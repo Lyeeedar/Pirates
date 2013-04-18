@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Pools;
 
 import com.lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinNoise;
 
@@ -36,61 +38,122 @@ class Island {
             w = heightMap.length;
             h = heightMap[0].length;
     }
-   
+
     public Mesh getMesh(float maxHeight)
     {
-            final int vertexSize =
-                            3 // position
-                            + 3 // normal
-                            + 2 // texture
-                            ;
-           
-            final float[] vertices = new float[w*h*vertexSize];
-            final short[] indices = new short[(w-1)*(h-1)*6];
-           
-            int i = 0;
-            for (int x = 0; x < w; x++)
-            {
-                    for (int y = 0; y < h; y++)
-                    {
-                            vertices[i++] = x*2;
-                            vertices[i++] = (float) heightMap[x][y]*maxHeight;
-                            vertices[i++] = y*2;
-                           
-                            vertices[i++] = 0;
-                            vertices[i++] = 1;
-                            vertices[i++] = 0;
-                            
-                            vertices[i++] = x;
-                            vertices[i++] = y;
-                           
-                    }
-            }
-           
-            i = 0;
-            for (short x = 0; x < w-1; x++)
-            {
-                    for (short y = 0; y < h-1; y++)
-                    {
-                        	indices[i++] = (short) (y+(x*h));
-                        	indices[i++] = (short) (y+1+(x*h));
-                            indices[i++] = (short) (y+((x+1)*h));
-                           
-                            indices[i++] = (short) (y+1+(x*h));
-                            indices[i++] = (short) (y+1+((x+1)*h));
-                            indices[i++] = (short) (y+((x+1)*h));
-                    }
-            }
+    	final int vertexSize =
+    			3 // position
+    			+ 3 // normal
+    			+ 2 // texture
+    			;
 
-            Mesh mesh = new Mesh(true, w*h, indices.length,
-                            new VertexAttribute(Usage.Position, 3, "a_position"),
-                            new VertexAttribute(Usage.Normal, 3, "a_normal"),
-            				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
-           
-            mesh.setVertices(vertices);
-            mesh.setIndices(indices);
-           
-            return mesh;
+    	final float[] vertices = new float[w*h*vertexSize];
+    	final short[] indices = new short[(w-1)*(h-1)*6];
+
+    	int i = 0;
+    	for (int x = 0; x < w; x++)
+    	{
+    		for (int y = 0; y < h; y++)
+    		{
+    			vertices[i++] = x*2;
+    			vertices[i++] = (float) heightMap[x][y]*maxHeight;
+    			vertices[i++] = y*2;
+
+    			vertices[i++] = 0;
+    			vertices[i++] = 1;
+    			vertices[i++] = 0;
+
+    			vertices[i++] = x;
+    			vertices[i++] = y;
+
+    		}
+    	}
+
+    	Vector3 edge1 = Pools.obtain(Vector3.class);
+    	Vector3 edge2 = Pools.obtain(Vector3.class);
+    	Vector3 cross = Pools.obtain(Vector3.class);
+    	
+    	i = 0;
+    	for (short x = 0; x < w-1; x++)
+    	{
+    		for (short y = 0; y < h-1; y++)
+    		{
+    			int t1p1 = y+(x*h);
+    			int t1p2 = y+1+(x*h);
+    			int t1p3 = y+((x+1)*h);
+
+    			indices[i++] = (short) t1p1;
+    			indices[i++] = (short) t1p2;
+    			indices[i++] = (short) t1p3;
+
+    			edge1
+    			.set(vertices[(t1p2*vertexSize)+0], vertices[(t1p2*vertexSize)+1], vertices[(t1p2*vertexSize)+2])
+    			.sub(vertices[(t1p1*vertexSize)+0], vertices[(t1p1*vertexSize)+1], vertices[(t1p1*vertexSize)+2]);
+    			
+    			edge2
+    			.set(vertices[(t1p3*vertexSize)+0], vertices[(t1p3*vertexSize)+1], vertices[(t1p3*vertexSize)+2])
+    			.sub(vertices[(t1p1*vertexSize)+0], vertices[(t1p1*vertexSize)+1], vertices[(t1p1*vertexSize)+2]);
+    			
+    			cross.set(edge1).crs(edge2);
+    			
+    			vertices[(t1p1*vertexSize)+3] = (vertices[(t1p1*vertexSize)+3] + cross.x)/2;
+    			vertices[(t1p1*vertexSize)+4] = (vertices[(t1p1*vertexSize)+4] + cross.y)/2;
+    			vertices[(t1p1*vertexSize)+5] = (vertices[(t1p1*vertexSize)+5] + cross.z)/2;
+    			
+    			vertices[(t1p2*vertexSize)+3] = (vertices[(t1p2*vertexSize)+3] + cross.x)/2;
+    			vertices[(t1p2*vertexSize)+4] = (vertices[(t1p2*vertexSize)+4] + cross.y)/2;
+    			vertices[(t1p2*vertexSize)+5] = (vertices[(t1p2*vertexSize)+5] + cross.z)/2;
+    			
+    			vertices[(t1p3*vertexSize)+3] = (vertices[(t1p3*vertexSize)+3] + cross.x)/2;
+    			vertices[(t1p3*vertexSize)+4] = (vertices[(t1p3*vertexSize)+4] + cross.y)/2;
+    			vertices[(t1p3*vertexSize)+5] = (vertices[(t1p3*vertexSize)+5] + cross.z)/2;
+    			
+    			
+    			int t2p1 = y+1+(x*h);
+    			int t2p2 = y+1+((x+1)*h);
+    			int t2p3 = y+((x+1)*h);
+    			
+    			indices[i++] = (short) t2p1;
+    			indices[i++] = (short) t2p2;
+    			indices[i++] = (short) t2p3;
+    			
+    			edge1
+    			.set(vertices[(t2p2*vertexSize)+0], vertices[(t2p2*vertexSize)+1], vertices[(t2p2*vertexSize)+2])
+    			.sub(vertices[(t2p1*vertexSize)+0], vertices[(t2p1*vertexSize)+1], vertices[(t2p1*vertexSize)+2]);
+    			
+    			edge2
+    			.set(vertices[(t2p3*vertexSize)+0], vertices[(t2p3*vertexSize)+1], vertices[(t2p3*vertexSize)+2])
+    			.sub(vertices[(t2p1*vertexSize)+0], vertices[(t2p1*vertexSize)+1], vertices[(t2p1*vertexSize)+2]);
+    			
+    			cross.set(edge1).crs(edge2);
+    			
+    			vertices[(t2p1*vertexSize)+3] = (vertices[(t2p1*vertexSize)+3] + cross.x)/2;
+    			vertices[(t2p1*vertexSize)+4] = (vertices[(t2p1*vertexSize)+4] + cross.y)/2;
+    			vertices[(t2p1*vertexSize)+5] = (vertices[(t2p1*vertexSize)+5] + cross.z)/2;
+    			
+    			vertices[(t2p2*vertexSize)+3] = (vertices[(t2p2*vertexSize)+3] + cross.x)/2;
+    			vertices[(t2p2*vertexSize)+4] = (vertices[(t2p2*vertexSize)+4] + cross.y)/2;
+    			vertices[(t2p2*vertexSize)+5] = (vertices[(t2p2*vertexSize)+5] + cross.z)/2;
+    			
+    			vertices[(t2p3*vertexSize)+3] = (vertices[(t2p3*vertexSize)+3] + cross.x)/2;
+    			vertices[(t2p3*vertexSize)+4] = (vertices[(t2p3*vertexSize)+4] + cross.y)/2;
+    			vertices[(t2p3*vertexSize)+5] = (vertices[(t2p3*vertexSize)+5] + cross.z)/2;
+    		}
+    	}
+    	
+    	Pools.free(edge1);
+    	Pools.free(edge2);
+    	Pools.free(cross);
+
+    	Mesh mesh = new Mesh(true, w*h, indices.length,
+    			new VertexAttribute(Usage.Position, 3, "a_position"),
+    			new VertexAttribute(Usage.Normal, 3, "a_normal"),
+    			new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+
+    	mesh.setVertices(vertices);
+    	mesh.setIndices(indices);
+
+    	return mesh;
     }
 
 }
@@ -340,15 +403,14 @@ class IslandCreator
                     for (int y = 0; y < grid[0].length; y++)
                     {
                             double height = noise.GetHeight(x/(grid.length/100.0), y/(grid[0].length/100.0));
-                            height = (height+2)/2;
+                            
+                            height *= height;
                            
                             int mx = (int)(((float)x/(float)grid.length)*mask.length);
                             int my = (int)(((float)y/(float)grid[0].length)*mask[0].length);
                             height *= mask[mx][my];
                             //height /= 2;
-                           
-                            height *= height; 
-                            
+
                             if (height > maxHeight) maxHeight = height;
                            
                             grid[x][y] = height;

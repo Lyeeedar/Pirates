@@ -42,9 +42,9 @@ public class SkyBox {
 		Gdx.gl.glCullFace(GL20.GL_FRONT);
 		Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
 		
-		texture.bind(0);
 		shader.begin();
 		
+		texture.bind(0);
 		mat41.set(cam.combined).mul(mat42.setToTranslation(cam.position));
 		shader.setUniformMatrix("u_mvp", mat41);
 		shader.setUniformi("u_texture", 0);
@@ -56,9 +56,9 @@ public class SkyBox {
 	
 	private Mesh getSkyBox()
 	{
-		int x = 10;
-		int y = 10;
-		int z = 10;
+		int x = 2;
+		int y = 2;
+		int z = 2;
 		float[] cubeVerts = {
 				-x, -y, -z, // bottom
 				-x, -y, z,
@@ -189,8 +189,7 @@ public class SkyBox {
 			"varying vec2 v_texCoords;\n"+
 			
 			"void main() {\n"+
-			"	gl_FragColor = texture2D(u_texture, v_texCoords);\n"+
+			"	gl_FragColor.rgb = texture2D(u_texture, v_texCoords).rgb;\n"+
+			"	gl_FragColor.a = 1.0;\n"+
 			"}";
-	
-			
 }

@@ -3,6 +3,7 @@ package Entities.AI;
 import Entities.GameEntity;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pools;
@@ -41,6 +42,8 @@ public class AI_Player_Control extends AI_Package {
 		if (controls.right()) entity.left_right(-10);
 		
 		if (controls.esc()) Gdx.app.exit();
+		
+		if (Gdx.input.isKeyPressed(Keys.SPACE)) entity.positionYAbsolutely(10);
 		
 		entity.applyVelocity(delta);
 		entity.getVelocity().add(0, GLOBALS.GRAVITY*delta, 0);

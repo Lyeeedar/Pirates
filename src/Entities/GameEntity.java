@@ -5,6 +5,7 @@ import Entities.AI.AI_Package;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.utils.Pools;
 import com.lyeeedar.Pirates.GLOBALS;
 
@@ -80,6 +81,8 @@ public class GameEntity {
 		velocity.z += (float)Math.sin(rotation.z) * mag;
 	}
 	
+	private final Ray ray = new Ray(new Vector3(), new Vector3());
+	private final Vector3 collision = new Vector3();
 	public void applyVelocity(float delta)
 	{
 		Vector3 v = Pools.obtain(Vector3.class).set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
@@ -87,16 +90,41 @@ public class GameEntity {
 		
 		Vector3 nPos = Pools.obtain(Vector3.class).set(position).add(v);
 
-		if (position.y < 0) v.y = -position.y*delta;
+		ray.origin.set(position).add(0, 0.5f, 0);
+		ray.direction.set(nPos).sub(position);
+		
+		ray.direction.set(nPos.x-position.x, 0, 0);
+		if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(nPos.x, position.y+0.5f, position.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		{
+			velocity.x = 0;
+			v.x = 0;
+		}
+		
+		ray.direction.set(0, 0, nPos.z-position.z);
+		if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(position.x, position.y+0.5f, nPos.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		{
+			velocity.z = 0;
+			v.z = 0;
+		}
+		
+		ray.direction.set(0, nPos.y-position.y, 0);
+		if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(position.x, nPos.y, position.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		{
+			velocity.y = 0;
+			v.y = 0;
+			positionYAbsolutely(collision.y+0.1f);
+		}
+		else if (nPos.y < -1)
+		{
+			velocity.y = 0;
+			v.y = 0;
+			positionYAbsolutely(-1);
+		}
 		
 		translate(v.x, v.y, v.z);
 		
-		NavMeshNode node = GLOBALS.TEST_NAV_MESH.getClosestNode(position);
-		if (node != null) positionYAbsolutely(node.y);
-		
 		velocity.x = 0;
 		velocity.z = 0;
-		velocity.y = 0;
 		
 		Pools.free(v);
 		Pools.free(nPos);

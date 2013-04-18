@@ -7,12 +7,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
+import com.lyeeedar.Pirates.GLOBALS;
 
 public class CellShadingRenderer extends AbstractRenderer {
 	
 	private static ShaderProgram shaderBody;
 	private static ShaderProgram shaderOutline;
 	private int textureHash = 0;
+	private Vector3 black = new Vector3();
 
 	@Override
 	protected void flush(LightManager lights) {
@@ -31,7 +33,7 @@ public class CellShadingRenderer extends AbstractRenderer {
 			final Drawable drawable = drawableManager.drawables.get(i);
 
 			shaderOutline.setUniformMatrix("u_mm", drawable.model_matrix);
-			shaderOutline.setUniformf("u_colour", new Vector3());
+			shaderOutline.setUniformf("u_colour", black);
 
 			drawable.mesh.render(shaderOutline, drawable.primitiveType);
 		}
@@ -70,10 +72,20 @@ public class CellShadingRenderer extends AbstractRenderer {
 	
 	private void loadBodyShader()
 	{
-		shaderBody = new ShaderProgram(
-				Gdx.files.internal("data/shaders/cellshading_body.vertex.glsl"),
-				Gdx.files.internal("data/shaders/cellshading_body.fragment.glsl")
-				);
+		if (GLOBALS.ANDROID)
+		{
+			shaderBody = new ShaderProgram(
+					Gdx.files.internal("data/shaders/cellshading_body_vert.vertex.glsl"),
+					Gdx.files.internal("data/shaders/cellshading_body_vert.fragment.glsl")
+					);
+		}
+		else
+		{
+			shaderBody = new ShaderProgram(
+					Gdx.files.internal("data/shaders/cellshading_body.vertex.glsl"),
+					Gdx.files.internal("data/shaders/cellshading_body.fragment.glsl")
+					);
+		}
 		
 		if (!shaderBody.isCompiled()) System.err.println(shaderBody.getLog());
 	}
