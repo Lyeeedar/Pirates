@@ -1,6 +1,7 @@
 package Entities.AI;
 
 import Entities.GameEntity;
+import Entities.NavMesh.NavMeshNode;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -51,7 +52,8 @@ public class AI_Player_Control extends AI_Package {
 		cam.up.set(entity.getUP());
 		cam.direction.set(entity.getRotation());
 		Yrotate(angle, cam);
-		cam.position.set(entity.getPosition()).sub(cam.direction).sub(cam.direction).sub(cam.direction).sub(cam.direction).sub(cam.direction);
+		cam.position.set(entity.getPosition()).add(0, 1, 0).sub(cam.direction).sub(cam.direction).sub(cam.direction).sub(cam.direction).sub(cam.direction);
+		
 		cam.update();
 	}
 

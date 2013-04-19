@@ -102,7 +102,7 @@ public class NavMesh {
 		tmpRay.origin.mul(inverse);
 		tmpRay.direction.mul(rotationTra);
 		
-		NavMeshPartition nmp = partition.getPartition(x, y, z);
+		NavMeshPartition nmp = partition.getPartition(tmpVec, tmpRay.origin);
 		if (nmp == null || nmp.triangles == null || !Intersector.intersectRayTriangles(tmpRay, nmp.triangles, collision)) {
 				return false;
 		}
@@ -156,7 +156,7 @@ public class NavMesh {
 			nodeList.add(n2);
 			nodeList.add(n3);
 			
-			float[] triangle = new float[9];
+			float[] triangle = new float[10];
 			triangle[0] = n1.x;
 			triangle[1] = n1.y;
 			triangle[2] = n1.z;
@@ -358,6 +358,7 @@ public class NavMesh {
 			
 			for (int i = 0; i < nodes.length; i++)
 			{
+				if (childNodes[i]) continue;
 				NavMeshNode node = nodes[i];
 				if (node.x > minx && node.x < maxx && 
 						node.y > miny && node.y < maxy && 
@@ -384,9 +385,10 @@ public class NavMesh {
 				NavMeshNode node = nodes[i];
 				for (float[] triangle : node.triangles)
 				{
-					if (!triangleList.contains(triangle))
+					if (triangle[9] == 0)
 					{
 						triangleList.add(triangle);
+						triangle[9] = 1;
 					}
 				}
 			}
@@ -397,6 +399,7 @@ public class NavMesh {
 			for (int i = 0; i < triangleList.size(); i++)
 			{
 				System.arraycopy(triangleList.get(i), 0, triangles, i*9, 9);
+				triangleList.get(i)[9] = 0;
 			}
 			
 			return triangles;
@@ -435,6 +438,46 @@ public class NavMesh {
 				return nmp;
 			}
 			else if (bse != null && (nmp=bse.getPartition(x, y, z)) != null)
+			{
+				return nmp;
+			}
+			else return this;
+		}
+		
+		public NavMeshPartition getPartition(Vector3 p1, Vector3 p2)
+		{
+			NavMeshPartition nmp = null;
+			if (p1.x < minx || p1.x > maxx || p1.y < miny || p1.y > maxy || p1.z < minz || p1.z > maxz ||
+					p2.x < minx || p2.x > maxx || p2.y < miny || p2.y > maxy || p2.z < minz || p2.z > maxz) return null;
+			else if (tnw != null && (nmp=tnw.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (tne != null && (nmp=tne.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (tsw != null && (nmp=tsw.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (tse != null && (nmp=tse.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (bnw != null && (nmp=bnw.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (bne != null && (nmp=bne.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (bsw != null && (nmp=bsw.getPartition(p1, p2)) != null)
+			{
+				return nmp;
+			}
+			else if (bse != null && (nmp=bse.getPartition(p1, p2)) != null)
 			{
 				return nmp;
 			}

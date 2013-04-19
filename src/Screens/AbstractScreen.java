@@ -93,8 +93,8 @@ public abstract class AbstractScreen implements Screen {
 
         cam.viewportWidth = width;
         cam.viewportHeight = height;
-        cam.near = 1.5f;
-        cam.far = 200f;
+        cam.near = 2f;
+        cam.far = 502f;
 
 		stage.setViewport( width, height, true);
 	}

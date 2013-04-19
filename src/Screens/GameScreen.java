@@ -67,6 +67,7 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create() {
 		
+		long time = System.nanoTime();
 		controls = new Controls(GLOBALS.ANDROID);
 		
 		ObjLoader loader = new ObjLoader();
@@ -77,14 +78,13 @@ public class GameScreen extends AbstractScreen {
 		//texture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
 		texture1 = new Texture(Gdx.files.internal("data/blank.png"));
-		plane = genPlane(1000, 0, 1000);
 
 		player = new GameEntity();
 		player.setAi(new AI_Player_Control(player, controls, cam));
 		
 		IslandGenerator ig = new IslandGenerator();
 		
-		model = ig.getIsland(20);
+		model = ig.getIsland(35);
 		GLOBALS.TEST_NAV_MESH = NavMesh.getNavMesh(model, 50f);
 		
 		renderer = new CellShadingRenderer();
@@ -96,7 +96,9 @@ public class GameScreen extends AbstractScreen {
 		lights.directionalLight.direction.set(0, 0.5f, -0.5f);
 
 		Texture tex = new Texture(Gdx.files.internal("data/test.png"));
-		skyBox = new SkyBox(tex);
+		skyBox = new SkyBox(tex, new Vector3(0.2f, 0.8f, 1), new Vector3(1, 1, 1));
+		
+		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
 
 	@Override
@@ -109,9 +111,6 @@ public class GameScreen extends AbstractScreen {
 		tmpMat.setToTranslation(player.getPosition()).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, player.getRotation()));
 		renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat);
 
-		tmpMat2.setToTranslation(player.getPosition().x, 0, player.getPosition().z);
-		renderer.add(plane, GL20.GL_TRIANGLE_STRIP, texture1, colour.set(0.2f, 0.8f, 1), tmpMat2);
-		
 		renderer.end(lights);
 		
 		skyBox.render(cam);
@@ -134,31 +133,13 @@ public class GameScreen extends AbstractScreen {
 	public void update(float delta) {
 		
 		player.update(delta);
+		skyBox.update(delta);
 		
 		GLOBALS.TEST_NAV_MESH.setPosition(0, -2, 0);
 		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
 		GLOBALS.TEST_NAV_MESH.updateMatrixes();
 		
 
-	}
-	
-	public static Mesh genPlane (float x, float y, float z) {
-
-		Mesh mesh = new Mesh(true, 4, 0, 
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				new VertexAttribute(Usage.Normal, 3, "a_normal"),
-				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
-		
-		float[] vertices = {
-				-x, y, -z, 0, 1, 0, 0, 0,
-				-x, y, z, 0, 1, 0, 0, 1,
-				x, y, -z, 0, 1, 0, 1, 0,
-				x, y, z, 0, 1, 0, 1, 1
-				};
-
-		mesh.setVertices(vertices);
-
-		return mesh;
 	}
 
 	@Override

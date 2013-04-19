@@ -9,49 +9,102 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
 
 public class SkyBox {
 	
-	Texture texture;
+	private final Texture skyTexture;
 	
-	ShaderProgram shader;
+	private final ShaderProgram skyShader;
+	private final ShaderProgram seaShader;
 	
-	Mesh box;
+	private final Mesh box;
+	private final Mesh plane;
 	
-	Matrix4 mat41;
-	Matrix4 mat42;
+	private final Matrix4 mat41 = new Matrix4();
+	private final Matrix4 mat42 = new Matrix4();
+	
+	private final Vector3 seaColour = new Vector3();
+	private final Vector3 foamColour = new Vector3();
+	
+	private final Vector3 tmpVec = new Vector3();
 	
 	private static final float oneThird = 1f/3f;
 	private static final float twoThird = 2f/3f;
 	
-	public SkyBox(Texture texture)
+	private float seaHeight;
+	private float foamHeight;
+	private float time;
+	
+	public SkyBox(Texture texture, Vector3 seaColour, Vector3 foamColour)
 	{
-		this.texture = texture;
-		box = getSkyBox();
-		shader = new ShaderProgram(VERTEX_SHADER, FRAGMENT_SHADER);
-		if (!shader.isCompiled()) {
-			System.err.println(shader.getLog());
-		}
+		this.skyTexture = texture;
+		this.seaColour.set(seaColour);
+		this.foamColour.set(foamColour);
 		
-		mat41 = new Matrix4();
-		mat42 = new Matrix4();
+		box = getSkyBox();
+		plane = genPlane(1000, 0, 1000);
+		
+		skyShader = new ShaderProgram(VERTEX_SHADER_SKY, FRAGMENT_SHADER_SKY);
+		if (!skyShader.isCompiled()) {
+			System.err.println(skyShader.getLog());
+		}
+		seaShader = new ShaderProgram(VERTEX_SHADER_SEA, FRAGMENT_SHADER_SEA);
+		if (!seaShader.isCompiled()) {
+			System.err.println(seaShader.getLog());
+		}
+	}
+	
+	public void update(float delta)
+	{
+		time += delta;
+		if (time > Math.PI*2) time = 0;
+		
+		seaHeight = (float) Math.sin(time+1)/20;
+		foamHeight = (float) Math.sin(time)/20;
 	}
 	
 	public void render(Camera cam)
 	{
+		Gdx.gl.glDepthMask(false);
+		
+		seaShader.begin();
+		
+		tmpVec.set(cam.position.x, foamHeight+0.05f, cam.position.z);
+		mat41.set(cam.combined).mul(mat42.setToTranslation(tmpVec));
+		seaShader.setUniformMatrix("u_mvp", mat41);
+		seaShader.setUniformf("u_colour", foamColour);
+		
+		plane.render(seaShader, GL20.GL_TRIANGLE_STRIP);
+		
+		seaShader.end();
+		
+		Gdx.gl.glDepthMask(true);
+		
+		seaShader.begin();
+		
+		tmpVec.set(cam.position.x, seaHeight, cam.position.z);
+		mat41.set(cam.combined).mul(mat42.setToTranslation(tmpVec));
+		seaShader.setUniformMatrix("u_mvp", mat41);
+		seaShader.setUniformf("u_colour", seaColour);
+		
+		plane.render(seaShader, GL20.GL_TRIANGLE_STRIP);
+		
+		seaShader.end();
+		
 		Gdx.gl.glCullFace(GL20.GL_FRONT);
 		Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
 		
-		shader.begin();
+		skyShader.begin();
 		
-		texture.bind(0);
+		skyTexture.bind(0);
 		mat41.set(cam.combined).mul(mat42.setToTranslation(cam.position));
-		shader.setUniformMatrix("u_mvp", mat41);
-		shader.setUniformi("u_texture", 0);
+		skyShader.setUniformMatrix("u_mvp", mat41);
+		skyShader.setUniformi("u_texture", 0);
 		
-		box.render(shader, GL20.GL_TRIANGLES);
+		box.render(skyShader, GL20.GL_TRIANGLES);
 		
-		shader.end();
+		skyShader.end();
 	}
 	
 	private Mesh getSkyBox()
@@ -165,7 +218,24 @@ public class SkyBox {
 		return box;
 	}
 	
-	private static final String VERTEX_SHADER = 
+	private static Mesh genPlane (float x, float y, float z) {
+
+		Mesh mesh = new Mesh(true, 4, 0, 
+				new VertexAttribute(Usage.Position, 3, "a_position"));
+		
+		float[] vertices = {
+				-x, y, -z,
+				-x, y, z,
+				x, y, -z,
+				x, y, z
+				};
+
+		mesh.setVertices(vertices);
+
+		return mesh;
+	}
+	
+	private static final String VERTEX_SHADER_SKY = 
 			"attribute vec3 a_position;\n"+
 			"attribute vec2 a_texCoord0;\n"+
 					
@@ -179,7 +249,7 @@ public class SkyBox {
 			"	gl_Position = position.xyww;\n"+
 			"}";
 	
-	private static final String FRAGMENT_SHADER = 
+	private static final String FRAGMENT_SHADER_SKY = 
 			"#ifdef GL_ES\n"+
 			"	precision mediump float;\n"+
 			"#endif\n"+
@@ -190,6 +260,28 @@ public class SkyBox {
 			
 			"void main() {\n"+
 			"	gl_FragColor.rgb = texture2D(u_texture, v_texCoords).rgb;\n"+
+			"	gl_FragColor.a = 1.0;\n"+
+			"}";
+	
+	private static final String VERTEX_SHADER_SEA = 
+			"attribute vec3 a_position;\n"+
+					
+			"uniform mat4 u_mvp;\n"+
+			
+			"void main() {\n"+
+			"	vec4 position = u_mvp * vec4(a_position, 1.0);\n"+
+			"	gl_Position = position.xyzw;\n"+
+			"}";
+	
+	private static final String FRAGMENT_SHADER_SEA = 
+			"#ifdef GL_ES\n"+
+			"	precision mediump float;\n"+
+			"#endif\n"+
+			
+			"uniform vec3 u_colour;\n"+
+			
+			"void main() {\n"+
+			"	gl_FragColor.rgb = u_colour;\n"+
 			"	gl_FragColor.a = 1.0;\n"+
 			"}";
 }

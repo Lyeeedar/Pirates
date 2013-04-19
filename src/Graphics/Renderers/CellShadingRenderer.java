@@ -34,6 +34,7 @@ public class CellShadingRenderer extends AbstractRenderer {
 
 			shaderOutline.setUniformMatrix("u_mm", drawable.model_matrix);
 			shaderOutline.setUniformf("u_colour", black);
+			shaderOutline.setUniformf("u_cam", cam.position);
 
 			drawable.mesh.render(shaderOutline, drawable.primitiveType);
 		}
