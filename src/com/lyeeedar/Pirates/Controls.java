@@ -41,7 +41,8 @@ public class Controls {
 			
 			if (Math.abs(max) < GLOBALS.SCREEN_SIZE[0]/6) max = 0;
 			
-			return max * Gdx.graphics.getDeltaTime();
+			int sign = (max < 0) ? -1 : 1;
+			return (float) (Math.pow(max, 2.0) * Gdx.graphics.getDeltaTime() * 0.0005f * sign);
 		}
 		else
 		{
@@ -162,6 +163,18 @@ public class Controls {
 		else
 		{
 			return  Gdx.input.isKeyPressed(Keys.ESCAPE);
+		}
+	}
+	
+	public boolean jump()
+	{
+		if (isAndroid)
+		{
+			return false;
+		}
+		else
+		{
+			return  Gdx.input.isKeyPressed(Keys.SPACE);
 		}
 	}
 

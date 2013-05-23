@@ -1,7 +1,6 @@
 package Entities.AI;
 
 import Entities.GameEntity;
-import Entities.NavMesh.NavMeshNode;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -16,6 +15,7 @@ public class AI_Player_Control extends AI_Package {
 	private final Controls controls;
 	private final Camera cam;
 	private float angle = -25;
+	private boolean jump = false;
 	
 	public AI_Player_Control(GameEntity entity, Controls controls, Camera cam)
 	{
@@ -44,7 +44,17 @@ public class AI_Player_Control extends AI_Package {
 		
 		if (controls.esc()) Gdx.app.exit();
 		
-		if (Gdx.input.isKeyPressed(Keys.SPACE)) entity.positionYAbsolutely(10);
+		if (controls.jump() && entity.getJumpToken() > 0 && !jump) {
+			entity.getVelocity().set(0, 30, 0);
+			entity.setJumpToken((short) (entity.getJumpToken()-1));
+			jump = true;
+		}
+		else if (!controls.jump())
+		{
+			jump = false;
+		}
+		if (Gdx.input.isKeyPressed(Keys.B)) entity.positionYAbsolutely(10);
+		if (Gdx.input.isKeyPressed(Keys.J)) entity.getVelocity().set(0, 50f, 0);
 		
 		entity.applyVelocity(delta);
 		entity.getVelocity().add(0, GLOBALS.GRAVITY*delta, 0);

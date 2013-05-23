@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pools;
 
@@ -18,9 +19,9 @@ import com.lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinNoise;
 
 public class IslandGenerator {
 
-	public Mesh getIsland(float maxHeight)
+	public Mesh getIsland(int width, int height, float maxHeight)
 	{
-		IslandCreator ic = new IslandCreator();
+		IslandCreator ic = new IslandCreator(width, height);
 		return ic.islands.get(0).getMesh(maxHeight);
 	}
 
@@ -55,9 +56,9 @@ class Island {
 		{
 			for (int y = 0; y < h; y++)
 			{
-				vertices[i++] = x*7;
+				vertices[i++] = x*5;
 				vertices[i++] = (float) heightMap[x][y]*maxHeight;
-				vertices[i++] = y*7;
+				vertices[i++] = y*5;
 
 				vertices[i++] = 0;
 				vertices[i++] = 1;
@@ -74,12 +75,12 @@ class Island {
 		Vector3 cross = Pools.obtain(Vector3.class);
 
 		i = 0;
-		for (short x = 0; x < w-1; x++)
+		for (int x = 0; x < w-1; x++)
 		{
-			for (short y = 0; y < h-1; y++)
+			for (int y = 0; y < h-1; y++)
 			{
 				int t1p1 = y+(x*h);
-				int t1p2 = y+1+(x*h);
+				int t1p2 = y+1+((x+1)*h);
 				int t1p3 = y+((x+1)*h);
 
 				indices[i++] = (short) t1p1;
@@ -109,9 +110,9 @@ class Island {
 				vertices[(t1p3*vertexSize)+5] = (vertices[(t1p3*vertexSize)+5] + cross.z)/2;
 
 
-				int t2p1 = y+1+(x*h);
-				int t2p2 = y+1+((x+1)*h);
-				int t2p3 = y+((x+1)*h);
+				int t2p1 = y+(x*h);
+				int t2p2 = y+1+(x*h);
+				int t2p3 = y+1+((x+1)*h);
 
 				indices[i++] = (short) t2p1;
 				indices[i++] = (short) t2p2;
@@ -146,9 +147,9 @@ class Island {
 		Pools.free(cross);
 
 		Mesh mesh = new Mesh(true, w*h, indices.length,
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				new VertexAttribute(Usage.Normal, 3, "a_normal"),
-				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE),
+				new VertexAttribute(Usage.Normal, 3, ShaderProgram.NORMAL_ATTRIBUTE),
+				new VertexAttribute(Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
 
 		mesh.setVertices(vertices);
 		mesh.setIndices(indices);
@@ -160,13 +161,13 @@ class Island {
 
 class IslandCreator
 {
-	int width = 70;
-	int height = 70;
+	int width;
+	int height;
 
 	int persistance = 3;
-	double[][] grid = new double[width][height];
-	double[][] mask = new double[width][height];
-	int[][] city = new int[width][height];
+	double[][] grid;
+	double[][] mask;
+	int[][] city;
 
 	List<Island> islands;
 
@@ -174,8 +175,14 @@ class IslandCreator
 	PerlinNoise noise = new PerlinNoise(0.4, 0.07, 2, 8, seed);
 
 	boolean view = false;
-	public IslandCreator()
+	public IslandCreator(int width, int height)
 	{
+		this.width = width;
+		this.height = height;
+		grid = new double[width][height];
+		mask = new double[width][height];
+		city = new int[width][height];
+				
 		createMask();
 		redoNoise(persistance);
 		islands = new ArrayList<Island>();
@@ -437,7 +444,7 @@ class IslandCreator
 			for (int y = 0; y < grid[0].length; y++)
 			{
 				grid[x][y] /= maxHeight;
-
+				//grid[x][y] = 1;
 			}
 		}
 	}

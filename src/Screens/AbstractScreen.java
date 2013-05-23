@@ -36,7 +36,7 @@ public abstract class AbstractScreen implements Screen {
 	
 	PerspectiveCamera cam;
 	
-	FPSLogger fps = new FPSLogger();
+	private long startTime;
 
 	public AbstractScreen()
 	{
@@ -72,7 +72,12 @@ public abstract class AbstractScreen implements Screen {
 
 		drawOrthogonals(delta);
 
-        fps.log();
+        if (System.currentTimeMillis() - startTime > 1000) {
+        	 Gdx.app.log("Update", "");
+			Gdx.app.log("	FPS", ""+Gdx.graphics.getFramesPerSecond());
+	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
+			startTime = System.currentTimeMillis();
+		}
 		
         spriteBatch.begin();
         font.draw(spriteBatch, ""+Gdx.app.getGraphics().getFramesPerSecond(), 20, screen_height-40);
@@ -94,7 +99,7 @@ public abstract class AbstractScreen implements Screen {
         cam.viewportWidth = width;
         cam.viewportHeight = height;
         cam.near = 2f;
-        cam.far = 502f;
+        cam.far = (GLOBALS.ANDROID) ? 202f : 502f ;
 
 		stage.setViewport( width, height, true);
 	}

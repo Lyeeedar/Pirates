@@ -77,11 +77,7 @@ public class SkyBox {
 		
 		plane.render(seaShader, GL20.GL_TRIANGLE_STRIP);
 		
-		seaShader.end();
-		
 		Gdx.gl.glDepthMask(true);
-		
-		seaShader.begin();
 		
 		tmpVec.set(cam.position.x, seaHeight, cam.position.z);
 		mat41.set(cam.combined).mul(mat42.setToTranslation(tmpVec));

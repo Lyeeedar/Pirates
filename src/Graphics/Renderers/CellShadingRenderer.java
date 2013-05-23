@@ -35,6 +35,10 @@ public class CellShadingRenderer extends AbstractRenderer {
 			shaderOutline.setUniformMatrix("u_mm", drawable.model_matrix);
 			shaderOutline.setUniformf("u_colour", black);
 			shaderOutline.setUniformf("u_cam", cam.position);
+			float min = (drawable.type == 1) ? 0.05f : 1.0f ;
+			shaderOutline.setUniformf("u_thickness_min", min);
+			float max = (drawable.type == 1) ? 0.01f : 0.2f ;
+			shaderOutline.setUniformf("u_thickness_max", max);
 
 			drawable.mesh.render(shaderOutline, drawable.primitiveType);
 		}

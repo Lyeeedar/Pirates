@@ -1,6 +1,5 @@
 package Entities;
 
-import Entities.NavMesh.NavMeshNode;
 import Entities.AI.AI_Package;
 
 import com.badlogic.gdx.math.Matrix4;
@@ -10,11 +9,18 @@ import com.badlogic.gdx.utils.Pools;
 import com.lyeeedar.Pirates.GLOBALS;
 
 public class GameEntity {
-	
+		
 	private final Vector3 UP = new Vector3(GLOBALS.DEFAULT_UP);	
 	private final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 	private final Vector3 position = new Vector3(0, 0, 0);
 	private final Vector3 velocity = new Vector3(0, 0, 0);
+	private final float radius = 0.5f;
+	private final float radius2 = radius*radius;
+	private final float radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
+	private short jumpToken = 0;
+	
+	private final Vector3 nPos = new Vector3();
+	private final Vector3 v = new Vector3();
 	
 	private AI_Package ai;
 	
@@ -85,49 +91,63 @@ public class GameEntity {
 	private final Vector3 collision = new Vector3();
 	public void applyVelocity(float delta)
 	{
-		Vector3 v = Pools.obtain(Vector3.class).set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
+		if (velocity.len2() == 0) return;
+		
+		if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
+		else if (velocity.x > GLOBALS.MAX_SPEED_X) velocity.x = GLOBALS.MAX_SPEED_X;
+		
+		if (velocity.y < -GLOBALS.MAX_SPEED_Y) velocity.y = -GLOBALS.MAX_SPEED_Y;
+		else if (velocity.y > GLOBALS.MAX_SPEED_Y) velocity.y = GLOBALS.MAX_SPEED_Y;
+		
+		if (velocity.z < -GLOBALS.MAX_SPEED_Z) velocity.z = -GLOBALS.MAX_SPEED_Z;
+		else if (velocity.z > GLOBALS.MAX_SPEED_Z) velocity.z = GLOBALS.MAX_SPEED_Z;
+		
+		v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 		v.scl(delta);
 		
-		Vector3 nPos = Pools.obtain(Vector3.class).set(position).add(v);
+		ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+		nPos.set(position).add(v);
+		ray.direction.set(v.x, 0, 0).nor();
 
-		ray.origin.set(position).add(0, 0.5f, 0);
-		ray.direction.set(nPos).sub(position);
-		
-		ray.direction.set(nPos.x-position.x, 0, 0);
-		if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(nPos.x, position.y+0.5f, position.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(nPos.x, position.y, position.z, ray, collision) && collision.dst2(ray.origin) < radius2)
 		{
 			velocity.x = 0;
 			v.x = 0;
 		}
 		
-		ray.direction.set(0, 0, nPos.z-position.z);
-		if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(position.x, position.y+0.5f, nPos.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+		nPos.set(position).add(v);
+		ray.direction.set(0, 0, v.z).nor();
+
+		if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(nPos.x, position.y, nPos.z, ray, collision) && collision.dst2(ray.origin) < radius2)
 		{
 			velocity.z = 0;
 			v.z = 0;
 		}
 		
-		ray.direction.set(0, nPos.y-position.y, 0);
-		if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(position.x, nPos.y, position.z, ray, collision) && collision.dst2(ray.origin) < 1)
+		ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+		nPos.set(position).add(v);
+		ray.direction.set(0, v.y, 0).nor();
+
+		if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(nPos.x, nPos.y, nPos.z, ray, collision) && collision.dst2(ray.origin) < radius2y)
 		{
+			if (v.y < 0) jumpToken = 2;
 			velocity.y = 0;
 			v.y = 0;
-			positionYAbsolutely(collision.y+0.1f);
+			positionYAbsolutely(collision.y);
 		}
-		else if (nPos.y < -1)
+		else if (nPos.y < -0.5f)
 		{
 			velocity.y = 0;
 			v.y = 0;
-			positionYAbsolutely(-1);
+			positionYAbsolutely(-0.5f);
+			jumpToken = 2;
 		}
 		
 		translate(v.x, v.y, v.z);
 		
 		velocity.x = 0;
 		velocity.z = 0;
-		
-		Pools.free(v);
-		Pools.free(nPos);
 	}
 
 	public AI_Package getAi() {
@@ -152,5 +172,13 @@ public class GameEntity {
 
 	public Vector3 getVelocity() {
 		return velocity;
+	}
+
+	public short getJumpToken() {
+		return jumpToken;
+	}
+
+	public void setJumpToken(short jumpToken) {
+		this.jumpToken = jumpToken;
 	}
 }

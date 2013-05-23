@@ -25,9 +25,9 @@ public abstract class AbstractRenderer{
 		drawing = true;
 	}
 
-	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix) {
+	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
 		//if (cam != null) if (!cam.frustum.sphereInFrustum(attributes.getSortCenter(), attributes.getBoundingSphereRadius()*2)) return;
-		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix);
+		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix, type);
 	}
 	
 	public void end(LightManager lights) {
@@ -65,9 +65,9 @@ public abstract class AbstractRenderer{
 		 * @param colour
 		 * @param model_matrix
 		 */
-		public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix) {
+		public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
 			Drawable drawable = drawablePool.obtain();
-			drawable.setCommon(mesh, primitiveType, texture, colour, model_matrix);
+			drawable.setCommon(mesh, primitiveType, texture, colour, model_matrix, type);
 			drawables.add(drawable);
 		}
 
@@ -92,6 +92,8 @@ public abstract class AbstractRenderer{
 			Mesh mesh;
 			final Matrix4 model_matrix = new Matrix4();
 			final Matrix3 normal_matrix = new Matrix3();
+			
+			int type;
 
 			int distance;			
 			int primitiveType;
@@ -102,8 +104,9 @@ public abstract class AbstractRenderer{
 			
 			final Vector3 tmp = new Vector3();
 
-			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix) {
+			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
 				
+				this.type = type;
 				this.mesh = mesh;
 				this.primitiveType = primitiveType;
 				this.colour.set(colour);
