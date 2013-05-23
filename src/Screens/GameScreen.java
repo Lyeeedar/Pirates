@@ -44,7 +44,7 @@ public class GameScreen extends AbstractScreen {
 	//Texture shipTex;
 	//Mesh shipMesh;
 	
-	int numEntities = 10;
+	int numEntities = 50;
 	ArrayList<GameEntity> entities = new ArrayList<GameEntity>();
 	
 	CellShadingRenderer renderer;
@@ -90,16 +90,14 @@ public class GameScreen extends AbstractScreen {
 		
 		texture1 = new Texture(Gdx.files.internal("data/blank.png"));
 		
-		texture = new Texture(Gdx.files.internal("data/shipTex.png"));
-		model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
-
 		player = new GameEntity();
 		player.setAi(new AI_Player_Control(player, controls, cam));
 		player.getPosition().set(10, 55, 0);
 		
 		//IslandGenerator ig = new IslandGenerator();
-		
 		//model = ig.getIsland(40, 40, 40);
+		texture = new Texture(Gdx.files.internal("data/shipTex.png"));
+		model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
 		GLOBALS.TEST_NAV_MESH = SymbolicMesh.getSymbolicMesh(model, 1f);
 		
 		renderer = new CellShadingRenderer();
@@ -176,7 +174,7 @@ public class GameScreen extends AbstractScreen {
 		for (GameEntity ge : entities) ge.update(delta);
 		skyBox.update(delta);
 		
-		GLOBALS.TEST_NAV_MESH.setPosition(0, -2, 0);
+		GLOBALS.TEST_NAV_MESH.setPosition(0, 4, 0);
 		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
 		GLOBALS.TEST_NAV_MESH.updateMatrixes();
 		
