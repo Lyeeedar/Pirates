@@ -102,10 +102,6 @@ public final class SymbolicMesh {
 
 		TempMeshPartition temp = new TempMeshPartition(null, this.minx, this.maxx, this.miny, this.maxy, this.minz, this.maxz, 0);
 		
-		float[] x = new float[3];
-		float[] y = new float[3];
-		float[] z = new float[3];
-		
 		indices = new short[triangles.length*3];
 		int ii = 0;
 		
@@ -114,11 +110,15 @@ public final class SymbolicMesh {
 			System.arraycopy(tri, 0, indices, ii*3, 3);		
 			ii++;
 			
+			float[] x = new float[3];
+			float[] y = new float[3];
+			float[] z = new float[3];
+			
 			for (int i = 0; i < 3; i++)
 			{
-				x[i] = vertices[tri[i]+0];
-				y[i] = vertices[tri[i]+1];
-				z[i] = vertices[tri[i]+2];
+				x[i] = vertices[(tri[i]*vertexSize)+0];
+				y[i] = vertices[(tri[i]*vertexSize)+1];
+				z[i] = vertices[(tri[i]*vertexSize)+2];
 			}
 			
 			temp.addTriangle(tri, x, y, z);
@@ -169,11 +169,13 @@ public final class SymbolicMesh {
 		tmpRay.origin.mul(inverse);
 		tmpRay.direction.mul(rotationTra);
 		
-		short[] tris = testItr(partition, tmpRay, tmpVec, collision);
+		//short[] tris = testItr(partition, tmpRay, tmpVec, collision);
 		
 		//System.out.println(tris.length/3);
 		
-		if (!intersectRayTriangles(tmpRay, tris, collision)){//checkCollisionIterative(partition, tmpRay, tmpVec, collision)) {
+		if (!
+			//intersectRayTriangles(tmpRay, tris, collision)){//
+			checkCollisionIterative(partition, tmpRay, tmpVec, collision)) {
 			return false;
 		}
 
@@ -289,14 +291,18 @@ public final class SymbolicMesh {
 			return true;
 		}
 		
-		if (partition.tne != null && checkCollisionRecursive(partition.tne, ray, end, collision)) return true;
-		if (partition.tnw != null && checkCollisionRecursive(partition.tnw, ray, end, collision)) return true;
-		if (partition.tse != null && checkCollisionRecursive(partition.tse, ray, end, collision)) return true;
-		if (partition.tsw != null && checkCollisionRecursive(partition.tsw, ray, end, collision)) return true;
-		if (partition.bne != null && checkCollisionRecursive(partition.bne, ray, end, collision)) return true;
-		if (partition.bnw != null && checkCollisionRecursive(partition.bnw, ray, end, collision)) return true;
-		if (partition.bse != null && checkCollisionRecursive(partition.bse, ray, end, collision)) return true;
-		if (partition.bsw != null && checkCollisionRecursive(partition.bsw, ray, end, collision)) return true;
+		short top = partition.getTop(ray.origin.y, end.y);
+		short north = partition.getNorth(ray.origin.z, end.z);
+		short east = partition.getEast(ray.origin.x, end.x);
+		
+		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.tne, ray, end, collision)) return true;
+		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.tnw, ray, end, collision)) return true;
+		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.tse, ray, end, collision)) return true;
+		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.tsw, ray, end, collision)) return true;
+		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.bne, ray, end, collision)) return true;
+		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.bnw, ray, end, collision)) return true;
+		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.bse, ray, end, collision)) return true;
+		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.bsw, ray, end, collision)) return true;
 		
 		return false;
 	}
@@ -486,7 +492,7 @@ public final class SymbolicMesh {
 
 	public class TempMeshPartition
 	{
-		private static final int MIN_BUCKET = 0;
+		private static final int BUCKET_SIZE = 8;
 		
 		public final int depth;
 
@@ -502,8 +508,11 @@ public final class SymbolicMesh {
 		public final float maxy;
 		public final float maxz;
 
-		public short[] triangles;
+		public short[] triangles = new short[0];
 		public List<short[]> triangleList;
+		public List<float[]> xs;
+		public List<float[]> ys;
+		public List<float[]> zs;
 		
 		public final TempMeshPartition parent;
 
@@ -527,23 +536,24 @@ public final class SymbolicMesh {
 			this.maxx = maxx;
 			this.maxy = maxy;
 			this.maxz = maxz;
-
-			this.midx = minx+(maxx-minx)/2f;
-			this.midy = miny+(maxy-miny)/2f;
-			this.midz = minz+(maxz-minz)/2f;
-
+			
 			this.parent = parent;
 			
 			this.triangleList = new ArrayList<short[]>();
+			xs = new ArrayList<float[]>();
+			ys = new ArrayList<float[]>();
+			zs = new ArrayList<float[]>();
 		}
 		
 		public void addTriangle(short[] triangle, float[] x, float[] y, float[] z)
 		{
-			if (triangleList.size() < MIN_BUCKET)
-			{
-				triangleList.add(triangle);
-				return;
-			}
+			triangleList.add(triangle);
+			xs.add(x);
+			ys.add(y);
+			zs.add(z);
+		}
+		
+		public boolean cascade (short[] triangle, float[] x, float[] y, float[] z) {
 			
 			short top;
 			short north;
@@ -560,59 +570,86 @@ public final class SymbolicMesh {
 			if (z[0] >= midz && z[1] >= midz && z[2] >= midz) north = 1;
 			else if (z[0] < midz && z[1] < midz && z[2] < midz) north = -1;
 			else north = 0;
-
-			if (top == 0 || east == 0 || north == 0)
+			
+			if (top == 1 && east == 1 && north == 1)
 			{
-				triangleList.add(triangle);
-			}
-			else if (top == 1 && east == 1 && north == 1)
-			{
-				if (tne == null) tne = new TempMeshPartition(this, midx, maxx, midy, maxy, midz, maxz, depth+1);
 				tne.addTriangle(triangle, x, y, z);
 			}
 			else if (top == 1 && east == 1 && north == -1)
 			{
-				if (tse == null) tse = new TempMeshPartition(this, midx, maxx, midy, maxy, minz, midz, depth+1);
 				tse.addTriangle(triangle, x, y, z);
 			}
 			else if (top == 1 && east == -1 && north == 1)
 			{
-				if (tnw == null) tnw = new TempMeshPartition(this, minx, midx, midy, maxy, midz, maxz, depth+1);
 				tnw.addTriangle(triangle, x, y, z);
 			}
 			else if (top == 1 && east == -1 && north == -1)
 			{
-				if (tsw == null) tsw = new TempMeshPartition(this, minx, midx, midy, maxy, minz, midz, depth+1);
 				tsw.addTriangle(triangle, x, y, z);
 			}
 			else if (top == -1 && east == 1 && north == 1)
 			{
-				if (bne == null) bne = new TempMeshPartition(this, midx, maxx, miny, midy, midz, maxz, depth+1);
 				bne.addTriangle(triangle, x, y, z);
 			}
 			else if (top == -1 && east == 1 && north == -1)
 			{
-				if (bse == null) bse = new TempMeshPartition(this, midx, maxx, miny, midy, minz, midz, depth+1);
 				bse.addTriangle(triangle, x, y, z);
 			}
 			else if (top == -1 && east == -1 && north == 1)
 			{
-				if (bnw == null) bnw = new TempMeshPartition(this, minx, midx, miny, midy, midz, maxz, depth+1);
 				bnw.addTriangle(triangle, x, y, z);
 			}
 			else if (top == -1 && east == -1 && north == -1)
 			{
-				if (bsw == null) bsw = new TempMeshPartition(this, minx, midx, miny, midy, minz, midz, depth+1);
 				bsw.addTriangle(triangle, x, y, z);
 			}
 			else
 			{
-				triangleList.add(triangle);
+				return false;
 			}
+			return true;
 		}
 		
 		public void finalize()
 		{
+			if (triangleList.size() == 0) return;
+			
+			int count = 0;
+			
+			midx = minx+((maxx-minx)/2f);
+			midy = miny+((maxy-miny)/2f);
+			midz = minz+((maxz-minz)/2f);
+			
+			tne = new TempMeshPartition(this, midx, maxx, midy, maxy, midz, maxz, depth+1);
+			tnw = new TempMeshPartition(this, minx, midx, midy, maxy, midz, maxz, depth+1);
+			tse = new TempMeshPartition(this, midx, maxx, midy, maxy, minz, midz, depth+1);
+			tsw = new TempMeshPartition(this, minx, midx, midy, maxy, minz, midz, depth+1);
+			bne = new TempMeshPartition(this, midx, maxx, miny, midy, midz, maxz, depth+1);
+			bnw = new TempMeshPartition(this, minx, midx, miny, midy, midz, maxz, depth+1);
+			bse = new TempMeshPartition(this, midx, maxx, miny, midy, minz, midz, depth+1);
+			bsw = new TempMeshPartition(this, minx, midx, miny, midy, minz, midz, depth+1);
+			
+			if (triangleList.size() > BUCKET_SIZE)
+			{
+				int i = 0;
+				count = triangleList.size();
+				
+				for (i = 0; i < count; i++)
+				{
+					boolean success = cascade(triangleList.get(i), xs.get(i), ys.get(i), zs.get(i));
+					
+					if (success)
+					{
+						triangleList.remove(i);
+						xs.remove(i);
+						ys.remove(i);
+						zs.remove(i);
+						i--;
+						count--;
+					}
+				}
+			}
+			
 			int bucket_size = triangleList.size();
 			triangles = new short[bucket_size*3];
 			
