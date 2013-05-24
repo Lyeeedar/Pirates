@@ -2,8 +2,11 @@ package Screens;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-import Entities.GameEntity;
+import Entities.Entity;
 import Entities.SymbolicMesh;
 import Entities.AI.AI_Follow;
 import Entities.AI.AI_Player_Control;
@@ -17,8 +20,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -39,13 +40,11 @@ public class GameScreen extends AbstractScreen {
 	Matrix4 tmpMat1 = new Matrix4();
 	Matrix4 tmpMat2 = new Matrix4();
 	Vector3 colour = new Vector3();
-	GameEntity player;
+	Entity player;
+	Entity.EntityData data = new Entity.EntityData();
 	
-	//Texture shipTex;
-	//Mesh shipMesh;
-	
-	int numEntities = 50;
-	ArrayList<GameEntity> entities = new ArrayList<GameEntity>();
+	int numEntities = 10;
+	ArrayList<Entity> entities = new ArrayList<Entity>();
 	
 	CellShadingRenderer renderer;
 	LightManager lights;
@@ -90,14 +89,13 @@ public class GameScreen extends AbstractScreen {
 		
 		texture1 = new Texture(Gdx.files.internal("data/blank.png"));
 		
-		player = new GameEntity();
-		player.setAi(new AI_Player_Control(player, controls, cam));
-		player.getPosition().set(10, 55, 0);
+		player = new Entity();
+		player.setAI(new AI_Player_Control(player, controls, cam));
 		
-		//IslandGenerator ig = new IslandGenerator();
-		//model = ig.getIsland(40, 40, 40);
-		texture = new Texture(Gdx.files.internal("data/shipTex.png"));
-		model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
+		IslandGenerator ig = new IslandGenerator();
+		model = ig.getIsland(40, 40, 40);
+		//texture = new Texture(Gdx.files.internal("data/shipTex.png"));
+		//model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
 		GLOBALS.TEST_NAV_MESH = SymbolicMesh.getSymbolicMesh(model, 1f);
 		
 		renderer = new CellShadingRenderer();
@@ -117,11 +115,14 @@ public class GameScreen extends AbstractScreen {
 		Random ran = new Random();
 		for (int i = 0; i < numEntities; i++)
 		{
-			GameEntity ge = new GameEntity();
+			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
-			ge.setAi(ai);
-			ge.getPosition().set(ran.nextInt(30), 55, ran.nextInt(30));
+			ge.setAI(ai);
+			
+			ge.readData(data);
+			data.position.set(ran.nextInt(30), 55, ran.nextInt(30));
+			ge.writeData(data);
 			entities.add(ge);
 		}
 		
@@ -133,16 +134,18 @@ public class GameScreen extends AbstractScreen {
 		
 		renderer.begin();
 		
-		renderer.add(model, GL20.GL_TRIANGLES, texture, colour.set(0.5f, 1, 0.5f), GLOBALS.TEST_NAV_MESH.getCombined(), 0);
+		renderer.add(model, GL20.GL_TRIANGLES, texture, colour.set(1f, 1f, 1f), GLOBALS.TEST_NAV_MESH.getCombined(), 0);
 		
 		//renderer.add(shipMesh, GL20.GL_TRIANGLES, shipTex, colour.set(1, 1, 1), tmpMat.setToTranslation(-10, 5, -10), 0);
 		
-		tmpMat.setToTranslation(player.getPosition()).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, player.getRotation()));
+		player.readData(data);
+		tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
 		renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
 		
-		for (GameEntity ge : entities)
+		for (Entity ge : entities)
 		{
-			tmpMat.setToTranslation(ge.getPosition()).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, ge.getRotation()));
+			ge.readData(data);
+			tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
 			renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
 		}
 
@@ -168,13 +171,13 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void update(float delta) {
 		
-		l.position.set(player.getPosition()).add(0, 2, 0);
+		GLOBALS.submitTask(player.getRunnable(delta));//player.update(delta);
+		for (Entity ge : entities) GLOBALS.submitTask(ge.getRunnable(delta));//ge.update(delta);
+		GLOBALS.waitTillTasksComplete();
 		
-		player.update(delta);
-		for (GameEntity ge : entities) ge.update(delta);
 		skyBox.update(delta);
 		
-		GLOBALS.TEST_NAV_MESH.setPosition(0, 4, 0);
+		GLOBALS.TEST_NAV_MESH.setPosition(0, -2, 0);
 		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
 		GLOBALS.TEST_NAV_MESH.updateMatrixes();
 		

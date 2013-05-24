@@ -1,12 +1,13 @@
 package Entities.AI;
 
-import Entities.GameEntity;
+import Entities.Entity;
 
 public abstract class AI_Package {
 	
-	protected final GameEntity entity;
+	protected final Entity entity;
+	Entity.EntityData entityState = new Entity.EntityData();
 
-	public AI_Package(GameEntity entity)
+	public AI_Package(Entity entity)
 	{
 		this.entity = entity;
 	}

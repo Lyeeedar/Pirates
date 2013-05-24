@@ -1,5 +1,11 @@
 package com.lyeeedar.Pirates;
 
+import java.util.LinkedList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import Entities.SymbolicMesh;
 
 import com.badlogic.gdx.math.Vector3;
@@ -23,4 +29,26 @@ public final class GLOBALS {
 	public static boolean ANDROID = false;
 	
 	public static SymbolicMesh TEST_NAV_MESH;
+	
+	public static ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	public static LinkedList<Future<?>> futureList = new LinkedList<Future<?>>();
+	
+	public static void submitTask(Runnable run)
+	{
+		futureList.add(threadPool.submit(run));
+	}
+	public static void waitTillTasksComplete()
+	{
+		for (Future<?> future : futureList)
+		{
+			try {
+				future.get();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+		futureList.clear();
+	}
 }

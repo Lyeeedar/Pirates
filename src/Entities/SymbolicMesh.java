@@ -10,7 +10,6 @@ import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.utils.Pools;
 
 public final class SymbolicMesh {
 	
@@ -18,7 +17,6 @@ public final class SymbolicMesh {
 	
 	public final float[] vertices;
 	public final int vertexSize;
-	short[] indices;
 
 	private final Vector3 position = new Vector3();
 	private final Matrix4 rotation = new Matrix4();
@@ -35,8 +33,6 @@ public final class SymbolicMesh {
 	private final float maxx;
 	private final float maxy;
 	private final float maxz;
-	
-	private int count;
 	
 	public SymbolicMesh(SymbolicMeshNode[] nodes, short[][] triangles, float[] vertices, int vertexSize)
 	{	
@@ -98,15 +94,9 @@ public final class SymbolicMesh {
 		this.maxz = minz+max;
 
 		TempMeshPartition temp = new TempMeshPartition(null, this.minx, this.maxx, this.miny, this.maxy, this.minz, this.maxz, 0);
-		
-		indices = new short[triangles.length*3];
-		int ii = 0;
-		
+
 		for (short[] tri : triangles)
-		{
-			System.arraycopy(tri, 0, indices, ii*3, 3);		
-			ii++;
-			
+		{			
 			float[] x = new float[3];
 			float[] y = new float[3];
 			float[] z = new float[3];
@@ -124,19 +114,22 @@ public final class SymbolicMesh {
 		temp.finalize();
 		
 		partition = new SymbolicMeshPartition(null, temp);
-		
-		System.out.println(partition.toStringRecurse());
-		System.out.println(indices.length/3);
 	}
 
+	/**
+	 * Recalculate all the transformations for this mesh
+	 */
 	public void updateMatrixes()
 	{
-		Matrix4 tmpMat = Pools.obtain(Matrix4.class);
+		Matrix4 tmpMat = new Matrix4();
 		combined.setToTranslation(position).mul(rotation);
 		inverse.set(rotationTra).mul(tmpMat.setToTranslation(-position.x, -position.y, -position.z));
-		Pools.free(tmpMat);
 	}
 
+	/**
+	 * Get the combined transformation matrix for this mesh
+	 * @return
+	 */
 	public Matrix4 getCombined()
 	{
 		return combined;
@@ -157,34 +150,26 @@ public final class SymbolicMesh {
 		rotationTra.set(rotation).tra();
 	}
 
-	public boolean checkCollision(float x, float y, float z, Ray ray, Vector3 collision)
+	/**
+	 * Check the given ray to dest against the geometry. Store the resulting collision (if there was one) in the collision Vector3.
+	 * @param ray
+	 * @param dest
+	 * @param collision
+	 * @return
+	 */
+	public boolean checkCollision(Ray ray, Vector3 dest, Vector3 collision, float[] min_dist, Vector3[] tmp)
 	{
-		Vector3 tmpVec = Pools.obtain(Vector3.class);
-		
-		tmpVec.set(x, y, z).mul(inverse);
-		x = tmpVec.x;
-		y = tmpVec.y;
-		z = tmpVec.z;
+		dest.mul(inverse);
 
 		ray.origin.mul(inverse);
 		ray.direction.mul(rotationTra);
-		
-		//short[] tris = testItr(partition, tmpRay, tmpVec, collision);
-		
-		//System.out.println(tris.length/3);
-		
-		if (!
-			//intersectRayTriangles(tmpRay, tris, collision)){//
-			checkCollisionIterative(partition, ray, tmpVec, collision)) {
-			Pools.free(tmpVec);
+
+		if (!checkCollisionIterative(partition, ray, dest, collision, min_dist, tmp)) {
 			return false;
 		}
 
-		ray.origin.mul(combined);
 		collision.mul(combined);
 		
-		Pools.free(tmpVec);
-
 		return true;
 	}
 	
@@ -219,7 +204,7 @@ public final class SymbolicMesh {
 		}
 	}
 	
-	private boolean checkCollisionIterative(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision)
+	private boolean checkCollisionIterative(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision, float[] min_dist, Vector3[] tmp)
 	{
 		if ((ray.origin.x < minx && end.x < minx) || (ray.origin.x > maxx && end.x > maxx)) return false;
 		else
@@ -254,14 +239,6 @@ public final class SymbolicMesh {
 		SymbolicMeshPartition current = partition;
 		SymbolicMeshPartition next = partition;
 		
-		final float[] min_dist = {Float.MAX_VALUE};	
-		final Vector3[] tmp = {
-				Pools.obtain(Vector3.class),
-				Pools.obtain(Vector3.class),
-				Pools.obtain(Vector3.class),
-				Pools.obtain(Vector3.class)
-				};
-		
 		boolean collide = false;
 		
 		while(next != null)
@@ -276,11 +253,6 @@ public final class SymbolicMesh {
 		
 		collide = (checkCollisionRecursive(current, ray, end, collision, min_dist, tmp)) ? true : collide;
 		
-		Pools.free(tmp[0]);
-		Pools.free(tmp[1]);
-		Pools.free(tmp[2]);
-		Pools.free(tmp[3]);
-		
 		return collide;
 	}
 	
@@ -292,75 +264,16 @@ public final class SymbolicMesh {
 		short north = partition.getNorth(ray.origin.z, end.z);
 		short east = partition.getEast(ray.origin.x, end.x);
 		
-		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.tne, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.tnw, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.tse, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.tsw, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.bne, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.bnw, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.bse, ray, end, collision, min_dist, tmp)) collide = true;//return true;
-		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.bsw, ray, end, collision, min_dist, tmp)) collide = true;//return true;
+		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.tne, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.tnw, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.tse, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.tsw, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.bne, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.bnw, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.bse, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.bsw, ray, end, collision, min_dist, tmp)) collide = true;
 		
-		return collide;//false;
-	}
-	
-	private short[] testItr(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision)
-	{		
-		SymbolicMeshPartition current = partition;
-		SymbolicMeshPartition next = partition;
-		
-		List<short[]> list = new ArrayList<short[]>();
-		
-		while(next != null)
-		{
-			current = next;		
-			next = current.getPartition(ray.origin, end);
-			
-			if (next == null) break;
-			
-			list.add(current.triangles);
-		}
-		
-		list.addAll(testRec(current, ray, end, collision));
-		
-		int count = 0;
-		for (short[] s : list) count += s.length;
-		
-		short[] indices = new short[count];
-		
-		int index = 0;
-		
-		for (int i = 0; i < list.size(); i++)
-		{
-			short[] ind = list.get(i);
-			System.arraycopy(ind, 0, indices, index, ind.length);
-			index += ind.length;
-		}
-		
-		return indices;
-	}
-	
-	private List<short[]> testRec(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision)
-	{
-		List<short[]> list = new ArrayList<short[]>();
-		list.add(partition.triangles);
-		
-		short top = partition.getTop(ray.origin.y, end.y);
-		short north = partition.getNorth(ray.origin.z, end.z);
-		short east = partition.getEast(ray.origin.x, end.x);
-		
-		//System.out.println(top + " " + north + " " + east);
-		
-		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0) list.addAll(testRec(partition.tne, ray, end, collision));
-		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0) list.addAll(testRec(partition.tnw, ray, end, collision));
-		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0) list.addAll(testRec(partition.tse, ray, end, collision));
-		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0) list.addAll(testRec(partition.tsw, ray, end, collision));
-		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0) list.addAll(testRec(partition.bne, ray, end, collision));
-		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0) list.addAll(testRec(partition.bnw, ray, end, collision));
-		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0) list.addAll(testRec(partition.bse, ray, end, collision));
-		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0) list.addAll(testRec(partition.bsw, ray, end, collision));
-		
-		return list;
+		return collide;
 	}
 
 	/**
@@ -448,8 +361,8 @@ public final class SymbolicMesh {
 			distances = new float[size];
 			angles = new float[size];
 
-			Vector3 tmp1 = Pools.obtain(Vector3.class);
-			Vector3 tmp2 = Pools.obtain(Vector3.class);
+			Vector3 tmp1 = new Vector3();
+			Vector3 tmp2 = new Vector3();
 
 			for (int i = 0; i < size; i++)
 			{
@@ -647,8 +560,6 @@ public final class SymbolicMesh {
 			{
 				System.arraycopy(triangleList.get(i), 0, triangles, i*3, 3);
 			}
-			
-			triangleList = null;
 			
 			if (tne != null) tne.finalize();
 			if (tnw != null) tnw.finalize();
