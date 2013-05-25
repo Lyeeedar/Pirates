@@ -3,9 +3,11 @@ package Entities;
 import Entities.AI.AI_Package;
 
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.lyeeedar.Pirates.GLOBALS;
+import com.lyeeedar.Pirates.ThreadSafePlane;
 
 public class Entity {
 	
@@ -97,7 +99,8 @@ public class Entity {
 		private final Ray ray = new Ray(new Vector3(), new Vector3());
 		private final Vector3 collision = new Vector3();
 		private final float[] min_dist = {Float.MAX_VALUE};
-		private final Vector3[] tmp = {new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+		private final Vector3[] tmp = {new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+		private final Plane plane = new ThreadSafePlane(new Vector3(), 1);
 
 		public void write(EntityData data)
 		{
@@ -179,7 +182,7 @@ public class Entity {
 			ray.direction.set(v.x, 0, 0).nor();
 			min_dist[0] = Float.MAX_VALUE;
 
-			if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, position.z), collision, min_dist, tmp) && min_dist[0] < radius2)
+			if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, position.z), collision, min_dist, tmp, plane) && min_dist[0] < radius2)
 			{
 				velocity.x = 0;
 				v.x = 0;
@@ -190,7 +193,7 @@ public class Entity {
 			ray.direction.set(0, 0, v.z).nor();
 			min_dist[0] = Float.MAX_VALUE;
 
-			if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, nPos.z), collision, min_dist, tmp) && min_dist[0]  < radius2)
+			if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, nPos.z), collision, min_dist, tmp, plane) && min_dist[0]  < radius2)
 			{
 				velocity.z = 0;
 				v.z = 0;
@@ -201,7 +204,7 @@ public class Entity {
 			ray.direction.set(0, v.y, 0).nor();
 			min_dist[0] = Float.MAX_VALUE;
 
-			if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, nPos.y, nPos.z), collision, min_dist, tmp) && min_dist[0]  < radius2y)
+			if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, nPos.y, nPos.z), collision, min_dist, tmp, plane) && min_dist[0]  < radius2y)
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;

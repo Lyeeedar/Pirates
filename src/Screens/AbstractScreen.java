@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.ModelRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
  
 
@@ -34,7 +35,7 @@ public abstract class AbstractScreen implements Screen {
 
 	protected ModelRenderer renderer;
 	
-	PerspectiveCamera cam;
+	FollowCam cam;
 	
 	private long startTime;
 
@@ -44,8 +45,6 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch = new SpriteBatch();
 
 		stage = new Stage(0, 0, true, spriteBatch);
-		
-		cam = new PerspectiveCamera(75, 800, 600);
 	}
 
 	@Override

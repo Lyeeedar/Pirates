@@ -7,14 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pools;
-
 import com.lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinNoise;
 
 public class IslandGenerator {
@@ -444,7 +442,7 @@ class IslandCreator
 			for (int y = 0; y < grid[0].length; y++)
 			{
 				grid[x][y] /= maxHeight;
-				//grid[x][y] = 1;
+				//grid[x][y] = 0;
 			}
 		}
 	}

@@ -2,9 +2,6 @@ package Screens;
 
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import Entities.Entity;
 import Entities.SymbolicMesh;
@@ -24,6 +21,7 @@ import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.lyeeedar.Pirates.Controls;
+import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
 import com.lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
 
@@ -43,7 +41,7 @@ public class GameScreen extends AbstractScreen {
 	Entity player;
 	Entity.EntityData data = new Entity.EntityData();
 	
-	int numEntities = 10;
+	int numEntities = 5;
 	ArrayList<Entity> entities = new ArrayList<Entity>();
 	
 	CellShadingRenderer renderer;
@@ -79,6 +77,7 @@ public class GameScreen extends AbstractScreen {
 		
 		long time = System.nanoTime();
 		controls = new Controls(GLOBALS.ANDROID);
+		cam = new FollowCam(controls);
 		
 		ObjLoader loader = new ObjLoader();
 		character = loader.loadObj(Gdx.files.internal("data/character.obj")).subMeshes[0].mesh;
@@ -90,7 +89,7 @@ public class GameScreen extends AbstractScreen {
 		texture1 = new Texture(Gdx.files.internal("data/blank.png"));
 		
 		player = new Entity();
-		player.setAI(new AI_Player_Control(player, controls, cam));
+		player.setAI(new AI_Player_Control(player, controls));
 		
 		IslandGenerator ig = new IslandGenerator();
 		model = ig.getIsland(40, 40, 40);
@@ -121,7 +120,7 @@ public class GameScreen extends AbstractScreen {
 			ge.setAI(ai);
 			
 			ge.readData(data);
-			data.position.set(ran.nextInt(30), 55, ran.nextInt(30));
+			data.position.set(50, 55, 60);
 			ge.writeData(data);
 			entities.add(ge);
 		}
@@ -177,20 +176,24 @@ public class GameScreen extends AbstractScreen {
 		
 		skyBox.update(delta);
 		
-		GLOBALS.TEST_NAV_MESH.setPosition(0, -2, 0);
+		GLOBALS.TEST_NAV_MESH.setPosition(0, -1, 0);
 		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
 		GLOBALS.TEST_NAV_MESH.updateMatrixes();
 		
-//		if (System.currentTimeMillis()-time > 5000)
-//		{
-//			try {
-//				Thread.sleep(1500);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			time = System.currentTimeMillis();
-//		}
+		player.readData(data);
+		
+		cam.update(data);
+		
+		if (System.currentTimeMillis()-time > 2000)
+		{
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			time = System.currentTimeMillis();
+		}
 
 	}
 

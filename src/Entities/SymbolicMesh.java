@@ -6,8 +6,8 @@ import java.util.List;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
@@ -16,7 +16,6 @@ public final class SymbolicMesh {
 	public final SymbolicMeshNode[] nodes;
 	
 	public final float[] vertices;
-	public final int vertexSize;
 
 	private final Vector3 position = new Vector3();
 	private final Matrix4 rotation = new Matrix4();
@@ -34,10 +33,9 @@ public final class SymbolicMesh {
 	private final float maxy;
 	private final float maxz;
 	
-	public SymbolicMesh(SymbolicMeshNode[] nodes, short[][] triangles, float[] vertices, int vertexSize)
+	public SymbolicMesh(SymbolicMeshNode[] nodes, short[][] triangles, float[] vertices)
 	{	
 		this.vertices = vertices;
-		this.vertexSize = vertexSize;
 		
 		List<SymbolicMeshNode> nodeList = new ArrayList<SymbolicMeshNode>(nodes.length);
 		boolean[] duplicates = new boolean[nodes.length];
@@ -103,9 +101,9 @@ public final class SymbolicMesh {
 			
 			for (int i = 0; i < 3; i++)
 			{
-				x[i] = vertices[(tri[i]*vertexSize)+0];
-				y[i] = vertices[(tri[i]*vertexSize)+1];
-				z[i] = vertices[(tri[i]*vertexSize)+2];
+				x[i] = vertices[(tri[i])+0];
+				y[i] = vertices[(tri[i])+1];
+				z[i] = vertices[(tri[i])+2];
 			}
 			
 			temp.addTriangle(tri, x, y, z);
@@ -157,34 +155,33 @@ public final class SymbolicMesh {
 	 * @param collision
 	 * @return
 	 */
-	public boolean checkCollision(Ray ray, Vector3 dest, Vector3 collision, float[] min_dist, Vector3[] tmp)
+	public boolean checkCollision(Ray ray, Vector3 dest, Vector3 collision, float[] min_dist, Vector3[] tmp, Plane p)
 	{
 		dest.mul(inverse);
-
 		ray.origin.mul(inverse);
 		ray.direction.mul(rotationTra);
 
-		if (!checkCollisionIterative(partition, ray, dest, collision, min_dist, tmp)) {
+		if (!checkCollisionIterative(partition, ray, dest, collision, min_dist, tmp, p)) {
 			return false;
 		}
-
+		
 		collision.mul(combined);
 		
 		return true;
 	}
 	
-	private boolean intersectRayTriangles (final Ray ray, final short[] indices, final Vector3 intersection, final float[] min_dist, final Vector3[] tmp) {
+	private boolean intersectRayTriangles (final Ray ray, final short[] indices, final Vector3 intersection, final float[] min_dist, final Vector3[] tmp, Plane p) {
 		boolean hit = false;
 		for (int i = 0; i < indices.length; i += 3) {
-			int i1 = indices[i] * vertexSize;
-			int i2 = indices[i + 1] * vertexSize;
-			int i3 = indices[i + 2] * vertexSize;
+			int i1 = indices[i];
+			int i2 = indices[i + 1];
+			int i3 = indices[i + 2];
 
-			boolean result = Intersector.intersectRayTriangle(ray, 
+			boolean result = intersectRayTriangle(ray, 
 					tmp[0].set(vertices[i1], vertices[i1 + 1], vertices[i1 + 2]),
 					tmp[1].set(vertices[i2], vertices[i2 + 1], vertices[i2 + 2]),
 					tmp[2].set(vertices[i3], vertices[i3 + 1], vertices[i3 + 2]), 
-					tmp[3]);
+					tmp[3], p, tmp);
 
 			if (result == true) {
 				float dist = tmp[0].set(ray.origin).sub(tmp[3]).len2();
@@ -204,7 +201,50 @@ public final class SymbolicMesh {
 		}
 	}
 	
-	private boolean checkCollisionIterative(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision, float[] min_dist, Vector3[] tmp)
+	private boolean intersectRayTriangle (Ray ray, Vector3 t1, Vector3 t2, Vector3 t3, Vector3 intersection, Plane p, Vector3[] tmp) {
+		p.set(t1, t2, t3);
+		if (!intersectRayPlane(ray, p, tmp[7], tmp)) return false;
+		
+		tmp[4].set(t3).sub(t1);
+		tmp[5].set(t2).sub(t1);
+		tmp[6].set(tmp[7]).sub(t1);
+
+		float dot00 = tmp[4].dot(tmp[4]);
+		float dot01 = tmp[4].dot(tmp[5]);
+		float dot02 = tmp[4].dot(tmp[6]);
+		float dot11 = tmp[5].dot(tmp[5]);
+		float dot12 = tmp[5].dot(tmp[6]);
+
+		float denom = dot00 * dot11 - dot01 * dot01;
+		if (denom == 0) return false;
+
+		float u = (dot11 * dot02 - dot01 * dot12) / denom;
+		float v = (dot00 * dot12 - dot01 * dot02) / denom;
+
+		if (u >= 0 && v >= 0 && u + v <= 1) {
+			intersection.set(tmp[7]);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	private boolean intersectRayPlane (Ray ray, Plane plane, Vector3 intersection, Vector3[] tmp) {
+		float denom = ray.direction.dot(plane.getNormal());
+		if (denom != 0) {
+			float t = -(ray.origin.dot(plane.getNormal()) + plane.getD()) / denom;
+			if (t < 0) return false;
+
+			intersection.set(ray.origin).add(tmp[8].set(ray.direction).scl(t));
+			return true;
+		} else if (plane.testPoint(ray.origin) == Plane.PlaneSide.OnPlane) {
+			intersection.set(ray.origin);
+			return true;
+		} else
+			return false;
+	}
+	
+	private boolean checkCollisionIterative(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision, float[] min_dist, Vector3[] tmp, Plane p)
 	{
 		if ((ray.origin.x < minx && end.x < minx) || (ray.origin.x > maxx && end.x > maxx)) return false;
 		else
@@ -248,30 +288,30 @@ public final class SymbolicMesh {
 			
 			if (next == null) break;
 			
-			collide = (intersectRayTriangles(ray, current.triangles, collision, min_dist, tmp)) ? true : collide;
+			collide = (intersectRayTriangles(ray, current.triangles, collision, min_dist, tmp, p)) ? true : collide;
 		}
 		
-		collide = (checkCollisionRecursive(current, ray, end, collision, min_dist, tmp)) ? true : collide;
+		collide = (checkCollisionRecursive(current, ray, end, collision, min_dist, tmp, p)) ? true : collide;
 		
 		return collide;
 	}
 	
-	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision, float[] min_dist, Vector3[] tmp)
+	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, Ray ray, Vector3 end, Vector3 collision, float[] min_dist, Vector3[] tmp, Plane p)
 	{
-		boolean collide = intersectRayTriangles(ray, partition.triangles, collision, min_dist, tmp);
+		boolean collide = intersectRayTriangles(ray, partition.triangles, collision, min_dist, tmp, p);
 		
 		short top = partition.getTop(ray.origin.y, end.y);
 		short north = partition.getNorth(ray.origin.z, end.z);
 		short east = partition.getEast(ray.origin.x, end.x);
 		
-		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.tne, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.tnw, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.tse, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.tsw, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.bne, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.bnw, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.bse, ray, end, collision, min_dist, tmp)) collide = true;
-		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.bsw, ray, end, collision, min_dist, tmp)) collide = true;
+		if (partition.tne != null && top >= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.tne, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.tnw != null && top >= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.tnw, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.tse != null && top >= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.tse, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.tsw != null && top >= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.tsw, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.bne != null && top <= 0 && north >= 0 && east >= 0 && checkCollisionRecursive(partition.bne, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.bnw != null && top <= 0 && north >= 0 && east <= 0 && checkCollisionRecursive(partition.bnw, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.bse != null && top <= 0 && north <= 0 && east >= 0 && checkCollisionRecursive(partition.bse, ray, end, collision, min_dist, tmp, p)) collide = true;
+		if (partition.bsw != null && top <= 0 && north <= 0 && east <= 0 && checkCollisionRecursive(partition.bsw, ray, end, collision, min_dist, tmp, p)) collide = true;
 		
 		return collide;
 	}
@@ -323,9 +363,9 @@ public final class SymbolicMesh {
 			n3.addNodes(n1, n2);
 
 			short[] triangle = new short[3];
-			triangle[0] = indices[(i*3)+0];
-			triangle[1] = indices[(i*3)+1];
-			triangle[2] = indices[(i*3)+2];
+			triangle[0] = (short) (indices[(i*3)+0]*3);
+			triangle[1] = (short) (indices[(i*3)+1]*3);
+			triangle[2] = (short) (indices[(i*3)+2]*3);
 
 			tris.add(triangle);
 		}
@@ -333,7 +373,7 @@ public final class SymbolicMesh {
 		final short[][] triArray = new short[tris.size()][3];
 		tris.toArray(triArray);
 		
-		return new SymbolicMesh(vertexNodes, triArray, vertexes, 3);
+		return new SymbolicMesh(vertexNodes, triArray, vertexes);
 	}
 
 	public final static class SymbolicMeshNode
