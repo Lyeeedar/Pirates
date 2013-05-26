@@ -51,4 +51,15 @@ public final class GLOBALS {
 		}
 		futureList.clear();
 	}
+	
+	public static double angle(Vector3 v1, Vector3 v2, Vector3 tmp)
+	{
+		Vector3 referenceForward = v1;
+		Vector3 referenceRight = tmp.set(GLOBALS.DEFAULT_UP).crs(referenceForward);
+		Vector3 newDirection = v2;
+		float angle = (float) Math.toDegrees(Math.acos(v1.dot(v2) / (v1.len()*v2.len())));
+		float sign = (newDirection.dot(referenceRight) > 0.0f) ? 1.0f : -1.0f;
+		float finalAngle = sign * angle;
+		return finalAngle;
+	}
 }

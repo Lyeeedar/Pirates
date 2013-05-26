@@ -8,6 +8,7 @@ import Entities.SymbolicMesh;
 import Entities.AI.AI_Follow;
 import Entities.AI.AI_Player_Control;
 import Graphics.SkyBox;
+import Graphics.Sprite3D;
 import Graphics.Lights.Light;
 import Graphics.Lights.LightManager;
 import Graphics.Renderers.CellShadingRenderer;
@@ -17,6 +18,10 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -43,9 +48,12 @@ public class GameScreen extends AbstractScreen {
 	
 	int numEntities = 5;
 	ArrayList<Entity> entities = new ArrayList<Entity>();
+	ArrayList<Sprite3D> sprites = new ArrayList<Sprite3D>();
 	
 	CellShadingRenderer renderer;
 	LightManager lights;
+	
+	Sprite3D decal;
 	
 	@Override
 	public void show() {
@@ -111,6 +119,12 @@ public class GameScreen extends AbstractScreen {
 
 		Texture tex = new Texture(Gdx.files.internal("data/test.png"));
 		skyBox = new SkyBox(tex, new Vector3(0.0f, 0.79f, 1), new Vector3(1, 1, 1));
+		
+		Texture female = new Texture(Gdx.files.internal("data/female.png"));
+		female.setFilter(Texture.TextureFilter.Linear,
+                Texture.TextureFilter.Linear);
+		female.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+		
 		Random ran = new Random();
 		for (int i = 0; i < numEntities; i++)
 		{
@@ -123,7 +137,11 @@ public class GameScreen extends AbstractScreen {
 			data.position.set(50, 55, 60);
 			ge.writeData(data);
 			entities.add(ge);
+			
+			sprites.add(new Sprite3D(female, 4, 1, 2, 0.1f));
 		}
+		
+		decal = new Sprite3D(female, 4, 1, 2, 0.1f);
 		
 		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
@@ -137,27 +155,33 @@ public class GameScreen extends AbstractScreen {
 		
 		//renderer.add(shipMesh, GL20.GL_TRIANGLES, shipTex, colour.set(1, 1, 1), tmpMat.setToTranslation(-10, 5, -10), 0);
 		
-		player.readData(data);
-		tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
-		renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
+		//player.readData(data);
+		//tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
+		//renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
 		
-		for (Entity ge : entities)
-		{
-			ge.readData(data);
-			tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
-			renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
-		}
+		//decal.
+		
+//		for (Entity ge : entities)
+//		{
+//			ge.readData(data);
+//			tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
+//			renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
+//		}
 
 		renderer.end(lights);
-		
 		skyBox.render(cam);
 
+		decalBatch.flush();
 	}
 
 	@Override
 	public void drawTransparent(float delta) {
-		// TODO Auto-generated method stub
-
+		decal.render(decalBatch);
+		
+		for (Sprite3D sprite : sprites)
+		{
+			sprite.render(decalBatch);
+		}
 	}
 
 	@Override
@@ -180,21 +204,25 @@ public class GameScreen extends AbstractScreen {
 		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
 		GLOBALS.TEST_NAV_MESH.updateMatrixes();
 		
+		for (int i = 0; i < numEntities; i++)
+		{
+			entities.get(i).readData(data);
+			
+			Sprite3D s = sprites.get(i);
+			
+			s.setPosition(data.position);
+			s.setRotation(data.rotation);
+			
+			s.update(delta, cam);
+		}
+		
 		player.readData(data);
 		
 		cam.update(data);
-		
-		if (System.currentTimeMillis()-time > 2000)
-		{
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			time = System.currentTimeMillis();
-		}
 
+		decal.setPosition(data.position);
+		decal.setRotation(data.rotation);
+		decal.update(delta, cam);
 	}
 
 	@Override

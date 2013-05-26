@@ -26,7 +26,7 @@ public class AI_Follow extends AI_Package {
 		entity.readData(entityState);	
 		follow.readData(followState);
 		
-		double a = angle(entityState.rotation, tmp.set(entityState.position).sub(followState.position).nor());
+		double a = GLOBALS.angle(entityState.rotation, tmp.set(entityState.position).sub(followState.position).nor(), up);
 
 		if (Math.abs(a) < delta*100)
 		{
@@ -49,16 +49,5 @@ public class AI_Follow extends AI_Package {
 		entity.writeData(entityState);
 	}
 	
-	private static final Vector3 up = new Vector3(0, 1, 0);
-	public double angle(Vector3 v1, Vector3 v2)
-	{
-		Vector3 referenceForward = v1;
-		Vector3 referenceRight = up.set(GLOBALS.DEFAULT_UP).crs(referenceForward);
-		Vector3 newDirection = v2;
-		float angle = (float) Math.toDegrees(Math.acos(v1.dot(v2) / (v1.len()*v2.len())));
-		float sign = (newDirection.dot(referenceRight) > 0.0f) ? 1.0f: -1.0f;
-		float finalAngle = sign * angle;
-		return finalAngle;
-	}
-
+	private final Vector3 up = new Vector3(0, 1, 0);
 }

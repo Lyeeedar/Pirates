@@ -18,6 +18,8 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.ModelRenderer;
+import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
@@ -29,6 +31,7 @@ public abstract class AbstractScreen implements Screen {
 	int screen_height;
 
 	protected final SpriteBatch spriteBatch;
+	protected DecalBatch decalBatch;
 
 	protected BitmapFont font;
 	protected final Stage stage;
@@ -43,6 +46,7 @@ public abstract class AbstractScreen implements Screen {
 	{
 		font = new BitmapFont();
 		spriteBatch = new SpriteBatch();
+		decalBatch = new DecalBatch();
 
 		stage = new Stage(0, 0, true, spriteBatch);
 	}
@@ -66,6 +70,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		
 		drawTransparent(delta);
+		decalBatch.flush();
 		
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 
@@ -101,6 +106,8 @@ public abstract class AbstractScreen implements Screen {
         cam.far = (GLOBALS.ANDROID) ? 202f : 502f ;
 
 		stage.setViewport( width, height, true);
+		
+		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
 	}
 
 	@Override
