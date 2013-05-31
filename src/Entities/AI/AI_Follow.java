@@ -50,4 +50,10 @@ public class AI_Follow extends AI_Package {
 	}
 	
 	private final Vector3 up = new Vector3(0, 1, 0);
+
+	@Override
+	public void inform() {
+		// TODO Auto-generated method stub
+		
+	}
 }

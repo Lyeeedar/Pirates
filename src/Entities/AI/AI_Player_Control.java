@@ -11,6 +11,7 @@ public class AI_Player_Control extends AI_Package {
 	
 	private final Controls controls;
 	private boolean jump = false;
+	private boolean animationLock = false;
 	
 	public AI_Player_Control(Entity entity, Controls controls)
 	{
@@ -26,11 +27,23 @@ public class AI_Player_Control extends AI_Package {
 		
 		entityState.Xrotate(-controls.getDeltaX());
 		
-		if (controls.up()) entityState.forward_backward(10);
-		if (controls.down()) entityState.forward_backward(-10);
-		
-		if (controls.left()) entityState.left_right(10);
-		if (controls.right()) entityState.left_right(-10);
+		if (!animationLock)
+		{
+			byte speed = 10;
+			if (controls.sprint()) speed = 50;
+			
+			if (controls.up()) entityState.forward_backward(speed);
+			if (controls.down()) entityState.forward_backward(-speed);
+			
+			if (controls.left()) entityState.left_right(speed);
+			if (controls.right()) entityState.left_right(-speed);
+			
+			if (controls.sprint()) entityState.animation = 2;
+			else entityState.animation = 0;
+			
+			if (controls.up() || controls.down() || controls.left() || controls.right()) entityState.animate = true;
+			else entityState.animate = false;
+		}
 		
 		if (controls.esc()) Gdx.app.exit();
 		
@@ -48,6 +61,21 @@ public class AI_Player_Control extends AI_Package {
 		entityState.applyVelocity(delta);
 		entityState.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 		
+		if (!animationLock && !entityState.animationLock && controls.leftClick())
+		{
+			animationLock = true;
+			entityState.playAnimation = 3;
+			entityState.nextAnimation = entityState.animation;
+			entityState.switchAtFrame = 8;
+			entityState.informable = this;
+		}
+		entityState.animationLock = animationLock;
+		
 		entity.writeData(entityState);
+	}
+
+	@Override
+	public void inform() {
+		animationLock = false;
 	}
 }

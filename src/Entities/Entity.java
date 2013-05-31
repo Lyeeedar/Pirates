@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.lyeeedar.Pirates.GLOBALS;
+import com.lyeeedar.Pirates.Informable;
 import com.lyeeedar.Pirates.ThreadSafePlane;
 
 public class Entity {
@@ -91,6 +92,16 @@ public class Entity {
 		public int jumpToken = 0;
 		public float scale = 1;
 		
+		public byte animation = 1;
+		public boolean animate = true;
+		public float animate_speed = 0.1f;
+		
+		public boolean animationLock = false;
+		public byte playAnimation = 0;
+		public byte nextAnimation = 0;
+		public byte switchAtFrame = 0;
+		public Informable informable;
+		
 		private final Vector3 tmpVec = new Vector3();
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 nPos = new Vector3();
@@ -113,6 +124,15 @@ public class Entity {
 			radius = data.radius;
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
+			animation = data.animation;
+			animate = data.animate;
+			animate_speed = data.animate_speed;
+			
+			animationLock = data.animationLock;
+			playAnimation = data.playAnimation;
+			nextAnimation = data.nextAnimation;
+			switchAtFrame = data.switchAtFrame;
+			informable = data.informable;
 		}
 		
 		public void cpy(EntityData target)
@@ -126,6 +146,15 @@ public class Entity {
 			target.radius = radius;
 			target.radius2 = radius2;
 			target.radius2y = radius2y;
+			target.animation = animation;
+			target.animate = animate;
+			target.animate_speed = animate_speed;
+			
+			target.animationLock = animationLock;
+			target.playAnimation = playAnimation;
+			target.nextAnimation = nextAnimation;
+			target.switchAtFrame = switchAtFrame;
+			target.informable = informable;
 		}
 		
 		public void Yrotate (float angle) {	

@@ -8,12 +8,12 @@ import Entities.SymbolicMesh;
 import Entities.AI.AI_Follow;
 import Entities.AI.AI_Player_Control;
 import Graphics.SkyBox;
-import Graphics.Sprite3D;
 import Graphics.Lights.Light;
 import Graphics.Lights.LightManager;
 import Graphics.Renderers.CellShadingRenderer;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -28,7 +28,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.lyeeedar.Pirates.Controls;
 import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
+import com.lyeeedar.Pirates.Sprite3D;
 import com.lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
+import com.lyeeedar.Pirates.Sprite3D.SpriteLayer;
 
 public class GameScreen extends AbstractScreen {
 	
@@ -88,13 +90,13 @@ public class GameScreen extends AbstractScreen {
 		cam = new FollowCam(controls);
 		
 		ObjLoader loader = new ObjLoader();
-		character = loader.loadObj(Gdx.files.internal("data/character.obj")).subMeshes[0].mesh;
+		character = loader.loadObj(Gdx.files.internal("data/models/character.obj")).subMeshes[0].mesh;
 		
-		texture = new Texture(Gdx.files.internal("data/grass.png"));
+		texture = new Texture(Gdx.files.internal("data/textures/grass.png"));
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		//texture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
-		texture1 = new Texture(Gdx.files.internal("data/blank.png"));
+		texture1 = new Texture(Gdx.files.internal("data/textures/blank.png"));
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -117,13 +119,8 @@ public class GameScreen extends AbstractScreen {
 		
 		lights.add(l);
 
-		Texture tex = new Texture(Gdx.files.internal("data/test.png"));
+		Texture tex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		skyBox = new SkyBox(tex, new Vector3(0.0f, 0.79f, 1), new Vector3(1, 1, 1));
-		
-		Texture female = new Texture(Gdx.files.internal("data/female.png"));
-		female.setFilter(Texture.TextureFilter.Linear,
-                Texture.TextureFilter.Linear);
-		female.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 		
 		Random ran = new Random();
 		for (int i = 0; i < numEntities; i++)
@@ -138,10 +135,18 @@ public class GameScreen extends AbstractScreen {
 			ge.writeData(data);
 			entities.add(ge);
 			
-			sprites.add(new Sprite3D(female, 4, 1, 2, 0.1f));
+			Sprite3D s = new Sprite3D(1, 2);
+			s.addLayer("data/sprites/female.png", Color.WHITE, 0, SpriteLayer.BODY);
+			s.create(GLOBALS.ASSET_MANAGER);
+			
+			sprites.add(s);
 		}
 		
-		decal = new Sprite3D(female, 4, 1, 2, 0.1f);
+		Sprite3D s = new Sprite3D(1, 2);
+		s.addLayer("data/sprites/female.png", Color.WHITE, 0, SpriteLayer.BODY);
+		s.create(GLOBALS.ASSET_MANAGER);
+		
+		decal = s;
 		
 		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
@@ -212,6 +217,11 @@ public class GameScreen extends AbstractScreen {
 			
 			s.setPosition(data.position);
 			s.setRotation(data.rotation);
+			s.setAnimation(data.animation, data.animate, data.animate_speed);
+			if (data.animationLock)
+			{
+				s.playAnimation(data.playAnimation, data.nextAnimation, data.switchAtFrame, data.informable);
+			}
 			
 			s.update(delta, cam);
 		}
@@ -222,6 +232,11 @@ public class GameScreen extends AbstractScreen {
 
 		decal.setPosition(data.position);
 		decal.setRotation(data.rotation);
+		decal.setAnimation(data.animation, data.animate, data.animate_speed);
+		if (data.animationLock)
+		{
+			decal.playAnimation(data.playAnimation, data.nextAnimation, data.switchAtFrame, data.informable);
+		}
 		decal.update(delta, cam);
 	}
 

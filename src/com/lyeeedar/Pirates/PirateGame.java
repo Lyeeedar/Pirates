@@ -22,6 +22,10 @@ public class PirateGame extends Game {
 
 	@Override
 	public void create() {
+		
+		GLOBALS.queue_all_assets();
+		GLOBALS.ASSET_MANAGER.finishLoading();
+		
 		GLOBALS.RESOLUTION[0] = Gdx.graphics.getWidth();
 		GLOBALS.RESOLUTION[1] = Gdx.graphics.getHeight();
 		

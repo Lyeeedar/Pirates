@@ -54,9 +54,9 @@ class Island {
 		{
 			for (int y = 0; y < h; y++)
 			{
-				vertices[i++] = x*5;
+				vertices[i++] = x*15;
 				vertices[i++] = (float) heightMap[x][y]*maxHeight;
-				vertices[i++] = y*5;
+				vertices[i++] = y*15;
 
 				vertices[i++] = 0;
 				vertices[i++] = 1;
@@ -424,6 +424,7 @@ class IslandCreator
 			{
 				double height = noise.GetHeight(x/(grid.length/100.0), y/(grid[0].length/100.0));
 
+				height *= height;
 				height *= height;
 
 				int mx = (int)(((float)x/(float)grid.length)*mask.length);

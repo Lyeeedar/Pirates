@@ -86,6 +86,18 @@ public class Controls {
 		}
 	}
 	
+	public boolean sprint()
+	{
+		if (isAndroid)
+		{
+			return false;
+		}
+		else
+		{
+			return Gdx.input.isKeyPressed(Keys.SHIFT_LEFT);
+		}
+	}
+	
 	public boolean left()
 	{
 		if (isAndroid)
