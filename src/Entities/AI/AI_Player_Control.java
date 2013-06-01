@@ -30,7 +30,7 @@ public class AI_Player_Control extends AI_Package {
 		if (!animationLock)
 		{
 			byte speed = 10;
-			if (controls.sprint()) speed = 50;
+			if (controls.sprint()) speed = 100;
 			
 			if (controls.up()) entityState.forward_backward(speed);
 			if (controls.down()) entityState.forward_backward(-speed);
@@ -38,11 +38,32 @@ public class AI_Player_Control extends AI_Package {
 			if (controls.left()) entityState.left_right(speed);
 			if (controls.right()) entityState.left_right(-speed);
 			
-			if (controls.sprint()) entityState.animation = 2;
-			else entityState.animation = 0;
+			if (controls.sprint()) {
+				if (entityState.animation != 6) entityState.updateAnimations = true;
+				else entityState.updateAnimations = false;
+				entityState.animation = 6;
+				entityState.useDirection = false;
+			}
+			else {
+				if (entityState.animation != 0) entityState.updateAnimations = true;
+				else entityState.updateAnimations = false;
+
+				entityState.animation = 0;
+				entityState.useDirection = true;
+			}
 			
-			if (controls.up() || controls.down() || controls.left() || controls.right()) entityState.animate = true;
-			else entityState.animate = false;
+			entityState.anim = "move";
+			
+			if (controls.up() || controls.down() || controls.left() || controls.right()) {
+				if (entityState.animate) entityState.updateAnimations = true;
+				else entityState.updateAnimations = false;
+				entityState.animate = true;
+			}
+			else {
+				if (!entityState.animate) entityState.updateAnimations = true;
+				else entityState.updateAnimations = false;
+				entityState.animate = false;
+			}
 		}
 		
 		if (controls.esc()) Gdx.app.exit();
@@ -64,9 +85,12 @@ public class AI_Player_Control extends AI_Package {
 		if (!animationLock && !entityState.animationLock && controls.leftClick())
 		{
 			animationLock = true;
-			entityState.playAnimation = 3;
+			entityState.playAnim = "attack_1";
+			entityState.playAnimation = 2;
+			entityState.nextAnim = entityState.anim;
 			entityState.nextAnimation = entityState.animation;
-			entityState.switchAtFrame = 8;
+			entityState.startFrame = 0;
+			entityState.endFrame = 7;
 			entityState.informable = this;
 		}
 		entityState.animationLock = animationLock;

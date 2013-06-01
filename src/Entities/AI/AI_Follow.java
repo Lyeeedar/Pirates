@@ -26,6 +26,10 @@ public class AI_Follow extends AI_Package {
 		entity.readData(entityState);	
 		follow.readData(followState);
 		
+		entityState.updateAnimations = true;
+		entityState.animation = 3;
+		entityState.anim = "move";
+		
 		double a = GLOBALS.angle(entityState.rotation, tmp.set(entityState.position).sub(followState.position).nor(), up);
 
 		if (Math.abs(a) < delta*100)

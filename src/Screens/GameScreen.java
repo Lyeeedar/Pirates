@@ -136,14 +136,19 @@ public class GameScreen extends AbstractScreen {
 			entities.add(ge);
 			
 			Sprite3D s = new Sprite3D(1, 2);
-			s.addLayer("data/sprites/female.png", Color.WHITE, 0, SpriteLayer.BODY);
+			s.setGender(false);
+			s.addAnimation("move");
+			s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 			s.create(GLOBALS.ASSET_MANAGER);
 			
 			sprites.add(s);
 		}
 		
 		Sprite3D s = new Sprite3D(1, 2);
-		s.addLayer("data/sprites/female.png", Color.WHITE, 0, SpriteLayer.BODY);
+		s.setGender(false);
+		s.addAnimation("move");
+		s.addAnimation("attack_1");
+		s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 		s.create(GLOBALS.ASSET_MANAGER);
 		
 		decal = s;
@@ -217,10 +222,13 @@ public class GameScreen extends AbstractScreen {
 			
 			s.setPosition(data.position);
 			s.setRotation(data.rotation);
-			s.setAnimation(data.animation, data.animate, data.animate_speed);
+			if (data.updateAnimations){
+				s.playAnimationLoop(data.anim, data.animation, data.useDirection);
+				s.setAnimation(data.animate, data.animate_speed);
+			}
 			if (data.animationLock)
 			{
-				s.playAnimation(data.playAnimation, data.nextAnimation, data.switchAtFrame, data.informable);
+				s.playAnimationSingle(data.playAnim, data.playAnimation, data.nextAnim, data.nextAnimation, data.startFrame, data.endFrame, data.informable);
 			}
 			
 			s.update(delta, cam);
@@ -232,10 +240,13 @@ public class GameScreen extends AbstractScreen {
 
 		decal.setPosition(data.position);
 		decal.setRotation(data.rotation);
-		decal.setAnimation(data.animation, data.animate, data.animate_speed);
+		if (data.updateAnimations){
+			decal.playAnimationLoop(data.anim, data.animation, data.useDirection);
+			decal.setAnimation(data.animate, data.animate_speed);
+		}
 		if (data.animationLock)
 		{
-			decal.playAnimation(data.playAnimation, data.nextAnimation, data.switchAtFrame, data.informable);
+			decal.playAnimationSingle(data.playAnim, data.playAnimation, data.nextAnim, data.nextAnimation, data.startFrame, data.endFrame, data.informable);
 		}
 		decal.update(delta, cam);
 	}

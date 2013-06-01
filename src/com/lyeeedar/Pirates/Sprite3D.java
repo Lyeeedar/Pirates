@@ -1,6 +1,9 @@
 package com.lyeeedar.Pirates;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -17,6 +20,10 @@ import com.lyeeedar.util.ImageUtils;
 
 public class Sprite3D {
 	
+	private static final String FILE_PREFIX = "data/sprites/";
+	private static final String FILE_SEPERATOR = ".";
+	private static final String FILE_SUFFIX = ".png";
+	
 	public enum SpriteLayer
 	{
 		OTHER, // 6
@@ -28,16 +35,20 @@ public class Sprite3D {
 		BODY // 0
 	}
 	
-	private static final short NUM_ANIMS = 15;
+	private static final short NUM_ANIMS = 8;
 	private static final short NUM_FRAMES = 8;
 
 	private final HashMap<SpriteLayer, SortedSet<SPRITESHEET>> layers;
 	
-	private Texture spritesheet;
+	private final List<String> animations;
+	
+	private String gender;
+	
+	private final HashMap<String, Texture> spritesheet;
 	private float width;
-	private short spriteWidth;
+	private final short spriteWidth = 1024/NUM_FRAMES;
 	private float height;
-	private short spriteHeight;
+	private final short spriteHeight = 1024/NUM_ANIMS;
 	
 	private final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 	private final Vector3 position = new Vector3();
@@ -51,14 +62,18 @@ public class Sprite3D {
 	private byte frame = 0;
 	private byte animation = 0;
 	private byte direction = 0;
+	private boolean useDirection = true;
+	private String currentAnimation = "";
 	
 	private final Vector3 tmp = new Vector3();
 	private boolean update = false;	
 	
 	private boolean lock = false;
 	private byte nextAnimation;
+	private String nextAnim;
 	private boolean animateStore;
-	private byte switchAtFrame = 0;
+	private boolean directionStore;
+	private byte endFrame;
 	private Informable informable;
 
 	public Sprite3D(float width, float height)
@@ -72,8 +87,33 @@ public class Sprite3D {
 		{
 			layers.put(sl, new TreeSet<SPRITESHEET>());
 		}
+		
+		animations = new ArrayList<String>();
+		spritesheet = new HashMap<String, Texture>();
 	}
 	
+	public void addAnimation(String animation)
+	{
+		this.animations.add(animation);
+	}
+	public boolean removeAnimation(String animation)
+	{
+		for (int i = 0; i < animations.size(); i++)
+		{
+			if (animations.get(i).equals(animation))
+			{
+				animations.remove(i);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void setGender(boolean male)
+	{
+		if (male) gender = "male";
+		else gender = "female";
+	}
 	public void addLayer(String spritesheet, Color tint, int priority, SpriteLayer layer)
 	{
 		layers.get(layer).add(new SPRITESHEET(spritesheet, tint, priority));
@@ -94,73 +134,79 @@ public class Sprite3D {
 	
 	public void create(AssetManager assetManager)
 	{
-		Pixmap sprite = null;
-		SortedSet<SPRITESHEET> layer = layers.get(SpriteLayer.BODY);
-		for (SPRITESHEET s : layer)
+		for (Map.Entry<String, Texture> entry : spritesheet.entrySet())
 		{
-			if (sprite == null)
+			entry.getValue().dispose();
+		}
+		spritesheet.clear();
+		
+		for (String anim : animations)
+		{
+			Pixmap sprite = null;
+			SortedSet<SPRITESHEET> layer = layers.get(SpriteLayer.BODY);
+			for (SPRITESHEET s : layer)
 			{
-				sprite = ImageUtils.copy(assetManager.get(s.filename, Pixmap.class));
-				ImageUtils.tint(sprite, s.colour);
+				if (sprite == null)
+				{
+					sprite = ImageUtils.copy(assetManager.get(FILE_PREFIX+s.filename+FILE_SEPERATOR+anim+FILE_SEPERATOR+gender+FILE_SUFFIX, Pixmap.class));
+					ImageUtils.tint(sprite, s.colour);
+				}
+				else
+				{
+					merge(s, anim, sprite, assetManager);
+				}
 			}
-			else
+			layer = layers.get(SpriteLayer.FEET);
+			for (SPRITESHEET s : layer)
 			{
-				Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-				ImageUtils.tint(pix, s.colour);
-				sprite = ImageUtils.merge(sprite, pix);
+				merge(s, anim, sprite, assetManager);
 			}
-		}
-		layer = layers.get(SpriteLayer.FEET);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
-		}
-		layer = layers.get(SpriteLayer.FACE);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
-		}
-		layer = layers.get(SpriteLayer.BOTTOM);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
-		}
-		layer = layers.get(SpriteLayer.TOP);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
-		}
-		layer = layers.get(SpriteLayer.HEAD);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
-		}
-		layer = layers.get(SpriteLayer.OTHER);
-		for (SPRITESHEET s : layer)
-		{
-			Pixmap pix = assetManager.get(s.filename, Pixmap.class);
-			ImageUtils.tint(pix, s.colour);
-			sprite = ImageUtils.merge(sprite, pix);
+			layer = layers.get(SpriteLayer.FACE);
+			for (SPRITESHEET s : layer)
+			{
+				merge(s, anim, sprite, assetManager);
+			}
+			layer = layers.get(SpriteLayer.BOTTOM);
+			for (SPRITESHEET s : layer)
+			{
+				merge(s, anim, sprite, assetManager);
+			}
+			layer = layers.get(SpriteLayer.TOP);
+			for (SPRITESHEET s : layer)
+			{
+				merge(s, anim, sprite, assetManager);
+			}
+			layer = layers.get(SpriteLayer.HEAD);
+			for (SPRITESHEET s : layer)
+			{
+				merge(s, anim, sprite, assetManager);
+			}
+			layer = layers.get(SpriteLayer.OTHER);
+			for (SPRITESHEET s : layer)
+			{
+				merge(s, anim, sprite, assetManager);
+			}
+			
+			spritesheet.put(anim, ImageUtils.PixmapToTexture(sprite));
 		}
 		
-		if (spritesheet != null) spritesheet.dispose();
-		spritesheet = ImageUtils.PixmapToTexture(sprite);
-		
-		spriteWidth = (short) (spritesheet.getWidth()/NUM_FRAMES);
-		spriteHeight = (short) (spritesheet.getHeight()/NUM_ANIMS);
-		
-		region = new TextureRegion(spritesheet, 0, 0, spriteWidth, spriteHeight);
+		region = new TextureRegion(spritesheet.get(animations.get(0)), 0, 0, spriteWidth, spriteHeight);
 		decal = Decal.newDecal(width, height, region, true);
+	}
+	
+	private final <T> Pixmap merge(SPRITESHEET ss, String anim, Pixmap sprite, AssetManager assetManager)
+	{
+		String filename = FILE_PREFIX+ss.filename+FILE_SEPERATOR+anim+FILE_SEPERATOR+gender+FILE_SUFFIX;
+		if (assetManager.isLoaded(filename, Pixmap.class))
+		{
+			Pixmap pix = assetManager.get(filename, Pixmap.class);
+			ImageUtils.tint(pix, ss.colour);
+			return ImageUtils.merge(sprite, pix);
+		}
+		else
+		{
+			return sprite;
+		}
 	}
 	
 	public void setPosition(Vector3 position)
@@ -172,31 +218,55 @@ public class Sprite3D {
 		this.rotation.set(rotation);
 	}
 	
-	public void playAnimation(byte animation, byte nextAnimation, byte switchAtFrame, Informable informable)
+	public void playAnimationLoop(String animationName, byte animation, boolean useDirection)
 	{
 		if (lock) return;
 		
-		this.switchAtFrame = switchAtFrame;
-		this.informable = informable;
-		this.animation = animation;
-		this.update = true;
-		this.nextAnimation = nextAnimation;
-		this.animateStore = this.animate;
 		this.animate = true;
-		this.frame = 0;
-		
-		lock = true;
-	}	
-	public void setAnimation(byte animation, boolean animate, float animate_speed)
-	{
-		if (lock) return;
-		
-		this.animationDelay = animate_speed;
+		if (!currentAnimation.equals(animationName))
+		{
+			Texture texture = spritesheet.get(animationName);
+			region.setTexture(texture);
+			update = true;
+		}
 		if (this.animation != animation)
 		{
 			this.animation = animation;
 			update = true;
 		}
+		this.useDirection = useDirection;
+	}
+	public void playAnimationSingle(String anim, byte animation, String nextAnim, byte nextAnimation, byte startFrame, byte endFrame, Informable informable)
+	{
+		if (lock) return;
+		
+		this.directionStore = this.useDirection;
+		this.animateStore = this.animate;
+		this.nextAnim = nextAnim;
+		this.nextAnimation = nextAnimation;
+		this.endFrame = endFrame;
+		this.informable = informable;
+		
+		playAnimationLoop(anim, animation, false);
+		this.frame = startFrame;
+		
+		lock = true;
+	}
+	private void finishAnimationSingle()
+	{
+		lock = false;
+		informable.inform();
+		frame = 0;
+		playAnimationLoop(nextAnim, nextAnimation, directionStore);
+		this.animate = animateStore;
+		this.useDirection = directionStore;
+	}
+	
+	public void setAnimation(boolean animate, float animate_speed)
+	{
+		if (lock) return;
+		
+		this.animationDelay = animate_speed;
 		if (this.animate != animate)
 		{
 			this.animate = animate;
@@ -217,44 +287,47 @@ public class Sprite3D {
 		{
 			animationCD = animationDelay;
 			frame++;
-			if (lock && frame == switchAtFrame)
+			if (lock && frame == endFrame)
 			{
-				lock = false;
-				this.animation = this.nextAnimation;
-				this.animate = this.animateStore;
-				informable.inform();
-				frame = 0;
+				finishAnimationSingle();
 			}
-			if (frame == NUM_FRAMES) {
+			else if (frame == NUM_FRAMES) {
 				frame = 0;
 			}
 			update = true;
 		}
 		
-		double angle = GLOBALS.angle(cam.direction, rotation, tmp);
-		double abs_a = Math.abs(angle);
-		
-		byte d = 0;
-		if (abs_a < 60)
+		if (useDirection)
 		{
-			d = 2;
+			double angle = GLOBALS.angle(cam.direction, rotation, tmp);
+			double abs_a = Math.abs(angle);
+			
+			byte d = 0;
+			if (abs_a < 60)
+			{
+				d = 2;
+			}
+			else if (abs_a > 120)
+			{
+				d = 0;
+			}
+			else if (angle < 0)
+			{
+				d = 4;
+			}
+			else if (angle > 0)
+			{
+				d = 1;
+			}
+			if (direction != d)
+			{
+				direction = d;
+				update = true;
+			}
 		}
-		else if (abs_a > 120)
+		else
 		{
-			d = 0;
-		}
-		else if (angle < 0)
-		{
-			d = 4;
-		}
-		else if (angle > 0)
-		{
-			d = 1;
-		}
-		if (direction != d)
-		{
-			direction = d;
-			update = true;
+			direction = 0;
 		}
 		
 		decal.setRotation(cam.direction, GLOBALS.DEFAULT_UP);
@@ -264,10 +337,10 @@ public class Sprite3D {
 		{
 			update = false;
 			if (direction == 4){
-				region.setRegion((frame+1)*spriteWidth, ((animation*3)+1)*spriteHeight, -spriteWidth, spriteHeight);
+				region.setRegion((frame+1)*spriteWidth, (animation+1)*spriteHeight, -spriteWidth, spriteHeight);
 			}
 			else {
-				region.setRegion(frame*spriteWidth, ((animation*3)+direction)*spriteHeight, spriteWidth, spriteHeight);
+				region.setRegion(frame*spriteWidth, (animation+direction)*spriteHeight, spriteWidth, spriteHeight);
 			}
 			decal.setTextureRegion(region);
 		}

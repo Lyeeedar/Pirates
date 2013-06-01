@@ -92,14 +92,20 @@ public class Entity {
 		public int jumpToken = 0;
 		public float scale = 1;
 		
-		public byte animation = 1;
-		public boolean animate = true;
+		public boolean updateAnimations = false;
+		public String anim = "";
+		public byte animation = 0;
 		public float animate_speed = 0.1f;
+		public boolean useDirection = true;
+		public boolean animate = true;
 		
 		public boolean animationLock = false;
+		public String playAnim = "";
 		public byte playAnimation = 0;
+		public String nextAnim = "";
 		public byte nextAnimation = 0;
-		public byte switchAtFrame = 0;
+		public byte startFrame = 0;
+		public byte endFrame = 0;
 		public Informable informable;
 		
 		private final Vector3 tmpVec = new Vector3();
@@ -124,14 +130,20 @@ public class Entity {
 			radius = data.radius;
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
+			updateAnimations = data.updateAnimations;
+			anim = data.anim;
 			animation = data.animation;
-			animate = data.animate;
 			animate_speed = data.animate_speed;
+			useDirection = data.useDirection;
+			animate = data.animate;
 			
 			animationLock = data.animationLock;
+			playAnim = data.playAnim;
 			playAnimation = data.playAnimation;
+			nextAnim = data.nextAnim;
 			nextAnimation = data.nextAnimation;
-			switchAtFrame = data.switchAtFrame;
+			startFrame = data.startFrame;
+			endFrame = data.endFrame;
 			informable = data.informable;
 		}
 		
@@ -146,14 +158,20 @@ public class Entity {
 			target.radius = radius;
 			target.radius2 = radius2;
 			target.radius2y = radius2y;
+			target.updateAnimations = updateAnimations;
+			target.anim = anim;
 			target.animation = animation;
-			target.animate = animate;
 			target.animate_speed = animate_speed;
+			target.animate = animate;
+			target.useDirection = useDirection;
 			
 			target.animationLock = animationLock;
+			target.playAnim = playAnim;
 			target.playAnimation = playAnimation;
+			target.nextAnim = nextAnim;
 			target.nextAnimation = nextAnimation;
-			target.switchAtFrame = switchAtFrame;
+			target.startFrame = startFrame;
+			target.endFrame = endFrame;
 			target.informable = informable;
 		}
 		
