@@ -26,29 +26,29 @@ public class AI_Follow extends AI_Package {
 		entity.readData(entityState);	
 		follow.readData(followState);
 		
-		entityState.updateAnimations = true;
-		entityState.animation = 3;
-		entityState.anim = "move";
+		entityState.animationData.updateAnimations = true;
+		entityState.animationData.animation = 3;
+		entityState.animationData.anim = "move";
 		
-		double a = GLOBALS.angle(entityState.rotation, tmp.set(entityState.position).sub(followState.position).nor(), up);
+		double a = GLOBALS.angle(entityState.positionalData.rotation, tmp.set(entityState.positionalData.position).sub(followState.positionalData.position).nor(), up);
 
 		if (Math.abs(a) < delta*100)
 		{
-			entityState.rotate(0,  1, 0, (float) a);
+			entityState.positionalData.rotate(0,  1, 0, (float) a);
 		}
 		else if (a > 0)
 		{
-			entityState.rotate(0, 1, 0, (float) (-delta*100*Math.random()));
+			entityState.positionalData.rotate(0, 1, 0, (float) (-delta*100*Math.random()));
 		}
 		else
 		{
-			entityState.rotate(0, 1, 0, (float) (delta*100*Math.random()));
+			entityState.positionalData.rotate(0, 1, 0, (float) (delta*100*Math.random()));
 		}
 		
-		entityState.forward_backward(8);
+		entityState.positionalData.forward_backward(8);
 		
-		entityState.applyVelocity(delta);
-		entityState.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+		entityState.positionalData.applyVelocity(delta);
+		entityState.positionalData.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 
 		entity.writeData(entityState);
 	}

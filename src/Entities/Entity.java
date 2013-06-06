@@ -25,12 +25,6 @@ public class Entity {
 		this.ai = ai;
 	}
 	
-	public Runnable getRunnable(float delta)
-	{
-		runnable.set(delta, this);
-		return runnable;
-	}
-	
 	public void update(float delta)
 	{
 		ai.update(delta);
@@ -42,8 +36,7 @@ public class Entity {
 		{
 			this.data.write(data);
 		}
-	}
-	
+	}	
 	public EntityData readData(EntityData data)
 	{
 		synchronized(this.data)
@@ -54,6 +47,11 @@ public class Entity {
 		return data;
 	}
 	
+	public Runnable getRunnable(float delta)
+	{
+		runnable.set(delta, this);
+		return runnable;
+	}
 	public static class EntityRunnable implements Runnable
 	{
 		float delta;
@@ -73,25 +71,23 @@ public class Entity {
 	
 	public static class EntityData
 	{
-		public float radius = 0.5f;
-		public float radius2 = radius*radius;
-		public float radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
-		
-		public void updateRadius(float radius)
+		public final PositionalData positionalData = new PositionalData();
+		public final AnimationData animationData = new AnimationData();
+
+		public void write(EntityData data)
 		{
-			this.radius = radius;
-			this.radius2 = radius * radius;
-			this.radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
+			positionalData.write(data.positionalData);
+			animationData.write(data.animationData);
 		}
 		
-		public final Vector3 position = new Vector3();
-		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
-		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);	
-		public final Vector3 velocity = new Vector3();
-		
-		public int jumpToken = 0;
-		public float scale = 1;
-		
+		public void cpy(EntityData target)
+		{
+			positionalData.cpy(target.positionalData);
+			animationData.cpy(target.animationData);
+		}
+	}
+	public static class AnimationData
+	{
 		public boolean updateAnimations = false;
 		public String anim = "";
 		public byte animation = 0;
@@ -107,29 +103,9 @@ public class Entity {
 		public byte startFrame = 0;
 		public byte endFrame = 0;
 		public Informable informable;
-		
-		private final Vector3 tmpVec = new Vector3();
-		private final Matrix4 tmpMat = new Matrix4();
-		private final Vector3 nPos = new Vector3();
-		private final Vector3 v = new Vector3();
-		private final Vector3 dest = new Vector3();
-		private final Ray ray = new Ray(new Vector3(), new Vector3());
-		private final Vector3 collision = new Vector3();
-		private final float[] min_dist = {Float.MAX_VALUE};
-		private final Vector3[] tmp = {new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
-		private final Plane plane = new ThreadSafePlane(new Vector3(), 1);
 
-		public void write(EntityData data)
+		public void write(AnimationData data)
 		{
-			position.set(data.position);
-			rotation.set(data.rotation);		
-			velocity.set(data.velocity);
-			up.set(data.up);
-			jumpToken = data.jumpToken;
-			scale = data.scale;
-			radius = data.radius;
-			radius2 = data.radius2;
-			radius2y = data.radius2y;
 			updateAnimations = data.updateAnimations;
 			anim = data.anim;
 			animation = data.animation;
@@ -147,17 +123,8 @@ public class Entity {
 			informable = data.informable;
 		}
 		
-		public void cpy(EntityData target)
+		public void cpy(AnimationData target)
 		{
-			target.position.set(position);
-			target.rotation.set(rotation);		
-			target.velocity.set(velocity);
-			target.up.set(up);
-			target.jumpToken = jumpToken;
-			target.scale = scale;
-			target.radius = radius;
-			target.radius2 = radius2;
-			target.radius2y = radius2y;
 			target.updateAnimations = updateAnimations;
 			target.anim = anim;
 			target.animation = animation;
@@ -173,6 +140,61 @@ public class Entity {
 			target.startFrame = startFrame;
 			target.endFrame = endFrame;
 			target.informable = informable;
+		}
+	}
+	public static class PositionalData
+	{
+		public float radius = 0.5f;
+		public float radius2 = radius*radius;
+		public float radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
+		
+		public void updateRadius(float radius)
+		{
+			this.radius = radius;
+			this.radius2 = radius * radius;
+			this.radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
+		}
+		
+		public final Vector3 position = new Vector3();
+		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
+		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);	
+		public final Vector3 velocity = new Vector3();
+		
+		public int jumpToken = 0;
+		
+		private final Vector3 tmpVec = new Vector3();
+		private final Matrix4 tmpMat = new Matrix4();
+		private final Vector3 nPos = new Vector3();
+		private final Vector3 v = new Vector3();
+		private final Vector3 dest = new Vector3();
+		private final Ray ray = new Ray(new Vector3(), new Vector3());
+		private final Vector3 collision = new Vector3();
+		private final float[] min_dist = {Float.MAX_VALUE};
+		private final Vector3[] tmp = {new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+		private final Plane plane = new ThreadSafePlane(new Vector3(), 1);
+		
+		public void write(PositionalData data)
+		{
+			position.set(data.position);
+			rotation.set(data.rotation);		
+			velocity.set(data.velocity);
+			up.set(data.up);
+			jumpToken = data.jumpToken;
+			radius = data.radius;
+			radius2 = data.radius2;
+			radius2y = data.radius2y;
+		}
+		
+		public void cpy(PositionalData target)
+		{
+			target.position.set(position);
+			target.rotation.set(rotation);		
+			target.velocity.set(velocity);
+			target.up.set(up);
+			target.jumpToken = jumpToken;
+			target.radius = radius;
+			target.radius2 = radius2;
+			target.radius2y = radius2y;
 		}
 		
 		public void Yrotate (float angle) {	
@@ -272,5 +294,4 @@ public class Entity {
 			velocity.z = 0;
 		}
 	}
-	
 }

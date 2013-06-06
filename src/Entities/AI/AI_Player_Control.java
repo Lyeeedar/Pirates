@@ -25,75 +25,75 @@ public class AI_Player_Control extends AI_Package {
 		
 		entity.readData(entityState);
 		
-		entityState.Xrotate(-controls.getDeltaX());
+		entityState.positionalData.Xrotate(-controls.getDeltaX());
 		
 		if (!animationLock)
 		{
 			byte speed = 10;
 			if (controls.sprint()) speed = 100;
 			
-			if (controls.up()) entityState.forward_backward(speed);
-			if (controls.down()) entityState.forward_backward(-speed);
+			if (controls.up()) entityState.positionalData.forward_backward(speed);
+			if (controls.down()) entityState.positionalData.forward_backward(-speed);
 			
-			if (controls.left()) entityState.left_right(speed);
-			if (controls.right()) entityState.left_right(-speed);
+			if (controls.left()) entityState.positionalData.left_right(speed);
+			if (controls.right()) entityState.positionalData.left_right(-speed);
 			
 			if (controls.sprint()) {
-				if (entityState.animation != 6) entityState.updateAnimations = true;
-				else entityState.updateAnimations = false;
-				entityState.animation = 6;
-				entityState.useDirection = false;
+				if (entityState.animationData.animation != 6) entityState.animationData.updateAnimations = true;
+				else entityState.animationData.updateAnimations = false;
+				entityState.animationData.animation = 6;
+				entityState.animationData.useDirection = false;
 			}
 			else {
-				if (entityState.animation != 0) entityState.updateAnimations = true;
-				else entityState.updateAnimations = false;
+				if (entityState.animationData.animation != 0) entityState.animationData.updateAnimations = true;
+				else entityState.animationData.updateAnimations = false;
 
-				entityState.animation = 0;
-				entityState.useDirection = true;
+				entityState.animationData.animation = 0;
+				entityState.animationData.useDirection = true;
 			}
 			
-			entityState.anim = "move";
+			entityState.animationData.anim = "move";
 			
 			if (controls.up() || controls.down() || controls.left() || controls.right()) {
-				if (entityState.animate) entityState.updateAnimations = true;
-				else entityState.updateAnimations = false;
-				entityState.animate = true;
+				if (entityState.animationData.animate) entityState.animationData.updateAnimations = true;
+				else entityState.animationData.updateAnimations = false;
+				entityState.animationData.animate = true;
 			}
 			else {
-				if (!entityState.animate) entityState.updateAnimations = true;
-				else entityState.updateAnimations = false;
-				entityState.animate = false;
+				if (!entityState.animationData.animate) entityState.animationData.updateAnimations = true;
+				else entityState.animationData.updateAnimations = false;
+				entityState.animationData.animate = false;
 			}
 		}
 		
 		if (controls.esc()) Gdx.app.exit();
 		
-		if (controls.jump() && entityState.jumpToken > 0 && !jump) {
-			entityState.velocity.set(0, 30, 0);
-			entityState.jumpToken--;
+		if (controls.jump() && entityState.positionalData.jumpToken > 0 && !jump) {
+			entityState.positionalData.velocity.set(0, 30, 0);
+			entityState.positionalData.jumpToken--;
 			jump = true;
 		}
 		else if (!controls.jump())
 		{
 			jump = false;
 		}
-		if (Gdx.input.isKeyPressed(Keys.J)) entityState.velocity.set(0, 50f, 0);
+		if (Gdx.input.isKeyPressed(Keys.J)) entityState.positionalData.velocity.set(0, 50f, 0);
 		
-		entityState.applyVelocity(delta);
-		entityState.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+		entityState.positionalData.applyVelocity(delta);
+		entityState.positionalData.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 		
-		if (!animationLock && !entityState.animationLock && controls.leftClick())
+		if (!animationLock && !entityState.animationData.animationLock && controls.leftClick())
 		{
 			animationLock = true;
-			entityState.playAnim = "attack_1";
-			entityState.playAnimation = 2;
-			entityState.nextAnim = entityState.anim;
-			entityState.nextAnimation = entityState.animation;
-			entityState.startFrame = 0;
-			entityState.endFrame = 7;
-			entityState.informable = this;
+			entityState.animationData.playAnim = "attack_1";
+			entityState.animationData.playAnimation = 2;
+			entityState.animationData.nextAnim = entityState.animationData.anim;
+			entityState.animationData.nextAnimation = entityState.animationData.animation;
+			entityState.animationData.startFrame = 0;
+			entityState.animationData.endFrame = 7;
+			entityState.animationData.informable = this;
 		}
-		entityState.animationLock = animationLock;
+		entityState.animationData.animationLock = animationLock;
 		
 		entity.writeData(entityState);
 	}

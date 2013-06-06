@@ -10,17 +10,20 @@
  ******************************************************************************/
 package Screens;
 
+import Graphics.MotionTrailBatch;
+import Graphics.Lights.LightManager;
+import Graphics.Renderers.AbstractRenderer;
+import Graphics.Renderers.CellShadingRenderer;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.ModelRenderer;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.lyeeedar.Pirates.Controls;
 import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
  
@@ -30,56 +33,103 @@ public abstract class AbstractScreen implements Screen {
 	int screen_width;
 	int screen_height;
 
-	protected final SpriteBatch spriteBatch;
-	protected DecalBatch decalBatch;
+	private SpriteBatch spriteBatch;
+	private DecalBatch decalBatch;
+	private MotionTrailBatch trailBatch;
+	private AbstractRenderer renderer;
 
 	protected BitmapFont font;
 	protected final Stage stage;
 
-	protected ModelRenderer renderer;
+	protected Controls controls;
+	protected FollowCam cam;
 	
-	FollowCam cam;
+	protected LightManager lights;
 	
 	private long startTime;
+	private long time;
+	private long averageUpdate;
+	private long averageModel;
+	private long averageTrail;
+	private long averageDecal;
+	private long averageOrthogonal;
 
-	public AbstractScreen()
+	public AbstractScreen(LightManager lights)
 	{
+		this.lights = lights;
 		font = new BitmapFont();
 		spriteBatch = new SpriteBatch();
-		decalBatch = new DecalBatch();
+		trailBatch = new MotionTrailBatch();
+		renderer = new CellShadingRenderer();
 
 		stage = new Stage(0, 0, true, spriteBatch);
+		controls = new Controls(GLOBALS.ANDROID);
+		cam = new FollowCam(controls);
+		renderer.cam = cam;
+		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
 	}
 
 	@Override
 	public void render(float delta) {
 		
+		time = System.nanoTime();
 		update(delta);
 		stage.act(delta);
+		averageUpdate += System.nanoTime()-time;
+		averageUpdate /= 2;
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);	
 
-		drawModels(delta);
+		time = System.nanoTime();
+		renderer.begin();
+		drawModels(delta, renderer);
+		renderer.end(lights);
+		drawSkybox(delta);
+		averageModel += System.nanoTime()-time;
+		averageModel /= 2;
 		
+		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		
-		drawTransparent(delta);
+		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glDepthMask(false);
+		drawDecals(delta, decalBatch);
 		decalBatch.flush();
+		averageDecal += System.nanoTime()-time;
+		averageDecal /= 2;
 		
+		time = System.nanoTime();
+		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+		Gdx.gl.glDepthMask(false);
+		trailBatch.begin(cam);
+		drawTrails(delta, trailBatch);
+		trailBatch.end();
+		averageTrail += System.nanoTime()-time;
+		averageTrail /= 2;
+		
+		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
-
-		drawOrthogonals(delta);
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		drawOrthogonals(delta, spriteBatch);
+		averageOrthogonal += System.nanoTime()-time;
+		averageOrthogonal /= 2;
 
         if (System.currentTimeMillis() - startTime > 1000) {
-        	 Gdx.app.log("Update", "");
-			Gdx.app.log("	FPS", ""+Gdx.graphics.getFramesPerSecond());
+        	Gdx.app.log("Update", "");
+			Gdx.app.log("	FPS         ", ""+Gdx.graphics.getFramesPerSecond());
 	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
+	        Gdx.app.log("	Update      ", ""+averageUpdate);
+	        Gdx.app.log("	Model       ", ""+averageModel);
+	        Gdx.app.log("	Decal       ", ""+averageDecal);
+	        Gdx.app.log("	Trail       ", ""+averageTrail);
+	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
 			startTime = System.currentTimeMillis();
 		}
 		
@@ -106,8 +156,6 @@ public abstract class AbstractScreen implements Screen {
         cam.far = (GLOBALS.ANDROID) ? 202f : 502f ;
 
 		stage.setViewport( width, height, true);
-		
-		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
 	}
 
 	@Override
@@ -123,25 +171,17 @@ public abstract class AbstractScreen implements Screen {
 	 * Put all the creation of the objects used by the screen in here to avoid reloading everything on a screenswap
 	 */
 	public abstract void create();
-	/**
-	 * Draw models using {@link ForwardRenderer}. Everything drawn in this method will also be passed through the post-processor
-	 * @param delta
-	 */
-	public abstract void drawModels(float delta);
-	/**
-	 * Draw decals here. Everything drawn in this method will also be passed through the post-processor
-	 * @param delta
-	 */
-	public abstract void drawTransparent(float delta);
-	/**
-	 * Draw sprites using sprite batch. Everything drawn here will NOT be post-processed
-	 * @param delta
-	 */
-	public abstract void drawOrthogonals(float delta);
-	/**
-	 * Update game logic
-	 * @param delta
-	 */
+
+	public abstract void drawModels(float delta, AbstractRenderer renderer);
+	
+	public abstract void drawSkybox(float delta);
+
+	public abstract void drawDecals(float delta, DecalBatch batch);
+
+	public abstract void drawTrails(float delta, MotionTrailBatch batch);
+
+	public abstract void drawOrthogonals(float delta, SpriteBatch batch);
+
 	public abstract void update(float delta);
 	
 	public abstract void superDispose();

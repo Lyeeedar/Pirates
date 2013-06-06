@@ -7,10 +7,12 @@ import Entities.Entity;
 import Entities.SymbolicMesh;
 import Entities.AI.AI_Follow;
 import Entities.AI.AI_Player_Control;
+import Graphics.MotionTrail;
+import Graphics.MotionTrailBatch;
 import Graphics.SkyBox;
 import Graphics.Lights.Light;
 import Graphics.Lights.LightManager;
-import Graphics.Renderers.CellShadingRenderer;
+import Graphics.Renderers.AbstractRenderer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -18,9 +20,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
-import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Matrix4;
@@ -29,13 +29,17 @@ import com.lyeeedar.Pirates.Controls;
 import com.lyeeedar.Pirates.FollowCam;
 import com.lyeeedar.Pirates.GLOBALS;
 import com.lyeeedar.Pirates.Sprite3D;
-import com.lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
 import com.lyeeedar.Pirates.Sprite3D.SpriteLayer;
+import com.lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
 
 public class GameScreen extends AbstractScreen {
 	
+	public GameScreen(LightManager lights) {
+		super(lights);
+		this.lights = lights;
+	}
+
 	SkyBox skyBox;
-	Controls controls;
 	Mesh model;
 	Mesh character;
 	Mesh plane;
@@ -45,6 +49,7 @@ public class GameScreen extends AbstractScreen {
 	Matrix4 tmpMat1 = new Matrix4();
 	Matrix4 tmpMat2 = new Matrix4();
 	Vector3 colour = new Vector3();
+	Vector3 tmp = new Vector3();
 	Entity player;
 	Entity.EntityData data = new Entity.EntityData();
 	
@@ -52,10 +57,9 @@ public class GameScreen extends AbstractScreen {
 	ArrayList<Entity> entities = new ArrayList<Entity>();
 	ArrayList<Sprite3D> sprites = new ArrayList<Sprite3D>();
 	
-	CellShadingRenderer renderer;
-	LightManager lights;
-	
 	Sprite3D decal;
+	
+	MotionTrail trail;
 	
 	@Override
 	public void show() {
@@ -86,8 +90,7 @@ public class GameScreen extends AbstractScreen {
 	public void create() {
 		
 		long time = System.nanoTime();
-		controls = new Controls(GLOBALS.ANDROID);
-		cam = new FollowCam(controls);
+		
 		
 		ObjLoader loader = new ObjLoader();
 		character = loader.loadObj(Gdx.files.internal("data/models/character.obj")).subMeshes[0].mesh;
@@ -106,18 +109,6 @@ public class GameScreen extends AbstractScreen {
 		//texture = new Texture(Gdx.files.internal("data/shipTex.png"));
 		//model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
 		GLOBALS.TEST_NAV_MESH = SymbolicMesh.getSymbolicMesh(model, 1f);
-		
-		renderer = new CellShadingRenderer();
-		renderer.cam = cam;
-		
-		lights = new LightManager();
-		lights.ambientColour.set(0.8f, 0.9f, 0.7f);
-		lights.directionalLight.colour.set(0.2f, 0.3f, 0.2f);
-		lights.directionalLight.direction.set(0, 0.5f, -0.5f);
-		
-		l = new Light(new Vector3(), new Vector3(0.4f, 0.4f, 0.4f), 0.5f);
-		
-		lights.add(l);
 
 		Texture tex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		skyBox = new SkyBox(tex, new Vector3(0.0f, 0.79f, 1), new Vector3(1, 1, 1));
@@ -131,7 +122,7 @@ public class GameScreen extends AbstractScreen {
 			ge.setAI(ai);
 			
 			ge.readData(data);
-			data.position.set(50, 55, 60);
+			data.positionalData.position.set(50, 55, 60);
 			ge.writeData(data);
 			entities.add(ge);
 			
@@ -153,51 +144,42 @@ public class GameScreen extends AbstractScreen {
 		
 		decal = s;
 		
+		trail = new MotionTrail(100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class));
+		
 		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
 
 	@Override
-	public void drawModels(float delta) {
-		
-		renderer.begin();
+	public void drawModels(float delta, AbstractRenderer renderer) {
 		
 		renderer.add(model, GL20.GL_TRIANGLES, texture, colour.set(1f, 1f, 1f), GLOBALS.TEST_NAV_MESH.getCombined(), 0);
-		
-		//renderer.add(shipMesh, GL20.GL_TRIANGLES, shipTex, colour.set(1, 1, 1), tmpMat.setToTranslation(-10, 5, -10), 0);
-		
-		//player.readData(data);
-		//tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
-		//renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
-		
-		//decal.
-		
-//		for (Entity ge : entities)
-//		{
-//			ge.readData(data);
-//			tmpMat.setToTranslation(data.position).mul(tmpMat1.setToRotation(GLOBALS.DEFAULT_ROTATION, data.rotation));
-//			renderer.add(character, GL20.GL_TRIANGLES, texture1, colour.set(1, 0.7f, 0.6f), tmpMat, 1);
-//		}
-
-		renderer.end(lights);
+	}
+	
+	@Override
+	public void drawSkybox(float delta)
+	{
 		skyBox.render(cam);
-
-		decalBatch.flush();
 	}
 
 	@Override
-	public void drawTransparent(float delta) {
-		decal.render(decalBatch);
+	public void drawDecals(float delta, DecalBatch batch) {
+		decal.render(batch);
 		
 		for (Sprite3D sprite : sprites)
 		{
-			sprite.render(decalBatch);
+			sprite.render(batch);
 		}
+	}
+	
+	@Override
+	public void drawTrails(float delta, MotionTrailBatch batch)
+	{
+		batch.render(trail);
 	}
 
 	@Override
-	public void drawOrthogonals(float delta) {
-		// TODO Auto-generated method stub
-
+	public void drawOrthogonals(float delta, SpriteBatch batch) {
+	
 	}
 
 	long time = System.currentTimeMillis();
@@ -220,15 +202,15 @@ public class GameScreen extends AbstractScreen {
 			
 			Sprite3D s = sprites.get(i);
 			
-			s.setPosition(data.position);
-			s.setRotation(data.rotation);
-			if (data.updateAnimations){
-				s.playAnimationLoop(data.anim, data.animation, data.useDirection);
-				s.setAnimation(data.animate, data.animate_speed);
+			s.setPosition(data.positionalData.position);
+			s.setRotation(data.positionalData.rotation);
+			if (data.animationData.updateAnimations){
+				s.playAnimationLoop(data.animationData.anim, data.animationData.animation, data.animationData.useDirection);
+				s.setAnimation(data.animationData.animate, data.animationData.animate_speed);
 			}
-			if (data.animationLock)
+			if (data.animationData.animationLock)
 			{
-				s.playAnimationSingle(data.playAnim, data.playAnimation, data.nextAnim, data.nextAnimation, data.startFrame, data.endFrame, data.informable);
+				s.playAnimationSingle(data.animationData.playAnim, data.animationData.playAnimation, data.animationData.nextAnim, data.animationData.nextAnimation, data.animationData.startFrame, data.animationData.endFrame, data.animationData.informable);
 			}
 			
 			s.update(delta, cam);
@@ -238,17 +220,23 @@ public class GameScreen extends AbstractScreen {
 		
 		cam.update(data);
 
-		decal.setPosition(data.position);
-		decal.setRotation(data.rotation);
-		if (data.updateAnimations){
-			decal.playAnimationLoop(data.anim, data.animation, data.useDirection);
-			decal.setAnimation(data.animate, data.animate_speed);
+		decal.setPosition(data.positionalData.position);
+		decal.setRotation(data.positionalData.rotation);
+		if (data.animationData.updateAnimations){
+			decal.playAnimationLoop(data.animationData.anim, data.animationData.animation, data.animationData.useDirection);
+			decal.setAnimation(data.animationData.animate, data.animationData.animate_speed);
 		}
-		if (data.animationLock)
+		if (data.animationData.animationLock)
 		{
-			decal.playAnimationSingle(data.playAnim, data.playAnimation, data.nextAnim, data.nextAnimation, data.startFrame, data.endFrame, data.informable);
+			decal.playAnimationSingle(data.animationData.playAnim, data.animationData.playAnimation, data.animationData.nextAnim, data.animationData.nextAnimation, data.animationData.startFrame, data.animationData.endFrame, data.animationData.informable);
 		}
 		decal.update(delta, cam);
+		
+		if (System.currentTimeMillis()-time > 10)
+		{
+			trail.update(data.positionalData.position, tmp.set(data.positionalData.position).add(0, 2, 0));
+			time = System.currentTimeMillis();
+		}
 	}
 
 	@Override

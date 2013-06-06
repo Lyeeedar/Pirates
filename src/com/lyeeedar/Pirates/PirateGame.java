@@ -3,11 +3,14 @@ package com.lyeeedar.Pirates;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import Graphics.Lights.Light;
+import Graphics.Lights.LightManager;
 import Screens.AbstractScreen;
 import Screens.GameScreen;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Vector3;
 
 public class PirateGame extends Game {
 	
@@ -29,7 +32,16 @@ public class PirateGame extends Game {
 		GLOBALS.RESOLUTION[0] = Gdx.graphics.getWidth();
 		GLOBALS.RESOLUTION[1] = Gdx.graphics.getHeight();
 		
-		screens.put(Screen.GAME, new GameScreen());
+		LightManager lights = new LightManager();
+		lights.ambientColour.set(0.8f, 0.9f, 0.7f);
+		lights.directionalLight.colour.set(0.2f, 0.3f, 0.2f);
+		lights.directionalLight.direction.set(0, 0.5f, -0.5f);
+		
+		Light l = new Light(new Vector3(), new Vector3(0.4f, 0.4f, 0.4f), 0.5f);
+		
+		lights.add(l);
+		
+		screens.put(Screen.GAME, new GameScreen(lights));
 		
 		for (Entry<Screen, AbstractScreen> entry : screens.entrySet())
 		{
