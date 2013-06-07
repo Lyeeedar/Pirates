@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Informable;
@@ -20,7 +24,7 @@ import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 
-public class Sprite3D {
+public class Sprite3D implements Renderable {
 	
 	private static final String FILE_PREFIX = "data/sprites/";
 	private static final String FILE_SEPERATOR = ".";
@@ -77,6 +81,9 @@ public class Sprite3D {
 	private boolean directionStore;
 	private byte endFrame;
 	private Informable informable;
+	
+	private final PositionalData pData = new PositionalData();
+	private final AnimationData aData = new AnimationData();
 
 	public Sprite3D(float width, float height)
 	{
@@ -92,6 +99,31 @@ public class Sprite3D {
 		
 		animations = new ArrayList<String>();
 		spritesheet = new HashMap<String, Texture>();
+	}
+	
+	@Override
+	public void queue(float delta, AbstractModelBatch modelBatch,
+			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
+		decalBatch.add(decal);
+		
+	}
+
+	@Override
+	public void set(Entity source) {
+		
+		source.readData(pData, PositionalData.class);
+		source.readData(aData, AnimationData.class);
+		
+		setPosition(pData.position);
+		setRotation(pData.rotation);
+		if (aData.updateAnimations){
+			playAnimationLoop(aData.anim, aData.animation, aData.useDirection);
+			setAnimation(aData.animate, aData.animate_speed);
+		}
+		if (aData.animationLock)
+		{
+			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.informable);
+		}
 	}
 	
 	public void addAnimation(String animation)
@@ -347,12 +379,7 @@ public class Sprite3D {
 			decal.setTextureRegion(region);
 		}
 	}
-	
-	public void render(DecalBatch batch)
-	{
-		batch.add(decal);
-	}
-	
+
 	private static final class SPRITESHEET implements Comparable<SPRITESHEET>
 	{
 		public final String filename;

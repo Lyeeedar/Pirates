@@ -1,14 +1,14 @@
 package com.Lyeeedar.Graphics.Renderers;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractRenderer.DrawableManager.Drawable;
+import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch.DrawableManager.Drawable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 
-public class CellShadingRenderer extends AbstractRenderer {
+public class CellShadingModelBatch extends AbstractModelBatch {
 	
 	private static ShaderProgram shaderBody;
 	private static ShaderProgram shaderOutline;
@@ -16,7 +16,7 @@ public class CellShadingRenderer extends AbstractRenderer {
 	private Vector3 black = new Vector3();
 
 	@Override
-	protected void flush(LightManager lights) {
+	protected void render(LightManager lights) {
 		if (shaderOutline == null) loadOutlineShader();
 		if (shaderBody == null) loadBodyShader();
 		

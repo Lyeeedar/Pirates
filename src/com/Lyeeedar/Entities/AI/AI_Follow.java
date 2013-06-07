@@ -1,12 +1,18 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.math.Vector3;
 
 public class AI_Follow extends AI_Package {
 	Entity follow;
-	Entity.EntityData followState = new Entity.EntityData();
+	
+	PositionalData entityPos = new PositionalData();
+	PositionalData followPos = new PositionalData();
+	
+	AnimationData entityAnim = new AnimationData();
 	
 	Vector3 tmp = new Vector3();
 
@@ -22,34 +28,37 @@ public class AI_Follow extends AI_Package {
 	@Override
 	public void update(float delta) {
 		
-		entity.readData(entityState);	
-		follow.readData(followState);
+		entity.readData(entityPos, PositionalData.class);	
+		follow.readData(followPos, PositionalData.class);
 		
-		entityState.animationData.updateAnimations = true;
-		entityState.animationData.animation = 3;
-		entityState.animationData.anim = "move";
+		entity.readData(entityAnim, AnimationData.class);	
 		
-		double a = GLOBALS.angle(entityState.positionalData.rotation, tmp.set(entityState.positionalData.position).sub(followState.positionalData.position).nor(), up);
+		entityAnim.updateAnimations = true;
+		entityAnim.animation = 3;
+		entityAnim.anim = "move";
+		
+		double a = GLOBALS.angle(entityPos.rotation, tmp.set(entityPos.position).sub(followPos.position).nor(), up);
 
 		if (Math.abs(a) < delta*100)
 		{
-			entityState.positionalData.rotate(0,  1, 0, (float) a);
+			entityPos.rotate(0,  1, 0, (float) a);
 		}
 		else if (a > 0)
 		{
-			entityState.positionalData.rotate(0, 1, 0, (float) (-delta*100*Math.random()));
+			entityPos.rotate(0, 1, 0, (float) (-delta*100*Math.random()));
 		}
 		else
 		{
-			entityState.positionalData.rotate(0, 1, 0, (float) (delta*100*Math.random()));
+			entityPos.rotate(0, 1, 0, (float) (delta*100*Math.random()));
 		}
 		
-		entityState.positionalData.forward_backward(8);
+		entityPos.forward_backward(8);
 		
-		entityState.positionalData.applyVelocity(delta);
-		entityState.positionalData.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+		entityPos.applyVelocity(delta);
+		entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 
-		entity.writeData(entityState);
+		entity.writeData(entityPos, PositionalData.class);
+		entity.writeData(entityAnim, AnimationData.class);
 	}
 	
 	private final Vector3 up = new Vector3(0, 1, 0);

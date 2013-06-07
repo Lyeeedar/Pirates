@@ -10,18 +10,14 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 
-public abstract class AbstractRenderer{
+public abstract class AbstractModelBatch{
 	
 	public Camera cam;
 	public boolean drawing;
 	protected DrawableManager drawableManager = new DrawableManager();
 	
-	public AbstractRenderer()
+	public AbstractModelBatch()
 	{
-	}
-
-	public void begin () {
-		drawing = true;
 	}
 
 	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
@@ -29,15 +25,15 @@ public abstract class AbstractRenderer{
 		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix, type);
 	}
 	
-	public void end(LightManager lights) {
+	public void flush(LightManager lights) {
 		drawableManager.drawables.sort();
 		lights.sort(cam.position);
-		flush(lights);
+		render(lights);
 		drawing = false;
 		drawableManager.clear();
 	}
 	
-	protected abstract void flush(LightManager lights);
+	protected abstract void render(LightManager lights);
 	public abstract void dispose();
 	
 	/**

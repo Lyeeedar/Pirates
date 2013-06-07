@@ -1,5 +1,7 @@
 package com.Lyeeedar.Graphics;
 
+import java.util.LinkedList;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -9,7 +11,7 @@ public class MotionTrailBatch {
 	
 	private ShaderProgram shader = null;
 	private long textureHash = 0L;
-	private boolean drawing = false;
+	private final LinkedList<MotionTrail> trailList ;
 	
 	public MotionTrailBatch()
 	{
@@ -18,35 +20,34 @@ public class MotionTrailBatch {
 		{
 			Gdx.app.log("Problem loading shader:", shader.getLog());
 		}
+		trailList = new LinkedList<MotionTrail>();
 	}
-
-	public void begin(Camera cam)
+	
+	public void add(MotionTrail trail)
+	{
+		trailList.add(trail);
+	}
+	
+	public void flush(Camera cam)
 	{
 		shader.begin();
 		shader.setUniformMatrix("u_mv", cam.combined);
 		
-		drawing = true;
-	}
-	
-	public void render(MotionTrail trail)
-	{
-		if (!drawing) throw new RuntimeException("MotionTrailBatch: Begin was not called before Render.");
-		if (trail.texHash != textureHash) {
-			trail.texture.bind();
-			textureHash = trail.texHash;
+		for (MotionTrail trail : trailList)
+		{
+			if (trail.texHash != textureHash) {
+				trail.texture.bind();
+				textureHash = trail.texHash;
+			}
+			
+			shader.setUniformf("u_colour", trail.colour);
+			
+			trail.mesh.render(shader, GL20.GL_TRIANGLE_STRIP);
 		}
 		
-		shader.setUniformf("u_colour", trail.colour);
-		
-		trail.mesh.render(shader, GL20.GL_TRIANGLE_STRIP);
-	}
-	
-	public void end()
-	{
-		if (!drawing) throw new RuntimeException("MotionTrailBatch: Begin was not called before End.");
 		shader.end();
 		textureHash = 0;
-		drawing = false;
+		trailList.clear();
 	}
 	
 	public void dispose()

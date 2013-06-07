@@ -6,7 +6,6 @@ import com.Lyeeedar.Util.Informable;
 public abstract class AI_Package implements Informable {
 	
 	protected final Entity entity;
-	Entity.EntityData entityState = new Entity.EntityData();
 
 	public AI_Package(Entity entity)
 	{

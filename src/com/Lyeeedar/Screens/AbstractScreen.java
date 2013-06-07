@@ -12,8 +12,8 @@ package com.Lyeeedar.Screens;
 
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractRenderer;
-import com.Lyeeedar.Graphics.Renderers.CellShadingRenderer;
+import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.FollowCam;
@@ -35,7 +35,7 @@ public abstract class AbstractScreen implements Screen {
 	private SpriteBatch spriteBatch;
 	private DecalBatch decalBatch;
 	private MotionTrailBatch trailBatch;
-	private AbstractRenderer renderer;
+	private AbstractModelBatch renderer;
 
 	protected BitmapFont font;
 	protected final Stage stage;
@@ -59,7 +59,7 @@ public abstract class AbstractScreen implements Screen {
 		font = new BitmapFont();
 		spriteBatch = new SpriteBatch();
 		trailBatch = new MotionTrailBatch();
-		renderer = new CellShadingRenderer();
+		renderer = new CellShadingModelBatch();
 
 		stage = new Stage(0, 0, true, spriteBatch);
 		controls = new Controls(GLOBALS.ANDROID);
@@ -73,6 +73,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		time = System.nanoTime();
 		update(delta);
+		queueRenderables(delta, renderer, decalBatch, trailBatch);
 		stage.act(delta);
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
@@ -87,9 +88,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDepthMask(true);	
 
 		time = System.nanoTime();
-		renderer.begin();
-		drawModels(delta, renderer);
-		renderer.end(lights);
+		renderer.flush(lights);
 		drawSkybox(delta);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
@@ -98,7 +97,6 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(false);
-		drawDecals(delta, decalBatch);
 		decalBatch.flush();
 		averageDecal += System.nanoTime()-time;
 		averageDecal /= 2;
@@ -107,9 +105,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glDepthMask(false);
-		trailBatch.begin(cam);
-		drawTrails(delta, trailBatch);
-		trailBatch.end();
+		trailBatch.flush(cam);
 		averageTrail += System.nanoTime()-time;
 		averageTrail /= 2;
 		
@@ -171,13 +167,9 @@ public abstract class AbstractScreen implements Screen {
 	 */
 	public abstract void create();
 
-	public abstract void drawModels(float delta, AbstractRenderer renderer);
-	
 	public abstract void drawSkybox(float delta);
-
-	public abstract void drawDecals(float delta, DecalBatch batch);
-
-	public abstract void drawTrails(float delta, MotionTrailBatch batch);
+	
+	public abstract void queueRenderables(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch);
 
 	public abstract void drawOrthogonals(float delta, SpriteBatch batch);
 

@@ -1,9 +1,19 @@
 package com.Lyeeedar.Entities;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.Lyeeedar.Entities.AI.AI_Package;
+import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.Renderable;
+import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Informable;
 import com.Lyeeedar.Util.ThreadSafePlane;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
@@ -11,12 +21,41 @@ import com.badlogic.gdx.math.collision.Ray;
 
 public class Entity {
 	
-	private final EntityData data = new EntityData();	
+	public enum Equipment_Slot
+	{
+		HEAD,
+		BODY,
+		LEGS,
+		FEET,
+		LARM,
+		RARM,
+		MISC
+	}
+	
+	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
+	
 	private AI_Package ai;
-	private EntityRunnable runnable = new EntityRunnable();
+	private final EntityRunnable runnable = new EntityRunnable();
+	private final EntityRenderables renderables = new EntityRenderables();
 	
 	public Entity()
 	{
+		entityData.put(PositionalData.class, new PositionalData());
+		entityData.put(AnimationData.class, new AnimationData());
+		entityData.put(EquipmentData.class, new EquipmentData());
+		entityData.put(StatusData.class, new StatusData());
+	}
+	
+	public void addRenderable(Renderable r, Equipment_Slot slot)
+	{
+		renderables.add(r, slot);
+	}
+	
+	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	{
+		renderables.set(this);
+		renderables.update(delta, cam);
+		renderables.queue(delta, modelBatch, decalBatch, trailBatch);
 	}
 	
 	public void setAI(AI_Package ai)
@@ -29,21 +68,25 @@ public class Entity {
 		ai.update(delta);
 	}
 	
-	public void writeData(EntityData data)
+	public <E extends EntityData<E>> void writeData(E data, Class<E> type)
 	{
-		synchronized(this.data)
+		@SuppressWarnings("unchecked")
+		E target = (E) entityData.get(type);
+		synchronized(target)
 		{
-			this.data.write(data);
+			target.write(data);
 		}
 	}	
-	public EntityData readData(EntityData data)
+	public <E extends EntityData<E>> E readData(E target, Class<E> type)
 	{
-		synchronized(this.data)
+		@SuppressWarnings("unchecked")
+		E data = (E) entityData.get(type);
+		synchronized(data)
 		{
-			this.data.cpy(data);
+			data.read(target);
 		}
 		
-		return data;
+		return target;
 	}
 	
 	public Runnable getRunnable(float delta)
@@ -68,24 +111,63 @@ public class Entity {
 		}
 	}
 	
-	public static class EntityData
+	public static class EntityRenderables 
 	{
-		public final PositionalData positionalData = new PositionalData();
-		public final AnimationData animationData = new AnimationData();
-
-		public void write(EntityData data)
+		private final HashMap<Equipment_Slot, ArrayList<Renderable>> renderables = new HashMap<Equipment_Slot, ArrayList<Renderable>>();
+		
+		public EntityRenderables()
 		{
-			positionalData.write(data.positionalData);
-			animationData.write(data.animationData);
+			for (Equipment_Slot es : Equipment_Slot.values())
+			{
+				renderables.put(es, new ArrayList<Renderable>());
+			}
 		}
 		
-		public void cpy(EntityData target)
+		public void add(Renderable r, Equipment_Slot slot)
 		{
-			positionalData.cpy(target.positionalData);
-			animationData.cpy(target.animationData);
+			renderables.get(slot).add(r);
+		}
+		
+		public void set(Entity source)
+		{
+			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			{
+				for (Renderable r : entry.getValue())
+				{
+					r.set(source);
+				}
+			}
+		}
+		
+		public void update(float delta, Camera cam)
+		{
+			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			{
+				for (Renderable r : entry.getValue())
+				{
+					r.update(delta, cam);
+				}
+			}
+		}
+		
+		public void queue(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+		{
+			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			{
+				for (Renderable r : entry.getValue())
+				{
+					r.queue(delta, modelBatch, decalBatch, trailBatch);
+				}
+			}
 		}
 	}
-	public static class AnimationData
+	
+	public interface EntityData<E extends EntityData<E>>
+	{
+		public void write(E data);
+		public void read(E target);
+	}
+	public static class AnimationData implements EntityData<AnimationData>
 	{
 		public boolean updateAnimations = false;
 		public String anim = "";
@@ -122,26 +204,12 @@ public class Entity {
 			informable = data.informable;
 		}
 		
-		public void cpy(AnimationData target)
+		public void read(AnimationData target)
 		{
-			target.updateAnimations = updateAnimations;
-			target.anim = anim;
-			target.animation = animation;
-			target.animate_speed = animate_speed;
-			target.animate = animate;
-			target.useDirection = useDirection;
-			
-			target.animationLock = animationLock;
-			target.playAnim = playAnim;
-			target.playAnimation = playAnimation;
-			target.nextAnim = nextAnim;
-			target.nextAnimation = nextAnimation;
-			target.startFrame = startFrame;
-			target.endFrame = endFrame;
-			target.informable = informable;
+			target.write(this);
 		}
 	}
-	public static class PositionalData
+	public static class PositionalData implements EntityData<PositionalData>
 	{
 		public float radius = 0.5f;
 		public float radius2 = radius*radius;
@@ -184,16 +252,9 @@ public class Entity {
 			radius2y = data.radius2y;
 		}
 		
-		public void cpy(PositionalData target)
+		public void read(PositionalData target)
 		{
-			target.position.set(position);
-			target.rotation.set(rotation);		
-			target.velocity.set(velocity);
-			target.up.set(up);
-			target.jumpToken = jumpToken;
-			target.radius = radius;
-			target.radius2 = radius2;
-			target.radius2y = radius2y;
+			target.write(this);
 		}
 		
 		public void Yrotate (float angle) {	
@@ -293,4 +354,53 @@ public class Entity {
 			velocity.z = 0;
 		}
 	}
+	public static class EquipmentData implements EntityData<EquipmentData>
+	{
+		
+		private final HashMap<Equipment_Slot, ArrayList<Equipment<?>>> equipment = new HashMap<Equipment_Slot, ArrayList<Equipment<?>>>();
+		
+		public EquipmentData()
+		{
+			for (Equipment_Slot es : Equipment_Slot.values())
+			{
+				equipment.put(es, new ArrayList<Equipment<?>>());
+			}
+		}
+
+		@Override
+		public void write(EquipmentData data) {
+			equipment.clear();
+			for (Map.Entry<Equipment_Slot, ArrayList<Equipment<?>>> entry : data.equipment.entrySet())
+			{
+				ArrayList<Equipment<?>> equip = new ArrayList<Equipment<?>>();
+				equipment.put(entry.getKey(), equip);
+				for (Equipment<?> e : entry.getValue())
+				{
+					equip.add(e.copy());
+				}
+			}
+		}
+
+		@Override
+		public void read(EquipmentData target) {
+			target.write(this);
+		}
+	}
+	public static class StatusData implements EntityData<StatusData>
+	{
+
+		@Override
+		public void write(StatusData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void read(StatusData target) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+
 }
