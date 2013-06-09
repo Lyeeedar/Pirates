@@ -398,4 +398,12 @@ public class Sprite3D implements Renderable {
 			return a.priority - priority;
 		}
 	}
+
+	@Override
+	public void dispose() {
+		for (Map.Entry<String, Texture> entry : spritesheet.entrySet())
+		{
+			entry.getValue().dispose();
+		}
+	}
 }

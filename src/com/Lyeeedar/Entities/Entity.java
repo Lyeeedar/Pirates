@@ -46,13 +46,20 @@ public class Entity {
 		entityData.put(StatusData.class, new StatusData());
 	}
 	
-	public void addRenderable(Renderable r, Equipment_Slot slot)
+	public void addRenderable(Renderable r)
 	{
-		renderables.add(r, slot);
+		renderables.add(r);
+	}
+	
+	public void removeRenderable(Renderable r)
+	{
+		renderables.remove(r);
 	}
 	
 	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
+		((EquipmentData) entityData.get(EquipmentData.class)).update(delta);
+		
 		renderables.set(this);
 		renderables.update(delta, cam);
 		renderables.queue(delta, modelBatch, decalBatch, trailBatch);
@@ -113,51 +120,43 @@ public class Entity {
 	
 	public static class EntityRenderables 
 	{
-		private final HashMap<Equipment_Slot, ArrayList<Renderable>> renderables = new HashMap<Equipment_Slot, ArrayList<Renderable>>();
+		private final ArrayList<Renderable> renderables = new ArrayList<Renderable>();
 		
 		public EntityRenderables()
 		{
-			for (Equipment_Slot es : Equipment_Slot.values())
-			{
-				renderables.put(es, new ArrayList<Renderable>());
-			}
 		}
 		
-		public void add(Renderable r, Equipment_Slot slot)
+		public void add(Renderable r)
 		{
-			renderables.get(slot).add(r);
+			renderables.add(r);
+		}
+		
+		public void remove(Renderable r)
+		{
+			renderables.remove(r);
 		}
 		
 		public void set(Entity source)
 		{
-			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			for (Renderable r : renderables)
 			{
-				for (Renderable r : entry.getValue())
-				{
-					r.set(source);
-				}
+				r.set(source);
 			}
 		}
 		
 		public void update(float delta, Camera cam)
 		{
-			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			for (Renderable r : renderables)
 			{
-				for (Renderable r : entry.getValue())
-				{
-					r.update(delta, cam);
-				}
+				r.update(delta, cam);
 			}
 		}
 		
 		public void queue(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 		{
-			for (Map.Entry<Equipment_Slot, ArrayList<Renderable>> entry : renderables.entrySet())
+			for (Renderable r : renderables)
 			{
-				for (Renderable r : entry.getValue())
-				{
-					r.queue(delta, modelBatch, decalBatch, trailBatch);
-				}
+				r.queue(delta, modelBatch, decalBatch, trailBatch);
 			}
 		}
 	}
@@ -226,6 +225,7 @@ public class Entity {
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);	
 		public final Vector3 velocity = new Vector3();
+		public final Matrix4 composed = new Matrix4();
 		
 		public int jumpToken = 0;
 		
@@ -246,6 +246,7 @@ public class Entity {
 			rotation.set(data.rotation);		
 			velocity.set(data.velocity);
 			up.set(data.up);
+			composed.set(data.composed);
 			jumpToken = data.jumpToken;
 			radius = data.radius;
 			radius2 = data.radius2;
@@ -257,6 +258,13 @@ public class Entity {
 			target.write(this);
 		}
 		
+		public void calculateComposed()
+		{
+			tmpMat.setToRotation(rotation, GLOBALS.DEFAULT_ROTATION);
+			composed.setToTranslation(position).mul(tmpMat);
+		}
+		
+		// ------------------------- ROTATE ------------------------- //
 		public void Yrotate (float angle) {	
 			Vector3 dir = tmpVec.set(rotation).nor();
 			if(dir.y>-0.7 && angle<0 || dir.y<+0.7 && angle>0)
@@ -266,7 +274,6 @@ public class Entity {
 				rotate(localAxisX.x, localAxisX.y, localAxisX.z, angle);
 			}
 		}
-
 		public void Xrotate (float angle) {
 			rotate(0, 1, 0, angle);
 		}
@@ -276,8 +283,12 @@ public class Entity {
 			tmpMat.setToRotation(axis, angle);
 			rotation.mul(tmpMat).nor();
 			up.mul(tmpMat).nor();
+			
+			calculateComposed();
 		}
+		// ------------------------- ROTATE ------------------------- //
 		
+		// ------------------------- MOVE ------------------------- //
 		public void left_right(float mag)
 		{
 			velocity.x += (float)Math.sin(rotation.z) * mag;
@@ -289,6 +300,7 @@ public class Entity {
 			velocity.x += (float)Math.sin(rotation.x) * mag;
 			velocity.z += (float)Math.sin(rotation.z) * mag;
 		}
+		// ------------------------- MOVE ------------------------- //
 		
 		public void applyVelocity(float delta)
 		{
@@ -352,31 +364,73 @@ public class Entity {
 			
 			velocity.x = 0;
 			velocity.z = 0;
+			
+			calculateComposed();
 		}
 	}
 	public static class EquipmentData implements EntityData<EquipmentData>
 	{
-		
-		private final HashMap<Equipment_Slot, ArrayList<Equipment<?>>> equipment = new HashMap<Equipment_Slot, ArrayList<Equipment<?>>>();
+		private final HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
 		
 		public EquipmentData()
 		{
 			for (Equipment_Slot es : Equipment_Slot.values())
 			{
-				equipment.put(es, new ArrayList<Equipment<?>>());
+				equipment.put(es, null);
 			}
 		}
+		
+		public void update(float delta)
+		{
+			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : equipment.entrySet())
+			{
+				Equipment<?> e = entry.getValue();
+				if (e != null) e.update(delta);
+			}
+		}
+		
+		public boolean addEquipment(Equipment_Slot slot, Equipment<?> e)
+		{
+			boolean r = false;
+			if (equipment.get(slot) != null)
+			{
+				r = true;
+			}
+			
+			equipment.put(slot,  e);
+			
+			return r;
+		}
+		
+		public Equipment<?> getEquipment(Equipment_Slot slot)
+		{
+			return equipment.get(slot);
+		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void write(EquipmentData data) {
-			equipment.clear();
-			for (Map.Entry<Equipment_Slot, ArrayList<Equipment<?>>> entry : data.equipment.entrySet())
+			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
 			{
-				ArrayList<Equipment<?>> equip = new ArrayList<Equipment<?>>();
-				equipment.put(entry.getKey(), equip);
-				for (Equipment<?> e : entry.getValue())
+				if (entry.getValue() == null) {
+					equipment.put(entry.getKey(), null);
+					continue;
+				}
+				
+				@SuppressWarnings("rawtypes")
+				Equipment current = equipment.get(entry.getKey());
+				
+				if (current == null) 
 				{
-					equip.add(e.copy());
+					equipment.put(entry.getKey(), entry.getValue().copy());
+				}
+				else if (current.getClass().equals(entry.getValue().getClass()))
+				{
+					current.set(entry.getValue());
+				}
+				else
+				{
+					equipment.put(entry.getKey(), entry.getValue().copy());
 				}
 			}
 		}

@@ -3,7 +3,6 @@ package com.Lyeeedar.Graphics;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
-import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,11 +17,9 @@ public final class Model implements Renderable {
 	public final Texture texture;
 	public final Vector3 colour;
 	public final int type;
-	
 	public final Matrix4 model_matrix = new Matrix4();
 	
-	private final Matrix4 tmp = new Matrix4();
-	private final PositionalData data = new PositionalData();
+	private final PositionalData pData = new PositionalData();
 	
 	public Model(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
 	{
@@ -40,16 +37,20 @@ public final class Model implements Renderable {
 	}
 
 	@Override
-	public void update(float delta, Camera cam) {
+	public void set(Entity source) {
 		
+		source.readData(pData, PositionalData.class);
+		
+		model_matrix.set(pData.composed);
 	}
 
 	@Override
-	public void set(Entity source) {
-		
-		source.readData(data, PositionalData.class);
-		
-		tmp.setToRotation(data.rotation, GLOBALS.DEFAULT_ROTATION);
-		model_matrix.setToTranslation(data.position).mul(tmp);
+	public void update(float delta, Camera cam) {
+
+	}
+
+	@Override
+	public void dispose() {
+		mesh.dispose();
 	}
 }

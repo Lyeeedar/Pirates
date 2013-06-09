@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.SymbolicMesh;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
+import com.Lyeeedar.Entities.Items.Blade;
+import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
+import com.Lyeeedar.Graphics.WeaponTrail;
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
@@ -89,7 +93,13 @@ public class GameScreen extends AbstractScreen {
 		s.addAnimation("attack_1");
 		s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 		s.create(GLOBALS.ASSET_MANAGER);
-		player.addRenderable(s, Equipment_Slot.MISC);
+		player.addRenderable(s);
+		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.1f));
+		
+		EquipmentData eData = new EquipmentData();
+		player.readData(eData, EquipmentData.class);
+		eData.addEquipment(Equipment_Slot.RARM, new Blade(1));
+		player.writeData(eData, EquipmentData.class);
 		
 		entities.add(player);
 		
@@ -109,7 +119,7 @@ public class GameScreen extends AbstractScreen {
 			s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 			s.create(GLOBALS.ASSET_MANAGER);
 			
-			ge.addRenderable(s, Equipment_Slot.MISC);
+			ge.addRenderable(s);
 		}
 
 //		trail = new MotionTrail(100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class));

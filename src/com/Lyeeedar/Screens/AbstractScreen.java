@@ -48,6 +48,7 @@ public abstract class AbstractScreen implements Screen {
 	private long startTime;
 	private long time;
 	private long averageUpdate;
+	private long averageQueue;
 	private long averageModel;
 	private long averageTrail;
 	private long averageDecal;
@@ -73,10 +74,16 @@ public abstract class AbstractScreen implements Screen {
 		
 		time = System.nanoTime();
 		update(delta);
-		queueRenderables(delta, renderer, decalBatch, trailBatch);
-		stage.act(delta);
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
+		
+		time = System.nanoTime();
+		queueRenderables(delta, renderer, decalBatch, trailBatch);
+		averageQueue += System.nanoTime()-time;
+		averageQueue /= 2;
+		
+		stage.act(delta);
+
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -121,6 +128,7 @@ public abstract class AbstractScreen implements Screen {
 			Gdx.app.log("	FPS         ", ""+Gdx.graphics.getFramesPerSecond());
 	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
 	        Gdx.app.log("	Update      ", ""+averageUpdate);
+	        Gdx.app.log("	Queue       ", ""+averageQueue);
 	        Gdx.app.log("	Model       ", ""+averageModel);
 	        Gdx.app.log("	Decal       ", ""+averageDecal);
 	        Gdx.app.log("	Trail       ", ""+averageTrail);

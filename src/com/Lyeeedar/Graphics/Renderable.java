@@ -12,4 +12,6 @@ public interface Renderable {
 	public void set(Entity source);
 	
 	public void update(float delta, Camera cam);
+	
+	public void dispose();
 }
