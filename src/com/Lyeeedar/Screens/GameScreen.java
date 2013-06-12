@@ -1,17 +1,17 @@
 package com.Lyeeedar.Screens;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Random;
 
+import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Entities.SymbolicMesh;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.Items.Blade;
-import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
@@ -94,7 +94,7 @@ public class GameScreen extends AbstractScreen {
 		s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
-		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.1f));
+		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
@@ -153,12 +153,7 @@ public class GameScreen extends AbstractScreen {
 	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
 		
-		modelBatch.add(model, GL20.GL_TRIANGLES, texture, colour.set(1f, 1f, 1f), GLOBALS.TEST_NAV_MESH.getCombined(), 0);
-		
-		for (int i = 0; i < numEntities; i++)
-		{
-			entities.get(i).queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
-		}
+		GLOBALS.WORLD.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
 	}
 
 	@Override
@@ -178,10 +173,13 @@ public class GameScreen extends AbstractScreen {
 		
 	}
 
+	LinkedList<Runnable> list = new LinkedList<Runnable>();
 	@Override
 	public void update(float delta) {
 		
-		for (Entity ge : entities) GLOBALS.submitTask(ge.getRunnable(delta));
+		GLOBALS.WORLD.getRunnable(list, delta);
+		GLOBALS.submitTasks(list);
+		list.clear();
 		GLOBALS.waitTillTasksComplete();
 		
 		skyBox.update(delta);

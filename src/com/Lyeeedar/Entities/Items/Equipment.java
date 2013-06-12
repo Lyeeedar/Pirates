@@ -1,7 +1,9 @@
 package com.Lyeeedar.Entities.Items;
 
+import com.Lyeeedar.Util.Factory;
 
-public abstract class Equipment<E extends Equipment<E>> {
+
+public abstract class Equipment<E extends Equipment<E>> implements Factory<E> {
 	
 	@SuppressWarnings("unchecked")
 	public E copy()
@@ -13,6 +15,5 @@ public abstract class Equipment<E extends Equipment<E>> {
 	}
 	
 	public abstract void set(E other);
-	public abstract E newInstance();
 	public abstract void update(float delta);
 }

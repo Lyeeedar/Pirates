@@ -13,7 +13,9 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.Lyeeedar.Entities.SymbolicMesh;
+import com.Lyeeedar.Collision.SymbolicMesh;
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.EntityGraph;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
@@ -41,13 +43,17 @@ public final class GLOBALS {
 
 	public static boolean ANDROID = false;
 
-	public static SymbolicMesh TEST_NAV_MESH;
+	public static EntityGraph WORLD = new EntityGraph(new Entity(), null);
 
 	public static ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	public static LinkedList<Future<?>> futureList = new LinkedList<Future<?>>();	
 	public static void submitTask(Runnable run)
 	{
 		futureList.add(threadPool.submit(run));
+	}
+	public static void submitTasks(LinkedList<Runnable> list)
+	{
+		for (Runnable run : list) futureList.add(threadPool.submit(run));
 	}
 	public static void waitTillTasksComplete()
 	{

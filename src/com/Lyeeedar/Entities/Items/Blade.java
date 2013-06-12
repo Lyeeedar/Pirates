@@ -14,7 +14,7 @@ public class Blade extends Weapon<Blade> {
 	private boolean swinging = false;
 	private float angle = 0;
 	
-	private final Vector3 axis = new Vector3(0, 1, 0);
+	private final Vector3 axis = new Vector3(1, 0, 0);
 	
 	private final Matrix4 tmpMat = new Matrix4();
 
@@ -25,8 +25,6 @@ public class Blade extends Weapon<Blade> {
 
 	@Override
 	public void set(Blade other) {
-		System.out.println("copy");
-		System.out.println(edge+"     "+other.edge);
 		edge.set(other.edge);
 		dist = other.dist;
 		swinging = other.swinging;
@@ -39,13 +37,13 @@ public class Blade extends Weapon<Blade> {
 
 	@Override
 	public void update(float delta) {
-		angle += delta*100;
-		if (angle > Math.PI*2) angle = 0;
+		angle += delta*1000;
+		if (angle > 360) angle = 0;
 		
-		tmpMat.setToRotation(axis, angle);
+		tmpMat.idt().rotate(0, 0, 1, 90).rotate(0, 1, 0, angle);
 		
-		edge.direction.set(0, 1, 0).mul(tmpMat).nor();
-		System.out.println(edge.direction);
+		edge.origin.set(0, 1, 0);
+		edge.direction.set(0, 0, 1).mul(tmpMat).nor();
 	}
 
 }

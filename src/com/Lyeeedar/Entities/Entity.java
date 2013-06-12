@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.Lyeeedar.Collision.CollisionRay;
+import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -11,13 +13,11 @@ import com.Lyeeedar.Graphics.Renderable;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Informable;
-import com.Lyeeedar.Util.ThreadSafePlane;
+import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.Ray;
 
 public class Entity {
 	
@@ -37,6 +37,9 @@ public class Entity {
 	private AI_Package ai;
 	private final EntityRunnable runnable = new EntityRunnable();
 	private final EntityRenderables renderables = new EntityRenderables();
+	private EntityGraph entityGraph;
+	private CollisionShape<?> collisionShapeInternal;
+	private CollisionShape<?> collisionShapeExternal;
 	
 	public Entity()
 	{
@@ -44,6 +47,40 @@ public class Entity {
 		entityData.put(AnimationData.class, new AnimationData());
 		entityData.put(EquipmentData.class, new EquipmentData());
 		entityData.put(StatusData.class, new StatusData());
+	}
+	
+	public void setCollisionShapeInternal(CollisionShape<?> internal)
+	{
+		this.collisionShapeInternal = internal;
+	}
+	
+	public void setCollisionShapeExternal(CollisionShape<?> external)
+	{
+		this.collisionShapeExternal = external;
+		PositionalData data = new PositionalData();
+		readData(data, PositionalData.class);
+		data.shape = external.copy();
+		writeData(data, PositionalData.class);
+	}
+	
+	public void setCollisionShape(CollisionShape<?> shape)
+	{
+		setCollisionShapeExternal(shape);
+		setCollisionShapeInternal(shape);
+	}
+	
+	public boolean collide(CollisionShape<?> collide)
+	{
+		return collisionShapeInternal.collide(collide);
+	}
+	
+	public void setGraph(EntityGraph eg)
+	{
+		this.entityGraph = eg;
+		PositionalData data = new PositionalData();
+		readData(data, PositionalData.class);
+		data.graphHash = entityGraph.hashCode();
+		writeData(data, PositionalData.class);
 	}
 	
 	public void addRenderable(Renderable r)
@@ -70,7 +107,7 @@ public class Entity {
 		this.ai = ai;
 	}
 	
-	public void update(float delta)
+	private void update(float delta)
 	{
 		ai.update(delta);
 	}
@@ -231,14 +268,11 @@ public class Entity {
 		
 		private final Vector3 tmpVec = new Vector3();
 		private final Matrix4 tmpMat = new Matrix4();
-		private final Vector3 nPos = new Vector3();
 		private final Vector3 v = new Vector3();
-		private final Vector3 dest = new Vector3();
-		private final Ray ray = new Ray(new Vector3(), new Vector3());
-		private final Vector3 collision = new Vector3();
-		private final float[] min_dist = {Float.MAX_VALUE};
-		private final Vector3[] tmp = {new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
-		private final Plane plane = new ThreadSafePlane(new Vector3(), 1);
+		
+		public long graphHash;
+		
+		public CollisionShape<?> shape;
 		
 		public void write(PositionalData data)
 		{
@@ -251,6 +285,8 @@ public class Entity {
 			radius = data.radius;
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
+			graphHash = data.graphHash;
+			shape = data.shape.copy();
 		}
 		
 		public void read(PositionalData target)
@@ -260,7 +296,7 @@ public class Entity {
 		
 		public void calculateComposed()
 		{
-			tmpMat.setToRotation(rotation, GLOBALS.DEFAULT_ROTATION);
+			tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
 			composed.setToTranslation(position).mul(tmpMat);
 		}
 		
@@ -318,41 +354,38 @@ public class Entity {
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
 			
-			ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-			nPos.set(position).add(v);
-			ray.direction.set(v.x, 0, 0).nor();
-			min_dist[0] = Float.MAX_VALUE;
+			CollisionShape<?> s1 = shape.obtain();
+			
+			s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
 
-			if (v.x != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, position.z), collision, min_dist, tmp, plane) && min_dist[0] < radius2)
+			if (v.x != 0 && GLOBALS.WORLD.collide(shape, graphHash))
 			{
 				velocity.x = 0;
 				v.x = 0;
 			}
 			
-			ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-			nPos.set(position).add(v);
-			ray.direction.set(0, 0, v.z).nor();
-			min_dist[0] = Float.MAX_VALUE;
+			s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, v.z));
 
-			if (v.z != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, position.y, nPos.z), collision, min_dist, tmp, plane) && min_dist[0]  < radius2)
+			if (v.z != 0 && GLOBALS.WORLD.collide(shape, graphHash))
 			{
 				velocity.z = 0;
 				v.z = 0;
 			}
 			
-			ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-			nPos.set(position).add(v);
-			ray.direction.set(0, v.y, 0).nor();
-			min_dist[0] = Float.MAX_VALUE;
+			CollisionRay ray = Pools.obtain(CollisionRay.class);
+			ray.dist = Float.MAX_VALUE;
+			ray.intersection.set(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+			ray.ray.direction.set(0, v.y, 0).nor();
 
-			if (v.y != 0 && GLOBALS.TEST_NAV_MESH.checkCollision(ray, dest.set(nPos.x, nPos.y, nPos.z), collision, min_dist, tmp, plane) && min_dist[0]  < radius2y)
+			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash) && ray.dist < radius2y)
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
-				position.y = collision.y;
+				position.y = ray.intersection.y;
 			}
-			else if (nPos.y < -0.5f)
+			else if (position.y-v.y < -0.5f)
 			{
 				velocity.y = 0;
 				v.y = 0;

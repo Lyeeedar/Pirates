@@ -9,6 +9,11 @@ public class ThreadSafePlane extends Plane {
 	
 	private final Vector3 l = new Vector3();
 	private final Vector3 r = new Vector3();
+	
+	public ThreadSafePlane()
+	{
+		this(new Vector3(), 0);
+	}
 
 	/** Constructs a new plane based on the normal and distance to the origin.
 	 * 

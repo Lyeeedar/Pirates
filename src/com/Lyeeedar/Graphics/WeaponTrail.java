@@ -69,8 +69,6 @@ public class WeaponTrail implements Renderable {
 			tmp1.mul(pData.composed);
 			tmp2.mul(pData.composed);
 			
-			System.out.println(b.edge.origin+"   "+b.edge.direction);
-			
 			trail.update(tmp1, tmp2);
 		}
 	}
