@@ -31,9 +31,19 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	public abstract void transformPosition(Matrix4 matrix);
 	public abstract void transformDirection(Matrix4 matrix);
 	
+	public abstract void reset();
+	
 	public abstract E set(E other);
 	public abstract E copy();
 	
 	public abstract E obtain();
 	public abstract void free();
+	
+	@Override
+	public String toString()
+	{
+		return string();
+	}
+	
+	protected abstract String string();
 }

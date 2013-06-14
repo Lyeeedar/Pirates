@@ -104,4 +104,15 @@ public class Box extends CollisionShape<Box> {
 		
 	}
 
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected String string() {
+		return "Center: "+center+" W: "+width+" H: "+height+" D: "+depth;
+	}
+
 }

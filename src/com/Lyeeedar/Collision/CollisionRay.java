@@ -15,13 +15,31 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	
 	public CollisionRay()
 	{
-		
+		reset();
 	}
 	
 	public CollisionRay(Ray ray, float len)
 	{
 		this.ray.set(ray);
 		this.len = len;
+		
+		reset();
+	}
+	
+	public CollisionRay set(Vector3 start, Vector3 end)
+	{
+		ray.origin.set(start);
+		ray.direction.set(end).sub(start).nor();
+		len = start.dst(end);
+		
+		return this;
+	}
+	
+	@Override
+	public void reset()
+	{
+		dist = Float.MAX_VALUE;
+		intersection.set(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
 	}
 
 	@Override
@@ -93,5 +111,10 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void setRotation(Vector3 rotation) {
 		ray.direction.set(rotation);
+	}
+
+	@Override
+	protected String string() {
+		return ""+ray+" Len: "+len+" I: "+intersection+" Dist: "+dist;
 	}
 }

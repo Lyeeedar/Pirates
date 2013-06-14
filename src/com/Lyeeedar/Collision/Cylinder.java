@@ -94,4 +94,15 @@ public class Cylinder extends CollisionShape<Cylinder> {
 		rotation.set(rotation);
 	}
 
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected String string() {
+		return "Center: "+center+" R: "+radius+" H: "+height;
+	}
+
 }

@@ -6,7 +6,6 @@ import com.badlogic.gdx.math.Vector3;
 public class ThreadSafePlane extends Plane {
 	private static final long serialVersionUID = 6917699700986507282L;
 	
-	
 	private final Vector3 l = new Vector3();
 	private final Vector3 r = new Vector3();
 	
@@ -48,5 +47,13 @@ public class ThreadSafePlane extends Plane {
 		Vector3 nor = l.crs(r).nor();
 		normal.set(nor);
 		d = -point1.dot(nor);
+	}
+	
+	public Vector3 getClosestPoint(Vector3 point, Vector3 answer)
+	{
+		float dist = distance(point);
+		answer.set(point).sub(normal.x*dist, normal.y*dist, normal.z*dist);
+		
+		return answer;
 	}
 }

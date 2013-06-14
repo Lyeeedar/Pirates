@@ -88,4 +88,15 @@ public class Sphere extends CollisionShape<Sphere> {
 	public void setRotation(Vector3 rotation) {
 		
 	}
+
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected String string() {
+		return "Center: "+center+" R: "+radius;
+	}
 }

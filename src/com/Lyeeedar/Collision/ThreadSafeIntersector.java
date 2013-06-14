@@ -12,7 +12,7 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Sphere sphere1, Sphere sphere2)
 	{
-		return sphere1.center.dst2(sphere2.center) < Math.pow(sphere1.radius+sphere2.radius, 2);		
+		return sphere1.center.dst2(sphere2.center) < (sphere1.radius+sphere2.radius)*(sphere1.radius+sphere2.radius);		
 	}
 
 	/**
@@ -71,81 +71,63 @@ public class ThreadSafeIntersector {
 		return dist_squared > 0;
 	}
 
-	/**
-	 * Source: http://realtimecollisiondetection.net/blog/?p=103
-	 * @param sphere1
-	 * @param tri1
-	 * @return
-	 */
 	public static boolean collide(Sphere sphere1, Triangle tri1)
 	{
-		Vector3 tmp = Pools.obtain(Vector3.class);
-
-		Vector3 A = Pools.obtain(Vector3.class).set(tri1.v1).sub(sphere1.center);
-		Vector3 B = Pools.obtain(Vector3.class).set(tri1.v2).sub(sphere1.center);
-		Vector3 C = Pools.obtain(Vector3.class).set(tri1.v3).sub(sphere1.center);
-
-		float rr = sphere1.radius * sphere1.radius;
-		Vector3 V = Pools.obtain(Vector3.class).set(B).sub(A).crs(tmp.set(C).sub(A));
-		float d = A.dot(V);
-		float e = V.dot(V);
-		boolean sep1 = d * d > rr * e;
-
-		float aa = A.dot(A);
-		float ab = A.dot(B);
-		float ac = A.dot(C);
-		float bb = B.dot(B);
-		float bc = B.dot(C);
-		float cc = C.dot(C);
-
-		boolean sep2 = (aa > rr) & (ab > aa) & (ac > aa);
-		boolean sep3 = (bb > rr) & (ab > bb) & (bc > bb);
-		boolean sep4 = (cc > rr) & (ac > cc) & (bc > cc);
-
-		Vector3 AB = Pools.obtain(Vector3.class).set(B).sub(A);
-		Vector3 BC = Pools.obtain(Vector3.class).set(C).sub(B);
-		Vector3 CA = Pools.obtain(Vector3.class).set(A).sub(C);
-
-		float d1 = ab - aa;
-		float d2 = bc - bb;
-		float d3 = ac - cc;
-
-		float e1 = AB.dot(AB);
-		float e2 = BC.dot(BC);
-		float e3 = CA.dot(CA);
-
-		Vector3 Q1 = Pools.obtain(Vector3.class).set(A).scl(e1).sub(tmp.set(AB).scl(d1));
-		Vector3 Q2 = Pools.obtain(Vector3.class).set(B).scl(e2).sub(tmp.set(BC).scl(d2));
-		Vector3 Q3 = Pools.obtain(Vector3.class).set(C).scl(e3).sub(tmp.set(CA).scl(d3));
-
-		Vector3 QC = Pools.obtain(Vector3.class).set(C).scl(e1).sub(Q1);
-		Vector3 QA = Pools.obtain(Vector3.class).set(A).scl(e2).sub(Q2);
-		Vector3 QB = Pools.obtain(Vector3.class).set(B).scl(e3).sub(Q3);
-
-		boolean sep5 = Q1.dot(Q1) > rr * e1 * e1 && Q1.dot(QC) > 0;
-		boolean sep6 = Q2.dot(Q2) > rr * e2 * e2 && Q2.dot(QA) > 0;
-		boolean sep7 = Q3.dot(Q3) > rr * e3 * e3 && Q3.dot(QB) > 0;
-
-		Pools.free(tmp);
-
-		Pools.free(A);
-		Pools.free(B);
-		Pools.free(C);
-		Pools.free(V);
-
-		Pools.free(AB);
-		Pools.free(BC);
-		Pools.free(CA);
-
-		Pools.free(Q1);
-		Pools.free(Q2);
-		Pools.free(Q3);
-
-		Pools.free(QA);
-		Pools.free(QB);
-		Pools.free(QC);
-
-		return sep1 || sep2 || sep3 || sep4 || sep5 || sep6 || sep7;
+		float r2 = sphere1.radius*sphere1.radius;
+		
+		ThreadSafePlane plane = Pools.obtain(ThreadSafePlane.class);
+		plane.set(tri1.v1, tri1.v2, tri1.v3);
+		
+		// Check plane
+		if (plane.distance(sphere1.center) > r2) {
+			Pools.free(plane);
+			return false;
+		}
+		
+		// Check face
+		Vector3 point = Pools.obtain(Vector3.class);
+		plane.getClosestPoint(sphere1.center, point);
+		
+		Pools.free(plane);
+		
+		if (testPointInTriangle(point, tri1))
+		{
+			return true;
+		}
+		
+		Pools.free(point);
+		
+		// Check 3 vertices
+		if (sphere1.center.dst2(tri1.v1) < r2) return true;
+		if (sphere1.center.dst2(tri1.v2) < r2) return true;
+		if (sphere1.center.dst2(tri1.v3) < r2) return true;
+		
+		// Check 3 edges
+		CollisionRay ray = Pools.obtain(CollisionRay.class);
+		
+		ray.reset();
+		ray.set(tri1.v1, tri1.v2);
+		if (collide(sphere1, ray)) {
+			Pools.free(ray);
+			return true;
+		}
+		
+		ray.reset();
+		ray.set(tri1.v1, tri1.v3);
+		if (collide(sphere1, ray)) {
+			Pools.free(ray);
+			return true;
+		}
+		
+		ray.reset();
+		ray.set(tri1.v2, tri1.v3);
+		if (collide(sphere1, ray)) {
+			Pools.free(ray);
+			return true;
+		}
+		
+		Pools.free(ray);
+		return false;
 	}
 
 	public static boolean collide(Sphere sphere1, CollisionRay ray1)
@@ -202,9 +184,15 @@ public class ThreadSafeIntersector {
 	        t = t0;
 	    }
 	    
-	    if (t < ray1.dist)
+	    float t2 = t*t;
+	    
+	    if (t2 > ray1.len)
 	    {
-	    	ray1.dist = t;
+	    	return false;
+	    }	    
+	    else if (t2 < ray1.dist)
+	    {
+	    	ray1.dist = t2;
 		    ray1.intersection.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
 	    }
 	    
@@ -596,6 +584,63 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Box box1, CollisionRay ray1)
 	{
+		Vector3 dirfrac = Pools.obtain(Vector3.class);
+		// r.dir is unit direction vector of ray
+		dirfrac.x = 1.0f / ray1.ray.direction.x;
+		dirfrac.y = 1.0f / ray1.ray.direction.y;
+		dirfrac.z = 1.0f / ray1.ray.direction.z;
+		
+		Vector3 lb = Pools.obtain(Vector3.class).set(box1.center).sub(box1.width, box1.height, box1.depth);
+		Vector3 rt = Pools.obtain(Vector3.class).set(box1.center).add(box1.width, box1.height, box1.depth);
+		
+		// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+		// r.org is origin of ray
+		float t1 = (lb.x - ray1.ray.origin.x)*dirfrac.x;
+		float t2 = (rt.x - ray1.ray.origin.x)*dirfrac.x;
+		float t3 = (lb.y - ray1.ray.origin.y)*dirfrac.y;
+		float t4 = (rt.y - ray1.ray.origin.y)*dirfrac.y;
+		float t5 = (lb.z - ray1.ray.origin.z)*dirfrac.z;
+		float t6 = (rt.z - ray1.ray.origin.z)*dirfrac.z;
+		
+		Pools.free(lb);
+		Pools.free(rt);
+
+		float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+		float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+		float t = 0;
+		
+		// if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+		if (tmax < 0)
+		{
+		    t = tmax;
+		    return false;
+		}
+
+		// if tmin > tmax, ray doesn't intersect AABB
+		if (tmin > tmax)
+		{
+		    t = tmax;
+		    return false;
+		}
+		else
+		{
+			t = tmin;
+		}
+		
+		float tt = t*t;
+		
+		if (tt < ray1.len && tt < ray1.dist)
+		{
+			ray1.dist = tt;
+			ray1.intersection.set(ray1.ray.origin).add(dirfrac.set(ray1.ray.direction).scl(t));
+			
+			Pools.free(dirfrac);
+			
+			return true;
+		}
+
+		Pools.free(dirfrac);
 		return false;
 	}
 
@@ -623,57 +668,32 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Triangle tri1, CollisionRay ray1)
 	{
+
 		ThreadSafePlane p = Pools.obtain(ThreadSafePlane.class);
 		Vector3 i = Pools.obtain(Vector3.class);
-
+		
 		p.set(tri1.v1, tri1.v2, tri1.v3);
 		if (!intersectRayPlane(ray1.ray, p, i)) {
 			Pools.free(p);
 			Pools.free(i);
 			return false;
 		}
+		
 		Pools.free(p);
-
-		Vector3 v0 = Pools.obtain(Vector3.class);
-		Vector3 v1 = Pools.obtain(Vector3.class);
-		Vector3 v2 = Pools.obtain(Vector3.class);
-
-		v0.set(tri1.v3).sub(tri1.v1);
-		v1.set(tri1.v2).sub(tri1.v1);
-		v2.set(i).sub(tri1.v1);
-
-		float dot00 = v0.dot(v0);
-		float dot01 = v0.dot(v1);
-		float dot02 = v0.dot(v2);
-		float dot11 = v1.dot(v1);
-		float dot12 = v1.dot(v2);
-
-		Pools.free(v0);
-		Pools.free(v1);
-		Pools.free(v2);
-
-		float denom = dot00 * dot11 - dot01 * dot01;
-		if (denom == 0) {
-			Pools.free(i);
-			return false;
-		}
-
-		float u = (dot11 * dot02 - dot01 * dot12) / denom;
-		float v = (dot00 * dot12 - dot01 * dot02) / denom;
-
-		if (u >= 0 && v >= 0 && u + v <= 1) {
-			float d = i.dst(ray1.intersection);
-			if (d < ray1.dist)
+		
+		if (testPointInTriangle(i, tri1))
+		{
+			float dist = i.dst2(ray1.ray.origin);
+			if (dist < ray1.len && dist < ray1.dist)
 			{
-				ray1.dist = d;
+				ray1.dist = dist;
 				ray1.intersection.set(i);
+				Pools.free(i);
+				return true;
 			}
-			Pools.free(i);
-			return true;
-		} else {
-			Pools.free(i);
-			return false;
 		}
+		Pools.free(i);
+		return false;
 	}
 
 	// --------------------- COLLISIONRAY --------------------- //
@@ -731,6 +751,56 @@ public class ThreadSafeIntersector {
 			return true;
 		} else
 			return false;
+	}
+	
+	public static float max(float f1, float f2)
+	{
+		return (f1 < f2) ? f2 : f1 ;
+	}
+	
+	public static float min(float f1, float f2)
+	{
+		return (f1 > f2) ? f2 : f1 ;
+	}
+	
+	public static boolean testPointInTriangle(Vector3 point, Triangle tri)
+	{
+		Vector3 v0 = Pools.obtain(Vector3.class);
+		Vector3 v1 = Pools.obtain(Vector3.class);
+		Vector3 v2 = Pools.obtain(Vector3.class);
+
+		v0.set(tri.v3).sub(tri.v1);
+		v1.set(tri.v2).sub(tri.v1);
+		v2.set(point).sub(tri.v1);
+
+		float dot00 = v0.dot(v0);
+		float dot01 = v0.dot(v1);
+		float dot02 = v0.dot(v2);
+		float dot11 = v1.dot(v1);
+		float dot12 = v1.dot(v2);
+
+		float denom = dot00 * dot11 - dot01 * dot01;
+		if (denom == 0) {
+			Pools.free(v0);
+			Pools.free(v1);
+			Pools.free(v2);
+			return false;
+		}
+
+		float u = (dot11 * dot02 - dot01 * dot12) / denom;
+		float v = (dot00 * dot12 - dot01 * dot02) / denom;
+
+		if (u >= 0 && v >= 0 && u + v <= 1) {
+			Pools.free(v0);
+			Pools.free(v1);
+			Pools.free(v2);
+			return true;
+		} else {
+			Pools.free(v0);
+			Pools.free(v1);
+			Pools.free(v2);
+			return false;
+		}
 	}
 }
 

@@ -188,48 +188,64 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	public void free() {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	public void reset() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	protected String string() {
+		return "SymbolicMesh dickweed";
+	}
 
-	/**
-	 * Check the given ray to dest against the geometry. Store the resulting collision (if there was one) in the collision Vector3.
-	 * @param ray
-	 * @param dest
-	 * @param collision
-	 * @return
-	 */
 	public boolean checkCollision(CollisionShape<?> shape, boolean fast)
 	{	
 		shape.transformPosition(inverse);
 		shape.transformDirection(rotationTra);
+		
+		CollisionShape<?> check = shape.obtain();
 
-		if (!checkCollisionRecursive(partition, shape, fast)) {
+		if (!checkCollisionRecursive(partition, shape, check, fast)) {
+			check.free();
 			return false;
 		}
-		
+				
+		check.free();
 		shape.transformPosition(combined);
-		
+				
 		return true;
 	}
 	
-	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, CollisionShape<?> shape, boolean fast)
+	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, CollisionShape<?> shape, CollisionShape<?> check, boolean fast)
 	{
 		boolean collide = intersectShapeTriangles(shape, tris, partition.indices, fast);
 		if (fast && collide) return true;
+		check.reset();
 		
-		if (partition.tne != null && partition.tne.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		if (partition.tne != null && partition.tne.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.tnw != null && partition.tnw.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.tnw != null && partition.tnw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.tse != null && partition.tse.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.tse != null && partition.tse.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.tsw != null && partition.tsw.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.tsw != null && partition.tsw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.bne != null && partition.bne.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.bne != null && partition.bne.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.bnw != null && partition.bnw.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.bnw != null && partition.bnw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.bse != null && partition.bse.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.bse != null && partition.bse.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
 		if (fast && collide) return true;
-		if (partition.bsw != null && partition.bsw.shape.collide(shape) && checkCollisionRecursive(partition.tne, shape, fast)) collide = true;
+		check.reset();
+		if (partition.bsw != null && partition.bsw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
+		check.reset();
 		
 		return collide;
 	}
@@ -612,8 +628,4 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			bsw = (tree.bsw == null) ? null : new SymbolicMeshPartition(this, tree.bsw);
 		}
 	}
-
-
-
-
 }

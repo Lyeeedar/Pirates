@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
+import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -71,6 +72,7 @@ public class Entity {
 	
 	public boolean collide(CollisionShape<?> collide)
 	{
+		if (collisionShapeInternal == null) return false;
 		return collisionShapeInternal.collide(collide);
 	}
 	
@@ -109,7 +111,7 @@ public class Entity {
 	
 	private void update(float delta)
 	{
-		ai.update(delta);
+		if (ai != null) ai.update(delta);
 	}
 	
 	public <E extends EntityData<E>> void writeData(E data, Class<E> type)
@@ -272,7 +274,7 @@ public class Entity {
 		
 		public long graphHash;
 		
-		public CollisionShape<?> shape;
+		public CollisionShape<?> shape = new Sphere(new Vector3(), 0);
 		
 		public void write(PositionalData data)
 		{
@@ -364,7 +366,7 @@ public class Entity {
 				v.x = 0;
 			}
 			
-			s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, v.z));
+			s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
 
 			if (v.z != 0 && GLOBALS.WORLD.collide(shape, graphHash))
 			{
@@ -372,18 +374,21 @@ public class Entity {
 				v.z = 0;
 			}
 			
+			s1.free();
+			
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
-			ray.dist = Float.MAX_VALUE;
-			ray.intersection.set(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+			ray.reset();
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
+			ray.len = radius2y;
 
-			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash) && ray.dist < radius2y)
+			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash))
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
 				position.y = ray.intersection.y;
+				position.set(ray.intersection);
 			}
 			else if (position.y-v.y < -0.5f)
 			{
@@ -392,6 +397,8 @@ public class Entity {
 				position.y = -0.5f;
 				jumpToken = 2;
 			}
+			
+			Pools.free(ray);
 			
 			position.add(v.x, v.y, v.z);
 			

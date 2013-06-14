@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
+import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
@@ -12,6 +13,7 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.Items.Blade;
+import com.Lyeeedar.Graphics.Model;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
@@ -37,24 +39,12 @@ import com.badlogic.gdx.math.Vector3;
 public class GameScreen extends AbstractScreen {
 	
 	SkyBox skyBox;
-
-	Mesh model;
-	Mesh character;
-	Mesh plane;
-	Texture texture;
-	Texture texture1;
-	Matrix4 tmpMat = new Matrix4();
-	Matrix4 tmpMat1 = new Matrix4();
-	Matrix4 tmpMat2 = new Matrix4();
-	Vector3 colour = new Vector3();
-	Vector3 tmp = new Vector3();
 	PositionalData dataPos = new PositionalData();
 	int numEntities = 5;
 	
-	ArrayList<Entity> entities = new ArrayList<Entity>();
-	Light l;
-	
 	long time = System.currentTimeMillis();
+	
+	Entity player;
 
 	public GameScreen(LightManager lights) {
 		super(lights);
@@ -66,26 +56,24 @@ public class GameScreen extends AbstractScreen {
 		
 		long time = System.nanoTime();
 		
-		
-		ObjLoader loader = new ObjLoader();
-		character = loader.loadObj(Gdx.files.internal("data/models/character.obj")).subMeshes[0].mesh;
-		
-		texture = new Texture(Gdx.files.internal("data/textures/grass.png"));
+		Texture texture = GLOBALS.ASSET_MANAGER.get("data/textures/grass.png", Texture.class);
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		//texture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		
-		texture1 = new Texture(Gdx.files.internal("data/textures/blank.png"));
-		
+
 		IslandGenerator ig = new IslandGenerator();
-		model = ig.getIsland(40, 40, 40);
-		//texture = new Texture(Gdx.files.internal("data/shipTex.png"));
-		//model = loader.loadObj(Gdx.files.internal("data/shipMesh.obj"), true).subMeshes[0].mesh;
-		GLOBALS.TEST_NAV_MESH = SymbolicMesh.getSymbolicMesh(model, 1f);
+		Mesh model = ig.getIsland(40, 40, 40);
+
+		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
+		
+		Entity island = new Entity();
+		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
+		island.setCollisionShapeInternal(mesh);
+		
+		GLOBALS.WORLD.addEntity(island);
 
 		Texture tex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		skyBox = new SkyBox(tex, new Vector3(0.0f, 0.79f, 1), new Vector3(1, 1, 1));
 		
-		Entity player = new Entity();
+		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
 		Sprite3D s = new Sprite3D(1, 2);
 		s.setGender(false);
@@ -95,13 +83,14 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
+		player.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
 		eData.addEquipment(Equipment_Slot.RARM, new Blade(1));
 		player.writeData(eData, EquipmentData.class);
 		
-		entities.add(player);
+		GLOBALS.WORLD.addEntity(player);
 		
 		Random ran = new Random();
 		for (int i = 0; i < numEntities; i++)
@@ -109,9 +98,10 @@ public class GameScreen extends AbstractScreen {
 			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
-			ge.setAI(ai);
+			//ge.setAI(ai);
+			ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 			
-			entities.add(ge);
+			//GLOBALS.WORLD.addEntity(ge);
 			
 			s = new Sprite3D(1, 2);
 			s.setGender(false);
@@ -122,8 +112,6 @@ public class GameScreen extends AbstractScreen {
 			ge.addRenderable(s);
 		}
 
-//		trail = new MotionTrail(100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class));
-//		
 		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
 
@@ -184,11 +172,7 @@ public class GameScreen extends AbstractScreen {
 		
 		skyBox.update(delta);
 		
-		GLOBALS.TEST_NAV_MESH.setPosition(0, -1, 0);
-		GLOBALS.TEST_NAV_MESH.setRotation(GLOBALS.DEFAULT_ROTATION, GLOBALS.DEFAULT_ROTATION);
-		GLOBALS.TEST_NAV_MESH.updateMatrixes();
-		
-		entities.get(0).readData(dataPos, PositionalData.class);
+		player.readData(dataPos, PositionalData.class);
 		
 		cam.update(dataPos);
 	}

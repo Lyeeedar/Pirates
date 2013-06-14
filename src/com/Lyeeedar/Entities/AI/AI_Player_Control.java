@@ -84,6 +84,8 @@ public class AI_Player_Control extends AI_Package {
 		}
 		if (Gdx.input.isKeyPressed(Keys.J)) entityPos.velocity.set(0, 50f, 0);
 		
+		if (Gdx.input.isKeyPressed(Keys.B)) entityPos.position.add(0, 1, 0);
+		
 		entityPos.applyVelocity(delta);
 		entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 		

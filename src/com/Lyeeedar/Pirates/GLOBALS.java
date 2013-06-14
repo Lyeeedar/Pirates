@@ -13,7 +13,6 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.badlogic.gdx.Gdx;

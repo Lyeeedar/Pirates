@@ -13,13 +13,14 @@ public class EntityGraph {
 
 	private final Entity entity;
 	public EntityGraph parent;
-	public HashSet<EntityGraph> children;
+	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
+	public final long hash = this.hashCode();
 	
 	public EntityGraph(Entity entity, EntityGraph parent)
 	{
 		this.entity = entity;
 		this.parent = parent;
-		parent.children.add(this);
+		if (parent != null) parent.children.add(this);
 		entity.setGraph(this);
 	}
 	
@@ -49,10 +50,16 @@ public class EntityGraph {
 	
 	public boolean collide(CollisionShape<?> source, long hash)
 	{
-		if (hash != this.hashCode() && entity.collide(source)) return true;
+		if (hash != this.hash && entity.collide(source)) return true;
 		
-		for (EntityGraph eg : children) eg.collide(source, hash);
+		for (EntityGraph eg : children) if (eg.collide(source, hash)) return true;
 		
 		return false;
 	}
+	
+	public void addEntity(Entity e)
+	{
+		new EntityGraph(e, this);
+	}
+
 }
