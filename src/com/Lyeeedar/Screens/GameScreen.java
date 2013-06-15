@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
+import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Entities.Entity;
@@ -35,6 +36,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.Ray;
 
 public class GameScreen extends AbstractScreen {
 	
@@ -83,7 +85,7 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
-		player.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
+		//player.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);

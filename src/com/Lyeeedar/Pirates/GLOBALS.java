@@ -26,7 +26,7 @@ import com.badlogic.gdx.math.Vector3;
 
 public final class GLOBALS {
 
-	public static final float STEP = 0.5f;
+	public static final float STEP = 1f;
 
 	public static final int MAX_SPEED_X = 60;
 	public static final int MAX_SPEED_Y = 100;

@@ -92,6 +92,7 @@ public class ThreadSafeIntersector {
 		
 		if (testPointInTriangle(point, tri1))
 		{
+			Pools.free(point);
 			return true;
 		}
 		
@@ -132,6 +133,14 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Sphere sphere1, CollisionRay ray1)
 	{
+		if (sphere1.center.dst2(ray1.ray.origin) < sphere1.radius*sphere1.radius)
+		{
+			ray1.intersection.set(ray1.ray.origin);
+			ray1.dist = 0;
+			
+			return true;
+		}
+		
 		Vector3 o = Pools.obtain(Vector3.class).set(ray1.ray.origin).sub(sphere1.center);
 		//Compute A, B and C coefficients
 	    float a = ray1.ray.direction.dot(ray1.ray.direction);
@@ -584,14 +593,28 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Box box1, CollisionRay ray1)
 	{
+		Vector3 lb = Pools.obtain(Vector3.class).set(box1.center).sub(box1.width, box1.height, box1.depth);
+		Vector3 rt = Pools.obtain(Vector3.class).set(box1.center).add(box1.width, box1.height, box1.depth);
+
+		if (
+			ray1.ray.origin.x > lb.x && ray1.ray.origin.x < rt.x &&
+			ray1.ray.origin.y > lb.y && ray1.ray.origin.y < rt.y &&
+			ray1.ray.origin.z > lb.z && ray1.ray.origin.z < rt.z
+			)
+		{
+			ray1.intersection.set(ray1.ray.origin);
+			ray1.dist = 0;
+			
+			Pools.free(lb);
+			Pools.free(rt);
+			return true;
+		}
+
 		Vector3 dirfrac = Pools.obtain(Vector3.class);
 		// r.dir is unit direction vector of ray
 		dirfrac.x = 1.0f / ray1.ray.direction.x;
 		dirfrac.y = 1.0f / ray1.ray.direction.y;
 		dirfrac.z = 1.0f / ray1.ray.direction.z;
-		
-		Vector3 lb = Pools.obtain(Vector3.class).set(box1.center).sub(box1.width, box1.height, box1.depth);
-		Vector3 rt = Pools.obtain(Vector3.class).set(box1.center).add(box1.width, box1.height, box1.depth);
 		
 		// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
 		// r.org is origin of ray
@@ -800,6 +823,27 @@ public class ThreadSafeIntersector {
 			Pools.free(v1);
 			Pools.free(v2);
 			return false;
+		}
+	}
+	
+	public static boolean collideShapeList(CollisionShape<?> shape, CollisionShape<?>[] list, short[] indices, boolean fast)
+	{
+		boolean hit = false;
+		
+		for (int i = 0; i < indices.length; i++) {
+			boolean result = list[i].collide(shape);
+
+			if (result == true) {
+				hit = true;
+				if (fast) break;
+			}
+		}	
+
+		if (hit == false) {
+			return false;
+		}
+		else {
+			return true;
 		}
 	}
 }

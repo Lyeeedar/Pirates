@@ -18,6 +18,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	public final Triangle[] tris;
 
 	private final Vector3 position = new Vector3();
+	private final Vector3 rotationVec = new Vector3();
 	private final Matrix4 rotation = new Matrix4();
 	private final Matrix4 rotationTra = new Matrix4();
 	private final Matrix4 combined = new Matrix4();
@@ -91,7 +92,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		this.maxy = miny+max;
 		this.maxz = minz+max;
 
-		TempMeshPartition temp = new TempMeshPartition(null, this.minx, this.maxx, this.miny, this.maxy, this.minz, this.maxz, 0);
+		TempMeshPartition temp = new TempMeshPartition(null, this.minx, this.maxx, this.miny, this.maxy, this.minz, this.maxz, (byte) 0);
 
 		for (short i = 0; i < tris.length; i++)
 		{			
@@ -101,6 +102,10 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		temp.finalize();
 		
 		partition = new SymbolicMeshPartition(null, temp);
+		
+		setPosition(new Vector3(0, 0, 0));
+		setRotation(GLOBALS.DEFAULT_ROTATION);
+		updateMatrixes();
 	}
 
 	/**
@@ -123,13 +128,20 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	@Override
 	public void setPosition(Vector3 position)
 	{
-		position.set(position);
+		if (this.position.x == position.x && this.position.y == position.y && this.position.z == position.z) return;
+		
+		this.position.set(position);
+		updateMatrixes();
 	}
 	
 	@Override
 	public void setRotation(Vector3 rotation) {
+		
+		if (rotationVec.x == rotation.x && rotationVec.y == rotation.y && rotationVec.z == rotation.z) return;
+		
+		rotationVec.set(rotation);
 		this.rotation.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
-		rotationTra.set(this.rotation).tra();
+		updateMatrixes();
 	}
 	
 	@Override
@@ -164,7 +176,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 	@Override
 	public SymbolicMesh copy() {
-		throw new UnsupportedOperationException();
+		return this;
 	}
 	
 	@Override
@@ -181,12 +193,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	
 	@Override
 	public SymbolicMesh obtain() {
-		throw new UnsupportedOperationException();
+		return this;
 	}
 
 	@Override
 	public void free() {
-		throw new UnsupportedOperationException();
+		
 	}
 	
 	@Override
@@ -219,62 +231,21 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	
 	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, CollisionShape<?> shape, CollisionShape<?> check, boolean fast)
 	{
-		boolean collide = intersectShapeTriangles(shape, tris, partition.indices, fast);
-		if (fast && collide) return true;
-		check.reset();
+		//if (!partition.shape.collide(check)) return false;
 		
-		if (partition.tne != null && partition.tne.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
+		boolean collide = (partition.indices.length > 0) ? ThreadSafeIntersector.collideShapeList(shape, tris, partition.indices, fast) : false ;
 		if (fast && collide) return true;
-		check.reset();
-		if (partition.tnw != null && partition.tnw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.tse != null && partition.tse.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.tsw != null && partition.tsw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.bne != null && partition.bne.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.bnw != null && partition.bnw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.bse != null && partition.bse.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		if (fast && collide) return true;
-		check.reset();
-		if (partition.bsw != null && partition.bsw.shape.collide(check) && checkCollisionRecursive(partition.tne, shape, check, fast)) collide = true;
-		check.reset();
+		
+		for (SymbolicMeshPartition p : partition.children)
+		{
+			check.reset();
+			if (p != null && checkCollisionRecursive(p, shape, check, fast)) collide = true;
+			if (fast && collide) break;
+		}
 		
 		return collide;
 	}
-	
-	private boolean intersectShapeTriangles (CollisionShape<?> shape, Triangle[] triangles, short[] indices, boolean fast) {
-		boolean hit = false;
-		
-		for (int i = 0; i < indices.length; i += 3) {
-			boolean result = triangles[i].collide(shape);
 
-			if (result == true) {
-				hit = true;
-				if (fast) break;
-			}
-		}	
-
-		if (hit == false) {
-			return false;
-		}
-		else {
-			return true;
-		}
-	}
-
-	/**
-	 * Only works for triangular polygon meshes (with indices specifiying triangles in groups of 3)
-	 * @param mesh
-	 * @return
-	 */
 	public static SymbolicMesh getSymbolicMesh(Mesh mesh, float maxArea)
 	{
 		final VertexAttributes attributes = mesh.getVertexAttributes();
@@ -289,7 +260,6 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		mesh.getIndices(indices);
 
 		final SymbolicMeshNode[] vertexNodes = new SymbolicMeshNode[vertCount];
-		final float[] vertexes = new float[vertCount * 3];
 
 		for (int i = 0; i < vertCount; i++)
 		{
@@ -298,10 +268,6 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 					verts[(i*vertexSize)+positionOffset+1],
 					verts[(i*vertexSize)+positionOffset+2]
 					);
-			
-			vertexes[(i*3)+0] = verts[(i*vertexSize)+positionOffset+0];
-			vertexes[(i*3)+1] = verts[(i*vertexSize)+positionOffset+1];
-			vertexes[(i*3)+2] = verts[(i*vertexSize)+positionOffset+2];
 		}
 
 		final List<Triangle> tris = new ArrayList<Triangle>(triangles);
@@ -315,11 +281,6 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			n1.addNodes(n2, n3);
 			n2.addNodes(n1, n3);
 			n3.addNodes(n1, n2);
-
-			short[] triangle = new short[3];
-			triangle[0] = (short) (indices[(i*3)+0]*3);
-			triangle[1] = (short) (indices[(i*3)+1]*3);
-			triangle[2] = (short) (indices[(i*3)+2]*3);
 			
 			Triangle t = new Triangle();
 			t.v1.set(n1.x, n1.y, n1.z);
@@ -394,40 +355,33 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 	public class TempMeshPartition
 	{
+
 		private static final int BUCKET_SIZE = 8;
 		
-		public final int depth;
+		public byte depth;
 
-		public final float minx;
-		public final float miny;
-		public final float minz;
+		public float minx;
+		public float miny;
+		public float minz;
 
 		public float midx;
 		public float midy;
 		public float midz;
 
-		public final float maxx;
-		public final float maxy;
-		public final float maxz;
+		public float maxx;
+		public float maxy;
+		public float maxz;
 
 		public List<Triangle> triangleList;
 		public List<Short> indices;
 		
 		public short[] indexArray;
 		
-		public final TempMeshPartition parent;
+		public TempMeshPartition parent;
+		
+		public TempMeshPartition[] children;
 
-		public TempMeshPartition tnw;
-		public TempMeshPartition tne;
-		public TempMeshPartition tsw;
-		public TempMeshPartition tse;
-
-		public TempMeshPartition bnw;
-		public TempMeshPartition bne;
-		public TempMeshPartition bsw;
-		public TempMeshPartition bse;
-
-		public TempMeshPartition(TempMeshPartition parent, float minx, float maxx, float miny, float maxy, float minz, float maxz, int depth)
+		public TempMeshPartition(TempMeshPartition parent, float minx, float maxx, float miny, float maxy, float minz, float maxz, byte depth)
 		{
 			this.depth = depth;
 
@@ -470,35 +424,35 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			
 			if (top == 1 && east == 1 && north == 1)
 			{
-				tne.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.TNE].addTriangle(index, triangle);
 			}
 			else if (top == 1 && east == 1 && north == -1)
 			{
-				tse.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.TSE].addTriangle(index, triangle);
 			}
 			else if (top == 1 && east == -1 && north == 1)
 			{
-				tnw.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.TNW].addTriangle(index, triangle);
 			}
 			else if (top == 1 && east == -1 && north == -1)
 			{
-				tsw.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.TSW].addTriangle(index, triangle);
 			}
 			else if (top == -1 && east == 1 && north == 1)
 			{
-				bne.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.BNE].addTriangle(index, triangle);
 			}
 			else if (top == -1 && east == 1 && north == -1)
 			{
-				bse.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.BSE].addTriangle(index, triangle);
 			}
 			else if (top == -1 && east == -1 && north == 1)
 			{
-				bnw.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.BNW].addTriangle(index, triangle);
 			}
 			else if (top == -1 && east == -1 && north == -1)
 			{
-				bsw.addTriangle(index, triangle);
+				children[SymbolicMeshPartition.BSW].addTriangle(index, triangle);
 			}
 			else
 			{
@@ -517,14 +471,16 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			midy = miny+((maxy-miny)/2f);
 			midz = minz+((maxz-minz)/2f);
 			
-			tne = new TempMeshPartition(this, midx, maxx, midy, maxy, midz, maxz, depth+1);
-			tnw = new TempMeshPartition(this, minx, midx, midy, maxy, midz, maxz, depth+1);
-			tse = new TempMeshPartition(this, midx, maxx, midy, maxy, minz, midz, depth+1);
-			tsw = new TempMeshPartition(this, minx, midx, midy, maxy, minz, midz, depth+1);
-			bne = new TempMeshPartition(this, midx, maxx, miny, midy, midz, maxz, depth+1);
-			bnw = new TempMeshPartition(this, minx, midx, miny, midy, midz, maxz, depth+1);
-			bse = new TempMeshPartition(this, midx, maxx, miny, midy, minz, midz, depth+1);
-			bsw = new TempMeshPartition(this, minx, midx, miny, midy, minz, midz, depth+1);
+			children = new TempMeshPartition[8];
+			
+			children[SymbolicMeshPartition.TNE] = new TempMeshPartition(this, midx, maxx, midy, maxy, midz, maxz, (byte) (depth+1));
+			children[SymbolicMeshPartition.TNW] = new TempMeshPartition(this, minx, midx, midy, maxy, midz, maxz, (byte) (depth+1));
+			children[SymbolicMeshPartition.TSE] = new TempMeshPartition(this, midx, maxx, midy, maxy, minz, midz, (byte) (depth+1));
+			children[SymbolicMeshPartition.TSW] = new TempMeshPartition(this, minx, midx, midy, maxy, minz, midz, (byte) (depth+1));
+			children[SymbolicMeshPartition.BNE] = new TempMeshPartition(this, midx, maxx, miny, midy, midz, maxz, (byte) (depth+1));
+			children[SymbolicMeshPartition.BNW] = new TempMeshPartition(this, minx, midx, miny, midy, midz, maxz, (byte) (depth+1));
+			children[SymbolicMeshPartition.BSE] = new TempMeshPartition(this, midx, maxx, miny, midy, minz, midz, (byte) (depth+1));
+			children[SymbolicMeshPartition.BSW] = new TempMeshPartition(this, minx, midx, miny, midy, minz, midz, (byte) (depth+1));
 			
 			if (triangleList.size() > BUCKET_SIZE)
 			{
@@ -553,20 +509,22 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 				indexArray[i] = indices.get(i);
 			}
 			
-			if (tne != null) tne.finalize();
-			if (tnw != null) tnw.finalize();
-			if (tse != null) tse.finalize();
-			if (tsw != null) tsw.finalize();
-			if (bne != null) bne.finalize();
-			if (bnw != null) bnw.finalize();
-			if (bse != null) bse.finalize();
-			if (bsw != null) bsw.finalize();
+			for (TempMeshPartition p : children) p.finalize();
 		}
 	}
 	
 	public final static class SymbolicMeshPartition
 	{
-		public final int depth;
+		private static final byte TNW = 0;
+		private static final byte TNE = 1;
+		private static final byte TSW = 2;
+		private static final byte TSE = 3;
+		private static final byte BNW = 4;
+		private static final byte BNE = 5;
+		private static final byte BSW = 6;
+		private static final byte BSE = 7;
+		
+		public final byte depth;
 
 		public final float minx;
 		public final float miny;
@@ -584,15 +542,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		public final SymbolicMeshPartition parent;
 
-		public final SymbolicMeshPartition tnw;
-		public final SymbolicMeshPartition tne;
-		public final SymbolicMeshPartition tsw;
-		public final SymbolicMeshPartition tse;
-
-		public final SymbolicMeshPartition bnw;
-		public final SymbolicMeshPartition bne;
-		public final SymbolicMeshPartition bsw;
-		public final SymbolicMeshPartition bse;
+		public final SymbolicMeshPartition[] children;
 		
 		public final Box shape;
 
@@ -614,18 +564,18 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 			this.parent = parent;
 			
-			this.indices = tree.indexArray;
+			this.indices = (tree.indexArray == null) ? new short[0] : tree.indexArray ;
 			
-			this.shape = new Box(new Vector3(tree.midx, tree.midy, tree.midz), maxx-minx, maxy-miny, maxz-minz);
+			this.shape = new Box(new Vector3(midx, midy, midz), (maxx-minx)/2, (maxy-miny)/2, (maxz-minz)/2);
 			
-			tne = (tree.tne == null) ? null : new SymbolicMeshPartition(this, tree.tne);
-			tnw = (tree.tnw == null) ? null : new SymbolicMeshPartition(this, tree.tnw);
-			tse = (tree.tse == null) ? null : new SymbolicMeshPartition(this, tree.tse);
-			tsw = (tree.tsw == null) ? null : new SymbolicMeshPartition(this, tree.tsw);
-			bne = (tree.bne == null) ? null : new SymbolicMeshPartition(this, tree.bne);
-			bnw = (tree.bnw == null) ? null : new SymbolicMeshPartition(this, tree.bnw);
-			bse = (tree.bse == null) ? null : new SymbolicMeshPartition(this, tree.bse);
-			bsw = (tree.bsw == null) ? null : new SymbolicMeshPartition(this, tree.bsw);
+			this.children = new SymbolicMeshPartition[8];
+			if (tree.children != null)
+			{
+				for (int i = 0; i < 8; i++)
+				{
+					children[i] = (tree.children[i] == null) ? null : new SymbolicMeshPartition(this, tree.children[i]);
+				}
+			}
 		}
 	}
 }

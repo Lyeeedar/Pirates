@@ -15,8 +15,7 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 		else if (shape instanceof Box) return collide((Box) shape);
 		else if (shape instanceof Triangle) return collide((Triangle) shape);
 		else if (shape instanceof CollisionRay) return collide((CollisionRay) shape);
-		
-		return false;
+		else throw new RuntimeException("Invalid Shape types: \n 	This: "+this+" \n	That: "+shape);
 	}
 	
 	public abstract boolean collide(Sphere sphere);

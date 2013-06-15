@@ -73,7 +73,21 @@ public class Entity {
 	public boolean collide(CollisionShape<?> collide)
 	{
 		if (collisionShapeInternal == null) return false;
-		return collisionShapeInternal.collide(collide);
+		
+		CollisionShape<?> shape = collisionShapeInternal.obtain();
+		PositionalData pd = readOnlyRead(PositionalData.class);
+		
+		synchronized(pd)
+		{
+			shape.setPosition(pd.position);
+			shape.setRotation(pd.rotation);
+		}
+		
+		boolean hit = shape.collide(collide);
+		
+		shape.free();
+		
+		return hit;
 	}
 	
 	public void setGraph(EntityGraph eg)
@@ -133,6 +147,12 @@ public class Entity {
 		}
 		
 		return target;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <E extends EntityData<E>> E readOnlyRead(Class<E> type)
+	{
+		return (E) entityData.get(type);
 	}
 	
 	public Runnable getRunnable(float delta)
@@ -356,31 +376,34 @@ public class Entity {
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
 			
-			CollisionShape<?> s1 = shape.obtain();
-			
-			s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
-
-			if (v.x != 0 && GLOBALS.WORLD.collide(shape, graphHash))
+			if (shape == null)
 			{
-				velocity.x = 0;
-				v.x = 0;
+				CollisionShape<?> s1 = shape.obtain();
+				
+				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
+	
+				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash))
+				{
+					velocity.x = 0;
+					v.x = 0;
+				}
+				
+				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
+	
+				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash))
+				{
+					velocity.z = 0;
+					v.z = 0;
+				}
+				
+				s1.free();
 			}
-			
-			s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
-
-			if (v.z != 0 && GLOBALS.WORLD.collide(shape, graphHash))
-			{
-				velocity.z = 0;
-				v.z = 0;
-			}
-			
-			s1.free();
 			
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
 			ray.reset();
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
-			ray.len = radius2y;
+			ray.len = radius2y+GLOBALS.STEP;
 
 			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash))
 			{
@@ -388,7 +411,6 @@ public class Entity {
 				velocity.y = 0;
 				v.y = 0;
 				position.y = ray.intersection.y;
-				position.set(ray.intersection);
 			}
 			else if (position.y-v.y < -0.5f)
 			{

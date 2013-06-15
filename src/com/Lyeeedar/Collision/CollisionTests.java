@@ -12,7 +12,7 @@ import com.badlogic.gdx.math.collision.Ray;
 
 public class CollisionTests {
 	
-	public static final int TESTS = 100000;
+	public static final int TESTS = 500000;
 	
 	private final Random ran = new Random();
 
@@ -124,7 +124,6 @@ public class CollisionTests {
 		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		
 		s1.radius = 1.5f;
-		
 		s2.center.set(1.7f, 1.7f, 1.7f);
 		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		
@@ -133,9 +132,11 @@ public class CollisionTests {
 		
 		s2.depth = 20;
 		s2.height = 20;
-		
 		s2.center.set(1.9f, 0, 0);
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		
+		s2.width = 20;
+		s2.center.set(0, 0, 0);
 		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		
 		for (int i = 0; i < TESTS; i++)
@@ -189,6 +190,12 @@ public class CollisionTests {
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
 		
+		s2.v1.set(0, 2, 0);
+		s2.v2.set(2, 2, 0);
+		s2.v3.set(2, 0, 0);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
+		
 		for (int i = 0; i < TESTS; i++)
 		{
 			s1.center.set(ran.nextFloat()*50.0f, ran.nextFloat()*50.0f, ran.nextFloat()*50.0f);
@@ -215,7 +222,7 @@ public class CollisionTests {
 		s2.ray.direction.set(1, 0, 0);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(-1, 0, 0);
@@ -228,7 +235,7 @@ public class CollisionTests {
 		s2.ray.direction.set(0, 1, 0);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(0, -1, 0);
@@ -241,7 +248,7 @@ public class CollisionTests {
 		s2.ray.direction.set(0, 0, 1);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(0, 0, -1);
@@ -312,7 +319,7 @@ public class CollisionTests {
 		s2.ray.direction.set(1, 0, 0);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(-1, 0, 0);
@@ -325,7 +332,7 @@ public class CollisionTests {
 		s2.ray.direction.set(0, 1, 0);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(0, -1, 0);
@@ -338,13 +345,24 @@ public class CollisionTests {
 		s2.ray.direction.set(0, 0, 1);
 		
 		assertFalse(ThreadSafeIntersector.collide(s1, s2));
-		assertTrue(s2.dist == Float.MAX_VALUE);
+		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
 		s2.ray.direction.set(0, 0, -1);
 		
 		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		assertTrue(s2.dist == 16.0f);
+		
+		s1.center.set(293.0f, 293.0f, 293.0f);
+		s1.width = 293.0f;
+		s1.height = 293.0f;
+		s1.depth = 293.0f;
+		
+		s2.ray.origin.set(465.23373f, 0.5f, 296.23645f);
+		s2.ray.direction.set(0.0f, -1.0f, 0.0f);
+		s2.len = 2.25f;
+		s2.reset();
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
 		
 		for (int i = 0; i < TESTS; i++)
 		{

@@ -38,8 +38,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void reset()
 	{
-		dist = Float.MAX_VALUE;
-		intersection.set(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+		dist = len;
 	}
 
 	@Override
