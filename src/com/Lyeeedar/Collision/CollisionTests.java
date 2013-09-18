@@ -7,7 +7,9 @@ import java.util.Random;
 import org.junit.Test;
 
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 
 public class CollisionTests {
@@ -279,12 +281,66 @@ public class CollisionTests {
 
 	@Test
 	public void testCollideCylinderCylinder() {
-		fail("Not yet implemented");
+		Cylinder s1 = new Cylinder(new Vector3(), new Vector3(), 1, 1);
+		Cylinder s2 = new Cylinder(new Vector3(), new Vector3(), 1, 1);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(1.9f, 0, 0);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(2.1f, 0, 0);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(1.9f, 0.9f, 0);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(1.9f, 1.1f, 0);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
 	}
 
 	@Test
 	public void testCollideCylinderBox() {
-		fail("Not yet implemented");
+		Box s1 = new Box(new Vector3(), 1, 1, 1);
+		Cylinder s2 = new Cylinder(new Vector3(), new Vector3(), 1, 1);
+		
+		s2.reset();
+		s2.center.set(1.9f, 0, 0);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(0, 1.9f, 0);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(0, 0, 1.9f);
+		
+		assertTrue(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(2.00001f, 0, 0);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(0, 2.00001f, 0);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
+		
+		s2.reset();
+		s2.center.set(0, 0, 2.00001f);
+		
+		assertFalse(ThreadSafeIntersector.collide(s1, s2));
 	}
 
 	@Test
@@ -322,6 +378,7 @@ public class CollisionTests {
 		assertTrue(s2.dist == s2.len);
 		
 		s2.reset();
+		s2.ray.origin.set(5, 0, 0);
 		s2.ray.direction.set(-1, 0, 0);
 		
 		assertTrue(ThreadSafeIntersector.collide(s1, s2));
@@ -374,9 +431,20 @@ public class CollisionTests {
 			s2.reset();
 			s2.ray.origin.set(ran.nextFloat()*50.0f, ran.nextFloat()*50.0f, ran.nextFloat()*50.0f);
 			s2.ray.direction.set(ran.nextFloat(), ran.nextFloat(), ran.nextFloat()).nor();
-			s2.len = ran.nextFloat()*20.0f;
+			float len = ran.nextFloat()*20.0f;
+			s2.len = Float.MAX_VALUE;
 			
-			ThreadSafeIntersector.collide(s1, s2);
+			Vector3 tmp = new Vector3();
+			boolean t = Intersector.intersectRayBounds(s2.ray, new BoundingBox(new Vector3(s1.center).sub(s1.width, s1.height, s1.depth), new Vector3(s1.center).add(s1.width, s1.height, s1.depth)), tmp);
+			
+			if (! ThreadSafeIntersector.testPointInBox(s2.ray.origin, s1)) {
+				boolean m = ThreadSafeIntersector.collide(s1, s2);
+				boolean f = (s2.ray.origin.dst2(tmp) <= len);
+				boolean f2 = (s2.ray.origin.dst2(s2.intersection) <= len);
+				boolean b = (t == m);
+				if (b && t) b = (f == f2);
+				assertTrue(b);
+			}
 		}
 	}
 

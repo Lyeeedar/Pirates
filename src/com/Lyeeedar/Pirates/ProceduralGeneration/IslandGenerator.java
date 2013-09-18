@@ -443,7 +443,7 @@ class IslandCreator
 			for (int y = 0; y < grid[0].length; y++)
 			{
 				grid[x][y] /= maxHeight;
-				//grid[x][y] = 0.05f;
+				grid[x][y] = 0.05f;
 			}
 		}
 	}

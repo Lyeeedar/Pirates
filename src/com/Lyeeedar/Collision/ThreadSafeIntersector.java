@@ -296,6 +296,20 @@ public class ThreadSafeIntersector {
 	 */
 	public static boolean collide(Box box1, Triangle tri1)
 	{
+		//Check if triangle points in box
+		if (testPointInBox(tri1.v1, box1))
+		{
+			return true;
+		}
+		if (testPointInBox(tri1.v2, box1))
+		{
+			return true;
+		}
+		if (testPointInBox(tri1.v3, box1))
+		{
+			return true;
+		}
+		
 		/*    use separating axis theorem to test overlap between triangle and box */
 		/*    need to test for overlap in these directions: */
 		/*    1) the {x,y,z}-directions (actually, since we use the AABB of the triangle */
@@ -593,78 +607,137 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Box box1, CollisionRay ray1)
 	{
-		Vector3 lb = Pools.obtain(Vector3.class).set(box1.center).sub(box1.width, box1.height, box1.depth);
-		Vector3 rt = Pools.obtain(Vector3.class).set(box1.center).add(box1.width, box1.height, box1.depth);
 
-		if (
-			ray1.ray.origin.x > lb.x && ray1.ray.origin.x < rt.x &&
-			ray1.ray.origin.y > lb.y && ray1.ray.origin.y < rt.y &&
-			ray1.ray.origin.z > lb.z && ray1.ray.origin.z < rt.z
-			)
-		{
+		if (testPointInBox(ray1.ray.origin, box1)) {
 			ray1.intersection.set(ray1.ray.origin);
 			ray1.dist = 0;
-			
-			Pools.free(lb);
-			Pools.free(rt);
 			return true;
 		}
-
-		Vector3 dirfrac = Pools.obtain(Vector3.class);
-		// r.dir is unit direction vector of ray
-		dirfrac.x = 1.0f / ray1.ray.direction.x;
-		dirfrac.y = 1.0f / ray1.ray.direction.y;
-		dirfrac.z = 1.0f / ray1.ray.direction.z;
 		
-		// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
-		// r.org is origin of ray
-		float t1 = (lb.x - ray1.ray.origin.x)*dirfrac.x;
-		float t2 = (rt.x - ray1.ray.origin.x)*dirfrac.x;
-		float t3 = (lb.y - ray1.ray.origin.y)*dirfrac.y;
-		float t4 = (rt.y - ray1.ray.origin.y)*dirfrac.y;
-		float t5 = (lb.z - ray1.ray.origin.z)*dirfrac.z;
-		float t6 = (rt.z - ray1.ray.origin.z)*dirfrac.z;
+		Vector3 tmp = Pools.obtain(Vector3.class).set(ray1.ray.direction).scl(ray1.len).add(ray1.ray.origin);
 		
-		Pools.free(lb);
-		Pools.free(rt);
-
-		float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-		float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-		float t = 0;
+//		if (testPointInBox(tmp, box1)) {
+//			Pools.free(tmp);
+//			return true;
+//		}
 		
-		// if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
-		if (tmax < 0)
-		{
-		    t = tmax;
-		    return false;
-		}
-
-		// if tmin > tmax, ray doesn't intersect AABB
-		if (tmin > tmax)
-		{
-		    t = tmax;
-		    return false;
-		}
-		else
-		{
-			t = tmin;
-		}
+		Vector3 min = Pools.obtain(Vector3.class).set(box1.center).sub(box1.width, box1.height, box1.depth);
+		Vector3 max = Pools.obtain(Vector3.class).set(box1.center).add(box1.width, box1.height, box1.depth);
 		
-		float tt = t*t;
+		tmp.set(ray1.ray.origin);
+		Vector3 tmp2 = Pools.obtain(Vector3.class).set(ray1.ray.origin);
+		Vector3 tmp3 = Pools.obtain(Vector3.class);
 		
-		if (tt < ray1.len && tt < ray1.dist)
-		{
-			ray1.dist = tt;
-			ray1.intersection.set(ray1.ray.origin).add(dirfrac.set(ray1.ray.direction).scl(t));
+		tmp.sub(min);
+		tmp.sub(max);
+		if (tmp.x > 0 && tmp.y > 0 && tmp.z > 0 && tmp2.x < 0 && tmp2.y < 0
+			&& tmp2.z < 0) {
 			
-			Pools.free(dirfrac);
+			Pools.free(min);
+			Pools.free(max);
+			Pools.free(tmp);
+			Pools.free(tmp2);
+			Pools.free(tmp3);
 			
 			return true;
 		}
+		float lowest = 0, t;
+		boolean hit = false;
 
-		Pools.free(dirfrac);
-		return false;
+		// min x
+		if (ray1.ray.origin.x <= min.x && ray1.ray.direction.x > 0) {
+			t = (min.x - ray1.ray.origin.x) / ray1.ray.direction.x;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.y >= min.y && tmp3.y <= max.y && tmp3.z >= min.z
+					&& tmp3.z <= max.z && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		// max x
+		if (ray1.ray.origin.x >= max.x && ray1.ray.direction.x < 0) {
+			t = (max.x - ray1.ray.origin.x) / ray1.ray.direction.x;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.y >= min.y && tmp3.y <= max.y && tmp3.z >= min.z
+					&& tmp3.z <= max.z && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		// min y
+		if (ray1.ray.origin.y <= min.y && ray1.ray.direction.y > 0) {
+			t = (min.y - ray1.ray.origin.y) / ray1.ray.direction.y;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.x >= min.x && tmp3.x <= max.x && tmp3.z >= min.z
+					&& tmp3.z <= max.z && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		// max y
+		if (ray1.ray.origin.y >= max.y && ray1.ray.direction.y < 0) {
+			t = (max.y - ray1.ray.origin.y) / ray1.ray.direction.y;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.x >= min.x && tmp3.x <= max.x && tmp3.z >= min.z
+					&& tmp3.z <= max.z && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		// min z
+		if (ray1.ray.origin.z <= min.y && ray1.ray.direction.z > 0) {
+			t = (min.z - ray1.ray.origin.z) / ray1.ray.direction.z;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.x >= min.x && tmp3.x <= max.x && tmp3.y >= min.y
+					&& tmp3.y <= max.y && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		// max y
+		if (ray1.ray.origin.z >= max.z && ray1.ray.direction.z < 0) {
+			t = (max.z - ray1.ray.origin.z) / ray1.ray.direction.z;
+			if (t >= 0) {
+				tmp3.set(ray1.ray.direction).scl(t).add(ray1.ray.origin);
+				if (tmp3.x >= min.x && tmp3.x <= max.x && tmp3.y >= min.y
+					&& tmp3.y <= max.y && (!hit || t < lowest)) {
+					hit = true;
+					lowest = t;
+				}
+			}
+		}
+		if (hit) {
+			tmp.set(ray1.ray.direction).scl(lowest).add(ray1.ray.origin);
+			float dist = ray1.ray.origin.dst2(tmp);
+			
+			if (dist > ray1.len)
+			{
+				hit = false;
+			}
+			else if (dist < ray1.dist)
+			{
+				ray1.intersection.set(tmp);
+				ray1.dist = dist;
+			}
+		}
+		
+		Pools.free(min);
+		Pools.free(max);
+		Pools.free(tmp);
+		Pools.free(tmp2);
+		Pools.free(tmp3);
+		
+		return hit;
 	}
 
 	// --------------------- TRIANGLE --------------------- //
@@ -824,6 +897,15 @@ public class ThreadSafeIntersector {
 			Pools.free(v2);
 			return false;
 		}
+	}
+	
+	public static boolean testPointInBox(Vector3 point, Box box)
+	{
+		return (
+				Math.abs(point.x-box.center.x) < box.width &&
+				Math.abs(point.y-box.center.y) < box.height &&
+				Math.abs(point.z-box.center.z) < box.depth
+				);
 	}
 	
 	public static boolean collideShapeList(CollisionShape<?> shape, CollisionShape<?>[] list, short[] indices, boolean fast)

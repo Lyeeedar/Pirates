@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
+import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Collision.SymbolicMesh;
@@ -62,11 +63,18 @@ public class GameScreen extends AbstractScreen {
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 
 		IslandGenerator ig = new IslandGenerator();
-		Mesh model = ig.getIsland(40, 40, 40);
+		Mesh model = ig.getIsland(10, 10, 10);
 
 		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
+		mesh.setPosition(new Vector3(-20, 0, 0));
 		
 		Entity island = new Entity();
+		PositionalData pData = new PositionalData();
+		island.readData(pData, PositionalData.class);
+		pData.position.x = 1;
+		pData.calculateComposed();
+		island.writeData(pData, PositionalData.class);
+		
 		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
 		island.setCollisionShapeInternal(mesh);
 		
@@ -85,7 +93,7 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
-		//player.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
+		//player.setCollisionShape(new Box(new Vector3(), 1, 1, 1));
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);

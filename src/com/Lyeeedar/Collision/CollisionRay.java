@@ -31,6 +31,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 		ray.origin.set(start);
 		ray.direction.set(end).sub(start).nor();
 		len = start.dst(end);
+		dist = len;
 		
 		return this;
 	}
@@ -38,6 +39,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void reset()
 	{
+		intersection.set(ray.origin);
 		dist = len;
 	}
 

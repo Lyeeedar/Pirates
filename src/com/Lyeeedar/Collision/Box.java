@@ -24,6 +24,26 @@ public class Box extends CollisionShape<Box> {
 		this.depth = depth;
 	}
 	
+	public Box(Vector3 min, Vector3 max)
+	{
+		float minx = min.x;
+		float miny = min.y;
+		float minz = min.z;
+		
+		float maxx = max.x;
+		float maxy = max.y;
+		float maxz = max.z;
+		
+		float midx = minx+((maxx-minx)/2f);
+		float midy = miny+((maxy-miny)/2f);
+		float midz = minz+((maxz-minz)/2f);
+		
+		this.center.set(midx, midy, midz);
+		this.width = midx-minx;
+		this.height = midy-miny;
+		this.depth = midz-minz;
+	}
+	
 	public Box set(Vector3 center, float width, float height, float depth)
 	{
 		this.center.set(center);

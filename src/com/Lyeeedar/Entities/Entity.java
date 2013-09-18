@@ -294,7 +294,7 @@ public class Entity {
 		
 		public long graphHash;
 		
-		public CollisionShape<?> shape = new Sphere(new Vector3(), 0);
+		public CollisionShape<?> shape = null;
 		
 		public void write(PositionalData data)
 		{
@@ -308,7 +308,7 @@ public class Entity {
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
 			graphHash = data.graphHash;
-			shape = data.shape.copy();
+			if (data.shape != null) shape = data.shape.copy();
 		}
 		
 		public void read(PositionalData target)
@@ -376,10 +376,11 @@ public class Entity {
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
 			
-			if (shape == null)
+			if (shape != null && (v.x != 0 || v.z != 0))
 			{
 				CollisionShape<?> s1 = shape.obtain();
 				
+				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
 	
 				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash))
@@ -388,6 +389,7 @@ public class Entity {
 					v.x = 0;
 				}
 				
+				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
 	
 				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash))
@@ -400,25 +402,26 @@ public class Entity {
 			}
 			
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
-			ray.reset();
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
 			ray.len = radius2y+GLOBALS.STEP;
+			ray.reset();
 
 			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash))
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
-				position.y = ray.intersection.y;
+				if (ray.dist > 0) position.y = ray.intersection.y;
 			}
 			else if (position.y-v.y < -0.5f)
 			{
-				velocity.y = 0;
-				v.y = 0;
-				position.y = -0.5f;
+				if (velocity.y < 0) velocity.y = 0;
+				if (v.y < 0) v.y = 0;
+				if (v.y < 0) position.y = -0.5f;
 				jumpToken = 2;
 			}
+			jumpToken = 2;
 			
 			Pools.free(ray);
 			
