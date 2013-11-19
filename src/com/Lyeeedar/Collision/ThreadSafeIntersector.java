@@ -616,7 +616,7 @@ public class ThreadSafeIntersector {
 			return true;
 		}
 		
-		Vector3 tmp = Pools.obtain(Vector3.class).set(ray1.ray.direction).scl(ray1.len).add(ray1.ray.origin);
+		Vector3 tmp = Pools.obtain(Vector3.class).set(ray1.ray.direction).scl(ray1.dist).add(ray1.ray.origin);
 		
 //		if (testPointInBox(tmp, box1)) {
 //			Pools.free(tmp);

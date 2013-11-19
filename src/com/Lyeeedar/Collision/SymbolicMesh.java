@@ -286,6 +286,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		{
 			SymbolicMeshPartition partition = openList.pop();
 			
+			check.reset();
+			if (!partition.shape.collide(check))
+			{
+				continue;
+			}
+			
 			boolean tcollide = (partition.indices.length > 0) ? ThreadSafeIntersector.collideShapeList(shape, tris, partition.indices, fast) : false ;
 			if (tcollide) collide = true;
 
@@ -298,6 +304,8 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 					openList.push(p);
 			}
 		}
+		
+		Pools.free(openList);
 
 		return collide;
 	}
@@ -471,18 +479,30 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		public boolean cascade (short index) 
 		{	
-			boolean success = false;
-			
-			for (TempMeshPartition p : children)
-			{
-				if (tris[index].collide(p.box))
-				{
-					p.addTriangle(index);
-					success = true;
-				}
-			}
-			
-			return success;
+			TempMeshPartition child = null;
+            for (TempMeshPartition p : children)
+            {
+                    if (tris[index].collide(p.box))
+                    {
+                            if (child == null)
+                                    child = p;
+                            else
+                            {
+                                    child = null;
+                                    break;
+                            }
+                    }
+            }
+            
+            if (child != null)
+            {
+                    child.addTriangle(index);
+                    return true;
+            }
+            else
+            {
+                    return false;
+            }
 		}
 
 		public void minimize()

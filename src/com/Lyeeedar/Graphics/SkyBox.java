@@ -14,42 +14,63 @@ import com.badlogic.gdx.math.Vector3;
 public class SkyBox {
 	
 	private final Texture skyTexture;
+	private final Texture seaTexture;
 	
 	private final ShaderProgram skyShader;
 	private final ShaderProgram seaShader;
 	
 	private final Mesh box;
-	private final Mesh plane;
+	private final Mesh sea;
 	
 	private final Matrix4 mat41 = new Matrix4();
 	private final Matrix4 mat42 = new Matrix4();
 	
 	private final Vector3 seaColour = new Vector3();
-	private final Vector3 foamColour = new Vector3();
+	private final float[] amplitudes = new float[8];
+	private final float[] wavelengths = new float[8];
+	private final float[] speeds = new float[8];
+	private final float[] directions = new float[16];
 	
 	private final Vector3 tmpVec = new Vector3();
 	
 	private static final float oneThird = 1f/3f;
 	private static final float twoThird = 2f/3f;
 	
-	private float seaHeight;
-	private float foamHeight;
 	private float time;
 	
-	public SkyBox(Texture texture, Vector3 seaColour, Vector3 foamColour)
+	public SkyBox(Texture skyTexture, Texture seaTexture, Vector3 seaColour)
 	{
-		this.skyTexture = texture;
+		this.skyTexture = skyTexture;
+		this.seaTexture = seaTexture;
+		
 		this.seaColour.set(seaColour);
-		this.foamColour.set(foamColour);
+				
+		amplitudes[0] = 0.3f;
+		wavelengths[0] = 1.1f;
+		speeds[0] = 1.0f;
+		directions[0] = 1.0f; directions[1] = 0.0f;
+		
+		amplitudes[1] = 1.0f;
+		wavelengths[1] = 7.0f;
+		speeds[1] = 5.0f;
+		directions[2] = 0.0f; directions[3] = 1.0f;
+		
+		amplitudes[2] = 0.4f;
+		wavelengths[2] = 23.0f;
+		speeds[2] = 0.1f;
+		directions[4] = -1.0f; directions[5] = 1.0f;
 		
 		box = getSkyBox();
-		plane = genPlane(1000, 0, 1000);
+		sea = getSea(500, 250, 500, 250);
 		
 		skyShader = new ShaderProgram(VERTEX_SHADER_SKY, FRAGMENT_SHADER_SKY);
 		if (!skyShader.isCompiled()) {
 			System.err.println(skyShader.getLog());
 		}
-		seaShader = new ShaderProgram(VERTEX_SHADER_SEA, FRAGMENT_SHADER_SEA);
+		seaShader = new ShaderProgram(
+				Gdx.files.internal("data/shaders/sea.vertex.glsl"),
+				Gdx.files.internal("data/shaders/sea.fragment.glsl")
+				);
 		if (!seaShader.isCompiled()) {
 			System.err.println(seaShader.getLog());
 		}
@@ -58,33 +79,30 @@ public class SkyBox {
 	public void update(float delta)
 	{
 		time += delta;
-		if (time > Math.PI*2) time = 0;
-		
-		seaHeight = (float) Math.sin(time+1)/20;
-		foamHeight = (float) Math.sin(time)/20;
+		//if (time > Math.PI*2) time = 0;
 	}
 	
-	public void render(Camera cam)
+	public void render(Camera cam, Vector3 position)
 	{
-		Gdx.gl.glDepthMask(false);
-		
 		seaShader.begin();
 		
-		tmpVec.set(cam.position.x, foamHeight+0.05f, cam.position.z);
-		mat41.set(cam.combined).mul(mat42.setToTranslation(tmpVec));
+		mat41.set(cam.combined);
+		
+		seaShader.setUniformf("delta", time);
+		seaShader.setUniformi("numWaves", 3);
+		seaShader.setUniform1fv("amplitude", amplitudes, 0, 8);
+		seaShader.setUniform1fv("wavelength", wavelengths, 0, 8);
+		seaShader.setUniform1fv("speed", speeds, 0, 8);
+		seaShader.setUniform2fv("direction", directions, 0, 8);
+
+		seaShader.setUniformf("u_position", position);
 		seaShader.setUniformMatrix("u_mvp", mat41);
-		seaShader.setUniformf("u_colour", foamColour);
 		
-		plane.render(seaShader, GL20.GL_TRIANGLE_STRIP);
-		
-		Gdx.gl.glDepthMask(true);
-		
-		tmpVec.set(cam.position.x, seaHeight, cam.position.z);
-		mat41.set(cam.combined).mul(mat42.setToTranslation(tmpVec));
-		seaShader.setUniformMatrix("u_mvp", mat41);
 		seaShader.setUniformf("u_colour", seaColour);
+		seaShader.setUniformi("u_texture", 0);
+		seaTexture.bind(0);
 		
-		plane.render(seaShader, GL20.GL_TRIANGLE_STRIP);
+		sea.render(seaShader, GL20.GL_TRIANGLES);
 		
 		seaShader.end();
 		
@@ -214,19 +232,53 @@ public class SkyBox {
 		return box;
 	}
 	
-	private static Mesh genPlane (float x, float y, float z) {
+	private static Mesh getSea(float x, int nx, float z, int nz)
+	{
+		float dx = x/(float)nx;
+		float dz = z/(float)nz;
+		
+		float[] vertices = new float[nx*nz*3];
+		int i = 0;
+		
+		for (int ix = 0; ix < nx; ix++)
+		{
+			for (int iz = 0; iz < nz; iz++)
+			{
+				vertices[i++] = (-x/2f)+(ix*dx);
+				vertices[i++] = 0;
+				vertices[i++] = (-z/2f)+(iz*dz);
+			}
+		}
+		
+		final short[] indices = new short[(nx-1)*(nz-1)*6];
+		i = 0;
+		for (int ix = 0; ix < nx-1; ix++)
+		{
+			for (int iz = 0; iz < nz-1; iz++)
+			{
+				int t1p1 = iz+(ix*nz);
+				int t1p2 = iz+1+((ix+1)*nz);
+				int t1p3 = iz+((ix+1)*nz);
 
-		Mesh mesh = new Mesh(true, 4, 0, 
+				indices[i++] = (short) t1p1;
+				indices[i++] = (short) t1p2;
+				indices[i++] = (short) t1p3;
+				
+				int t2p1 = iz+(ix*nz);
+				int t2p2 = iz+1+(ix*nz);
+				int t2p3 = iz+1+((ix+1)*nz);
+
+				indices[i++] = (short) t2p1;
+				indices[i++] = (short) t2p2;
+				indices[i++] = (short) t2p3;
+			}
+		}
+		
+		Mesh mesh = new Mesh(true, nx*nz*3, (nx-1)*(nz-1)*6, 
 				new VertexAttribute(Usage.Position, 3, "a_position"));
 		
-		float[] vertices = {
-				-x, y, -z,
-				-x, y, z,
-				x, y, -z,
-				x, y, z
-				};
-
 		mesh.setVertices(vertices);
+		mesh.setIndices(indices);
 
 		return mesh;
 	}
@@ -256,28 +308,6 @@ public class SkyBox {
 			
 			"void main() {\n"+
 			"	gl_FragColor.rgb = texture2D(u_texture, v_texCoords).rgb;\n"+
-			"	gl_FragColor.a = 1.0;\n"+
-			"}";
-	
-	private static final String VERTEX_SHADER_SEA = 
-			"attribute vec3 a_position;\n"+
-					
-			"uniform mat4 u_mvp;\n"+
-			
-			"void main() {\n"+
-			"	vec4 position = u_mvp * vec4(a_position, 1.0);\n"+
-			"	gl_Position = position.xyzw;\n"+
-			"}";
-	
-	private static final String FRAGMENT_SHADER_SEA = 
-			"#ifdef GL_ES\n"+
-			"	precision mediump float;\n"+
-			"#endif\n"+
-			
-			"uniform vec3 u_colour;\n"+
-			
-			"void main() {\n"+
-			"	gl_FragColor.rgb = u_colour;\n"+
 			"	gl_FragColor.a = 1.0;\n"+
 			"}";
 }

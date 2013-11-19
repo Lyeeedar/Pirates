@@ -47,6 +47,8 @@ public abstract class AbstractScreen implements Screen {
 	
 	private long startTime;
 	private long time;
+	private long frameTime;
+	private long averageFrame;
 	private long averageUpdate;
 	private long averageQueue;
 	private long averageModel;
@@ -71,6 +73,8 @@ public abstract class AbstractScreen implements Screen {
 
 	@Override
 	public void render(float delta) {
+		
+		frameTime = System.nanoTime();
 		
 		time = System.nanoTime();
 		update(delta);
@@ -126,6 +130,7 @@ public abstract class AbstractScreen implements Screen {
         if (System.currentTimeMillis() - startTime > 1000) {
         	Gdx.app.log("Update", "");
 			Gdx.app.log("	FPS         ", ""+Gdx.graphics.getFramesPerSecond());
+			Gdx.app.log("	Frame Time  ", ""+averageFrame/1000000f);
 	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
 	        Gdx.app.log("	Update      ", ""+averageUpdate);
 	        Gdx.app.log("	Queue       ", ""+averageQueue);
@@ -139,6 +144,9 @@ public abstract class AbstractScreen implements Screen {
         spriteBatch.begin();
         font.draw(spriteBatch, ""+Gdx.app.getGraphics().getFramesPerSecond(), 20, screen_height-40);
         spriteBatch.end();
+        
+        averageFrame += System.nanoTime()-frameTime;
+		averageFrame /= 2;
 	}
 
 	@Override

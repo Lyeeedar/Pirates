@@ -43,6 +43,8 @@ public class GameScreen extends AbstractScreen {
 	
 	SkyBox skyBox;
 	PositionalData dataPos = new PositionalData();
+	PositionalData pData = new PositionalData();
+
 	int numEntities = 5;
 	
 	long time = System.currentTimeMillis();
@@ -73,7 +75,6 @@ public class GameScreen extends AbstractScreen {
 		mesh.setPosition(new Vector3(-20, 0, 0));
 		
 		Entity island = new Entity();
-		PositionalData pData = new PositionalData();
 		island.readData(pData, PositionalData.class);
 		pData.position.x = 1;
 		pData.calculateComposed();
@@ -84,8 +85,10 @@ public class GameScreen extends AbstractScreen {
 		
 		GLOBALS.WORLD.addEntity(island);
 
-		Texture tex = new Texture(Gdx.files.internal("data/textures/test.png"));
-		skyBox = new SkyBox(tex, new Vector3(0.0f, 0.79f, 1), new Vector3(1, 1, 1));
+		Texture skytex = new Texture(Gdx.files.internal("data/textures/test.png"));
+		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
+		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		skyBox = new SkyBox(skytex, seatex, new Vector3(0.0f, 0.79f, 1));
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -97,7 +100,11 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
-		player.setCollisionShape(new Box(new Vector3(), 1, 1, 1));
+		player.setCollisionShape(new Sphere(new Vector3(), 0.1f));
+		
+		player.readData(pData, PositionalData.class);
+		pData.position.set(4, 5, 0);
+		player.writeData(pData, PositionalData.class);
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
@@ -114,6 +121,9 @@ public class GameScreen extends AbstractScreen {
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
 			ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
+			ge.readData(pData, PositionalData.class);
+			pData.position.set(4, 5, 0);
+			ge.writeData(pData, PositionalData.class);
 			
 			GLOBALS.WORLD.addEntity(ge);
 			
@@ -137,7 +147,8 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
-		skyBox.render(cam);
+		player.readData(pData, PositionalData.class);
+		skyBox.render(cam, pData.position);
 	}
 	@Override
 	public void hide() {

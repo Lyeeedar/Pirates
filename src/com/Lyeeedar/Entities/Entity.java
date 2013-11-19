@@ -294,7 +294,7 @@ public class Entity {
 		
 		public long graphHash;
 		
-		public CollisionShape<?> shape = null;
+		public CollisionShape<?> shape = new CollisionRay();
 		
 		public void write(PositionalData data)
 		{
@@ -380,23 +380,34 @@ public class Entity {
 			{
 				CollisionShape<?> s1 = shape.obtain();
 				
+				CollisionRay ray = Pools.obtain(CollisionRay.class);
+				ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+				ray.ray.direction.set(v.x, 0, 0).nor();
+				ray.len = radius2y;
+				ray.reset();
+				
 				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
 	
-				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash))
+				if (v.x != 0 && GLOBALS.WORLD.collide(ray, graphHash))
 				{
-					velocity.x = 0;
 					v.x = 0;
 				}
+				
+				ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
+				ray.ray.direction.set(0, 0, v.z).nor();
+				ray.len = radius2y;
+				ray.reset();
 				
 				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
 	
-				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash))
+				if (v.z != 0 && GLOBALS.WORLD.collide(ray, graphHash))
 				{
-					velocity.z = 0;
 					v.z = 0;
 				}
+				
+				ray.free();
 				
 				s1.free();
 			}
