@@ -302,27 +302,6 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		return collide;
 	}
 
-	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, CollisionShape<?> shape, CollisionShape<?> check, boolean fast, int[] value)
-	{
-		check.reset();
-		if (!partition.shape.collide(check)) return false;
-		System.out.println("Colliding with partition: "+partition+" "+partition.shape.collide(check));
-
-		boolean collide = (partition.indices.length > 0) ? ThreadSafeIntersector.collideShapeList(shape, tris, partition.indices, fast) : false ;
-		
-		value[0] += partition.indices.length;
-
-		if (collide) System.out.println("Collided at partition "+partition);
-
-		for (SymbolicMeshPartition p : partition.children)
-		{
-			if (fast && collide) break;
-			if (checkCollisionRecursive(p, shape, check, fast, value)) collide = true;
-		}
-
-		return collide;
-	}
-
 	public static SymbolicMesh getSymbolicMesh(Mesh mesh, float maxArea)
 	{
 		final VertexAttributes attributes = mesh.getVertexAttributes();
@@ -491,31 +470,19 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		}
 
 		public boolean cascade (short index) 
-		{			
-			TempMeshPartition child = null;
+		{	
+			boolean success = false;
+			
 			for (TempMeshPartition p : children)
 			{
 				if (tris[index].collide(p.box))
 				{
-					if (child == null)
-						child = p;
-					else
-					{
-						child = null;
-						break;
-					}
+					p.addTriangle(index);
+					success = true;
 				}
 			}
 			
-			if (child != null)
-			{
-				child.addTriangle(index);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
+			return success;
 		}
 
 		public void minimize()
