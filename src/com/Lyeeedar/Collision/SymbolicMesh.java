@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Pools;
@@ -54,7 +55,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	{
 		try {
 
-			String content = partition.print();
+			String content = partition.print(tris);
 
 			File file = new File("tree.txt");
 
@@ -140,7 +141,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			temp.addTriangle(i);
 		}
 
-		temp.finalize();
+		temp.finalize(true);
 
 		partition = new SymbolicMeshPartition(null, temp);
 
@@ -261,45 +262,59 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		CollisionShape<?> check = shape.obtain();
 
-		System.out.println(check+"\n"+partition.shape+"\n"+check.collide(partition.shape)+"\n"+count(partition)+"\n");
-
-		//		SymbolicMeshPartition p = partition.getPartition(check);
-		//		if (p!= null) {
-		//			System.out.println(p+"  "+p.depth+"\n"+p.shape);
-		//			for (short i : p.indices)
-		//			{
-		//				System.out.println(tris[i]);
-		//			}
-		//		}
-
-		int[] value = {0};
-		if (!checkCollisionRecursive(partition, shape, check, fast, value)) {
-			System.out.println("FAIL "+value[0]);
-			System.out.println(shape+" \n "+check+"\n\n\n\n\n");
+		if (!checkCollisionIterative(partition, shape, check, fast)) {
 			check.free();
 			return false;
 		}
-		System.out.println("SUCCEED "+value[0]);
-		System.out.println(shape+" \n "+check+"\n\n\n\n\n");
 
 		check.free();
-
+		
 		shape.transformPosition(combined);
 
 		return true;
+	}
+	
+	private boolean checkCollisionIterative(SymbolicMeshPartition root, CollisionShape<?> shape, CollisionShape<?> check, boolean fast)
+	{
+		@SuppressWarnings("unchecked")
+		Stack<SymbolicMeshPartition> openList = Pools.obtain(Stack.class);
+		openList.clear();
+		openList.push(root);
+		boolean collide = false;
+						
+		while (!openList.empty())
+		{
+			SymbolicMeshPartition partition = openList.pop();
+			
+			boolean tcollide = (partition.indices.length > 0) ? ThreadSafeIntersector.collideShapeList(shape, tris, partition.indices, fast) : false ;
+			if (tcollide) collide = true;
+
+			if (fast && collide) break;
+
+			for (SymbolicMeshPartition p : partition.children)
+			{
+				check.reset();
+				if (p.shape.collide(check)) 
+					openList.push(p);
+			}
+		}
+
+		return collide;
 	}
 
 	private boolean checkCollisionRecursive(SymbolicMeshPartition partition, CollisionShape<?> shape, CollisionShape<?> check, boolean fast, int[] value)
 	{
 		check.reset();
-		//if (!partition.shape.collide(check)) return false;
+		if (!partition.shape.collide(check)) return false;
+		System.out.println("Colliding with partition: "+partition+" "+partition.shape.collide(check));
 
 		boolean collide = (partition.indices.length > 0) ? ThreadSafeIntersector.collideShapeList(shape, tris, partition.indices, fast) : false ;
+		
 		value[0] += partition.indices.length;
 
 		if (collide) System.out.println("Collided at partition "+partition);
 
-		if (partition.children != null) for (SymbolicMeshPartition p : partition.children)
+		for (SymbolicMeshPartition p : partition.children)
 		{
 			if (fast && collide) break;
 			if (checkCollisionRecursive(p, shape, check, fast, value)) collide = true;
@@ -415,7 +430,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		}
 	}
 
-	public class TempMeshPartition
+	public static class TempMeshPartition
 	{
 
 		private static final int BUCKET_SIZE = 8;
@@ -439,7 +454,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		public Triangle[] tris;
 		public List<Short> indices;
-
+		
 		public short[] indexArray;
 
 		public TempMeshPartition parent;
@@ -477,19 +492,30 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		public boolean cascade (short index) 
 		{			
+			TempMeshPartition child = null;
 			for (TempMeshPartition p : children)
 			{
-				if (
-						ThreadSafeIntersector.testPointInBox(tris[index].v1, p.box) &&
-						ThreadSafeIntersector.testPointInBox(tris[index].v2, p.box) &&
-						ThreadSafeIntersector.testPointInBox(tris[index].v3, p.box)
-						)
+				if (tris[index].collide(p.box))
 				{
-					p.addTriangle(index);
-					return true;
+					if (child == null)
+						child = p;
+					else
+					{
+						child = null;
+						break;
+					}
 				}
 			}
-			return false;
+			
+			if (child != null)
+			{
+				child.addTriangle(index);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		public void minimize()
@@ -575,21 +601,48 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			return output;
 		}
 
-		public void finalize()
+		public float[] getDividingPlanes()
+		{
+			float[] xyz = new float[3];
+			
+			for (short i : indices)
+			{
+				xyz[0] += tris[i].v1.x;
+				xyz[0] += tris[i].v2.x;
+				xyz[0] += tris[i].v3.x;
+				
+				xyz[1] += tris[i].v1.y;
+				xyz[1] += tris[i].v2.y;
+				xyz[1] += tris[i].v3.y;
+				
+				xyz[2] += tris[i].v1.z;
+				xyz[2] += tris[i].v2.z;
+				xyz[2] += tris[i].v3.z;
+			}
+			
+			xyz[0] /= indices.size()*3;
+			xyz[1] /= indices.size()*3;
+			xyz[2] /= indices.size()*3;
+			
+			return xyz;
+		}
+		
+		public void finalize(boolean cascade)
 		{
 			if (indices.size() == 0) return;
 
-			minimize();
+			//minimize();
 			boolean sx = maxx-minx > MIN_BOX_SIZE;
 			boolean sy = maxy-miny > MIN_BOX_SIZE;
 			boolean sz = maxz-minz > MIN_BOX_SIZE;
 			if (indices.size() > BUCKET_SIZE && (sx || sy || sz))
 			{
+				float[] xyz = {midx, midy, midz};//getDividingPlanes();
 				ArrayList<float[]> x = new ArrayList<float[]>();
 				if (sx)
 				{
-					x.add(new float[]{minx, midx});
-					x.add(new float[]{midx, maxx});
+					x.add(new float[]{minx, xyz[0]});
+					x.add(new float[]{xyz[0], maxx});
 				}
 				else
 				{
@@ -599,8 +652,8 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 				ArrayList<float[]> y = new ArrayList<float[]>();
 				if (sy)
 				{
-					y.add(new float[]{miny, midy});
-					y.add(new float[]{midy, maxy});
+					y.add(new float[]{miny, xyz[1]});
+					y.add(new float[]{xyz[1], maxy});
 				}
 				else
 				{
@@ -610,8 +663,8 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 				ArrayList<float[]> z = new ArrayList<float[]>();
 				if (sz)
 				{
-					z.add(new float[]{minz, midz});
-					z.add(new float[]{midz, maxz});
+					z.add(new float[]{minz, xyz[2]});
+					z.add(new float[]{xyz[2], maxz});
 				}
 				else
 				{
@@ -648,7 +701,59 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 				indexArray[i] = indices.get(i);
 			}
 
-			if (children != null) for (TempMeshPartition p : children) p.finalize();
+			if (children != null) for (TempMeshPartition p : children) p.finalize(false);
+		}
+		
+		public String print()
+		{
+			String output = this+"  depth: "+depth+"   min: "+minx+","+miny+","+minz+"   max: "+maxx+","+maxy+","+maxz+"\n";
+			if (children != null) for (TempMeshPartition p : children)
+			{
+				output += p.print();
+			}
+			return output;
+		}
+		
+		public TempMeshPartition getPartition(CollisionShape<?> shape)
+		{
+			shape.reset();
+			if (!this.box.collide(shape)) return null;
+
+			TempMeshPartition child = null;
+			
+			if (children != null) for (TempMeshPartition p : children)
+			{
+				if (p == null) continue;
+				
+				if (p.box.collide(shape))
+				{
+					if (child == null)
+					{
+						child = p;
+					}
+					else
+					{
+						child = null;
+						break;
+					}
+				}
+			}
+
+			if (child != null) return child.getPartition(shape);
+			else return this;
+		}
+		
+		public void gatherAll(ArrayList<TempMeshPartition> list)
+		{
+			list.add(this);
+			
+			if (children != null)
+			{
+				for (TempMeshPartition p : children)
+				{
+					p.gatherAll(list);
+				}
+			}
 		}
 	}
 
@@ -717,29 +822,60 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			shape.reset();
 			if (!this.shape.collide(shape)) return null;
 
-			SymbolicMeshPartition pp = null;
+			SymbolicMeshPartition child = null;
+			
 			for (SymbolicMeshPartition p : children)
 			{
 				if (p == null) continue;
-
-				if (pp != null && p.getPartition(shape)!=null) throw new RuntimeException("argh double match");
-				pp = p.getPartition(shape);
-				if (pp != null) return pp;
+				
+				if (p.shape.collide(shape))
+				{
+					if (child == null)
+					{
+						child = p;
+					}
+					else
+					{
+						child = null;
+						break;
+					}
+				}
 			}
 
-			return this;
+			if (child != null) return child.getPartition(shape);
+			else return this;
+		}
+		
+		public void gatherAll(ArrayList<SymbolicMeshPartition> list)
+		{
+			list.add(this);
+			
+			if (children != null)
+			{
+				for (SymbolicMeshPartition p : children)
+				{
+					p.gatherAll(list);
+				}
+			}
 		}
 
-		public String print()
+		public String print(Triangle[] tris)
 		{
-			String self = this.toString()+" depth: "+depth+" indices: "+indices.length+" min: "+minx+","+miny+","+minz+" max: "+maxx+","+maxy+","+maxz+"\n";
+			String self = this.toString()+" depth: "+depth+" indices: "+indices.length+" min: "+minx+","+miny+","+minz+" max: "+maxx+","+maxy+","+maxz+"\n"+shape+"\n";
+			for (short s : indices)
+			{
+				self += tris[s].toString()+"\n";
+			}
+			self += "\nCHILDREN:\n";
 
 			for (SymbolicMeshPartition p : children)
 			{
 				if (p == null) continue;
 
-				self += p.print();
+				self += p.print(tris);
 			}
+			
+			self += "\n-------------------------------\n";
 
 			return self;
 		}

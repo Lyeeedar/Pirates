@@ -63,7 +63,11 @@ public class GameScreen extends AbstractScreen {
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 
 		IslandGenerator ig = new IslandGenerator();
-		Mesh model = ig.getIsland(10, 10, 10);
+		Mesh model = ig.getIsland(50, 50, 23);
+		
+		ObjLoader loader = new ObjLoader();
+		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
+        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
 
 		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
 		mesh.setPosition(new Vector3(-20, 0, 0));
@@ -93,7 +97,7 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
-		//player.setCollisionShape(new Box(new Vector3(), 1, 1, 1));
+		player.setCollisionShape(new Box(new Vector3(), 1, 1, 1));
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
@@ -108,10 +112,10 @@ public class GameScreen extends AbstractScreen {
 			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
-			//ge.setAI(ai);
+			ge.setAI(ai);
 			ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 			
-			//GLOBALS.WORLD.addEntity(ge);
+			GLOBALS.WORLD.addEntity(ge);
 			
 			s = new Sprite3D(1, 2);
 			s.setGender(false);

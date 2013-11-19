@@ -1,5 +1,7 @@
 package com.Lyeeedar.Collision;
 
+import java.util.List;
+
 import com.Lyeeedar.Util.Pools;
 import com.Lyeeedar.Util.ThreadSafePlane;
 import com.badlogic.gdx.math.Plane;
@@ -911,22 +913,18 @@ public class ThreadSafeIntersector {
 	public static boolean collideShapeList(CollisionShape<?> shape, CollisionShape<?>[] list, short[] indices, boolean fast)
 	{
 		boolean hit = false;
+		boolean result = false;
 		
 		for (int i = 0; i < indices.length; i++) {
-			boolean result = list[i].collide(shape);
+			result = list[indices[i]].collide(shape);
 
-			if (result == true) {
+			if (result) {
 				hit = true;
 				if (fast) break;
 			}
 		}	
 
-		if (hit == false) {
-			return false;
-		}
-		else {
-			return true;
-		}
+		return hit;
 	}
 }
 
