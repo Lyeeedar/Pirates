@@ -72,7 +72,9 @@ public abstract class AbstractScreen implements Screen {
 	}
 
 	@Override
-	public void render(float delta) {
+	public void render(float delta) 
+	{
+		GLOBALS.PROGRAM_TIME += delta;
 		
 		frameTime = System.nanoTime();
 		
@@ -164,7 +166,7 @@ public abstract class AbstractScreen implements Screen {
         cam.viewportWidth = width;
         cam.viewportHeight = height;
         cam.near = 2f;
-        cam.far = (GLOBALS.ANDROID) ? 202f : 502f ;
+        cam.far = (GLOBALS.ANDROID) ? 202f : 1502f ;
 
 		stage.setViewport( width, height, true);
 	}

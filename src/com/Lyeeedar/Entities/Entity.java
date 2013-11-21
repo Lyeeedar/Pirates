@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.Ray;
 
 public class Entity {
 	
@@ -294,7 +295,7 @@ public class Entity {
 		
 		public long graphHash;
 		
-		public CollisionShape<?> shape = new CollisionRay();
+		public CollisionShape<?> shape = new CollisionRay(new Ray(position, rotation), radius);
 		
 		public void write(PositionalData data)
 		{
@@ -380,34 +381,23 @@ public class Entity {
 			{
 				CollisionShape<?> s1 = shape.obtain();
 				
-				CollisionRay ray = Pools.obtain(CollisionRay.class);
-				ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-				ray.ray.direction.set(v.x, 0, 0).nor();
-				ray.len = radius2y;
-				ray.reset();
-				
 				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
+				s1.setRotation(tmpVec.set(v.x, 0, 0).nor());
 	
-				if (v.x != 0 && GLOBALS.WORLD.collide(ray, graphHash))
+				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash))
 				{
 					v.x = 0;
 				}
 				
-				ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-				ray.ray.direction.set(0, 0, v.z).nor();
-				ray.len = radius2y;
-				ray.reset();
-				
 				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
+				s1.setRotation(tmpVec.set(0, 0, v.z).nor());
 	
-				if (v.z != 0 && GLOBALS.WORLD.collide(ray, graphHash))
+				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash))
 				{
 					v.z = 0;
 				}
-				
-				ray.free();
 				
 				s1.free();
 			}
@@ -425,11 +415,15 @@ public class Entity {
 				v.y = 0;
 				if (ray.dist > 0) position.y = ray.intersection.y;
 			}
-			else if (position.y-v.y < -0.5f)
+			else 
 			{
-				if (velocity.y < 0) velocity.y = 0;
-				if (v.y < 0) v.y = 0;
-				if (v.y < 0) position.y = -0.5f;
+				float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-0.5f;
+				if (position.y-v.y < waveHeight)
+				{
+					if (velocity.y < 0) velocity.y = 0;
+					if (v.y < 0) v.y = 0;
+					position.y = waveHeight;
+				}
 				jumpToken = 2;
 			}
 			jumpToken = 2;

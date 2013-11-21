@@ -12,8 +12,11 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Sea;
 import com.Lyeeedar.Entities.AI.AI_Follow;
+import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
+import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.Items.Blade;
 import com.Lyeeedar.Graphics.Model;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -42,6 +45,7 @@ import com.badlogic.gdx.math.collision.Ray;
 public class GameScreen extends AbstractScreen {
 	
 	SkyBox skyBox;
+	Sea sea;
 	PositionalData dataPos = new PositionalData();
 	PositionalData pData = new PositionalData();
 
@@ -88,7 +92,9 @@ public class GameScreen extends AbstractScreen {
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		skyBox = new SkyBox(skytex, seatex, new Vector3(0.0f, 0.79f, 1));
+		skyBox = new SkyBox(skytex);
+		sea = new Sea(seatex, new Vector3(0.0f, 0.79f, 1));
+		GLOBALS.sea = sea;
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -100,7 +106,9 @@ public class GameScreen extends AbstractScreen {
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
 		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
-		player.setCollisionShape(new Sphere(new Vector3(), 0.1f));
+		CollisionRay ray = new CollisionRay();
+		ray.len = 1;
+		//player.setCollisionShape(new Sphere(new Vector3(), 0.1f));
 		
 		player.readData(pData, PositionalData.class);
 		pData.position.set(4, 5, 0);
@@ -120,7 +128,7 @@ public class GameScreen extends AbstractScreen {
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
-			ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
+			//ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 			ge.readData(pData, PositionalData.class);
 			pData.position.set(4, 5, 0);
 			ge.writeData(pData, PositionalData.class);
@@ -148,7 +156,8 @@ public class GameScreen extends AbstractScreen {
 	public void drawSkybox(float delta)
 	{
 		player.readData(pData, PositionalData.class);
-		skyBox.render(cam, pData.position);
+		sea.render(cam, pData.position, lights);
+		skyBox.render(cam, lights);
 	}
 	@Override
 	public void hide() {
@@ -187,6 +196,7 @@ public class GameScreen extends AbstractScreen {
 	}
 
 	LinkedList<Runnable> list = new LinkedList<Runnable>();
+	boolean increase = true;
 	@Override
 	public void update(float delta) {
 		
@@ -200,6 +210,18 @@ public class GameScreen extends AbstractScreen {
 		player.readData(dataPos, PositionalData.class);
 		
 		cam.update(dataPos);
+		
+		delta /= 10;
+		
+		if (increase) lights.directionalLight.direction.y += delta;
+		else lights.directionalLight.direction.y -= delta;
+		
+		if (lights.directionalLight.direction.y > 1) increase = false;
+		if (lights.directionalLight.direction.y < -1) increase = true;
+		
+		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
+		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
+		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
 	}
 
 }

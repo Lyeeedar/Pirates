@@ -15,6 +15,7 @@ import java.util.zip.ZipInputStream;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
+import com.Lyeeedar.Entities.Sea;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
@@ -39,12 +40,19 @@ public final class GLOBALS {
 
 	public static final int[] RESOLUTION = {800, 600};
 	public static final int[] SCREEN_SIZE = {800, 600};
+	
+	public static final float FOG_MIN = 500.0f;
+	public static final float FOG_MAX = 700.0f;
 
 	public static boolean ANDROID = false;
+	
+	public static float PROGRAM_TIME = 0.0f;
+			
+	public static Sea sea;
 
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null);
 
-	public static ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	public static ExecutorService threadPool = Executors.newFixedThreadPool(1);//Runtime.getRuntime().availableProcessors());
 	public static LinkedList<Future<?>> futureList = new LinkedList<Future<?>>();	
 	public static void submitTask(Runnable run)
 	{
