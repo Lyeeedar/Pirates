@@ -32,11 +32,12 @@ public final class ImageUtils {
 		
 		bp.drawPixmap(bp, 0, 0, 0, 0, width, height);
 		
+		Color c = new Color();
+
 		for (int x = 0; x < width; x++)
 		{
 			for (int y = 0; y < height; y++)
 			{
-				Color c = new Color();
 				Color.rgba8888ToColor(c, ap.getPixel(x, y));
 				
 				if (c.a != 0) bp.drawPixel(x, y, ap.getPixel(x, y));

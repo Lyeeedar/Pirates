@@ -317,6 +317,9 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		final int vertCount = mesh.getNumVertices();
 		final int vertexSize = attributes.vertexSize / 4;
 		final int triangles = mesh.getNumIndices() / 3;
+		
+		System.out.println(mesh.getNumVertices());
+		System.out.println(mesh.getNumIndices());
 
 		final float[] verts = new float[vertexSize * vertCount];
 		mesh.getVertices(verts);	

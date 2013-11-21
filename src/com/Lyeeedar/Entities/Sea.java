@@ -23,7 +23,7 @@ public class Sea {
 	
 	private static final int scale = 4;
 	
-	private final Vector3 seaColour = new Vector3();
+	public final Vector3 seaColour = new Vector3();
 	private final float[] amplitudes = new float[8];
 	private final float[] wavelengths = new float[8];
 	private final float[] speeds = new float[8];
@@ -31,6 +31,7 @@ public class Sea {
 	
 	private final int numWaves;
 	
+	private final Vector3 tmpVec = new Vector3();
 	private final Matrix4 mat41 = new Matrix4();
 	private final Matrix4 mat42 = new Matrix4();
 	
@@ -71,6 +72,8 @@ public class Sea {
 	public void render(Camera cam, Vector3 position, LightManager lights)
 	{
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_BLEND); 
+		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		
 		seaShader.begin();
 		
@@ -89,7 +92,7 @@ public class Sea {
 		
 		seaShader.setUniformf("u_viewPos", position);
 		
-		seaShader.setUniformf("fog_colour", lights.ambientColour);
+		seaShader.setUniformf("fog_colour", tmpVec.set(seaColour).scl(lights.ambientColour));
 		seaShader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		seaShader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		

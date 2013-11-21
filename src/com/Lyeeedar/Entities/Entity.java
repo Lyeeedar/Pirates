@@ -418,12 +418,27 @@ public class Entity {
 			else 
 			{
 				float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-0.5f;
-				if (position.y-v.y < waveHeight)
+				float groundHeight = GLOBALS.terrain.getHeight(position.x+v.x, position.z+v.z);
+				
+				float hPos = GLOBALS.terrain.seaFloor-1;
+				
+				if (position.y-v.y-GLOBALS.STEP < waveHeight)
+				{
+					hPos = waveHeight;
+				}
+				
+				if (position.y-v.y-GLOBALS.STEP < groundHeight)
+				{
+					if (groundHeight > hPos) hPos = groundHeight;
+				}
+				
+				if (hPos > GLOBALS.terrain.seaFloor-1)
 				{
 					if (velocity.y < 0) velocity.y = 0;
 					if (v.y < 0) v.y = 0;
-					position.y = waveHeight;
+					position.y = hPos;
 				}
+				
 				jumpToken = 2;
 			}
 			jumpToken = 2;

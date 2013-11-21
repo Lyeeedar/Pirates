@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Sea;
+import com.Lyeeedar.Entities.Terrain;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
@@ -49,6 +50,7 @@ public final class GLOBALS {
 	public static float PROGRAM_TIME = 0.0f;
 			
 	public static Sea sea;
+	public static Terrain terrain;
 
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null);
 

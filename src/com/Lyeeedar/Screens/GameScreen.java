@@ -13,6 +13,7 @@ import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Sea;
+import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
@@ -45,7 +46,6 @@ import com.badlogic.gdx.math.collision.Ray;
 public class GameScreen extends AbstractScreen {
 	
 	SkyBox skyBox;
-	Sea sea;
 	PositionalData dataPos = new PositionalData();
 	PositionalData pData = new PositionalData();
 
@@ -69,32 +69,35 @@ public class GameScreen extends AbstractScreen {
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 
 		IslandGenerator ig = new IslandGenerator();
-		Mesh model = ig.getIsland(50, 50, 23);
+		Mesh model = ig.getIsland(75, 75, 53);
 		
-		ObjLoader loader = new ObjLoader();
-		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
-
-		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
-		mesh.setPosition(new Vector3(-20, 0, 0));
+//		ObjLoader loader = new ObjLoader();
+//		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
+//        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
+//        texture = new Texture(Gdx.files.internal("data/textures/texture.png"));
+//        model = loader.loadObj(Gdx.files.internal("data/models/untitled.obj"), true).subMeshes[0].mesh;
+//
+//		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
+//		mesh.setPosition(new Vector3(-20, 0, 0));
+//		
+//		Entity island = new Entity();
+//		island.readData(pData, PositionalData.class);
+//		pData.position.x = 10;
+//		pData.calculateComposed();
+//		island.writeData(pData, PositionalData.class);
+//		
+//		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
+//		island.setCollisionShapeInternal(mesh);
 		
-		Entity island = new Entity();
-		island.readData(pData, PositionalData.class);
-		pData.position.x = 1;
-		pData.calculateComposed();
-		island.writeData(pData, PositionalData.class);
-		
-		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
-		island.setCollisionShapeInternal(mesh);
-		
-		GLOBALS.WORLD.addEntity(island);
+		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
+		GLOBALS.terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(-50.0f, 0.0f, 0.0f), 50.0f, 500.0f), new Terrain.HeightMap(hm, new Vector3(600f, 0f, 600f), 500.0f, 500.0f)});
+		//GLOBALS.WORLD.addEntity(island);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		skyBox = new SkyBox(skytex);
-		sea = new Sea(seatex, new Vector3(0.0f, 0.79f, 1));
-		GLOBALS.sea = sea;
+		GLOBALS.sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -156,7 +159,8 @@ public class GameScreen extends AbstractScreen {
 	public void drawSkybox(float delta)
 	{
 		player.readData(pData, PositionalData.class);
-		sea.render(cam, pData.position, lights);
+		GLOBALS.terrain.render(cam, pData.position, lights);
+		GLOBALS.sea.render(cam, pData.position, lights);
 		skyBox.render(cam, lights);
 	}
 	@Override
@@ -199,6 +203,8 @@ public class GameScreen extends AbstractScreen {
 	boolean increase = true;
 	@Override
 	public void update(float delta) {
+		
+		
 		
 		GLOBALS.WORLD.getRunnable(list, delta);
 		GLOBALS.submitTasks(list);
