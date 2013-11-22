@@ -415,32 +415,16 @@ public class Entity {
 				v.y = 0;
 				if (ray.dist > 0) position.y = ray.intersection.y;
 			}
-			else 
+			
+			float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
+			
+			if (v.y < 0 && position.y-v.y-GLOBALS.STEP < waveHeight)
 			{
-				float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-0.5f;
-				float groundHeight = GLOBALS.terrain.getHeight(position.x+v.x, position.z+v.z);
-				
-				float hPos = GLOBALS.terrain.seaFloor-1;
-				
-				if (position.y-v.y-GLOBALS.STEP < waveHeight)
-				{
-					hPos = waveHeight;
-				}
-				
-				if (position.y-v.y-GLOBALS.STEP < groundHeight)
-				{
-					if (groundHeight > hPos) hPos = groundHeight;
-				}
-				
-				if (hPos > GLOBALS.terrain.seaFloor-1)
-				{
-					if (velocity.y < 0) velocity.y = 0;
-					if (v.y < 0) v.y = 0;
-					position.y = hPos;
-				}
-				
-				jumpToken = 2;
+				if (velocity.y < 0) velocity.y = 0;
+				if (v.y < 0) v.y = 0;
+				position.y =  waveHeight;
 			}
+			
 			jumpToken = 2;
 			
 			Pools.free(ray);

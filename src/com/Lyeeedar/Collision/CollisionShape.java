@@ -27,6 +27,8 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	public abstract void setPosition(Vector3 position);
 	public abstract void setRotation(Vector3 rotation);
 	
+	public abstract Vector3 getPosition();
+	
 	public abstract void transformPosition(Matrix4 matrix);
 	public abstract void transformDirection(Matrix4 matrix);
 	

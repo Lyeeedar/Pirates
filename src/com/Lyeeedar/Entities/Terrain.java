@@ -1,5 +1,10 @@
 package com.Lyeeedar.Entities;
 
+import java.util.ArrayList;
+
+import com.Lyeeedar.Collision.CollisionShape;
+import com.Lyeeedar.Collision.Triangle;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
@@ -18,7 +23,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pools;
 
-public class Terrain {
+public class Terrain extends Entity {
 	
 	private final ShaderProgram shader;
 	private final Texture texture;
@@ -39,7 +44,7 @@ public class Terrain {
 	private final Vector3 tmpVec = new Vector3();
 	private final Matrix4 mat41 = new Matrix4();
 	private final Matrix4 mat42 = new Matrix4();
-	
+
 	public Terrain(Texture texture, float seaFloor, HeightMap[] heightmaps)
 	{
 		this.texture = texture;
@@ -51,7 +56,6 @@ public class Terrain {
 		this.scaleBuf = new float[heightmaps.length];
 		
 		this.seaFloor = seaFloor;
-		
 		
 		this.terrain = getTerrain(255);
 		
@@ -109,26 +113,44 @@ public class Terrain {
 		shader.end();
 	}
 	
-	public float getHeight(float x, float z)
-	{
-		float height = seaFloor;
+//	public float getHeight(float x, float z)
+//	{
+//		float height = seaFloor;
+//	
+//		Vector3 tmpVec = Pools.obtain(Vector3.class);
+//		
+//		for (HeightMap hm : heightmaps)
+//		{
+//			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
+//			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
+//					tmpVec.z > 0 && tmpVec.z < 1.0f)
+//			{
+//				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]*hm.height);
+//				break;
+//			}
+//		}
+//		
+//		Pools.free(tmpVec);
+//		
+//		return height;
+//	}
 	
-		Vector3 tmpVec = Pools.obtain(Vector3.class);
+	public boolean collide(CollisionShape<?> collide)
+	{
+		boolean hit = false;
 		
 		for (HeightMap hm : heightmaps)
 		{
-			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
+			tmpVec.set(collide.getPosition().x, 0, collide.getPosition().z).sub(hm.position).scl(1.0f/hm.scale);
 			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
 					tmpVec.z > 0 && tmpVec.z < 1.0f)
 			{
-				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]*hm.height);
+				hit = hm.collide(collide, (int) ((tmpVec.x*hm.heights.length)+0.5f), (int) ((tmpVec.z*hm.heights[0].length)+0.5f));
 				break;
 			}
 		}
 		
-		Pools.free(tmpVec);
-		
-		return height;
+		return hit;
 	}
 	
 	private static Mesh[] getTerrain(int size)
@@ -228,7 +250,10 @@ public class Terrain {
 		float scale;
 		float[][] heights;
 		
-		public HeightMap(Texture texture, Vector3 position, float height, float scale)
+		Triangle[] triangles = {new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle()};
+		
+		@SuppressWarnings("unchecked")
+		public HeightMap(Texture texture, Vector3 position, float height, float scale, float seaFloor)
 		{
 			this.texture = texture;
 			this.position = position;
@@ -244,7 +269,7 @@ public class Terrain {
 				for (int z = 0; z < texture.getHeight(); z++)
 				{
 					Color.rgba8888ToColor(c, pm.getPixel(x, z));
-					heights[x][z] = (c.r+c.g+c.b)/3.0f;
+					heights[x][z] = seaFloor+((c.r+c.g+c.b)/3.0f)*height;
 				}
 			}
 		}
@@ -260,6 +285,67 @@ public class Terrain {
 			heightBuf[index] = height;
 			
 			scaleBuf[index] = scale;
+		}
+		
+		private static final int[][] locations = {
+			{0, 0},
+			{0, 1},
+			{1, 0},
+			{1, 1},
+			{0, -1},
+			{-1, 0},
+			{-1, -1},
+			{-1, 1},
+			{1, -1},
+		};
+		
+		public boolean collide(CollisionShape<?> shape, int x, int y)
+		{
+			boolean collide = false;
+			
+			if (x < 2) x = 2;
+			if (y < 2) y = 2;
+			if (x > heights.length-3) x = heights.length-3;
+			if (y > heights[0].length-3) y = heights[0].length-3;
+
+			for (int[] loc : locations)
+			{
+				fillTriangles(x+loc[0], y+loc[1]);
+				for (Triangle t : triangles)
+				{
+					if (t.collide(shape)) collide = true;
+				}
+			}
+			
+			return collide;
+		}
+		
+		private static final int[][] offsets = {
+			{0, 0, 		1, 0, 		1, 1},
+			{0, 0, 		0, 1, 		1, 1},
+			{0, 0, 		-1, 0, 		-1, -1},
+			{0, 0, 		0, -1, 		-1, -1},
+			{0, 0, 		-1, 0, 		-1, 1},
+			{0, 0, 		0, -1, 		1, -1},
+			{0, 0, 		1, 0, 		1, -1},
+			{0, 0, 		0, 1, 		-1, 1},
+			};
+		
+		private void fillTriangles(int x, int y)
+		{
+			for (int i = 0; i < offsets.length; i++)
+			{
+				triangles[i].set(
+						(((float)x+(float)offsets[i][0])/(float)texture.getWidth())*scale, heights[x+offsets[i][0]][y+offsets[i][1]],
+						(((float)y+(float)offsets[i][1])/(float)texture.getHeight())*scale,
+						
+						(((float)x+(float)offsets[i][2])/(float)texture.getWidth())*scale, heights[x+offsets[i][2]][y+offsets[i][3]],
+						(((float)y+(float)offsets[i][3])/(float)texture.getHeight())*scale,
+						
+						(((float)x+(float)offsets[i][4])/(float)texture.getWidth())*scale, heights[x+offsets[i][4]][y+offsets[i][5]],
+						(((float)y+(float)offsets[i][5])/(float)texture.getHeight())*scale
+						);
+			}
 		}
 	}
 

@@ -83,6 +83,12 @@ public class Cylinder extends CollisionShape<Cylinder> {
 	public void free() {
 		Pools.free(this);
 	}
+	
+	@Override
+	public Vector3 getPosition()
+	{
+		return center;
+	}
 
 	@Override
 	public void setPosition(Vector3 position) {

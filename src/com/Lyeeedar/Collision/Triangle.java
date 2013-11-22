@@ -50,9 +50,31 @@ public class Triangle extends CollisionShape<Triangle> {
 	@Override
 	public Triangle set(Triangle other)
 	{
-		v1.set(other.v1);
-		v2.set(other.v2);
-		v3.set(other.v3);
+		this.v1.set(other.v1);
+		this.v2.set(other.v2);
+		this.v3.set(other.v3);
+		
+		return this;
+	}
+	
+	public Triangle set(Vector3 v1, Vector3 v2, Vector3 v3)
+	{
+		this.v1.set(v1);
+		this.v2.set(v2);
+		this.v3.set(v3);
+		
+		return this;
+	}
+	
+	public Triangle set(
+			float v1x, float v1y, float v1z,
+			float v2x, float v2y, float v2z,
+			float v3x, float v3y, float v3z
+			)
+	{
+		this.v1.set(v1x, v1y, v1z);
+		this.v2.set(v2x, v2y, v2z);
+		this.v3.set(v3x, v3y, v3z);
 		
 		return this;
 	}
@@ -84,6 +106,12 @@ public class Triangle extends CollisionShape<Triangle> {
 	@Override
 	public void free() {
 		Pools.free(this);
+	}
+	
+	@Override
+	public Vector3 getPosition()
+	{
+		return v1;
 	}
 
 	@Override

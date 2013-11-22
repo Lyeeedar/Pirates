@@ -168,6 +168,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	{
 		return combined;
 	}
+	
+	@Override
+	public Vector3 getPosition()
+	{
+		return position;
+	}
 
 	@Override
 	public void setPosition(Vector3 position)
@@ -310,16 +316,13 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		return collide;
 	}
 
-	public static SymbolicMesh getSymbolicMesh(Mesh mesh, float maxArea)
+	public static SymbolicMesh getSymbolicMesh(Mesh mesh)
 	{
 		final VertexAttributes attributes = mesh.getVertexAttributes();
 		final int positionOffset = attributes.getOffset(Usage.Position);
 		final int vertCount = mesh.getNumVertices();
 		final int vertexSize = attributes.vertexSize / 4;
 		final int triangles = mesh.getNumIndices() / 3;
-		
-		System.out.println(mesh.getNumVertices());
-		System.out.println(mesh.getNumIndices());
 
 		final float[] verts = new float[vertexSize * vertCount];
 		mesh.getVertices(verts);	
@@ -334,6 +337,51 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 					verts[(i*vertexSize)+positionOffset+0],
 					verts[(i*vertexSize)+positionOffset+1],
 					verts[(i*vertexSize)+positionOffset+2]
+					);
+		}
+
+		final List<Triangle> tris = new ArrayList<Triangle>(triangles);
+
+		for (int i = 0; i < triangles; i++)
+		{
+			final SymbolicMeshNode n1 = vertexNodes[indices[(i*3)+0]];
+			final SymbolicMeshNode n2 = vertexNodes[indices[(i*3)+1]];
+			final SymbolicMeshNode n3 = vertexNodes[indices[(i*3)+2]];
+
+			n1.addNodes(n2, n3);
+			n2.addNodes(n1, n3);
+			n3.addNodes(n1, n2);
+
+			Triangle t = new Triangle();
+			t.v1.set(n1.x, n1.y, n1.z);
+			t.v2.set(n2.x, n2.y, n2.z);
+			t.v3.set(n3.x, n3.y, n3.z);
+
+			tris.add(t);
+		}
+
+		Triangle[] triArray = new Triangle[triangles];
+		tris.toArray(triArray);
+
+		return new SymbolicMesh(vertexNodes, triArray);
+	}
+	
+	public static SymbolicMesh getSymbolicMesh(float[] vertices, int[] indices)
+	{
+		final int vertCount = vertices.length / 3;
+		final int vertexSize = 3;
+		final int triangles = indices.length / 3;
+		
+		System.out.println("Triangles: "+triangles);
+
+		final SymbolicMeshNode[] vertexNodes = new SymbolicMeshNode[vertCount];
+
+		for (int i = 0; i < vertCount; i++)
+		{
+			vertexNodes[i] = new SymbolicMeshNode(
+					vertices[(i*vertexSize)+0],
+					vertices[(i*vertexSize)+1],
+					vertices[(i*vertexSize)+2]
 					);
 		}
 

@@ -103,6 +103,12 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	public void free() {
 		Pools.free(this);
 	}
+	
+	@Override
+	public Vector3 getPosition()
+	{
+		return ray.origin;
+	}
 
 	@Override
 	public void setPosition(Vector3 position) {

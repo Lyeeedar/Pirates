@@ -48,6 +48,8 @@ public class GameScreen extends AbstractScreen {
 	SkyBox skyBox;
 	PositionalData dataPos = new PositionalData();
 	PositionalData pData = new PositionalData();
+	
+	Terrain terrain;
 
 	int numEntities = 5;
 	
@@ -71,27 +73,29 @@ public class GameScreen extends AbstractScreen {
 		IslandGenerator ig = new IslandGenerator();
 		Mesh model = ig.getIsland(75, 75, 53);
 		
-//		ObjLoader loader = new ObjLoader();
-//		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-//        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
-//        texture = new Texture(Gdx.files.internal("data/textures/texture.png"));
-//        model = loader.loadObj(Gdx.files.internal("data/models/untitled.obj"), true).subMeshes[0].mesh;
-//
-//		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model, 1f);
-//		mesh.setPosition(new Vector3(-20, 0, 0));
-//		
-//		Entity island = new Entity();
-//		island.readData(pData, PositionalData.class);
-//		pData.position.x = 10;
-//		pData.calculateComposed();
-//		island.writeData(pData, PositionalData.class);
-//		
-//		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
-//		island.setCollisionShapeInternal(mesh);
+		ObjLoader loader = new ObjLoader();
+		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
+        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
+
+		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model);
+		mesh.setPosition(new Vector3(-20, 0, 0));
+		
+		Entity island = new Entity();
+		island.readData(pData, PositionalData.class);
+		pData.position.x = 10;
+		pData.calculateComposed();
+		island.writeData(pData, PositionalData.class);
+		
+		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
+		island.setCollisionShapeInternal(mesh);
+		
+		texture = GLOBALS.ASSET_MANAGER.get("data/textures/sand.png", Texture.class);
+		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		GLOBALS.terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(-50.0f, 0.0f, 0.0f), 50.0f, 500.0f), new Terrain.HeightMap(hm, new Vector3(600f, 0f, 600f), 500.0f, 500.0f)});
-		//GLOBALS.WORLD.addEntity(island);
+		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 1000.0f, -100.0f)});
+		GLOBALS.WORLD.addEntity(island);
+		GLOBALS.WORLD.setEntity(terrain);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/test.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
@@ -108,7 +112,7 @@ public class GameScreen extends AbstractScreen {
 		s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
 		s.create(GLOBALS.ASSET_MANAGER);
 		player.addRenderable(s);
-		player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
+		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
 		CollisionRay ray = new CollisionRay();
 		ray.len = 1;
 		//player.setCollisionShape(new Sphere(new Vector3(), 0.1f));
@@ -159,7 +163,7 @@ public class GameScreen extends AbstractScreen {
 	public void drawSkybox(float delta)
 	{
 		player.readData(pData, PositionalData.class);
-		GLOBALS.terrain.render(cam, pData.position, lights);
+		terrain.render(cam, pData.position, lights);
 		GLOBALS.sea.render(cam, pData.position, lights);
 		skyBox.render(cam, lights);
 	}
@@ -204,8 +208,6 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void update(float delta) {
 		
-		
-		
 		GLOBALS.WORLD.getRunnable(list, delta);
 		GLOBALS.submitTasks(list);
 		list.clear();
@@ -214,20 +216,22 @@ public class GameScreen extends AbstractScreen {
 		skyBox.update(delta);
 		
 		player.readData(dataPos, PositionalData.class);
-		
+				
 		cam.update(dataPos);
+		
+		lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
 		delta /= 10;
 		
-		if (increase) lights.directionalLight.direction.y += delta;
-		else lights.directionalLight.direction.y -= delta;
-		
-		if (lights.directionalLight.direction.y > 1) increase = false;
-		if (lights.directionalLight.direction.y < -1) increase = true;
-		
-		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
-		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
-		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
+//		if (increase) lights.directionalLight.direction.y += delta;
+//		else lights.directionalLight.direction.y -= delta;
+//		
+//		if (lights.directionalLight.direction.y > 1) increase = false;
+//		if (lights.directionalLight.direction.y < -1) increase = true;
+//		
+//		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
+//		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
+//		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
 	}
 
 }

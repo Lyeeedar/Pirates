@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 
 public class EntityGraph {
 
-	private final Entity entity;
+	private Entity entity;
 	public EntityGraph parent;
 	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
 	public final long hash = this.hashCode();
@@ -50,11 +50,22 @@ public class EntityGraph {
 	
 	public boolean collide(CollisionShape<?> source, long hash)
 	{
-		if (hash != this.hash && entity.collide(source)) return true;
+		boolean collide = false;
+		if (hash != this.hash && entity.collide(source)) collide = true;
 		
-		for (EntityGraph eg : children) if (eg.collide(source, hash)) return true;
+		for (EntityGraph eg : children) if (eg.collide(source, hash)) collide = true;
 		
-		return false;
+		return collide;
+	}
+	
+	public Entity getEntity()
+	{
+		return entity;
+	}
+	
+	public void setEntity(Entity e)
+	{
+		this.entity = e;
 	}
 	
 	public void addEntity(Entity e)

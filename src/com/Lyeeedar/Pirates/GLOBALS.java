@@ -50,7 +50,6 @@ public final class GLOBALS {
 	public static float PROGRAM_TIME = 0.0f;
 			
 	public static Sea sea;
-	public static Terrain terrain;
 
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null);
 
