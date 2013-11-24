@@ -377,38 +377,13 @@ public class Entity {
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
 			
-			if (shape != null && (v.x != 0 || v.z != 0))
-			{
-				CollisionShape<?> s1 = shape.obtain();
-				
-				s1.reset();
-				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
-				s1.setRotation(tmpVec.set(v.x, 0, 0).nor());
-	
-				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash))
-				{
-					v.x = 0;
-				}
-				
-				s1.reset();
-				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
-				s1.setRotation(tmpVec.set(0, 0, v.z).nor());
-	
-				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash))
-				{
-					v.z = 0;
-				}
-				
-				s1.free();
-			}
-			
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
 			ray.len = radius2y+GLOBALS.STEP;
 			ray.reset();
 
-			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash))
+			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash) != null)
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
@@ -418,16 +393,42 @@ public class Entity {
 			
 			float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
 			
-			if (v.y < 0 && position.y-v.y-GLOBALS.STEP < waveHeight)
+			if (position.y-v.y-GLOBALS.STEP < waveHeight)
 			{
 				if (velocity.y < 0) velocity.y = 0;
 				if (v.y < 0) v.y = 0;
 				position.y =  waveHeight;
+				GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 			}
 			
 			jumpToken = 2;
 			
 			Pools.free(ray);
+			
+			if (shape != null && (v.x != 0 || v.z != 0))
+			{
+				CollisionShape<?> s1 = shape.obtain();
+				
+				s1.reset();
+				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
+				s1.setRotation(tmpVec.set(v.x, 0, 0).nor());
+	
+				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash) != null)
+				{
+					v.x = 0;
+				}
+				
+				s1.reset();
+				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
+				s1.setRotation(tmpVec.set(0, 0, v.z).nor());
+	
+				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash) != null)
+				{
+					v.z = 0;
+				}
+				
+				s1.free();
+			}
 			
 			position.add(v.x, v.y, v.z);
 			

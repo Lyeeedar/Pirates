@@ -82,9 +82,10 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity island = new Entity();
 		island.readData(pData, PositionalData.class);
-		pData.position.x = 10;
+		//pData.position.x = 10;
 		pData.calculateComposed();
 		island.writeData(pData, PositionalData.class);
+		island.setAI(new AI_Simple(island));
 		
 		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
 		island.setCollisionShapeInternal(mesh);
@@ -205,6 +206,9 @@ public class GameScreen extends AbstractScreen {
 
 	LinkedList<Runnable> list = new LinkedList<Runnable>();
 	boolean increase = true;
+	
+	float strike_time = 0.0f;
+	Random ran = new Random();
 	@Override
 	public void update(float delta) {
 		
@@ -221,7 +225,7 @@ public class GameScreen extends AbstractScreen {
 		
 		lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
-		delta /= 10;
+		//delta /= 10;
 		
 //		if (increase) lights.directionalLight.direction.y += delta;
 //		else lights.directionalLight.direction.y -= delta;
@@ -232,6 +236,21 @@ public class GameScreen extends AbstractScreen {
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
+		
+//		strike_time -= delta;
+//		if (strike_time <= 0.0f)
+//		{
+//			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
+//		}
+//		else
+//		{
+//			lights.ambientColour.set(0.3f, 0.3f, 0.3f);
+//		}
+//		
+//		if (ran.nextInt(100) == 1)
+//		{
+//			strike_time = 0.2f;
+//		}
 	}
 
 }

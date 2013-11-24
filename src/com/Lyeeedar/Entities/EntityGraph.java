@@ -48,12 +48,16 @@ public class EntityGraph {
 		for (EntityGraph eg : children) eg.getRunnable(list, delta);
 	}
 	
-	public boolean collide(CollisionShape<?> source, long hash)
+	public EntityGraph collide(CollisionShape<?> source, long hash)
 	{
-		boolean collide = false;
-		if (hash != this.hash && entity.collide(source)) collide = true;
+		EntityGraph collide = null;
+		if (hash != this.hash && entity.collide(source)) collide = this;
 		
-		for (EntityGraph eg : children) if (eg.collide(source, hash)) collide = true;
+		for (EntityGraph eg : children) 
+		{
+			EntityGraph temp = eg.collide(source, hash);
+			if (temp != null) collide = temp;
+		}
 		
 		return collide;
 	}

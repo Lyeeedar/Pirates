@@ -26,7 +26,7 @@ public class FollowCam extends PerspectiveCamera {
 		up.set(entityState.up);
 		direction.set(entityState.rotation);
 		Yrotate(angle);
-		tmp.set(direction).scl(3);
+		tmp.set(direction).scl(6);
 		position.set(entityState.position).add(0, 1, 0).sub(tmp);
 		
 		update();

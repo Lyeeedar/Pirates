@@ -270,11 +270,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 		if (!checkCollisionIterative(partition, shape, check, fast)) {
 			check.free();
+			shape.transformPosition(combined);
+			
 			return false;
 		}
 
 		check.free();
-		
 		shape.transformPosition(combined);
 
 		return true;

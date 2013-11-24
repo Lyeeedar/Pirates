@@ -49,14 +49,14 @@ public class Sea {
 		directions[0] = 1.0f; directions[1] = 0.0f;
 		
 		amplitudes[1] = 0.3f;
-		wavelengths[1] = 7.0f;
-		speeds[1] = 5.0f;
-		directions[2] = 0.0f; directions[3] = 1.0f;
+		wavelengths[1] = 73.0f;
+		speeds[1] = 15.0f;
+		directions[2] = -1.0f; directions[3] = -1.0f;
 		
-		amplitudes[2] = 2.4f;
-		wavelengths[2] = 73.0f;
-		speeds[2] = 11.1f;
-		directions[4] = -1.0f; directions[5] = -1.0f;
+		amplitudes[2] = 9.4f;
+		wavelengths[2] = 373.0f;
+		speeds[2] = 31.1f;
+		directions[4] = 1.0f; directions[5] = 0.0f;
 		
 		sea = getSea(255);
 		
@@ -110,7 +110,7 @@ public class Sea {
 		seaShader.end();
 	}
 	
-	float wave(int i, float x, float y) 
+	public float wave(int i, float x, float y) 
 	{
 	    float frequency = 2.0f*(float)Math.PI/wavelengths[i];
 	    float phase = speeds[i] * frequency;
@@ -118,12 +118,27 @@ public class Sea {
 	    return (float) (amplitudes[i] * Math.sin(theta * frequency + GLOBALS.PROGRAM_TIME * phase));
 	}
 
-	float waveHeight(float x, float y) 
+	public float waveHeight(float x, float y) 
 	{
 	    float height = 0.0f;
 	    for (int i = 0; i < numWaves; ++i)
 	        height += wave(i, x, y);
 	    return height;
+	}
+	
+	public void modifyVelocity(Vector3 velocity, float delta, float px, float pz)
+	{
+		float x = 0;
+		float z = 0;
+		
+		for (int i = 0; i < numWaves; i++)
+		{
+			x += -directions[(i*2)+0]*speeds[i]*delta*(wave(i, px, pz)/amplitudes[i])*0.01f*amplitudes[i];
+			z += -directions[(i*2)+1]*speeds[i]*delta*(wave(i, px, pz)/amplitudes[i])*0.01f*amplitudes[i];
+		}
+		
+		velocity.x += x;
+		velocity.z += z;
 	}
 	
 	private static Mesh[] getSea(int size)

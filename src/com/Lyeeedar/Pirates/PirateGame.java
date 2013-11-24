@@ -33,7 +33,7 @@ public class PirateGame extends Game {
 		
 		LightManager lights = new LightManager();
 		lights.ambientColour.set(0.8f, 0.9f, 0.7f);
-		lights.directionalLight.colour.set(0.2f, 0.3f, 0.2f);
+		lights.directionalLight.colour.set(0.01f, 0.01f, 0.01f);
 		lights.directionalLight.direction.set(0, 0.5f, -0.5f);
 		
 		Light l = new Light(new Vector3(), new Vector3(0.4f, 0.4f, 0.4f), 0.2f);
