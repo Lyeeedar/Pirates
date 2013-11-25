@@ -18,10 +18,10 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public void update(PositionalData entityState)
 	{
-//		angle -= controls.getDeltaY();
-//		
-//		if (angle > 0) angle = 0;
-//		if (angle < -65) angle = -65;
+		angle -= controls.getDeltaY();
+		
+		if (angle > 60) angle = 60;
+		if (angle < -65) angle = -65;
 		
 		up.set(entityState.up);
 		direction.set(entityState.rotation);

@@ -61,6 +61,7 @@ public abstract class AbstractScreen implements Screen {
 	private long averageTrail;
 	private long averageDecal;
 	private long averageOrthogonal;
+	private long averageParticles;
 	private int particleNum;
 	protected ArrayList<ParticleEffect> visibleEmitters = new ArrayList<ParticleEffect>();
 
@@ -108,14 +109,17 @@ public abstract class AbstractScreen implements Screen {
 		stage.act(delta);
 
 		
-		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);	
+		Gdx.gl.glDepthMask(true);
+		
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
 		time = System.nanoTime();
 		renderer.flush(lights);
@@ -139,6 +143,7 @@ public abstract class AbstractScreen implements Screen {
 		averageTrail += System.nanoTime()-time;
 		averageTrail /= 2;
 		
+		time = System.nanoTime();
 		particleNum = 0;
 		ParticleEmitter.begin(cam);
 		for (ParticleEffect p : visibleEmitters)
@@ -148,6 +153,8 @@ public abstract class AbstractScreen implements Screen {
 			p.render();
 		}
 		ParticleEmitter.end();
+		averageParticles += System.nanoTime()-time;
+		averageParticles /= 2;
 		
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
@@ -167,6 +174,7 @@ public abstract class AbstractScreen implements Screen {
 	        Gdx.app.log("	Decal       ", ""+averageDecal);
 	        Gdx.app.log("	Trail       ", ""+averageTrail);
 	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
+	        Gdx.app.log("	Particles   ", ""+averageParticles);
 	        Gdx.app.log("	No Particles", ""+particleNum);
 			startTime = System.currentTimeMillis();
 		}
@@ -194,7 +202,7 @@ public abstract class AbstractScreen implements Screen {
         cam.viewportWidth = width;
         cam.viewportHeight = height;
         cam.near = 2f;
-        cam.far = (GLOBALS.ANDROID) ? 202f : 1202f ;
+        cam.far = (GLOBALS.ANDROID) ? 202f : 2502f ;
 
 		stage.setViewport( width, height, true);
 	}

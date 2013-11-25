@@ -180,8 +180,8 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 		len *= scale;
 		dist *= scale;
 		
-		ray.origin.scl(scale);
-		intersection.scl(scale);
+		//ray.origin.scl(scale);
+		//intersection.scl(scale);
 		
 	}
 }

@@ -161,9 +161,9 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	public void updateMatrixes()
 	{
 		Matrix4 tmpMat = Pools.obtain(Matrix4.class);
-		combined.setToTranslation(position).mul(rotation);
+		combined.setToTranslation(position).mul(tmpMat.setToScaling(scale)).mul(rotation);
 		rotationTra.set(rotation).tra();
-		inverse.set(rotationTra).mul(tmpMat.setToTranslation(-position.x, -position.y, -position.z));
+		inverse.set(rotationTra).mul(tmpMat.setToScaling(1.0f/scale.x, 1.0f/scale.y, 1.0f/scale.z)).mul(tmpMat.setToTranslation(-position.x, -position.y, -position.z));
 		Pools.free(tmpMat);
 	}
 
@@ -294,23 +294,23 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	{	
 		shape.transformPosition(inverse);
 		shape.transformDirection(rotationTra);
-		//shape.transformScaling(1.0f/scale.x);
+		shape.transformScaling(1.0f/scale.x);
 
 		CollisionShape<?> check = shape.obtain();
 
 		if (!checkCollisionIterative(partition, shape, check, fast)) {
 			check.free();
 			shape.transformPosition(combined);
-			shape.transformDirection(combined);
-			//shape.transformScaling(scale.x);
+			shape.transformDirection(rotation);
+			shape.transformScaling(scale.x);
 			
 			return false;
 		}
 
 		check.free();
 		shape.transformPosition(combined);
-		shape.transformDirection(combined);
-		//shape.transformScaling(scale.x);
+		shape.transformDirection(rotation);
+		shape.transformScaling(scale.x);
 
 		return true;
 	}

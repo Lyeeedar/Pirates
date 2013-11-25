@@ -39,7 +39,7 @@ public class Terrain extends Entity {
 	private final float[] heightBuf;
 	private final float[] scaleBuf;
 	
-	private static final int scale = 4;
+	private static final int scale = 10;
 	
 	private final Vector3 tmpVec = new Vector3();
 	private final Matrix4 mat41 = new Matrix4();
@@ -145,7 +145,7 @@ public class Terrain extends Entity {
 			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
 					tmpVec.z > 0 && tmpVec.z < 1.0f)
 			{
-				hit = hm.collide(collide, (int) ((tmpVec.x*hm.heights.length)+0.5f), (int) ((tmpVec.z*hm.heights[0].length)+0.5f));
+				hit = hm.collide(collide, (int) ((tmpVec.x*hm.width)+0.5f), (int) ((tmpVec.z*hm.height)+0.5f));
 				break;
 			}
 		}
@@ -246,30 +246,34 @@ public class Terrain extends Entity {
 	{
 		Texture texture;
 		Vector3 position;
-		float height;
+		float range;
 		float scale;
+		int width;
+		int height;
 		float[][] heights;
 		
 		Triangle[] triangles = {new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle()};
 		
 		@SuppressWarnings("unchecked")
-		public HeightMap(Texture texture, Vector3 position, float height, float scale, float seaFloor)
+		public HeightMap(Texture texture, Vector3 position, float range, float scale, float seaFloor)
 		{
 			this.texture = texture;
 			this.position = position;
-			this.height = height;
+			this.range = range;
 			this.scale = scale;
+			this.width = texture.getWidth()/Terrain.scale;
+			this.height = texture.getHeight()/Terrain.scale;
 			
 			Pixmap pm = ImageUtils.TextureToPixmap(texture);
-			heights = new float[texture.getWidth()][texture.getHeight()];
+			heights = new float[width][height];
 			
 			Color c = new Color();
-			for (int x = 0; x < texture.getWidth(); x++)
+			for (int x = 0; x < width; x++)
 			{
-				for (int z = 0; z < texture.getHeight(); z++)
+				for (int z = 0; z < height; z++)
 				{
-					Color.rgba8888ToColor(c, pm.getPixel(x, z));
-					heights[x][z] = seaFloor+((c.r+c.g+c.b)/3.0f)*height;
+					Color.rgba8888ToColor(c, pm.getPixel(x*Terrain.scale, z*Terrain.scale));
+					heights[x][z] = seaFloor+((c.r+c.g+c.b)/3.0f)*range;
 				}
 			}
 		}
@@ -282,7 +286,7 @@ public class Terrain extends Entity {
 			posBuf[(index*3)+1] = position.y;
 			posBuf[(index*3)+2] = position.z;
 			
-			heightBuf[index] = height;
+			heightBuf[index] = range;
 			
 			scaleBuf[index] = scale;
 		}
@@ -305,8 +309,8 @@ public class Terrain extends Entity {
 			
 			if (x < 2) x = 2;
 			if (y < 2) y = 2;
-			if (x > heights.length-3) x = heights.length-3;
-			if (y > heights[0].length-3) y = heights[0].length-3;
+			if (x > width-3) x = width-3;
+			if (y > height-3) y = height-3;
 
 			for (int[] loc : locations)
 			{
@@ -336,14 +340,14 @@ public class Terrain extends Entity {
 			for (int i = 0; i < offsets.length; i++)
 			{
 				triangles[i].set(
-						(((float)x+(float)offsets[i][0])/(float)texture.getWidth())*scale, heights[x+offsets[i][0]][y+offsets[i][1]],
-						(((float)y+(float)offsets[i][1])/(float)texture.getHeight())*scale,
+						(((float)x+(float)offsets[i][0])/(float)width)*scale, heights[x+offsets[i][0]][y+offsets[i][1]],
+						(((float)y+(float)offsets[i][1])/(float)height)*scale,
 						
-						(((float)x+(float)offsets[i][2])/(float)texture.getWidth())*scale, heights[x+offsets[i][2]][y+offsets[i][3]],
-						(((float)y+(float)offsets[i][3])/(float)texture.getHeight())*scale,
+						(((float)x+(float)offsets[i][2])/(float)width)*scale, heights[x+offsets[i][2]][y+offsets[i][3]],
+						(((float)y+(float)offsets[i][3])/(float)height)*scale,
 						
-						(((float)x+(float)offsets[i][4])/(float)texture.getWidth())*scale, heights[x+offsets[i][4]][y+offsets[i][5]],
-						(((float)y+(float)offsets[i][5])/(float)texture.getHeight())*scale
+						(((float)x+(float)offsets[i][4])/(float)width)*scale, heights[x+offsets[i][4]][y+offsets[i][5]],
+						(((float)y+(float)offsets[i][5])/(float)height)*scale
 						);
 			}
 		}

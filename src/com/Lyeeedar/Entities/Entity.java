@@ -312,7 +312,7 @@ public class Entity {
 			radius2y = data.radius2y;
 			scale.set(data.scale);
 			graphHash = data.graphHash;
-			if (data.shape != null) shape = data.shape.copy();
+			shape = data.shape.copy();
 		}
 		
 		public void read(PositionalData target)
@@ -397,7 +397,7 @@ public class Entity {
 			
 			float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
 			
-			if (position.y-v.y-GLOBALS.STEP < waveHeight)
+			if (v.y <= 0.0f && position.y-v.y-GLOBALS.STEP < waveHeight)
 			{
 				if (velocity.y < 0) velocity.y = 0;
 				if (v.y < 0) v.y = 0;

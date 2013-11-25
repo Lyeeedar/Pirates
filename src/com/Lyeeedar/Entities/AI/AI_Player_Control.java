@@ -44,10 +44,11 @@ public class AI_Player_Control extends AI_Package {
 			if (controls.right()) entityPos.left_right(-speed);
 			
 			if (controls.sprint()) {
-				if (entityAnim.animation != 6) entityAnim.updateAnimations = true;
+				if (entityAnim.animation != 3) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
-				entityAnim.animation = 6;
-				entityAnim.useDirection = false;
+				entityAnim.animation = 3;
+				//entityAnim.useDirection = false;
+				//entityAnim.animate = true;
 			}
 			else {
 				if (entityAnim.animation != 0) entityAnim.updateAnimations = true;

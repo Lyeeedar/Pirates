@@ -21,6 +21,7 @@ import com.badlogic.gdx.math.Vector3;
 public class SkyBox {
 	
 	private final Texture skyTexture;
+	private final Texture glowTexture;
 	
 	private final ShaderProgram skyShader;
 	
@@ -34,9 +35,10 @@ public class SkyBox {
 	private static final float oneThird = 1f/3f;
 	private static final float twoThird = 2f/3f;
 	
-	public SkyBox(Texture skyTexture)
+	public SkyBox(Texture skyTexture, Texture glowTexture)
 	{
 		this.skyTexture = skyTexture;
+		this.glowTexture = glowTexture;
 
 		box = getSkyBox();
 		
@@ -64,12 +66,17 @@ public class SkyBox {
 		
 		mat41.set(cam.combined).mul(mat42.setToTranslation(cam.position));
 		skyShader.setUniformMatrix("u_mvp", mat41);
-		//skyShader.setUniformMatrix("u_v", mat42);
 		
-		skyShader.setUniformf("colour_sea", tmpVec.set(GLOBALS.sea.seaColour).scl(lights.ambientColour));
-		skyShader.setUniformf("sea_height", 0.0f);
+		//skyShader.setUniformf("colour_sea", tmpVec.set(GLOBALS.sea.seaColour).scl(lights.ambientColour));
+		///skyShader.setUniformf("sea_height", 0.0f);
 		
-		skyShader.setUniformf("colour_sky", lights.ambientColour);
+		skyShader.setUniformf("sun_dir", lights.directionalLight.direction);
+		
+		glowTexture.bind(1);
+		skyTexture.bind(0);
+		
+		skyShader.setUniformi("color", 0);
+		skyShader.setUniformi("glow", 1);
 		
 		box.render(skyShader, GL20.GL_TRIANGLES);
 		
@@ -78,9 +85,9 @@ public class SkyBox {
 	
 	private Mesh getSkyBox()
 	{
-		int x = 2;
-		int y = 2;
-		int z = 2;
+		int x = 1;
+		int y = 1;
+		int z = 1;
 		float[] cubeVerts = {
 				-x, -y, -z, // bottom
 				-x, -y, z,

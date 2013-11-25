@@ -51,7 +51,7 @@ public class GameScreen extends AbstractScreen {
 	
 	Terrain terrain;
 
-	int numEntities = 5;
+	int numEntities = 15;
 	
 	long time = System.currentTimeMillis();
 	
@@ -83,7 +83,7 @@ public class GameScreen extends AbstractScreen {
 		Entity island = new Entity();
 		island.readData(pData, PositionalData.class);
 		//pData.position.x = 10;
-		//pData.scale.set(0.2f, 0.2f, 0.2f);
+		pData.scale.set(2.2f, 2.2f, 2.2f);
 		pData.calculateComposed();
 		island.writeData(pData, PositionalData.class);
 		island.setAI(new AI_Simple(island));
@@ -95,14 +95,15 @@ public class GameScreen extends AbstractScreen {
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 1000.0f, -100.0f)});
+		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000.0f, -100.0f)});
 		GLOBALS.WORLD.addEntity(island);
 		GLOBALS.WORLD.setEntity(terrain);
 
-		Texture skytex = new Texture(Gdx.files.internal("data/textures/test.png"));
+		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
+		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		skyBox = new SkyBox(skytex);
+		skyBox = new SkyBox(skytex, glowtex);
 		GLOBALS.sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
 		
 		player = new Entity();
@@ -164,10 +165,17 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+		skyBox.render(cam, lights);
+		
+		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glDepthMask(true);
+		Gdx.gl.glCullFace(GL20.GL_BACK);
 		player.readData(pData, PositionalData.class);
 		terrain.render(cam, pData.position, lights);
 		GLOBALS.sea.render(cam, pData.position, lights);
-		skyBox.render(cam, lights);
 	}
 	@Override
 	public void hide() {
@@ -229,30 +237,54 @@ public class GameScreen extends AbstractScreen {
 		
 		//delta /= 10;
 		
-//		if (increase) lights.directionalLight.direction.y += delta;
-//		else lights.directionalLight.direction.y -= delta;
-//		
-//		if (lights.directionalLight.direction.y > 1) increase = false;
-//		if (lights.directionalLight.direction.y < -1) increase = true;
+		if (increase) 
+		{
+			lights.directionalLight.direction.y += delta;
+			
+			if (lights.directionalLight.direction.y < 0.0f) 
+			{
+				lights.directionalLight.direction.z += delta;
+			}
+			else
+			{
+				lights.directionalLight.direction.z -= delta;
+			}
+		}
+		else 
+		{
+			lights.directionalLight.direction.y -= delta;
+			
+			if (lights.directionalLight.direction.y < 0.0f) 
+			{
+				lights.directionalLight.direction.z += delta;
+			}
+			else
+			{
+				lights.directionalLight.direction.z -= delta;
+			}
+		}
+		
+		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
+		if (lights.directionalLight.direction.y < -1) increase = true;
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
 //		
-		strike_time -= delta;
-		if (strike_time <= 0.0f)
-		{
-			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
-		}
-		else
-		{
-			lights.ambientColour.set(0.1f, 0.1f, 0.7f);
-		}
-		
-		if (ran.nextInt(500) == 1)
-		{
-			strike_time = 0.1f;
-		}
+//		strike_time -= delta;
+//		if (strike_time < 0.0f)
+//		{
+//			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
+//		}
+//		else
+//		{
+//			lights.ambientColour.set(0.1f, 0.1f, 0.7f);
+//		}
+//		
+//		if (ran.nextInt(500) == 1)
+//		{
+//			strike_time = 0.1f;
+//		}
 	}
 
 }
