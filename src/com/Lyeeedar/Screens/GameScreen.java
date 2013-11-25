@@ -83,6 +83,7 @@ public class GameScreen extends AbstractScreen {
 		Entity island = new Entity();
 		island.readData(pData, PositionalData.class);
 		//pData.position.x = 10;
+		//pData.scale.set(0.2f, 0.2f, 0.2f);
 		pData.calculateComposed();
 		island.writeData(pData, PositionalData.class);
 		island.setAI(new AI_Simple(island));
@@ -222,6 +223,7 @@ public class GameScreen extends AbstractScreen {
 		player.readData(dataPos, PositionalData.class);
 				
 		cam.update(dataPos);
+		this.visibleEmitters.get(0).setPosition(dataPos.position);
 		
 		lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
@@ -236,21 +238,21 @@ public class GameScreen extends AbstractScreen {
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
-		
-//		strike_time -= delta;
-//		if (strike_time <= 0.0f)
-//		{
-//			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
-//		}
-//		else
-//		{
-//			lights.ambientColour.set(0.3f, 0.3f, 0.3f);
-//		}
 //		
-//		if (ran.nextInt(100) == 1)
-//		{
-//			strike_time = 0.2f;
-//		}
+		strike_time -= delta;
+		if (strike_time <= 0.0f)
+		{
+			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
+		}
+		else
+		{
+			lights.ambientColour.set(0.1f, 0.1f, 0.7f);
+		}
+		
+		if (ran.nextInt(500) == 1)
+		{
+			strike_time = 0.1f;
+		}
 	}
 
 }

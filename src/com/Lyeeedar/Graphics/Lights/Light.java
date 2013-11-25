@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Lights;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector3;
 
 public class Light implements Comparable<Light> {
@@ -15,6 +16,13 @@ public class Light implements Comparable<Light> {
 	{
 		this.position.set(position);
 		this.colour.set(colour);
+		this.attenuation = attenuation;
+	}
+	
+	public Light(Vector3 position, Color colour, float attenuation)
+	{
+		this.position.set(position);
+		this.colour.set(colour.r, colour.g, colour.b);
 		this.attenuation = attenuation;
 	}
 	

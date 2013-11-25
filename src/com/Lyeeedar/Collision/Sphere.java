@@ -9,6 +9,8 @@ public class Sphere extends CollisionShape<Sphere> {
 	public final Vector3 center = new Vector3();
 	public float radius;
 	
+	public final Box box = new Box();
+	
 	public Sphere()
 	{
 		
@@ -104,5 +106,34 @@ public class Sphere extends CollisionShape<Sphere> {
 	@Override
 	protected String string() {
 		return "Center: "+center+" R: "+radius;
+	}
+
+	@Override
+	public void calculateBoundingBox() {
+		box.width = radius;
+		box.height = radius;
+		box.depth = radius;
+	}
+
+	@Override
+	public void setScaling(Vector3 scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean checkBoundingBox(Box box) {
+		return this.box.collide(box);
+	}
+
+	@Override
+	public Box getBoundingBox() {
+		return box;
+	}
+
+	@Override
+	public void transformScaling(float scale) {
+		// TODO Auto-generated method stub
+		
 	}
 }

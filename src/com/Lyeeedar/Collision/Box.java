@@ -10,7 +10,7 @@ public class Box extends CollisionShape<Box> {
 	public float width;
 	public float height;
 	public float depth;
-	
+
 	public Box()
 	{
 		
@@ -139,6 +139,31 @@ public class Box extends CollisionShape<Box> {
 	@Override
 	protected String string() {
 		return "Center: "+center+" W: "+width+" H: "+height+" D: "+depth;
+	}
+
+	@Override
+	public void calculateBoundingBox() {
+		
+	}
+
+	@Override
+	public void setScaling(Vector3 scale) {
+	}
+
+	@Override
+	public boolean checkBoundingBox(Box box) {
+		return false;
+	}
+
+	@Override
+	public Box getBoundingBox() {
+		return this;
+	}
+
+	@Override
+	public void transformScaling(float scale) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

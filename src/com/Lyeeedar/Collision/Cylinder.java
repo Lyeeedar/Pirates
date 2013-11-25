@@ -111,4 +111,34 @@ public class Cylinder extends CollisionShape<Cylinder> {
 		return "Center: "+center+" R: "+radius+" H: "+height;
 	}
 
+	@Override
+	public void calculateBoundingBox() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setScaling(Vector3 scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean checkBoundingBox(Box box) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Box getBoundingBox() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void transformScaling(float scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

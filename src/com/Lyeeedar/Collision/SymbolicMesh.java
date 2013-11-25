@@ -23,6 +23,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 
 	public final Triangle[] tris;
 
+	private final Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
 	private final Vector3 position = new Vector3();
 	private final Vector3 rotationVec = new Vector3();
 	private final Matrix4 rotation = new Matrix4();
@@ -39,6 +40,8 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	private final float maxx;
 	private final float maxy;
 	private final float maxz;
+	
+	public final Box box = new Box();
 
 	public int count(SymbolicMeshPartition p)
 	{
@@ -176,6 +179,32 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	}
 
 	@Override
+	public void calculateBoundingBox() {
+		box.width = (maxx-minx)/2.0f;
+		box.height = (maxy-miny)/2.0f;
+		box.depth = (maxz-minz)/2.0f;
+	}
+	
+	@Override
+	public boolean checkBoundingBox(Box box) {
+		return this.box.collide(box);
+	}
+
+	@Override
+	public Box getBoundingBox() {
+		return box;
+	}
+
+	@Override
+	public void setScaling(Vector3 scale) {
+		if (this.scale.x == scale.x && this.scale.y == scale.y && this.scale.z == scale.z) return;
+		
+		this.scale.set(scale);
+		
+		updateMatrixes();
+	}
+	
+	@Override
 	public void setPosition(Vector3 position)
 	{
 		if (this.position.x == position.x && this.position.y == position.y && this.position.z == position.z) return;
@@ -265,18 +294,23 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	{	
 		shape.transformPosition(inverse);
 		shape.transformDirection(rotationTra);
+		//shape.transformScaling(1.0f/scale.x);
 
 		CollisionShape<?> check = shape.obtain();
 
 		if (!checkCollisionIterative(partition, shape, check, fast)) {
 			check.free();
 			shape.transformPosition(combined);
+			shape.transformDirection(combined);
+			//shape.transformScaling(scale.x);
 			
 			return false;
 		}
 
 		check.free();
 		shape.transformPosition(combined);
+		shape.transformDirection(combined);
+		//shape.transformScaling(scale.x);
 
 		return true;
 	}
@@ -919,4 +953,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			return self;
 		}
 	}
+
+	@Override
+	public void transformScaling(float scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 }

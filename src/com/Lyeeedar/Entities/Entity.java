@@ -82,6 +82,7 @@ public class Entity {
 		{
 			shape.setPosition(pd.position);
 			shape.setRotation(pd.rotation);
+			shape.setScaling(pd.scale);
 		}
 		
 		boolean hit = shape.collide(collide);
@@ -283,7 +284,8 @@ public class Entity {
 		
 		public final Vector3 position = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
-		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);	
+		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
+		public final Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
 		public final Vector3 velocity = new Vector3();
 		public final Matrix4 composed = new Matrix4();
 		
@@ -308,6 +310,7 @@ public class Entity {
 			radius = data.radius;
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
+			scale.set(data.scale);
 			graphHash = data.graphHash;
 			if (data.shape != null) shape = data.shape.copy();
 		}
@@ -320,7 +323,7 @@ public class Entity {
 		public void calculateComposed()
 		{
 			tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
-			composed.setToTranslation(position).mul(tmpMat);
+			composed.setToTranslationAndScaling(position, scale).mul(tmpMat);
 		}
 		
 		// ------------------------- ROTATE ------------------------- //
@@ -382,6 +385,7 @@ public class Entity {
 			ray.ray.direction.set(0, v.y, 0).nor();
 			ray.len = radius2y+GLOBALS.STEP;
 			ray.reset();
+			ray.calculateBoundingBox();
 
 			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash) != null)
 			{
@@ -408,6 +412,7 @@ public class Entity {
 			if (shape != null && (v.x != 0 || v.z != 0))
 			{
 				CollisionShape<?> s1 = shape.obtain();
+				s1.calculateBoundingBox();
 				
 				s1.reset();
 				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));

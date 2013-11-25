@@ -53,9 +53,9 @@ public class Sea {
 		speeds[1] = 15.0f;
 		directions[2] = -1.0f; directions[3] = -1.0f;
 		
-		amplitudes[2] = 9.4f;
+		amplitudes[2] = 19.4f;
 		wavelengths[2] = 373.0f;
-		speeds[2] = 31.1f;
+		speeds[2] = 51.1f;
 		directions[4] = 1.0f; directions[5] = 0.0f;
 		
 		sea = getSea(255);

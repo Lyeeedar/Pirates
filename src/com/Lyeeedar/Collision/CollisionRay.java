@@ -13,6 +13,8 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	public final Vector3 intersection = new Vector3();
 	public float dist;
 	
+	public final Box box = new Box();
+	
 	public CollisionRay()
 	{
 		reset();
@@ -74,6 +76,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 		len = other.len;
 		intersection.set(other.intersection);
 		dist = other.dist;
+		box.set(other.box);
 		
 		return this;
 	}
@@ -123,5 +126,62 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	protected String string() {
 		return ""+ray+" Len: "+len+" I: "+intersection+" Dist: "+dist;
+	}
+
+	@Override
+	public void calculateBoundingBox() {
+		Vector3 end = Pools.obtain(Vector3.class);
+		
+		end.set(ray.direction).scl(len).add(ray.origin);
+		
+		float minx = ray.origin.x;
+		float miny = ray.origin.y;
+		float minz = ray.origin.z;
+		
+		float maxx = ray.origin.x;
+		float maxy = ray.origin.x;
+		float maxz = ray.origin.x;
+		
+		if (end.x < minx) minx = end.x;
+		if (end.x > maxx) maxx = end.x;
+		
+		if (end.y < miny) miny = end.y;
+		if (end.y > maxy) maxy = end.y;
+		
+		if (end.z < minz) minz = end.z;
+		if (end.z > maxz) maxz = end.z;
+		
+		box.width = (maxx-minx)/2.0f;
+		box.height = (maxy-miny)/2.0f;
+		box.depth = (maxz-minz)/2.0f;
+		
+		Pools.free(end);
+		
+	}
+
+	@Override
+	public void setScaling(Vector3 scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean checkBoundingBox(Box box) {
+		return this.box.collide(box);
+	}
+
+	@Override
+	public Box getBoundingBox() {
+		return box;
+	}
+
+	@Override
+	public void transformScaling(float scale) {
+		len *= scale;
+		dist *= scale;
+		
+		ray.origin.scl(scale);
+		intersection.scl(scale);
+		
 	}
 }

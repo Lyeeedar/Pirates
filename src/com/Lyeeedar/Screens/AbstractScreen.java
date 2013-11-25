@@ -10,8 +10,11 @@
  ******************************************************************************/
 package com.Lyeeedar.Screens;
 
+import java.util.ArrayList;
+
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -19,12 +22,15 @@ import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.Lyeeedar.Graphics.Particles.ParticleEffect;
  
 
 public abstract class AbstractScreen implements Screen {
@@ -55,6 +61,8 @@ public abstract class AbstractScreen implements Screen {
 	private long averageTrail;
 	private long averageDecal;
 	private long averageOrthogonal;
+	private int particleNum;
+	protected ArrayList<ParticleEffect> visibleEmitters = new ArrayList<ParticleEffect>();
 
 	public AbstractScreen(LightManager lights)
 	{
@@ -69,6 +77,15 @@ public abstract class AbstractScreen implements Screen {
 		cam = new FollowCam(controls);
 		renderer.cam = cam;
 		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
+		
+		ParticleEffect effect = new ParticleEffect(5);
+		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "f", "flame");
+		flame.createBasicEmitter(1, 1, new Color(0.3f, 0.3f, 0.4f, 0.5f), new Color(0.3f, 0.3f, 0.4f, 0.5f), 0, -75, 0);
+		flame.calculateParticles();
+		flame.create();
+		effect.addEmitter(flame, 
+				0, 10, 0);
+		visibleEmitters.add(effect);
 	}
 
 	@Override
@@ -122,6 +139,16 @@ public abstract class AbstractScreen implements Screen {
 		averageTrail += System.nanoTime()-time;
 		averageTrail /= 2;
 		
+		particleNum = 0;
+		ParticleEmitter.begin(cam);
+		for (ParticleEffect p : visibleEmitters)
+		{
+			p.update(delta, cam);
+			particleNum += p.getActiveParticles();
+			p.render();
+		}
+		ParticleEmitter.end();
+		
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
@@ -140,6 +167,7 @@ public abstract class AbstractScreen implements Screen {
 	        Gdx.app.log("	Decal       ", ""+averageDecal);
 	        Gdx.app.log("	Trail       ", ""+averageTrail);
 	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
+	        Gdx.app.log("	No Particles", ""+particleNum);
 			startTime = System.currentTimeMillis();
 		}
 		
@@ -166,7 +194,7 @@ public abstract class AbstractScreen implements Screen {
         cam.viewportWidth = width;
         cam.viewportHeight = height;
         cam.near = 2f;
-        cam.far = (GLOBALS.ANDROID) ? 202f : 1502f ;
+        cam.far = (GLOBALS.ANDROID) ? 202f : 1202f ;
 
 		stage.setViewport( width, height, true);
 	}

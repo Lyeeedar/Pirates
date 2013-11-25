@@ -59,18 +59,43 @@ public class ThreadSafeIntersector {
 
 	public static boolean collide(Sphere sphere1, Box box1)
 	{
-		float dist_squared = sphere1.radius * sphere1.radius;
+//		float dist_squared = sphere1.radius * sphere1.radius;
+//
+//		if (sphere1.center.x < box1.center.x-box1.width) dist_squared -= Math.pow(sphere1.center.x - (box1.center.x-box1.width), 2);
+//		else if (sphere1.center.x > box1.center.x+box1.width) dist_squared -= Math.pow(sphere1.center.x - (box1.center.x+box1.width), 2);
+//
+//		if (sphere1.center.y < box1.center.y-box1.height) dist_squared -= Math.pow(sphere1.center.y - (box1.center.y-box1.height), 2);
+//		else if (sphere1.center.y > box1.center.y+box1.height) dist_squared -= Math.pow(sphere1.center.y - (box1.center.y+box1.height), 2);
+//
+//		if (sphere1.center.z < box1.center.z-box1.height) dist_squared -= Math.pow(sphere1.center.z - (box1.center.z-box1.height), 2);
+//		else if (sphere1.center.z > box1.center.z+box1.height) dist_squared -= Math.pow(sphere1.center.z - (box1.center.z+box1.height), 2);
+//
+//		return dist_squared > 0;
+		
+		float dmin = 0;
+		float sr2 = sphere1.radius*sphere1.radius;
 
-		if (sphere1.center.x < box1.center.x-box1.width) dist_squared -= Math.pow(sphere1.center.x - (box1.center.x-box1.width), 2);
-		else if (sphere1.center.x > box1.center.x+box1.width) dist_squared -= Math.pow(sphere1.center.x - (box1.center.x+box1.width), 2);
+		// x axis
+		if (sphere1.center.x < box1.center.x)
+			dmin=dmin+((sphere1.center.x-box1.center.x)*(sphere1.center.x-box1.center.x));
 
-		if (sphere1.center.y < box1.center.y-box1.height) dist_squared -= Math.pow(sphere1.center.y - (box1.center.y-box1.height), 2);
-		else if (sphere1.center.y > box1.center.y+box1.height) dist_squared -= Math.pow(sphere1.center.y - (box1.center.y+box1.height), 2);
+		else if (sphere1.center.x>(box1.center.x+box1.width))
+			dmin=dmin+(((sphere1.center.x-(box1.center.x+box1.width)))*((sphere1.center.x-(box1.center.x+box1.width))));
 
-		if (sphere1.center.z < box1.center.z-box1.height) dist_squared -= Math.pow(sphere1.center.z - (box1.center.z-box1.height), 2);
-		else if (sphere1.center.z > box1.center.z+box1.height) dist_squared -= Math.pow(sphere1.center.z - (box1.center.z+box1.height), 2);
+		// y axis
+		if (sphere1.center.y < box1.center.y)
+			dmin=dmin+((sphere1.center.y-box1.center.y)*(sphere1.center.y-box1.center.y));
+		else if (sphere1.center.y>(box1.center.y+box1.height))
+			dmin=dmin+(((sphere1.center.y-(box1.center.y+box1.height)))*((sphere1.center.y-(box1.center.y+box1.height))));
 
-		return dist_squared > 0;
+		// z axis
+		if (sphere1.center.z < box1.center.z)
+			dmin=dmin+((sphere1.center.z-box1.center.z)*(sphere1.center.z-box1.center.z));
+		else if (sphere1.center.z>(box1.center.z+box1.depth))
+			dmin=dmin+(((sphere1.center.z-(box1.center.z+box1.depth)))*((sphere1.center.z-(box1.center.z+box1.depth))));
+
+		if (dmin<=sr2) return true; 
+		else return false;
 	}
 
 	public static boolean collide(Sphere sphere1, Triangle tri1)
