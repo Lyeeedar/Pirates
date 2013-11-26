@@ -95,7 +95,7 @@ public class GameScreen extends AbstractScreen {
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000.0f, -100.0f)});
+		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
 		GLOBALS.WORLD.addEntity(island);
 		GLOBALS.WORLD.setEntity(terrain);
 
@@ -237,35 +237,35 @@ public class GameScreen extends AbstractScreen {
 		
 		//delta /= 10;
 		
-		if (increase) 
-		{
-			lights.directionalLight.direction.y += delta;
-			
-			if (lights.directionalLight.direction.y < 0.0f) 
-			{
-				lights.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				lights.directionalLight.direction.z -= delta;
-			}
-		}
-		else 
-		{
-			lights.directionalLight.direction.y -= delta;
-			
-			if (lights.directionalLight.direction.y < 0.0f) 
-			{
-				lights.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				lights.directionalLight.direction.z -= delta;
-			}
-		}
-		
-		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
-		if (lights.directionalLight.direction.y < -1) increase = true;
+//		if (increase) 
+//		{
+//			lights.directionalLight.direction.y += delta;
+//			
+//			if (lights.directionalLight.direction.y < 0.0f) 
+//			{
+//				lights.directionalLight.direction.z += delta;
+//			}
+//			else
+//			{
+//				lights.directionalLight.direction.z -= delta;
+//			}
+//		}
+//		else 
+//		{
+//			lights.directionalLight.direction.y -= delta;
+//			
+//			if (lights.directionalLight.direction.y < 0.0f) 
+//			{
+//				lights.directionalLight.direction.z += delta;
+//			}
+//			else
+//			{
+//				lights.directionalLight.direction.z -= delta;
+//			}
+//		}
+//		
+//		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
+//		if (lights.directionalLight.direction.y < -1) increase = true;
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
