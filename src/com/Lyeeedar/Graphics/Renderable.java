@@ -4,6 +4,7 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.math.Matrix4;
 
 public interface Renderable {
 

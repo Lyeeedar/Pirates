@@ -83,7 +83,7 @@ public class GameScreen extends AbstractScreen {
 		Entity island = new Entity();
 		island.readData(pData, PositionalData.class);
 		//pData.position.x = 10;
-		pData.scale.set(2.2f, 2.2f, 2.2f);
+		//pData.scale.set(2.2f, 2.2f, 2.2f);
 		pData.calculateComposed();
 		island.writeData(pData, PositionalData.class);
 		island.setAI(new AI_Simple(island));

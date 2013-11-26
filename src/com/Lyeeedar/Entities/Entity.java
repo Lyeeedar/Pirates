@@ -97,7 +97,7 @@ public class Entity {
 		this.entityGraph = eg;
 		PositionalData data = new PositionalData();
 		readData(data, PositionalData.class);
-		data.graphHash = entityGraph.hashCode();
+		data.graph = entityGraph;
 		writeData(data, PositionalData.class);
 	}
 	
@@ -282,6 +282,7 @@ public class Entity {
 			this.radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
 		}
 		
+		public final Vector3 lastPos = new Vector3();
 		public final Vector3 position = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
@@ -295,12 +296,13 @@ public class Entity {
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 v = new Vector3();
 		
-		public long graphHash;
+		public EntityGraph graph;
 		
 		public CollisionShape<?> shape = new CollisionRay(new Ray(position, rotation), radius);
 		
 		public void write(PositionalData data)
 		{
+			lastPos.set(data.lastPos);
 			position.set(data.position);
 			rotation.set(data.rotation);		
 			velocity.set(data.velocity);
@@ -311,7 +313,7 @@ public class Entity {
 			radius2 = data.radius2;
 			radius2y = data.radius2y;
 			scale.set(data.scale);
-			graphHash = data.graphHash;
+			graph = data.graph;
 			shape = data.shape.copy();
 		}
 		
@@ -366,6 +368,11 @@ public class Entity {
 		
 		public void applyVelocity(float delta)
 		{
+			lastPos.set(position);
+			
+			graph.parent.getDeltaPos(tmpVec);
+			position.add(tmpVec);
+			
 			if (velocity.len2() == 0) return;
 			
 			if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
@@ -387,12 +394,19 @@ public class Entity {
 			ray.reset();
 			ray.calculateBoundingBox();
 
-			if (v.y != 0 && GLOBALS.WORLD.collide(ray, graphHash) != null)
+			EntityGraph base = GLOBALS.WORLD.collide(ray, graph);
+			
+			if (base != null)
 			{
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
 				if (ray.dist > 0) position.y = ray.intersection.y;
+				graph.popAndInsert(base);
+			}
+			else
+			{
+				graph.popAndInsert(GLOBALS.WORLD);
 			}
 			
 			float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
@@ -418,7 +432,7 @@ public class Entity {
 				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
 				s1.setRotation(tmpVec.set(v.x, 0, 0).nor());
 	
-				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graphHash) != null)
+				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graph) != null)
 				{
 					v.x = 0;
 				}
@@ -427,7 +441,7 @@ public class Entity {
 				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
 				s1.setRotation(tmpVec.set(0, 0, v.z).nor());
 	
-				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graphHash) != null)
+				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graph) != null)
 				{
 					v.z = 0;
 				}
