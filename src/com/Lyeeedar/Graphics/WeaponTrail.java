@@ -27,20 +27,27 @@ public class WeaponTrail implements Renderable {
 	private final Vector3 tmp1 = new Vector3();
 	private final Vector3 tmp2 = new Vector3();
 	
+	private boolean swinging = false;
+	
 	private boolean update = false;
 	private float cooldown = 0;
+	private int count = 0;
+	
+	private int steps;
 	
 	public WeaponTrail(Equipment_Slot slot, int steps, Color tint, Texture texture, float cooldown)
 	{
 		this.slot = slot;
 		this.trail = new MotionTrail(steps, tint, texture);
 		this.CD = cooldown;
+		
+		this.steps = steps;
 	}
 
 	@Override
 	public void queue(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
-		trailBatch.add(trail);
+		if (count <= steps) trailBatch.add(trail);
 	}
 
 	@Override
@@ -64,13 +71,23 @@ public class WeaponTrail implements Renderable {
 			
 			Blade b = (Blade) e;
 			
-			tmp1.set(b.edge.origin);
-			tmp2.set(b.edge.direction).scl(b.dist).add(tmp1);
-			
-			tmp1.mul(pData.composed);
-			tmp2.mul(pData.composed);
+			if (swinging || b.swinging)
+			{
+				tmp1.set(b.edge.origin);
+				tmp2.set(b.edge.direction).scl(b.dist).add(tmp1);
+				
+				tmp1.mul(pData.composed);
+				tmp2.mul(pData.composed);
+			}
 			
 			trail.update(tmp1, tmp2);
+			
+			if (b.swinging && !swinging) trail.reset(tmp1, tmp2);
+			
+			swinging = b.swinging;
+			
+			count ++;
+			if (swinging) count = 0;
 		}
 	}
 

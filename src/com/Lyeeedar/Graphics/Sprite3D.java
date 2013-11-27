@@ -12,13 +12,15 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Informable;
-import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
@@ -32,29 +34,29 @@ public class Sprite3D implements Renderable {
 	
 	public enum SpriteLayer
 	{
-		OTHER, // 6
-		HEAD, // 5
-		TOP, // 4
-		BOTTOM, // 3
-		FACE, // 2
-		FEET, // 1
-		BODY // 0
+		BODY,
+		FEET,
+		FACE,
+		BOTTOM,
+		TOP,
+		HEAD,
+		OTHER
 	}
 	
-	private static final short NUM_ANIMS = 8;
-	private static final short NUM_FRAMES = 8;
+	private final short NUM_ANIMS;
+	private final short NUM_FRAMES;
 
 	private final HashMap<SpriteLayer, SortedSet<SPRITESHEET>> layers;
 	
-	private final List<String> animations;
+	private final List<ANIMATION> animations;
 	
 	private String gender;
 	
 	private final HashMap<String, Texture> spritesheet;
 	private float width;
-	private final short spriteWidth = 1024/NUM_FRAMES;
+	private short spriteWidth;
 	private float height;
-	private final short spriteHeight = 1024/NUM_ANIMS;
+	private short spriteHeight;
 	
 	private final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 	private final Vector3 position = new Vector3();
@@ -85,10 +87,12 @@ public class Sprite3D implements Renderable {
 	private final PositionalData pData = new PositionalData();
 	private final AnimationData aData = new AnimationData();
 
-	public Sprite3D(float width, float height)
+	public Sprite3D(float width, float height, int num_anims, int num_frames)
 	{
 		this.width = width;
 		this.height = height;
+		this.NUM_ANIMS = (short) num_anims;
+		this.NUM_FRAMES = (short) num_frames;
 		
 		layers = new HashMap<SpriteLayer, SortedSet<SPRITESHEET>>();
 		
@@ -97,10 +101,10 @@ public class Sprite3D implements Renderable {
 			layers.put(sl, new TreeSet<SPRITESHEET>());
 		}
 		
-		animations = new ArrayList<String>();
+		animations = new ArrayList<ANIMATION>();
 		spritesheet = new HashMap<String, Texture>();
 	}
-	
+
 	@Override
 	public void queue(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
@@ -122,19 +126,19 @@ public class Sprite3D implements Renderable {
 		}
 		if (aData.animationLock)
 		{
-			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.informable);
+			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.informable);
 		}
 	}
 	
-	public void addAnimation(String animation)
+	public void addAnimation(String animation, String base, String... extras)
 	{
-		this.animations.add(animation);
+		this.animations.add(new ANIMATION(animation, base, extras));
 	}
 	public boolean removeAnimation(String animation)
 	{
 		for (int i = 0; i < animations.size(); i++)
 		{
-			if (animations.get(i).equals(animation))
+			if (animations.get(i).animationName.equals(animation))
 			{
 				animations.remove(i);
 				return true;
@@ -166,7 +170,34 @@ public class Sprite3D implements Renderable {
 		layers.get(layer).clear();
 	}
 	
-	public void create(AssetManager assetManager)
+	private String getFinalName(String file, String anim, String gender)
+	{
+		if (gender.equals("")) return FILE_PREFIX+file+FILE_SEPERATOR+anim+FILE_SUFFIX;
+		return FILE_PREFIX+file+FILE_SEPERATOR+anim+FILE_SEPERATOR+gender+FILE_SUFFIX;
+	}
+	
+	private Pixmap loadLayer(Pixmap sprite, ANIMATION animation, SortedSet<SPRITESHEET> layer)
+	{
+		for (SPRITESHEET s : layer)
+		{
+			if (sprite == null)
+			{
+				sprite = ImageUtils.copy(FileUtils.loadPixmap(getFinalName(s.filename, animation.animationBase, gender), false));
+				ImageUtils.tint(sprite, s.colour);
+			}
+			else
+			{
+				merge(s, animation.animationBase, sprite);
+			}
+			for (String extra : animation.extras)
+			{
+				merge(s, animation.animationBase+extra, sprite);
+			}
+		}
+		return sprite;
+	}
+	
+	public void create()
 	{
 		for (Map.Entry<String, Texture> entry : spritesheet.entrySet())
 		{
@@ -174,73 +205,43 @@ public class Sprite3D implements Renderable {
 		}
 		spritesheet.clear();
 		
-		for (String anim : animations)
+		for (ANIMATION animation : animations)
 		{
 			Pixmap sprite = null;
-			SortedSet<SPRITESHEET> layer = layers.get(SpriteLayer.BODY);
-			for (SPRITESHEET s : layer)
+			for (SpriteLayer layer : SpriteLayer.values())
 			{
-				if (sprite == null)
-				{
-					sprite = ImageUtils.copy(assetManager.get(FILE_PREFIX+s.filename+FILE_SEPERATOR+anim+FILE_SEPERATOR+gender+FILE_SUFFIX, Pixmap.class));
-					ImageUtils.tint(sprite, s.colour);
-				}
-				else
-				{
-					merge(s, anim, sprite, assetManager);
-				}
-			}
-			layer = layers.get(SpriteLayer.FEET);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
-			}
-			layer = layers.get(SpriteLayer.FACE);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
-			}
-			layer = layers.get(SpriteLayer.BOTTOM);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
-			}
-			layer = layers.get(SpriteLayer.TOP);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
-			}
-			layer = layers.get(SpriteLayer.HEAD);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
-			}
-			layer = layers.get(SpriteLayer.OTHER);
-			for (SPRITESHEET s : layer)
-			{
-				merge(s, anim, sprite, assetManager);
+				sprite = loadLayer(sprite, animation, layers.get(layer));
 			}
 			
-			spritesheet.put(anim, ImageUtils.PixmapToTexture(sprite));
+			spritesheet.put(animation.animationName, ImageUtils.PixmapToTexture(sprite));
 		}
 		
-		region = new TextureRegion(spritesheet.get(animations.get(0)), 0, 0, spriteWidth, spriteHeight);
+		spriteWidth = (short) (spritesheet.get(animations.get(0).animationName).getWidth()/NUM_FRAMES);
+		spriteHeight = (short) (spritesheet.get(animations.get(0).animationName).getHeight()/NUM_ANIMS);
+		
+		region = new TextureRegion(spritesheet.get(animations.get(0).animationName), 0, 0, spriteWidth, spriteHeight);
 		decal = Decal.newDecal(width, height, region, true);
 	}
 	
-	private final <T> Pixmap merge(SPRITESHEET ss, String anim, Pixmap sprite, AssetManager assetManager)
+	private final <T> Pixmap merge(SPRITESHEET ss, String anim, Pixmap sprite)
 	{
-		String filename = FILE_PREFIX+ss.filename+FILE_SEPERATOR+anim+FILE_SEPERATOR+gender+FILE_SUFFIX;
-		if (assetManager.isLoaded(filename, Pixmap.class))
+		String filename = getFinalName(ss.filename, anim, gender);
+		Pixmap pix = FileUtils.loadPixmap(filename, false);
+		if (pix != null)
 		{
-			Pixmap pix = assetManager.get(filename, Pixmap.class);
 			ImageUtils.tint(pix, ss.colour);
 			return ImageUtils.merge(sprite, pix);
 		}
-		else
+		
+		filename = getFinalName(ss.filename, anim, "");
+		pix = FileUtils.loadPixmap(filename, false);
+		if (pix != null)
 		{
-			return sprite;
+			ImageUtils.tint(pix, ss.colour);
+			return ImageUtils.merge(sprite, pix);
 		}
+		
+		return sprite;
 	}
 	
 	public void setPosition(Vector3 position)
@@ -270,7 +271,7 @@ public class Sprite3D implements Renderable {
 		}
 		this.useDirection = useDirection;
 	}
-	public void playAnimationSingle(String anim, byte animation, String nextAnim, byte nextAnimation, byte startFrame, byte endFrame, Informable informable)
+	public void playAnimationSingle(String anim, byte animation, String nextAnim, byte nextAnimation, byte startFrame, byte endFrame, boolean useDirection, Informable informable)
 	{
 		if (lock) return;
 		
@@ -281,7 +282,7 @@ public class Sprite3D implements Renderable {
 		this.endFrame = endFrame;
 		this.informable = informable;
 		
-		playAnimationLoop(anim, animation, false);
+		playAnimationLoop(anim, animation, useDirection);
 		this.frame = startFrame;
 		
 		lock = true;
@@ -339,7 +340,7 @@ public class Sprite3D implements Renderable {
 			byte d = 0;
 			if (abs_a < 60)
 			{
-				d = 2;
+				d = 3;
 			}
 			else if (abs_a > 120)
 			{
@@ -347,12 +348,15 @@ public class Sprite3D implements Renderable {
 			}
 			else if (angle < 0)
 			{
-				d = 4;
+				d = 1;
 			}
 			else if (angle > 0)
 			{
-				d = 1;
+				d = 2;
 			}
+			
+			if (d > NUM_ANIMS-1) d = (byte) (NUM_ANIMS-1);
+			
 			if (direction != d)
 			{
 				direction = d;
@@ -370,12 +374,7 @@ public class Sprite3D implements Renderable {
 		if (update)
 		{
 			update = false;
-			if (direction == 4){
-				region.setRegion((frame+1)*spriteWidth, (animation+1)*spriteHeight, -spriteWidth, spriteHeight);
-			}
-			else {
-				region.setRegion(frame*spriteWidth, (animation+direction)*spriteHeight, spriteWidth, spriteHeight);
-			}
+			region.setRegion(frame*spriteWidth, (animation+direction)*spriteHeight, spriteWidth, spriteHeight);
 			decal.setTextureRegion(region);
 		}
 	}
@@ -396,6 +395,20 @@ public class Sprite3D implements Renderable {
 		@Override
 		public int compareTo(SPRITESHEET a) {
 			return a.priority - priority;
+		}
+	}
+	
+	private static final class ANIMATION
+	{
+		public final String animationName;
+		public final String animationBase;
+		public final String[] extras;
+		
+		public ANIMATION(String animationName, String animationBase, String[] extras)
+		{
+			this.animationName = animationName;
+			this.animationBase = animationBase;
+			this.extras = extras;
 		}
 	}
 

@@ -141,4 +141,9 @@ public class Cylinder extends CollisionShape<Cylinder> {
 		
 	}
 
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((Cylinder)other);
+	}
+	
 }

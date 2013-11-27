@@ -2,29 +2,39 @@ package com.Lyeeedar.Entities;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Pools;
 
 public class EntityGraph {
 
-	private Entity entity;
+	public Entity entity;
 	public EntityGraph parent;
 	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
 	private final Entity.PositionalData pData = new  Entity.PositionalData();
+	public boolean walkable;
 	
-	public EntityGraph(Entity entity, EntityGraph parent)
+	public EntityGraph(Entity entity, EntityGraph parent, boolean walkable)
 	{
 		this.entity = entity;
 		this.parent = parent;
+		this.walkable = walkable;
 		if (parent != null) parent.children.add(this);
 		entity.setGraph(this);
+	}
+	
+	public void remove()
+	{
+		parent.children.remove(this);
+		for (EntityGraph graph : children) graph.insert(parent);
+		
+		pData.dispose();
+		if (entity != null) entity.dispose();
 	}
 	
 	public void pop()
@@ -35,15 +45,31 @@ public class EntityGraph {
 	
 	public void insert(EntityGraph parent)
 	{
+		if (!parent.walkable) return;
+		
 		this.parent = parent;
 		parent.children.add(this);
 	}
 	
 	public void popAndInsert(EntityGraph parent)
 	{
-		if (this.parent.equals(parent)) return;
+		if (this.parent == null || this.parent.equals(parent) || !parent.walkable) return;
 		pop();
 		insert(parent);
+	}
+	
+	public void collectDead(List<EntityGraph> list)
+	{
+		if (entity != null && entity.ALIVE < 0.0f)
+		{
+			list.add(this);
+		}
+		else
+		{
+			for (EntityGraph eg : children) {
+				eg.collectDead(list);
+			}
+		}
 	}
 
 	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
@@ -77,19 +103,36 @@ public class EntityGraph {
 		return collide;
 	}
 	
+	public EntityGraph collideWalkables(CollisionShape<?> source, EntityGraph graph)
+	{
+		if (!walkable || graph.equals(this)) return null;
+		
+		EntityGraph collide = null;
+		if (entity.collide(source)) collide = this;
+		
+		for (EntityGraph eg : children) 
+		{
+			EntityGraph temp = eg.collide(source, graph);
+			if (temp != null) collide = temp;
+		}
+		
+		return collide;
+	}
+	
 	public Entity getEntity()
 	{
 		return entity;
 	}
 	
-	public void setEntity(Entity e)
+	public void setEntity(Entity e, boolean walkable)
 	{
 		this.entity = e;
+		this.walkable = walkable;
 	}
 	
-	public void addEntity(Entity e)
+	public void addEntity(Entity e, boolean walkable)
 	{
-		new EntityGraph(e, this);
+		new EntityGraph(e, this, walkable);
 	}
 	
 	public void getDeltaPos(Vector3 deltaPos)

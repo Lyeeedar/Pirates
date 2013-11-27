@@ -80,7 +80,7 @@ public abstract class AbstractScreen implements Screen {
 		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
 		
 		ParticleEffect effect = new ParticleEffect(5);
-		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "f", "flame");
+		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
 		flame.createBasicEmitter(1, 1, new Color(0.3f, 0.3f, 0.4f, 0.5f), new Color(0.3f, 0.3f, 0.4f, 0.5f), 0, -75, 0);
 		flame.calculateParticles();
 		flame.create();

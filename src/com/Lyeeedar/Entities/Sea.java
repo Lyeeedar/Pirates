@@ -48,12 +48,12 @@ public class Sea {
 		speeds[0] = 1.0f;
 		directions[0] = 1.0f; directions[1] = 0.0f;
 		
-		amplitudes[1] = 2.3f;
+		amplitudes[1] = 0.3f;
 		wavelengths[1] = 73.0f;
 		speeds[1] = 15.0f;
 		directions[2] = -1.0f; directions[3] = -1.0f;
 		
-		amplitudes[2] = 10.4f;
+		amplitudes[2] = 0.4f;
 		wavelengths[2] = 373.0f;
 		speeds[2] = 51.1f;
 		directions[4] = 1.0f; directions[5] = 0.0f;

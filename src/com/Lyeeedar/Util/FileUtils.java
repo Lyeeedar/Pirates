@@ -27,7 +27,7 @@ public class FileUtils {
 	 */
 	public static Texture loadTexture(String textureName, boolean urgent)
 	{
-		String textureLocation = "data/textures/"+textureName+".png";
+		String textureLocation = textureName;
 		
 		if (loadedTextures.containsKey(textureLocation)) return loadedTextures.get(textureLocation);
 		
@@ -52,10 +52,44 @@ public class FileUtils {
 		loadedTextures.clear();
 	}
 	
+	public static HashMap<String, Pixmap> loadedPixmaps = new HashMap<String, Pixmap>();
+	/**
+	 * Tries to load the given pixmap. If set to urgent, will throw a runtime exception if this pixmap does not exist.
+	 * @param name
+	 * @param urgent
+	 * @return
+	 */
+	public static Pixmap loadPixmap(String name, boolean urgent)
+	{
+		String location = name;
+		
+		if (loadedPixmaps.containsKey(location)) return loadedPixmaps.get(location);
+		
+		if (!Gdx.files.internal(location).exists()) {
+			if (urgent) throw new RuntimeException("Pixmap "+location+" does not exist!");
+			else return null;
+		}
+		
+		Pixmap pixmap = new Pixmap(Gdx.files.internal(location));
+		
+		loadedPixmaps.put(location, pixmap);
+		
+		return pixmap;
+	}
+	
+	public static void unloadPixmaps()
+	{
+		for (Entry<String, Pixmap> entry : loadedPixmaps.entrySet())
+		{
+			entry.getValue().dispose();
+		}
+		loadedPixmaps.clear();
+	}
+	
 	public static HashMap<String, Mesh> loadedMeshes = new HashMap<String, Mesh>();
 	public static Mesh loadMesh(String meshName)
 	{
-		String meshLocation = "data/models/"+meshName+".obj";
+		String meshLocation = meshName;
 		
 		if (loadedMeshes.containsKey(meshLocation)) return loadedMeshes.get(meshLocation);
 		
@@ -83,7 +117,7 @@ public class FileUtils {
 	public static HashMap<String, TextureAtlas> loadedAtlases = new HashMap<String, TextureAtlas>();
 	public static TextureAtlas loadAtlas(String atlasName)
 	{
-		String atlasLocation = "data/atlases/"+atlasName+".atlas";
+		String atlasLocation = atlasName;
 		
 		if (loadedMeshes.containsKey(atlasLocation)) return loadedAtlases.get(atlasLocation);
 		

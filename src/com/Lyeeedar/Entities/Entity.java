@@ -6,7 +6,6 @@ import java.util.Map;
 
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
-import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -22,6 +21,8 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
 public class Entity {
+	
+	public float ALIVE = 10;
 	
 	public enum Equipment_Slot
 	{
@@ -39,9 +40,7 @@ public class Entity {
 	private AI_Package ai;
 	private final EntityRunnable runnable = new EntityRunnable();
 	private final EntityRenderables renderables = new EntityRenderables();
-	private EntityGraph entityGraph;
 	private CollisionShape<?> collisionShapeInternal;
-	private CollisionShape<?> collisionShapeExternal;
 	
 	public Entity()
 	{
@@ -58,10 +57,9 @@ public class Entity {
 	
 	public void setCollisionShapeExternal(CollisionShape<?> external)
 	{
-		this.collisionShapeExternal = external;
 		PositionalData data = new PositionalData();
 		readData(data, PositionalData.class);
-		data.shape = external.copy();
+		data.shape = external;
 		writeData(data, PositionalData.class);
 	}
 	
@@ -94,10 +92,9 @@ public class Entity {
 	
 	public void setGraph(EntityGraph eg)
 	{
-		this.entityGraph = eg;
 		PositionalData data = new PositionalData();
 		readData(data, PositionalData.class);
-		data.graph = entityGraph;
+		data.graph = eg;
 		writeData(data, PositionalData.class);
 	}
 	
@@ -113,7 +110,7 @@ public class Entity {
 	
 	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
-		((EquipmentData) entityData.get(EquipmentData.class)).update(delta);
+		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 		
 		renderables.set(this);
 		renderables.update(delta, cam);
@@ -150,7 +147,6 @@ public class Entity {
 		
 		return target;
 	}
-	
 	@SuppressWarnings("unchecked")
 	private <E extends EntityData<E>> E readOnlyRead(Class<E> type)
 	{
@@ -220,12 +216,30 @@ public class Entity {
 				r.queue(delta, modelBatch, decalBatch, trailBatch);
 			}
 		}
+		
+		public void dispose()
+		{
+			for (Renderable r : renderables)
+			{
+				r.dispose();
+			}
+		}
+	}
+	
+	public void dispose()
+	{
+		for (EntityData<? extends EntityData<?>> entry : entityData.values())
+		{
+			entry.dispose();
+		}
+		renderables.dispose();
 	}
 	
 	public interface EntityData<E extends EntityData<E>>
 	{
 		public void write(E data);
 		public void read(E target);
+		public void dispose();
 	}
 	public static class AnimationData implements EntityData<AnimationData>
 	{
@@ -245,6 +259,7 @@ public class Entity {
 		public byte endFrame = 0;
 		public Informable informable;
 
+		@Override
 		public void write(AnimationData data)
 		{
 			updateAnimations = data.updateAnimations;
@@ -264,24 +279,20 @@ public class Entity {
 			informable = data.informable;
 		}
 		
+		@Override
 		public void read(AnimationData target)
 		{
 			target.write(this);
 		}
+
+		
+		@Override
+		public void dispose() {
+			
+		}
 	}
 	public static class PositionalData implements EntityData<PositionalData>
 	{
-		public float radius = 0.5f;
-		public float radius2 = radius*radius;
-		public float radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
-		
-		public void updateRadius(float radius)
-		{
-			this.radius = radius;
-			this.radius2 = radius * radius;
-			this.radius2y = (radius+GLOBALS.STEP)*(radius+GLOBALS.STEP);
-		}
-		
 		public final Vector3 lastPos = new Vector3();
 		public final Vector3 position = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
@@ -298,8 +309,9 @@ public class Entity {
 		
 		public EntityGraph graph;
 		
-		public CollisionShape<?> shape = new CollisionRay(new Ray(position, rotation), radius);
+		public CollisionShape<?> shape = Pools.obtain(CollisionRay.class).set(new Ray(position, rotation), 0.5f);
 		
+		@Override
 		public void write(PositionalData data)
 		{
 			lastPos.set(data.lastPos);
@@ -309,14 +321,21 @@ public class Entity {
 			up.set(data.up);
 			composed.set(data.composed);
 			jumpToken = data.jumpToken;
-			radius = data.radius;
-			radius2 = data.radius2;
-			radius2y = data.radius2y;
 			scale.set(data.scale);
 			graph = data.graph;
-			shape = data.shape.copy();
+			
+			if (shape.getClass().equals(data.shape.getClass()))
+			{
+				shape.setGeneric(data.shape);
+			}
+			else
+			{
+				shape.free();
+				shape = data.shape.copy();
+			}
 		}
 		
+		@Override
 		public void read(PositionalData target)
 		{
 			target.write(this);
@@ -390,7 +409,7 @@ public class Entity {
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
-			ray.len = radius2y+GLOBALS.STEP;
+			ray.len = 0.25f+GLOBALS.STEP;
 			ray.reset();
 			ray.calculateBoundingBox();
 
@@ -417,6 +436,7 @@ public class Entity {
 				if (v.y < 0) v.y = 0;
 				position.y =  waveHeight;
 				GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
+				graph.popAndInsert(GLOBALS.WORLD);
 			}
 			
 			jumpToken = 2;
@@ -456,6 +476,11 @@ public class Entity {
 			
 			calculateComposed();
 		}
+
+		@Override
+		public void dispose() {
+			Pools.free(shape);
+		}
 	}
 	public static class EquipmentData implements EntityData<EquipmentData>
 	{
@@ -469,12 +494,12 @@ public class Entity {
 			}
 		}
 		
-		public void update(float delta)
+		public void update(float delta, Entity entity)
 		{
 			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : equipment.entrySet())
 			{
 				Equipment<?> e = entry.getValue();
-				if (e != null) e.update(delta);
+				if (e != null) e.update(delta, entity);
 			}
 		}
 		
@@ -528,18 +553,34 @@ public class Entity {
 		public void read(EquipmentData target) {
 			target.write(this);
 		}
+
+		
+		@Override
+		public void dispose() {
+			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : equipment.entrySet())
+			{
+				if (entry.getValue() != null) entry.getValue().dispose();
+			}
+		}
 	}
 	public static class StatusData implements EntityData<StatusData>
 	{
 
+		public int currentHealth = 1;
+		
 		@Override
 		public void write(StatusData data) {
-			// TODO Auto-generated method stub
-			
+			currentHealth = data.currentHealth;
 		}
 
 		@Override
 		public void read(StatusData target) {
+			target.write(this);
+		}
+
+		
+		@Override
+		public void dispose() {
 			// TODO Auto-generated method stub
 			
 		}

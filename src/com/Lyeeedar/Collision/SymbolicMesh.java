@@ -252,6 +252,11 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 	public SymbolicMesh set(SymbolicMesh other) {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((SymbolicMesh)other);
+	}
 
 	@Override
 	public SymbolicMesh copy() {

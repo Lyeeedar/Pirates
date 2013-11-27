@@ -2,7 +2,9 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
 import com.badlogic.gdx.Gdx;
@@ -16,6 +18,7 @@ public class AI_Player_Control extends AI_Package {
 	
 	private final PositionalData entityPos = new PositionalData();
 	private final AnimationData entityAnim = new AnimationData();
+	private final EquipmentData entityEquip = new EquipmentData();
 	
 	public AI_Player_Control(Entity entity, Controls controls)
 	{
@@ -29,20 +32,22 @@ public class AI_Player_Control extends AI_Package {
 		
 		entity.readData(entityPos, PositionalData.class);
 		entity.readData(entityAnim, AnimationData.class);
+		entity.readData(entityEquip, EquipmentData.class);
 		
 		entityPos.Xrotate(-controls.getDeltaX());
 		
+		byte speed = 10;
+		if (controls.sprint()) speed = 100;
+		
+		if (controls.up()) entityPos.forward_backward(speed);
+		if (controls.down()) entityPos.forward_backward(-speed);
+		
+		if (controls.left()) entityPos.left_right(speed);
+		if (controls.right()) entityPos.left_right(-speed);
+		
 		if (!animationLock)
 		{
-			byte speed = 10;
-			if (controls.sprint()) speed = 100;
-			
-			if (controls.up()) entityPos.forward_backward(speed);
-			if (controls.down()) entityPos.forward_backward(-speed);
-			
-			if (controls.left()) entityPos.left_right(speed);
-			if (controls.right()) entityPos.left_right(-speed);
-			
+
 			if (controls.sprint()) {
 				if (entityAnim.animation != 3) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
@@ -94,17 +99,25 @@ public class AI_Player_Control extends AI_Package {
 		{
 			animationLock = true;
 			entityAnim.playAnim = "attack_1";
-			entityAnim.playAnimation = 2;
+			entityAnim.playAnimation = 0;
 			entityAnim.nextAnim = entityAnim.anim;
 			entityAnim.nextAnimation = entityAnim.animation;
 			entityAnim.startFrame = 0;
-			entityAnim.endFrame = 7;
+			entityAnim.endFrame = 3;
 			entityAnim.informable = this;
+			entityAnim.useDirection = true;
+			
+			entityEquip.getEquipment(Equipment_Slot.RARM).use();
+		}
+		else if (!entityAnim.animationLock)
+		{
+			entityEquip.getEquipment(Equipment_Slot.RARM).stopUsing();
 		}
 		entityAnim.animationLock = animationLock;
 		
 		entity.writeData(entityPos, PositionalData.class);
 		entity.writeData(entityAnim, AnimationData.class);
+		entity.writeData(entityEquip, EquipmentData.class);
 	}
 
 	@Override

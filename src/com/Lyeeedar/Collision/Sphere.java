@@ -136,4 +136,9 @@ public class Sphere extends CollisionShape<Sphere> {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((Sphere)other);
+	}
 }

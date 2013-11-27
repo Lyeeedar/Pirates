@@ -6,16 +6,15 @@ import java.util.Random;
 
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
-import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Sea;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
-import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.Items.Blade;
@@ -25,11 +24,11 @@ import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.WeaponTrail;
-import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
+import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -39,9 +38,7 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.Ray;
 
 public class GameScreen extends AbstractScreen {
 	
@@ -67,7 +64,7 @@ public class GameScreen extends AbstractScreen {
 		
 		long time = System.nanoTime();
 		
-		Texture texture = GLOBALS.ASSET_MANAGER.get("data/textures/grass.png", Texture.class);
+		Texture texture = FileUtils.loadTexture("data/textures/grass.png", true);
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 
 		IslandGenerator ig = new IslandGenerator();
@@ -82,7 +79,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity island = new Entity();
 		island.readData(pData, PositionalData.class);
-		//pData.position.x = 10;
+		pData.position.x = 10;
 		//pData.scale.set(2.2f, 2.2f, 2.2f);
 		pData.calculateComposed();
 		island.writeData(pData, PositionalData.class);
@@ -91,13 +88,13 @@ public class GameScreen extends AbstractScreen {
 		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
 		island.setCollisionShapeInternal(mesh);
 		
-		texture = GLOBALS.ASSET_MANAGER.get("data/textures/sand.png", Texture.class);
+		texture = FileUtils.loadTexture("data/textures/sand.png", true);
 		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
-		GLOBALS.WORLD.addEntity(island);
-		GLOBALS.WORLD.setEntity(terrain);
+		GLOBALS.WORLD.addEntity(island, true);
+		GLOBALS.WORLD.setEntity(terrain, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
@@ -108,17 +105,19 @@ public class GameScreen extends AbstractScreen {
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
-		Sprite3D s = new Sprite3D(1, 2);
-		s.setGender(false);
-		s.addAnimation("move");
-		s.addAnimation("attack_1");
-		s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
-		s.create(GLOBALS.ASSET_MANAGER);
+		Sprite3D s = new Sprite3D(2, 2, 4, 4);
+		s.setGender(true);
+		s.addAnimation("move", "move");
+		s.addAnimation("attack_1", "attack", "_1");
+		s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
+		//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
+		s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
+		s.create();
 		player.addRenderable(s);
-		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 100, Color.WHITE, GLOBALS.ASSET_MANAGER.get("data/textures/gradient.png", Texture.class), 0.01f));
+		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		CollisionRay ray = new CollisionRay();
 		ray.len = 1;
-		//player.setCollisionShape(new Sphere(new Vector3(), 0.1f));
+		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		
 		player.readData(pData, PositionalData.class);
 		pData.position.set(4, 5, 0);
@@ -129,7 +128,7 @@ public class GameScreen extends AbstractScreen {
 		eData.addEquipment(Equipment_Slot.RARM, new Blade(1));
 		player.writeData(eData, EquipmentData.class);
 		
-		GLOBALS.WORLD.addEntity(player);
+		GLOBALS.WORLD.addEntity(player, false);
 		
 		Random ran = new Random();
 		for (int i = 0; i < numEntities; i++)
@@ -140,16 +139,19 @@ public class GameScreen extends AbstractScreen {
 			ge.setAI(ai);
 			//ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 			ge.readData(pData, PositionalData.class);
-			pData.position.set(4, 5, 0);
+			pData.position.set(4, 15, 0);
 			ge.writeData(pData, PositionalData.class);
+			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
-			GLOBALS.WORLD.addEntity(ge);
+			GLOBALS.WORLD.addEntity(ge, false);
 			
-			s = new Sprite3D(1, 2);
+			s = new Sprite3D(2, 2, 4, 4);
 			s.setGender(false);
-			s.addAnimation("move");
-			s.addLayer("human_body", Color.WHITE, 0, SpriteLayer.BODY);
-			s.create(GLOBALS.ASSET_MANAGER);
+			s.addAnimation("move", "move");
+			//s.addAnimation("attack_1");
+			s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
+			//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
+			s.create();
 			
 			ge.addRenderable(s);
 		}
@@ -214,6 +216,7 @@ public class GameScreen extends AbstractScreen {
 	}
 
 	LinkedList<Runnable> list = new LinkedList<Runnable>();
+	ArrayList<EntityGraph> deadList = new ArrayList<EntityGraph>();
 	boolean increase = true;
 	
 	float strike_time = 0.0f;
@@ -233,7 +236,11 @@ public class GameScreen extends AbstractScreen {
 		cam.update(dataPos);
 		this.visibleEmitters.get(0).setPosition(dataPos.position);
 		
-		lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
+		GLOBALS.WORLD.collectDead(deadList);
+		for (EntityGraph eg : deadList) eg.remove();
+		deadList.clear();
+		
+		//lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
 		//delta /= 10;
 		

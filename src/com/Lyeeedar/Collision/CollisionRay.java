@@ -41,7 +41,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void reset()
 	{
-		intersection.set(ray.origin);
+		intersection.set(ray.direction).scl(len).add(ray.origin);
 		dist = len;
 	}
 
@@ -83,7 +83,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 
 	@Override
 	public CollisionRay copy() {
-		return new CollisionRay(ray, len).set(this);
+		return Pools.obtain(CollisionRay.class).set(this);
 	}
 
 	@Override
@@ -183,5 +183,18 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 		//ray.origin.scl(scale);
 		//intersection.scl(scale);
 		
+	}
+
+	public CollisionShape<?> set(Ray ray2, float f) {
+
+		ray.set(ray2);
+		len = f;
+		
+		return this;
+	}
+
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((CollisionRay)other);
 	}
 }

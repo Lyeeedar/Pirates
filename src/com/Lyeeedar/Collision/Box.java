@@ -165,5 +165,10 @@ public class Box extends CollisionShape<Box> {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((Box)other);
+	}
 
 }

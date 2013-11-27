@@ -44,6 +44,7 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	public abstract void reset();
 	
 	public abstract E set(E other);
+	public abstract void setGeneric(CollisionShape<?> other);
 	public abstract E copy();
 	
 	public abstract E obtain();

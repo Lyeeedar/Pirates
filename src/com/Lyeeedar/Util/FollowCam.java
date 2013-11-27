@@ -1,6 +1,8 @@
 package com.Lyeeedar.Util;
 
+import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector3;
 
@@ -8,6 +10,8 @@ public class FollowCam extends PerspectiveCamera {
 	
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
+	private final CollisionRay ray = new CollisionRay();
+	private static final float followDist = 6.0f;
 	
 	public FollowCam(Controls controls)
 	{
@@ -15,6 +19,7 @@ public class FollowCam extends PerspectiveCamera {
 	}
 	
 	private float angle = -25;
+	private float minDist = 0;
 	
 	public void update(PositionalData entityState)
 	{
@@ -26,9 +31,31 @@ public class FollowCam extends PerspectiveCamera {
 		up.set(entityState.up);
 		direction.set(entityState.rotation);
 		Yrotate(angle);
-		tmp.set(direction).scl(6);
-		position.set(entityState.position).add(0, 1, 0).sub(tmp);
 		
+		ray.ray.origin.set(entityState.position).add(0, 1, 0);
+		ray.ray.direction.set(direction).scl(-1.0f);
+		ray.len = followDist;
+		ray.reset();
+		
+		position.set(ray.intersection);
+		update();
+		
+		minDist = ray.dist;
+		
+		for (int i = 0; i < 4; i++)
+		{
+			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
+			
+			GLOBALS.WORLD.collideWalkables(ray, entityState.graph);
+			
+			if (ray.dist < minDist) minDist = ray.dist;
+		}
+		
+		ray.len = minDist;
+		ray.ray.direction.set(direction).scl(-1.0f);
+		ray.reset();
+		
+		position.set(ray.intersection);
 		update();
 	}
 

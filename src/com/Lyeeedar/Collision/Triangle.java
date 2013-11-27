@@ -197,4 +197,8 @@ public class Triangle extends CollisionShape<Triangle> {
 		
 	}
 
+	@Override
+	public void setGeneric(CollisionShape<?> other) {
+		set((Triangle)other);
+	}
 }
