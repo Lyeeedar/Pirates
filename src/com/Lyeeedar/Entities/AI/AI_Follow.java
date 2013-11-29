@@ -35,6 +35,12 @@ public class AI_Follow extends AI_Package {
 		entity.readData(entityAnim, AnimationData.class);
 		entity.readData(entityStatus, StatusData.class);
 		
+		if (entityStatus.damage != 0)
+		{
+			entity.DAMAGE = entityStatus.damage;
+			entityStatus.currentHealth -= entityStatus.damage;
+			entityStatus.damage = 0;
+		}
 		
 		if (entityStatus.currentHealth < 0) 
 		{
@@ -81,6 +87,7 @@ public class AI_Follow extends AI_Package {
 		
 		entity.writeData(entityPos, PositionalData.class);
 		entity.writeData(entityAnim, AnimationData.class);
+		entity.writeData(entityStatus, StatusData.class);
 	}
 	
 	private final Vector3 up = new Vector3(0, 1, 0);

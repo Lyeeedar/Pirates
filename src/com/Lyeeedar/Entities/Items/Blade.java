@@ -16,6 +16,9 @@ public class Blade extends Weapon<Blade> {
 	public final Ray edge = new Ray(new Vector3(), new Vector3(GLOBALS.DEFAULT_ROTATION));
 	public float dist;
 	
+	private float hitCD = 0;
+	private float hitSpeed = 0.2f;
+	
 	public boolean swinging = false;
 	private float angle = 0;
 	
@@ -52,17 +55,24 @@ public class Blade extends Weapon<Blade> {
 			return;
 		}
 		
-		entity.readData(pData, PositionalData.class);
+		hitCD -= delta;
 		
-		box.center.set(pData.rotation).scl(1.0f).add(pData.position);
-		
-		EntityGraph graph = GLOBALS.WORLD.collide(box, pData.graph);
-		
-		if (graph != null && graph.entity != null) 
+		if (hitCD < 0)
 		{
-			graph.entity.readData(sData, StatusData.class);
-			sData.currentHealth -= 1;
-			graph.entity.writeData(sData, StatusData.class);
+			
+			entity.readData(pData, PositionalData.class);
+			
+			box.center.set(pData.rotation).scl(1.0f).add(pData.position);
+			
+			EntityGraph graph = GLOBALS.WORLD.collide(box, pData.graph);
+			
+			if (graph != null && graph.entity != null) 
+			{
+				graph.entity.readData(sData, StatusData.class);
+				sData.damage = 1;
+				graph.entity.writeData(sData, StatusData.class);
+			}
+			hitCD = hitSpeed;
 		}
 		
 		angle += delta*1000;

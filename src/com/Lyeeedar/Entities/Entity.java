@@ -23,6 +23,7 @@ import com.badlogic.gdx.math.collision.Ray;
 public class Entity {
 	
 	public float ALIVE = 10;
+	public int DAMAGE = 0;
 	
 	public enum Equipment_Slot
 	{
@@ -566,11 +567,13 @@ public class Entity {
 	public static class StatusData implements EntityData<StatusData>
 	{
 
-		public int currentHealth = 1;
+		public int currentHealth = 5;
+		public int damage = 0;
 		
 		@Override
 		public void write(StatusData data) {
 			currentHealth = data.currentHealth;
+			damage = data.damage;
 		}
 
 		@Override

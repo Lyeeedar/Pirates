@@ -6,8 +6,13 @@ import java.util.List;
 
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 
@@ -64,11 +69,8 @@ public class EntityGraph {
 		{
 			list.add(this);
 		}
-		else
-		{
-			for (EntityGraph eg : children) {
-				eg.collectDead(list);
-			}
+		for (EntityGraph eg : children) {
+			eg.collectDead(list);
 		}
 	}
 
@@ -79,6 +81,19 @@ public class EntityGraph {
 		for (EntityGraph eg : children) {
 			eg.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
 		}
+	}
+	
+	public void getText(List<TextParticle> list, SpriteBatch sB, BitmapFont font)
+	{
+		if (entity != null && entity.DAMAGE > 0)
+		{
+			entity.readData(pData, Entity.PositionalData.class);
+			Decal decal = ImageUtils.getTextDecal(0.5f, 0.8f, sB, font, ""+entity.DAMAGE);
+			decal.setColor(1.0f, 0.0f, 0.0f, 1.0f);
+			list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0)));
+			entity.DAMAGE = 0;
+		}
+		for (EntityGraph eg : children) eg.getText(list, sB, font);
 	}
 	
 	public void getRunnable(LinkedList<Runnable> list, float delta)

@@ -1,6 +1,7 @@
 package com.Lyeeedar.Screens;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -25,6 +26,7 @@ import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.WeaponTrail;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
@@ -53,6 +55,8 @@ public class GameScreen extends AbstractScreen {
 	long time = System.currentTimeMillis();
 	
 	Entity player;
+	
+	LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 
 	public GameScreen(LightManager lights) {
 		super(lights);
@@ -190,12 +194,28 @@ public class GameScreen extends AbstractScreen {
 		// TODO Auto-generated method stub
 
 	}
-
+	
 	@Override
 	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
 		
 		GLOBALS.WORLD.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
+		GLOBALS.WORLD.getText(tParticles, spriteBatch, font);
+		Iterator<TextParticle> itr = tParticles.iterator();
+		while (itr.hasNext())
+		{
+			TextParticle tp = itr.next();
+			if (tp.lifeTime < 0)
+			{
+				itr.remove();
+				tp.dispose();
+			}
+			else
+			{
+				tp.update(delta, cam);
+				tp.render(decalBatch);
+			}
+		}
 	}
 
 	@Override
@@ -242,37 +262,37 @@ public class GameScreen extends AbstractScreen {
 		
 		//lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
-		//delta /= 10;
+		delta /= 300;
 		
-//		if (increase) 
-//		{
-//			lights.directionalLight.direction.y += delta;
-//			
-//			if (lights.directionalLight.direction.y < 0.0f) 
-//			{
-//				lights.directionalLight.direction.z += delta;
-//			}
-//			else
-//			{
-//				lights.directionalLight.direction.z -= delta;
-//			}
-//		}
-//		else 
-//		{
-//			lights.directionalLight.direction.y -= delta;
-//			
-//			if (lights.directionalLight.direction.y < 0.0f) 
-//			{
-//				lights.directionalLight.direction.z += delta;
-//			}
-//			else
-//			{
-//				lights.directionalLight.direction.z -= delta;
-//			}
-//		}
-//		
-//		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
-//		if (lights.directionalLight.direction.y < -1) increase = true;
+		if (increase) 
+		{
+			lights.directionalLight.direction.y += delta;
+			
+			if (lights.directionalLight.direction.y < 0.0f) 
+			{
+				lights.directionalLight.direction.z += delta;
+			}
+			else
+			{
+				lights.directionalLight.direction.z -= delta;
+			}
+		}
+		else 
+		{
+			lights.directionalLight.direction.y -= delta;
+			
+			if (lights.directionalLight.direction.y < 0.0f) 
+			{
+				lights.directionalLight.direction.z += delta;
+			}
+			else
+			{
+				lights.directionalLight.direction.z -= delta;
+			}
+		}
+		
+		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
+		if (lights.directionalLight.direction.y < -1) increase = true;
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;

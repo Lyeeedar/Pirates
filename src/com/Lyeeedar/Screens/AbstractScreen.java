@@ -38,10 +38,10 @@ public abstract class AbstractScreen implements Screen {
 	int screen_width;
 	int screen_height;
 
-	private SpriteBatch spriteBatch;
-	private DecalBatch decalBatch;
-	private MotionTrailBatch trailBatch;
-	private AbstractModelBatch renderer;
+	protected SpriteBatch spriteBatch;
+	protected DecalBatch decalBatch;
+	protected MotionTrailBatch trailBatch;
+	protected AbstractModelBatch renderer;
 
 	protected BitmapFont font;
 	protected final Stage stage;
@@ -68,7 +68,7 @@ public abstract class AbstractScreen implements Screen {
 	public AbstractScreen(LightManager lights)
 	{
 		this.lights = lights;
-		font = new BitmapFont();
+		font = new BitmapFont(true);
 		spriteBatch = new SpriteBatch();
 		trailBatch = new MotionTrailBatch();
 		renderer = new CellShadingModelBatch();
