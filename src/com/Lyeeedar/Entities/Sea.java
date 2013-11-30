@@ -124,6 +124,19 @@ public class Sea {
 	    return height;
 	}
 	
+	public float waveMax(int i) 
+	{
+	    return (float) (amplitudes[i]);
+	}
+	
+	public float waveHeightMax()
+	{
+		float height = 0.0f;
+	    for (int i = 0; i < numWaves; ++i)
+	        height += waveMax(i);
+	    return height;
+	}
+	
 	public void modifyVelocity(Vector3 velocity, float delta, float px, float pz)
 	{
 		float x = 0;

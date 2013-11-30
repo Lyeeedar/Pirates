@@ -13,4 +13,5 @@ public abstract class AI_Package implements Informable {
 	}
 	
 	public abstract void update(float delta);
+	public abstract void dispose();
 }

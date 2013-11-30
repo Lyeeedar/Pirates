@@ -124,4 +124,10 @@ public class AI_Player_Control extends AI_Package {
 	public void inform() {
 		animationLock = false;
 	}
+
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+		
+	}
 }

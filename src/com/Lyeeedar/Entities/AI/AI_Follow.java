@@ -16,6 +16,10 @@ public class AI_Follow extends AI_Package {
 	AnimationData entityAnim = new AnimationData();
 	
 	Vector3 tmp = new Vector3();
+	
+	float deathCD = 1f;
+	float damageCD = 0.3f;
+	float damage = 0f;
 
 	public AI_Follow(Entity entity) {
 		super(entity);
@@ -37,17 +41,37 @@ public class AI_Follow extends AI_Package {
 		
 		if (entityStatus.damage != 0)
 		{
-			entity.DAMAGE = entityStatus.damage;
+			entityStatus.DAMAGED = entityStatus.damage;
 			entityStatus.currentHealth -= entityStatus.damage;
 			entityStatus.damage = 0;
+			damage = damageCD;
+		}
+		
+		damage -= delta;
+		if (damage > 0.0f)
+		{
+			entityAnim.colour.set(1.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			entityAnim.colour.set(1.0f, 1.0f, 1.0f);
 		}
 		
 		if (entityStatus.currentHealth < 0) 
 		{
-			entity.ALIVE = 9;
+			entityAnim.updateAnimations = true;
+			entityAnim.animate = false;
+			if (deathCD > 0) deathCD -= delta;
+			
+			entityPos.applyVelocity(delta);
+			entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+			
+			entityAnim.alpha = deathCD;
+			
+			if (deathCD < 0) entityStatus.ALIVE = false;
 		}
 		
-		if (entity.ALIVE == 10)
+		if (entityStatus.currentHealth > 0)
 		{
 			entityAnim.updateAnimations = true;
 			entityAnim.animation = 0;
@@ -72,18 +96,7 @@ public class AI_Follow extends AI_Package {
 			
 			entityPos.applyVelocity(delta);
 			entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
-		}
-		else
-		{
-			entityAnim.updateAnimations = true;
-			entityAnim.animate = false;
-			entity.ALIVE -= delta*500.0f;
-			
-			entityPos.applyVelocity(delta);
-			entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
-		}
-
-		
+		}	
 		
 		entity.writeData(entityPos, PositionalData.class);
 		entity.writeData(entityAnim, AnimationData.class);
@@ -94,6 +107,12 @@ public class AI_Follow extends AI_Package {
 
 	@Override
 	public void inform() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void dispose() {
 		// TODO Auto-generated method stub
 		
 	}

@@ -10,6 +10,7 @@ import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderable;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Informable;
@@ -21,9 +22,6 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
 public class Entity {
-	
-	public float ALIVE = 10;
-	public int DAMAGE = 0;
 	
 	public enum Equipment_Slot
 	{
@@ -109,12 +107,12 @@ public class Entity {
 		renderables.remove(r);
 	}
 	
-	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
 		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 		
 		renderables.set(this);
-		renderables.update(delta, cam);
+		renderables.update(delta, cam, lights);
 		renderables.queue(delta, modelBatch, decalBatch, trailBatch);
 	}
 	
@@ -202,11 +200,11 @@ public class Entity {
 			}
 		}
 		
-		public void update(float delta, Camera cam)
+		public void update(float delta, Camera cam, LightManager lights)
 		{
 			for (Renderable r : renderables)
 			{
-				r.update(delta, cam);
+				r.update(delta, cam, lights);
 			}
 		}
 		
@@ -234,6 +232,7 @@ public class Entity {
 			entry.dispose();
 		}
 		renderables.dispose();
+		ai.dispose();
 	}
 	
 	public interface EntityData<E extends EntityData<E>>
@@ -259,6 +258,9 @@ public class Entity {
 		public byte startFrame = 0;
 		public byte endFrame = 0;
 		public Informable informable;
+		
+		public final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
+		public float alpha = 1.0f;
 
 		@Override
 		public void write(AnimationData data)
@@ -278,6 +280,9 @@ public class Entity {
 			startFrame = data.startFrame;
 			endFrame = data.endFrame;
 			informable = data.informable;
+			
+			colour.set(data.colour);
+			alpha = data.alpha;
 		}
 		
 		@Override
@@ -566,12 +571,17 @@ public class Entity {
 	}
 	public static class StatusData implements EntityData<StatusData>
 	{
-
+		public boolean ALIVE = true;
+		public int DAMAGED = 0;
+		
 		public int currentHealth = 5;
 		public int damage = 0;
 		
 		@Override
 		public void write(StatusData data) {
+			ALIVE = data.ALIVE;
+			DAMAGED = data.DAMAGED;
+			
 			currentHealth = data.currentHealth;
 			damage = data.damage;
 		}

@@ -35,4 +35,10 @@ public class AI_Simple extends AI_Package {
 
 	}
 
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

@@ -2,6 +2,7 @@ package com.Lyeeedar.Graphics;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
@@ -45,7 +46,7 @@ public final class Model implements Renderable {
 	}
 
 	@Override
-	public void update(float delta, Camera cam) {
+	public void update(float delta, Camera cam, LightManager lights) {
 
 	}
 

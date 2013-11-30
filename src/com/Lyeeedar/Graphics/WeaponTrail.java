@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Items.Blade;
 import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -92,7 +93,7 @@ public class WeaponTrail implements Renderable {
 	}
 
 	@Override
-	public void update(float delta, Camera cam) {
+	public void update(float delta, Camera cam, LightManager lights) {
 		cooldown -= delta;
 		
 		if (cooldown < 0) {

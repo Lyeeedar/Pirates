@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
@@ -60,6 +61,9 @@ public class Sprite3D implements Renderable {
 	
 	private final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 	private final Vector3 position = new Vector3();
+	private final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
+	private float alpha = 1.0f;
+	private final Vector3 finalColour = new Vector3();
 	
 	private Decal decal;
 	private TextureRegion region;
@@ -108,6 +112,7 @@ public class Sprite3D implements Renderable {
 	@Override
 	public void queue(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
+		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
 		decalBatch.add(decal);
 		
 	}
@@ -128,6 +133,9 @@ public class Sprite3D implements Renderable {
 		{
 			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.informable);
 		}
+		
+		colour.set(aData.colour);
+		alpha = aData.alpha;
 	}
 	
 	public void addAnimation(String animation, String base, String... extras)
@@ -310,7 +318,7 @@ public class Sprite3D implements Renderable {
 		}
 	}
 
-	public void update(float delta, Camera cam)
+	public void update(float delta, Camera cam, LightManager lights)
 	{
 		animationCD -= delta;
 		
@@ -377,6 +385,8 @@ public class Sprite3D implements Renderable {
 			region.setRegion(frame*spriteWidth, (animation+direction)*spriteHeight, spriteWidth, spriteHeight);
 			decal.setTextureRegion(region);
 		}
+		
+		lights.getLight(position, finalColour).scl(colour);
 	}
 
 	private static final class SPRITESHEET implements Comparable<SPRITESHEET>

@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Util.ImageUtils;
@@ -22,7 +23,8 @@ public class EntityGraph {
 	public EntityGraph parent;
 	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
 	private final Entity.PositionalData pData = new  Entity.PositionalData();
-	public boolean walkable;
+	private final Entity.StatusData sData = new  Entity.StatusData();
+	public boolean walkable = false;
 	
 	public EntityGraph(Entity entity, EntityGraph parent, boolean walkable)
 	{
@@ -65,33 +67,41 @@ public class EntityGraph {
 	
 	public void collectDead(List<EntityGraph> list)
 	{
-		if (entity != null && entity.ALIVE < 0.0f)
+		if (entity != null)
 		{
-			list.add(this);
+			entity.readData(sData, Entity.StatusData.class);
+			
+			if (!sData.ALIVE) list.add(this);
 		}
 		for (EntityGraph eg : children) {
 			eg.collectDead(list);
 		}
 	}
 
-	public void queueRenderables(Camera cam, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
-		entity.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
+		entity.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
 		
 		for (EntityGraph eg : children) {
-			eg.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
+			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
 		}
 	}
 	
 	public void getText(List<TextParticle> list, SpriteBatch sB, BitmapFont font)
 	{
-		if (entity != null && entity.DAMAGE > 0)
+		if (entity != null)
 		{
-			entity.readData(pData, Entity.PositionalData.class);
-			Decal decal = ImageUtils.getTextDecal(0.5f, 0.8f, sB, font, ""+entity.DAMAGE);
-			decal.setColor(1.0f, 0.0f, 0.0f, 1.0f);
-			list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0)));
-			entity.DAMAGE = 0;
+			entity.readData(sData, Entity.StatusData.class);
+			
+			if (sData.DAMAGED != 0)
+			{
+				entity.readData(pData, Entity.PositionalData.class);
+				Decal decal = ImageUtils.getTextDecal(0.5f, 0.8f, sB, font, ""+sData.DAMAGED);
+				decal.setColor(1.0f, 0.0f, 0.0f, 1.0f);
+				list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0)));
+				sData.DAMAGED = 0;
+				entity.writeData(sData, Entity.StatusData.class);
+			}
 		}
 		for (EntityGraph eg : children) eg.getText(list, sB, font);
 	}
@@ -127,7 +137,7 @@ public class EntityGraph {
 		
 		for (EntityGraph eg : children) 
 		{
-			EntityGraph temp = eg.collide(source, graph);
+			EntityGraph temp = eg.collideWalkables(source, graph);
 			if (temp != null) collide = temp;
 		}
 		

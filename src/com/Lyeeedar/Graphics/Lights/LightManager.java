@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Lights;
 
+import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -91,5 +92,23 @@ public class LightManager {
 		shader.setUniform3fv("u_pl_pos", positions, 0, 3*MAX_LIGHTS);
 		shader.setUniform3fv("u_pl_col", colours, 0, 3*MAX_LIGHTS);
 		shader.setUniform1fv("u_pl_att", attenuations, 0, MAX_LIGHTS);
+	}
+	
+	public Vector3 getLight(Vector3 position, Vector3 light)
+	{
+		Vector3 tmpVec = Pools.obtain(Vector3.class);
+		light.set(ambientColour);
+		for (Light l : lights)
+		{
+			float dist = l.position.dst(position);
+			float brightness = 1.0f / (l.attenuation*dist);
+			tmpVec.set(l.colour).scl(brightness);
+			light.add(tmpVec);
+		}
+		Pools.free(tmpVec);
+		if (light.x > 1.0f) light.x = 1.0f;
+		if (light.y > 1.0f) light.y = 1.0f;
+		if (light.z > 1.0f) light.z = 1.0f;
+		return light;
 	}
 }

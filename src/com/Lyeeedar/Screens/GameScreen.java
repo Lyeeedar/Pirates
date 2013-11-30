@@ -199,7 +199,7 @@ public class GameScreen extends AbstractScreen {
 	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
 		
-		GLOBALS.WORLD.queueRenderables(cam, delta, modelBatch, decalBatch, trailBatch);
+		GLOBALS.WORLD.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
 		GLOBALS.WORLD.getText(tParticles, spriteBatch, font);
 		Iterator<TextParticle> itr = tParticles.iterator();
 		while (itr.hasNext())
@@ -262,7 +262,7 @@ public class GameScreen extends AbstractScreen {
 		
 		//lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
-		delta /= 300;
+		delta /= 10;//delta /= 300;
 		
 		if (increase) 
 		{
@@ -293,6 +293,20 @@ public class GameScreen extends AbstractScreen {
 		
 		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
 		if (lights.directionalLight.direction.y < -1) increase = true;
+		
+		if (lights.directionalLight.direction.y > 0.1f)
+		{
+			lights.ambientColour.set(1.0f, 1.0f, 1.0f);
+		}
+		else if (lights.directionalLight.direction.y < -0.5f)
+		{
+			lights.ambientColour.set(0.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			float brightness = (lights.directionalLight.direction.y+0.5f) / 0.6f;
+			lights.ambientColour.set(brightness, brightness, brightness);
+		}
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
