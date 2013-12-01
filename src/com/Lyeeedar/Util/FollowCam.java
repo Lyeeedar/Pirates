@@ -2,7 +2,6 @@ package com.Lyeeedar.Util;
 
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector3;
@@ -64,7 +63,7 @@ public class FollowCam extends PerspectiveCamera {
 		
 		for (int i = 0; i < 2; i++)
 		{
-			float seaHeight = GLOBALS.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
+			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
 			float diff = seaHeight - frustum.planePoints[i].y;
 			if (diff > seaY) seaY = diff;
 		}

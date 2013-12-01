@@ -1,34 +1,30 @@
 package com.Lyeeedar.Pirates;
 
-import java.io.IOException;
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
-import com.Lyeeedar.Entities.Sea;
-import com.Lyeeedar.Entities.Terrain;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Graphics.SkyBox;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.math.Vector3;
 
 public final class GLOBALS {
+	
+	public enum ELEMENTS
+	{
+		TEMPERATURE, // Hot, cold
+		LIGHT, // Shadow, lasers, illusions
+		LIFE, // Healing, necromancy
+		GAIA, // Earth, plants, weather
+		FORCE // Gravity, physical buffs
+	}
 
-	public static final float STEP = 1f;
+	public static final float STEP = 0.5f;
 
 	public static final int MAX_SPEED_X = 60;
 	public static final int MAX_SPEED_Y = 100;
@@ -49,10 +45,11 @@ public final class GLOBALS {
 	
 	public static float PROGRAM_TIME = 0.0f;
 			
-	public static Sea sea;
-
+	public static SkyBox SKYBOX;
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null, true);
-
+	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();
+	public static LightManager LIGHTS = new LightManager();
+	
 	public static ExecutorService threadPool = Executors.newFixedThreadPool(1);//Runtime.getRuntime().availableProcessors());
 	public static LinkedList<Future<?>> futureList = new LinkedList<Future<?>>();	
 	public static void submitTask(Runnable run)
@@ -151,5 +148,14 @@ public final class GLOBALS {
 		float sign = (newDirection.dot(referenceRight) > 0.0f) ? 1.0f : -1.0f;
 		float finalAngle = sign * angle;
 		return finalAngle;
+	}
+	
+	public static int numDigits(int i)
+	{
+		for (int digits = 1; digits < 100; digits++)
+		{
+			if (i < Math.pow(10, digits)) return digits;
+		}
+		return 0;
 	}
 }

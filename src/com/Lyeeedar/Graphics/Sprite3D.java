@@ -292,14 +292,15 @@ public class Sprite3D implements Renderable {
 		
 		playAnimationLoop(anim, animation, useDirection);
 		this.frame = startFrame;
+		this.animationCD = this.animationDelay;
 		
 		lock = true;
 	}
 	private void finishAnimationSingle()
 	{
-		lock = false;
-		informable.inform();
-		frame = 0;
+		this.lock = false;
+		if (this.informable != null) this.informable.inform();
+		this.frame = 0;
 		playAnimationLoop(nextAnim, nextAnimation, directionStore);
 		this.animate = animateStore;
 		this.useDirection = directionStore;

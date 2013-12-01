@@ -1,4 +1,4 @@
-package com.Lyeeedar.Entities;
+package com.Lyeeedar.Graphics;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;

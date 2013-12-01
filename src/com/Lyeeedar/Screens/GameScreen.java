@@ -1,6 +1,7 @@
 package com.Lyeeedar.Screens;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
@@ -12,31 +13,34 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.EntityGraph;
-import com.Lyeeedar.Entities.Sea;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
-import com.Lyeeedar.Entities.Items.Blade;
+import com.Lyeeedar.Entities.Items.Weapon;
+import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.Model;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
-import com.Lyeeedar.Graphics.WeaponTrail;
-import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Weather;
+import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Pirates.ProceduralGeneration.IslandGenerator;
 import com.Lyeeedar.Util.FileUtils;
+import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
@@ -44,68 +48,61 @@ import com.badlogic.gdx.math.Vector3;
 
 public class GameScreen extends AbstractScreen {
 	
-	SkyBox skyBox;
-	PositionalData dataPos = new PositionalData();
-	PositionalData pData = new PositionalData();
+	private Entity player;
+	private final PositionalData pData = new PositionalData();
+	private final StatusData sData = new StatusData();
 	
-	Terrain terrain;
+	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
+	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
+	
+	private final SpriteBatch sB = new SpriteBatch();
+	private final BitmapFont fB = new BitmapFont(true);
+	
+	Texture blank;
 
-	int numEntities = 15;
-	
-	long time = System.currentTimeMillis();
-	
-	Entity player;
-	
-	LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
-
-	public GameScreen(LightManager lights) {
-		super(lights);
-		this.lights = lights;
+	public GameScreen() {
+		super();
 	}
 
 	@Override
 	public void create() {
 		
-		long time = System.nanoTime();
-		
-		Texture texture = FileUtils.loadTexture("data/textures/grass.png", true);
-		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		blank = FileUtils.loadTexture("data/textures/blank.png", true);
 
-		IslandGenerator ig = new IslandGenerator();
-		Mesh model = ig.getIsland(75, 75, 53);
+		//IslandGenerator ig = new IslandGenerator();
+		//Mesh model = ig.getIsland(75, 75, 53);
 		
 		ObjLoader loader = new ObjLoader();
-		texture = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-        model = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
-
-		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(model);
-		mesh.setPosition(new Vector3(-20, 0, 0));
+		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
+        Mesh shipModel = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
+		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
 		
-		Entity island = new Entity();
-		island.readData(pData, PositionalData.class);
+		Entity ship = new Entity();
+		ship.readData(pData, PositionalData.class);
 		pData.position.x = 10;
 		//pData.scale.set(2.2f, 2.2f, 2.2f);
 		pData.calculateComposed();
-		island.writeData(pData, PositionalData.class);
-		island.setAI(new AI_Simple(island));
+		ship.writeData(pData, PositionalData.class);
+		ship.setAI(new AI_Simple(ship));
 		
-		island.addRenderable(new Model(model, GL20.GL_TRIANGLES, texture, new Vector3(1, 1, 1), 1));
-		island.setCollisionShapeInternal(mesh);
+		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
+		ship.setCollisionShapeInternal(mesh);
 		
-		texture = FileUtils.loadTexture("data/textures/sand.png", true);
-		texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
+		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		terrain = new Terrain(texture, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
-		GLOBALS.WORLD.addEntity(island, true);
+		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
+		GLOBALS.WORLD.addEntity(ship, true);
 		GLOBALS.WORLD.setEntity(terrain, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		skyBox = new SkyBox(skytex, glowtex);
-		GLOBALS.sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
+		Weather weather = new Weather(skytex, glowtex);
+		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
+		GLOBALS.SKYBOX = new SkyBox(sea, weather);
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -129,43 +126,55 @@ public class GameScreen extends AbstractScreen {
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
-		eData.addEquipment(Equipment_Slot.RARM, new Blade(1));
+		eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
 		GLOBALS.WORLD.addEntity(player, false);
 		
 		Random ran = new Random();
-		for (int i = 0; i < numEntities; i++)
+		for (int i = 0; i < 15; i++)
 		{
 			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
-			//ge.setCollisionShape(new Sphere(new Vector3(0, 0, 0), 0.1f));
 			ge.readData(pData, PositionalData.class);
-			pData.position.set(4, 15, 0);
+			pData.position.set(ran.nextFloat()*4, 15, ran.nextFloat()*4);
 			ge.writeData(pData, PositionalData.class);
 			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
+			ge.readData(eData, EquipmentData.class);
+			eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
+			ge.writeData(eData, EquipmentData.class);
+			
 			GLOBALS.WORLD.addEntity(ge, false);
 			
-			s = new Sprite3D(2, 2, 4, 4);
-			s.setGender(false);
+			s = new Sprite3D(1, 1, 4, 4);
+			s.setGender(true);
 			s.addAnimation("move", "move");
-			//s.addAnimation("attack_1");
-			s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
+			s.addAnimation("attack_1", "attack");
+			s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
 			//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
 			s.create();
 			
 			ge.addRenderable(s);
+			
+			ge.readData(pData, PositionalData.class);
+			ge.getCollisionShapeInternal().setPosition(pData.position);
+			while (GLOBALS.WORLD.collide(ge.getCollisionShapeInternal(), pData.graph) != null)
+			{
+				ge.readData(pData, PositionalData.class);
+				pData.position.set(ran.nextFloat()*14, 15, ran.nextFloat()*14);
+				ge.writeData(pData, PositionalData.class);
+				ge.getCollisionShapeInternal().setPosition(pData.position);
+			}
 		}
-
-		System.out.println("Load time: "+(System.nanoTime()-time)/1000000);
 	}
 
 	@Override
 	public void drawOrthogonals(float delta, SpriteBatch batch) {
-	
+		player.readData(sData, StatusData.class);
+		spriteBatch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
 	}
 
 	@Override
@@ -173,15 +182,15 @@ public class GameScreen extends AbstractScreen {
 	{
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-		skyBox.render(cam, lights);
+		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		player.readData(pData, PositionalData.class);
-		terrain.render(cam, pData.position, lights);
-		GLOBALS.sea.render(cam, pData.position, lights);
+		((Terrain) GLOBALS.WORLD.getEntity()).render(cam, pData.position, GLOBALS.LIGHTS);
+		GLOBALS.SKYBOX.sea.render(cam, pData.position, GLOBALS.LIGHTS);
 	}
 	@Override
 	public void hide() {
@@ -199,8 +208,8 @@ public class GameScreen extends AbstractScreen {
 	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
 			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
 		
-		GLOBALS.WORLD.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
-		GLOBALS.WORLD.getText(tParticles, spriteBatch, font);
+		GLOBALS.WORLD.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
+		GLOBALS.WORLD.getText(tParticles, sB, fB);
 		Iterator<TextParticle> itr = tParticles.iterator();
 		while (itr.hasNext())
 		{
@@ -231,7 +240,11 @@ public class GameScreen extends AbstractScreen {
 
 	@Override
 	public void superDispose() {
-		// TODO Auto-generated method stub
+		sB.dispose();
+		fB.dispose();
+		pData.dispose();
+		sData.dispose();
+		
 		
 	}
 
@@ -249,63 +262,74 @@ public class GameScreen extends AbstractScreen {
 		list.clear();
 		GLOBALS.waitTillTasksComplete();
 		
-		skyBox.update(delta);
+		GLOBALS.SKYBOX.update(delta);
 		
-		player.readData(dataPos, PositionalData.class);
+		player.readData(pData, PositionalData.class);
 				
-		cam.update(dataPos);
-		this.visibleEmitters.get(0).setPosition(dataPos.position);
+		((FollowCam)cam).update(pData);
 		
 		GLOBALS.WORLD.collectDead(deadList);
 		for (EntityGraph eg : deadList) eg.remove();
 		deadList.clear();
 		
+		Iterator<Spell> itr = GLOBALS.SPELLS.iterator();
+		while(itr.hasNext())
+		{
+			Spell s = itr.next();
+			boolean alive = s.update(delta);
+			if (!alive) 
+			{
+				itr.remove();
+				s.dispose();
+			}
+		}
+		
 		//lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
-		delta /= 10;//delta /= 300;
+		delta /= 300;
 		
 		if (increase) 
 		{
-			lights.directionalLight.direction.y += delta;
+			GLOBALS.LIGHTS.directionalLight.direction.y += delta;
 			
-			if (lights.directionalLight.direction.y < 0.0f) 
+			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
 			{
-				lights.directionalLight.direction.z += delta;
+				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
 			}
 			else
 			{
-				lights.directionalLight.direction.z -= delta;
+				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
 			}
 		}
 		else 
 		{
-			lights.directionalLight.direction.y -= delta;
+			GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
 			
-			if (lights.directionalLight.direction.y < 0.0f) 
+			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
 			{
-				lights.directionalLight.direction.z += delta;
+				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
 			}
 			else
 			{
-				lights.directionalLight.direction.z -= delta;
+				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
 			}
 		}
 		
-		if (lights.directionalLight.direction.y >= 1.0f) increase = false;
-		if (lights.directionalLight.direction.y < -1) increase = true;
+		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
+		if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
 		
-		if (lights.directionalLight.direction.y > 0.1f)
+		if (GLOBALS.LIGHTS.directionalLight.direction.y > 0.1f)
 		{
-			lights.ambientColour.set(1.0f, 1.0f, 1.0f);
+			GLOBALS.LIGHTS.ambientColour.set(1.0f, 1.0f, 1.0f);
 		}
-		else if (lights.directionalLight.direction.y < -0.5f)
+		else if (GLOBALS.LIGHTS.directionalLight.direction.y < -0.5f)
 		{
-			lights.ambientColour.set(0.0f, 0.0f, 0.0f);
+			GLOBALS.LIGHTS.ambientColour.set(0.0f, 0.0f, 0.0f);
 		}
 		else
 		{
-			float brightness = (lights.directionalLight.direction.y+0.5f) / 0.6f;
-			lights.ambientColour.set(brightness, brightness, brightness);
+			float brightness = (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
+			GLOBALS.LIGHTS.ambientColour.set(brightness, brightness, brightness);
 		}
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
@@ -326,6 +350,25 @@ public class GameScreen extends AbstractScreen {
 //		{
 //			strike_time = 0.1f;
 //		}
+	}
+
+	@Override
+	public void drawParticles(float delta) {
+		particleNum = 0;
+		for (Spell s : GLOBALS.SPELLS)
+		{
+			s.effect.getVisibleEmitters(visibleEmitters, cam);
+		}
+		Collections.sort(visibleEmitters, ParticleEmitter.getComparator());
+		ParticleEmitter.begin(cam);
+		for (ParticleEmitter p : visibleEmitters)
+		{
+			p.update(delta, cam);
+			particleNum += p.getActiveParticles();
+			p.render();
+		}
+		ParticleEmitter.end();
+		visibleEmitters.clear();
 	}
 
 }

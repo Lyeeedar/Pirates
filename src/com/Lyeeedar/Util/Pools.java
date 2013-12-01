@@ -25,7 +25,10 @@ public class Pools {
 		if (object == null) throw new IllegalArgumentException("object cannot be null.");
 		ThreadsafePool pool = pools.get(object.getClass());
 		if (pool == null)
-			throw new IllegalArgumentException("No objects have been obtained of type: " + object.getClass().getName());
+		{
+			pool = new ThreadsafePool(object.getClass());
+			pools.put(object.getClass(), pool);
+		}
 		pool.free(object);
 	}
 

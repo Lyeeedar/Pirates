@@ -132,10 +132,11 @@ public class ParticleEffect implements Serializable {
 		setPosition(x, y, z);
 	}
 	
-	public void getVisibleEmitters(ArrayList<ParticleEmitter> visibleEmitters, Camera cam)
+	public void getVisibleEmitters(List<ParticleEmitter> visibleEmitters, Camera cam)
 	{
 		for (Emitter e : emitters)
 		{
+			if (!e.emitter.created) e.emitter.create();
 			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius()*2)) continue;
 	
 			e.emitter.distance = cam.position.dst2(e.emitter.getPosition());

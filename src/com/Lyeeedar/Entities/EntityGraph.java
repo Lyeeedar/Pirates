@@ -9,6 +9,7 @@ import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -93,12 +94,14 @@ public class EntityGraph {
 		{
 			entity.readData(sData, Entity.StatusData.class);
 			
-			if (sData.DAMAGED != 0)
+			if (sData.DAMAGED > 0)
 			{
+				float mag = 1.0f - ((float)sData.DAMAGED) / ((float)sData.MAX_HEALTH/2);
+				if (mag > 1.0f) mag = 1.0f;
+				
 				entity.readData(pData, Entity.PositionalData.class);
-				Decal decal = ImageUtils.getTextDecal(0.5f, 0.8f, sB, font, ""+sData.DAMAGED);
-				decal.setColor(1.0f, 0.0f, 0.0f, 1.0f);
-				list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0)));
+				Decal decal = ImageUtils.getTextDecal(0.25f*GLOBALS.numDigits(sData.DAMAGED), 0.8f, sB, font, ""+sData.DAMAGED);
+				list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0), new Vector3(1.0f, mag, 0.0f)));
 				sData.DAMAGED = 0;
 				entity.writeData(sData, Entity.StatusData.class);
 			}
@@ -110,6 +113,25 @@ public class EntityGraph {
 	{
 		list.add(entity.getRunnable(delta));
 		for (EntityGraph eg : children) eg.getRunnable(list, delta);
+	}
+	
+	public boolean collide(CollisionShape<?> source, EntityGraph graph, List<EntityGraph> list)
+	{
+		if (graph.equals(this)) return false;
+		
+		boolean collide = false;
+		if (entity.collide(source)) 
+		{
+			list.add(this);
+			collide = true;
+		}
+		
+		for (EntityGraph eg : children) 
+		{
+			if (eg.collide(source, graph, list)) collide = true;
+		}
+		
+		return collide;
 	}
 	
 	public EntityGraph collide(CollisionShape<?> source, EntityGraph graph)

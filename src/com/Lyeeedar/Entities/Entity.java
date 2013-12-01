@@ -54,6 +54,11 @@ public class Entity {
 		this.collisionShapeInternal = internal;
 	}
 	
+	public CollisionShape<?> getCollisionShapeInternal()
+	{
+		return this.collisionShapeInternal;
+	}
+	
 	public void setCollisionShapeExternal(CollisionShape<?> external)
 	{
 		PositionalData data = new PositionalData();
@@ -109,8 +114,6 @@ public class Entity {
 	
 	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
-		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
-		
 		renderables.set(this);
 		renderables.update(delta, cam, lights);
 		renderables.queue(delta, modelBatch, decalBatch, trailBatch);
@@ -122,8 +125,9 @@ public class Entity {
 	}
 	
 	private void update(float delta)
-	{
+	{	
 		if (ai != null) ai.update(delta);
+		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 	}
 	
 	public <E extends EntityData<E>> void writeData(E data, Class<E> type)
@@ -434,14 +438,14 @@ public class Entity {
 				graph.popAndInsert(GLOBALS.WORLD);
 			}
 			
-			float waveHeight = GLOBALS.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
+			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
 			
 			if (v.y <= 0.0f && position.y-v.y-GLOBALS.STEP < waveHeight)
 			{
 				if (velocity.y < 0) velocity.y = 0;
 				if (v.y < 0) v.y = 0;
 				position.y =  waveHeight;
-				GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
+				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 				graph.popAndInsert(GLOBALS.WORLD);
 			}
 			
@@ -514,6 +518,7 @@ public class Entity {
 			boolean r = false;
 			if (equipment.get(slot) != null)
 			{
+				Pools.free(equipment.get(slot));
 				r = true;
 			}
 			
@@ -532,13 +537,17 @@ public class Entity {
 		public void write(EquipmentData data) {
 			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
 			{
+				@SuppressWarnings("rawtypes")
+				Equipment current = equipment.get(entry.getKey());
+				
 				if (entry.getValue() == null) {
+					if (current != null)
+					{
+						Pools.free(current);
+					}
 					equipment.put(entry.getKey(), null);
 					continue;
 				}
-				
-				@SuppressWarnings("rawtypes")
-				Equipment current = equipment.get(entry.getKey());
 				
 				if (current == null) 
 				{
@@ -550,6 +559,7 @@ public class Entity {
 				}
 				else
 				{
+					Pools.free(current);
 					equipment.put(entry.getKey(), entry.getValue().copy());
 				}
 			}
@@ -574,7 +584,8 @@ public class Entity {
 		public boolean ALIVE = true;
 		public int DAMAGED = 0;
 		
-		public int currentHealth = 5;
+		public int MAX_HEALTH = 150;
+		public int currentHealth = MAX_HEALTH;
 		public int damage = 0;
 		
 		@Override
@@ -582,8 +593,16 @@ public class Entity {
 			ALIVE = data.ALIVE;
 			DAMAGED = data.DAMAGED;
 			
+			MAX_HEALTH = data.MAX_HEALTH;
 			currentHealth = data.currentHealth;
 			damage = data.damage;
+		}
+		
+		public void applyDamage()
+		{
+			DAMAGED = damage;
+			currentHealth -= damage;
+			damage = 0;
 		}
 
 		@Override

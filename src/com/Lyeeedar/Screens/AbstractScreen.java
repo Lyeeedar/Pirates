@@ -10,11 +10,7 @@
  ******************************************************************************/
 package com.Lyeeedar.Screens;
 
-import java.util.ArrayList;
-
 import com.Lyeeedar.Graphics.MotionTrailBatch;
-import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -22,34 +18,32 @@ import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.Lyeeedar.Graphics.Particles.ParticleEffect;
  
 
 public abstract class AbstractScreen implements Screen {
 	
-	int screen_width;
-	int screen_height;
+	protected int screen_width;
+	protected int screen_height;
 
-	protected SpriteBatch spriteBatch;
-	protected DecalBatch decalBatch;
-	protected MotionTrailBatch trailBatch;
-	protected AbstractModelBatch renderer;
-
-	protected BitmapFont font;
+	protected final SpriteBatch spriteBatch;
+	protected final DecalBatch decalBatch;
+	protected final MotionTrailBatch trailBatch;
+	protected final AbstractModelBatch renderer;
+	protected final BitmapFont font;
 	protected final Stage stage;
-
-	protected Controls controls;
-	protected FollowCam cam;
 	
-	protected LightManager lights;
+	protected final Camera cam;
+	protected final Controls controls;
+
+//	protected SpriteBatch sB;
+//	protected BitmapFont fB;
 	
 	private long startTime;
 	private long time;
@@ -58,40 +52,40 @@ public abstract class AbstractScreen implements Screen {
 	private long averageUpdate;
 	private long averageQueue;
 	private long averageModel;
-	private long averageTrail;
+	//private long averageTrail;
 	private long averageDecal;
 	private long averageOrthogonal;
 	private long averageParticles;
-	private int particleNum;
-	protected ArrayList<ParticleEffect> visibleEmitters = new ArrayList<ParticleEffect>();
+	protected int particleNum;
 
-	public AbstractScreen(LightManager lights)
+	public AbstractScreen()
 	{
-		this.lights = lights;
-		font = new BitmapFont(true);
-		spriteBatch = new SpriteBatch();
-		trailBatch = new MotionTrailBatch();
-		renderer = new CellShadingModelBatch();
-
-		stage = new Stage(0, 0, true, spriteBatch);
 		controls = new Controls(GLOBALS.ANDROID);
 		cam = new FollowCam(controls);
-		renderer.cam = cam;
-		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
 		
-		ParticleEffect effect = new ParticleEffect(5);
-		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
-		flame.createBasicEmitter(1, 1, new Color(0.3f, 0.3f, 0.4f, 0.5f), new Color(0.3f, 0.3f, 0.4f, 0.5f), 0, -75, 0);
-		flame.calculateParticles();
-		flame.create();
-		effect.addEmitter(flame, 
-				0, 10, 0);
-		visibleEmitters.add(effect);
+		font = new BitmapFont();
+		spriteBatch = new SpriteBatch();
+		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
+		trailBatch = new MotionTrailBatch();
+		renderer = new CellShadingModelBatch();
+		stage = new Stage(0, 0, true, spriteBatch);
+		renderer.cam = cam;
+		
+//		ParticleEffect effect = new ParticleEffect(5);
+//		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
+//		flame.createBasicEmitter(1, 1, new Color(0.3f, 0.3f, 0.4f, 0.5f), new Color(0.3f, 0.3f, 0.4f, 0.5f), 0, -75, 0);
+//		flame.calculateParticles();
+//		flame.create();
+//		effect.addEmitter(flame, 
+//				0, 10, 0);
+//		visibleEmitters.add(effect);
 	}
 
 	@Override
 	public void render(float delta) 
 	{
+		if (controls.esc()) Gdx.app.exit();
+		
 		GLOBALS.PROGRAM_TIME += delta;
 		
 		frameTime = System.nanoTime();
@@ -107,7 +101,6 @@ public abstract class AbstractScreen implements Screen {
 		averageQueue /= 2;
 		
 		stage.act(delta);
-
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -122,7 +115,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
 		time = System.nanoTime();
-		renderer.flush(lights);
+		renderer.flush(GLOBALS.LIGHTS);
 		drawSkybox(delta);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
@@ -135,31 +128,25 @@ public abstract class AbstractScreen implements Screen {
 		averageDecal += System.nanoTime()-time;
 		averageDecal /= 2;
 		
-		time = System.nanoTime();
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glDepthMask(false);
-		trailBatch.flush(cam);
-		averageTrail += System.nanoTime()-time;
-		averageTrail /= 2;
+//		time = System.nanoTime();
+//		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+//		Gdx.gl.glEnable(GL20.GL_BLEND);
+//		Gdx.gl.glDepthMask(false);
+//		trailBatch.flush(cam);
+//		averageTrail += System.nanoTime()-time;
+//		averageTrail /= 2;
 		
 		time = System.nanoTime();
-		particleNum = 0;
-		ParticleEmitter.begin(cam);
-		for (ParticleEffect p : visibleEmitters)
-		{
-			p.update(delta, cam);
-			particleNum += p.getActiveParticles();
-			p.render();
-		}
-		ParticleEmitter.end();
+		drawParticles(delta);
 		averageParticles += System.nanoTime()-time;
 		averageParticles /= 2;
 		
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		spriteBatch.begin();
 		drawOrthogonals(delta, spriteBatch);
+		spriteBatch.end();
 		averageOrthogonal += System.nanoTime()-time;
 		averageOrthogonal /= 2;
 
@@ -172,7 +159,7 @@ public abstract class AbstractScreen implements Screen {
 	        Gdx.app.log("	Queue       ", ""+averageQueue);
 	        Gdx.app.log("	Model       ", ""+averageModel);
 	        Gdx.app.log("	Decal       ", ""+averageDecal);
-	        Gdx.app.log("	Trail       ", ""+averageTrail);
+	        //Gdx.app.log("	Trail       ", ""+averageTrail);
 	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
 	        Gdx.app.log("	Particles   ", ""+averageParticles);
 	        Gdx.app.log("	No Particles", ""+particleNum);
@@ -224,6 +211,8 @@ public abstract class AbstractScreen implements Screen {
 	public abstract void drawSkybox(float delta);
 	
 	public abstract void queueRenderables(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch);
+	
+	public abstract void drawParticles(float delta);
 
 	public abstract void drawOrthogonals(float delta, SpriteBatch batch);
 

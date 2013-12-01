@@ -113,6 +113,7 @@ public class ParticleEmitter implements Serializable {
 	private transient int i;
 	private transient int i2;
 	private transient int arrayLen;
+	public boolean created = false;
 	// ----- End Transient Variables ----- //
 
 	// ----- Non-Essential Variables ----- //
@@ -338,8 +339,8 @@ public class ParticleEmitter implements Serializable {
 		this.lightz = z;
 	}
 
-	public void create() {
-
+	public void create() 
+	{
 		if (shader == null)
 		{
 			shader = new ShaderProgram(SHADER_VERTEX, SHADER_FRAGMENT);
@@ -355,6 +356,8 @@ public class ParticleEmitter implements Serializable {
 		calculateRadius();
 		reloadParticles();
 		reloadTextures();
+		
+		created = true;
 	}
 	
 	public void dispose()
@@ -475,6 +478,8 @@ public class ParticleEmitter implements Serializable {
 
 	public void render()
 	{
+		if (!created) create();
+		
 		if (currentBlendSRC == blendFuncSRC && currentBlendDST == blendFuncDST)
 		{}
 		else {
@@ -499,6 +504,8 @@ public class ParticleEmitter implements Serializable {
 
 	public static void begin(Camera cam)
 	{
+		if (shader == null) return;
+		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthMask(false);
@@ -509,6 +516,8 @@ public class ParticleEmitter implements Serializable {
 
 	public static void end()
 	{
+		if (shader == null) return;
+		
 		shader.end();
 
 		Gdx.gl.glDepthMask(true);
@@ -520,6 +529,8 @@ public class ParticleEmitter implements Serializable {
 
 	public void update(float delta, Camera cam)
 	{
+		if (!created) create();
+		
 		if (light != null)
 		{
 			light.position.set(x+lightx+(ex/2f), y+lighty+ey, z+lightz+(ez/2));

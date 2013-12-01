@@ -10,6 +10,7 @@ public class TextParticle {
 	
 	public Vector3 velocity;
 	public Vector3 position;
+	public Vector3 colour;
 	public Decal text;
 	public float lifeTime;
 	
@@ -18,15 +19,18 @@ public class TextParticle {
 	private float fadeLimit;
 	private float fadeStep;
 	
-	public TextParticle (Decal text, float lifeTime, Vector3 position, Vector3 velocity)
+	public TextParticle (Decal text, float lifeTime, Vector3 position, Vector3 velocity, Vector3 colour)
 	{
 		this.text = text;
 		this.lifeTime = lifeTime;
 		this.position = new Vector3().set(position);
 		this.velocity = new Vector3().set(velocity);
+		this.colour = new Vector3().set(colour);
 		
 		fadeLimit = lifeTime/10.0f;
 		fadeStep = 1.0f/fadeLimit;
+		
+		text.setColor(colour.x, colour.y, colour.z, 1.0f);
 	}
 	
 	public void update(float delta, Camera cam)
@@ -40,7 +44,7 @@ public class TextParticle {
 		
 		if (lifeTime < fadeLimit)
 		{
-			text.setColor(1.0f, 0.0f, 0.0f, 1.0f+(fadeStep*lifeTime));
+			text.setColor(colour.x, colour.y, colour.z, 1.0f+(fadeStep*lifeTime));
 		}
 	}
 	
