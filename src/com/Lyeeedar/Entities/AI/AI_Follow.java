@@ -69,7 +69,7 @@ public class AI_Follow extends AI_Package {
 			
 			boolean close = entityPos.position.dst2(followPos.position) < 2f; 
 			if (!close) entityPos.forward_backward(4);
-			basicAttack(close, Equipment_Slot.RARM, entityEquip);
+			basicAttack(Math.abs(a) > delta*100, Equipment_Slot.RARM, entityEquip);
 			
 		}	
 		

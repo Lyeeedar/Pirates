@@ -61,10 +61,11 @@ public class Entity {
 	
 	public void setCollisionShapeExternal(CollisionShape<?> external)
 	{
-		PositionalData data = new PositionalData();
-		readData(data, PositionalData.class);
-		data.shape = external;
-		writeData(data, PositionalData.class);
+		PositionalData pd = readOnlyRead(PositionalData.class);
+		synchronized(pd)
+		{
+			pd.shape = external;
+		}
 	}
 	
 	public void setCollisionShape(CollisionShape<?> shape)
@@ -77,29 +78,20 @@ public class Entity {
 	{
 		if (collisionShapeInternal == null) return false;
 		
-		CollisionShape<?> shape = collisionShapeInternal.obtain();
-		PositionalData pd = readOnlyRead(PositionalData.class);
-		
-		synchronized(pd)
-		{
-			shape.setPosition(pd.position);
-			shape.setRotation(pd.rotation);
-			shape.setScaling(pd.scale);
-		}
+		CollisionShape<?> shape = collisionShapeInternal;
 		
 		boolean hit = shape.collide(collide);
-		
-		shape.free();
-		
+				
 		return hit;
 	}
 	
 	public void setGraph(EntityGraph eg)
 	{
-		PositionalData data = new PositionalData();
-		readData(data, PositionalData.class);
-		data.graph = eg;
-		writeData(data, PositionalData.class);
+		PositionalData pd = readOnlyRead(PositionalData.class);
+		synchronized(pd)
+		{
+			pd.graph = eg;
+		}
 	}
 	
 	public void addRenderable(Renderable r)
@@ -128,6 +120,20 @@ public class Entity {
 	{	
 		if (ai != null) ai.update(delta);
 		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
+		
+		if (collisionShapeInternal != null) 
+		{
+			PositionalData pd = readOnlyRead(PositionalData.class);
+			
+			CollisionShape<?> shape = collisionShapeInternal;
+			synchronized(pd)
+			{
+				shape.setPosition(pd.position);
+				shape.setRotation(pd.rotation);
+				shape.setScaling(pd.scale);
+			}
+			shape.reset();
+		}
 	}
 	
 	public <E extends EntityData<E>> void writeData(E data, Class<E> type)

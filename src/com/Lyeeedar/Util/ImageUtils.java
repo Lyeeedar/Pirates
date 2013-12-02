@@ -1,5 +1,9 @@
 package com.Lyeeedar.Util;
 
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Comparator;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -8,11 +12,33 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.utils.Array;
 
 public final class ImageUtils {
+	
+	public static ArrayList<BufferedImage> splitImage(BufferedImage image, int numx, int numy)
+	{
+		ArrayList<BufferedImage> images = new ArrayList<BufferedImage>();
+		
+		int xstep = image.getWidth()/numx;
+		int ystep = image.getHeight()/numy;
+		
+		for (int y = 0; y < numy; y++)
+		{
+			for (int x = 0; x < numx; x++)
+			{
+				BufferedImage ni = image.getSubimage(x*xstep, y*ystep, xstep, ystep);
+				images.add(ni);
+			}
+		}
+		
+		return images;
+	}
 
 	public static Pixmap TextureToPixmap(Texture texture)
 	{
@@ -132,6 +158,45 @@ public final class ImageUtils {
 	
 		fB.end();
 		return fB.getColorBufferTexture();
+	}
+	
+	public static BufferedImage[] deconstructAtlas(TextureAtlas atlas)
+	{
+		Texture tex = atlas.getTextures().iterator().next();
+		tex.getTextureData().prepare();
+		Pixmap pixels = tex.getTextureData().consumePixmap();
+		
+		Array<AtlasRegion> regions = atlas.getRegions();
+		regions.sort(new Comparator<AtlasRegion>(){
+			@Override
+			public int compare(AtlasRegion a1, AtlasRegion a2) {
+				int val1 = Integer.parseInt(a1.name.replace("sprite", ""));
+				int val2 = Integer.parseInt(a2.name.replace("sprite", ""));
+				return val1 - val2;
+			}});
+		
+		BufferedImage[] images = new BufferedImage[regions.size];
+		
+		for (int i = 0; i < regions.size; i++)
+		{
+			AtlasRegion region = regions.get(i);
+			images[i] = new BufferedImage(region.getRegionWidth(), region.getRegionHeight(), BufferedImage.TYPE_INT_ARGB);
+			
+			for (int x = region.getRegionX(); x < region.getRegionX()+region.getRegionWidth(); x++)
+			{
+				for (int y = region.getRegionY(); y < region.getRegionY()+region.getRegionHeight(); y++)
+				{
+					Color c = new Color();
+					Color.rgba8888ToColor(c, pixels.getPixel(x, y));
+					
+					java.awt.Color cc = new java.awt.Color(c.r, c.g, c.b, c.a);
+					
+					images[i].setRGB(x-region.getRegionX(), y-region.getRegionY(), cc.getRGB());
+				}
+			}
+		}
+		
+		return images;
 	}
 
 }

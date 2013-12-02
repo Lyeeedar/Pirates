@@ -14,7 +14,9 @@ import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.Controls;
+import com.Lyeeedar.Util.DiscardCameraGroupStrategy;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -24,10 +26,14 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
  
 
 public abstract class AbstractScreen implements Screen {
+	
+	protected final PirateGame game;
 	
 	protected int screen_width;
 	protected int screen_height;
@@ -38,6 +44,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final AbstractModelBatch renderer;
 	protected final BitmapFont font;
 	protected final Stage stage;
+	protected static final Skin skin = new Skin(Gdx.files.internal("data/skins/uiskin.json"));
 	
 	protected final Camera cam;
 	protected final Controls controls;
@@ -58,33 +65,25 @@ public abstract class AbstractScreen implements Screen {
 	private long averageParticles;
 	protected int particleNum;
 
-	public AbstractScreen()
+	public AbstractScreen(PirateGame game)
 	{
+		this.game = game;
 		controls = new Controls(GLOBALS.ANDROID);
 		cam = new FollowCam(controls);
 		
 		font = new BitmapFont();
 		spriteBatch = new SpriteBatch();
-		decalBatch = new DecalBatch(new CameraGroupStrategy(cam));
+		decalBatch = new DecalBatch(new DiscardCameraGroupStrategy(cam));
 		trailBatch = new MotionTrailBatch();
 		renderer = new CellShadingModelBatch();
 		stage = new Stage(0, 0, true, spriteBatch);
 		renderer.cam = cam;
-		
-//		ParticleEffect effect = new ParticleEffect(5);
-//		ParticleEmitter flame = new ParticleEmitter(1.5f, 1, 0.0005f, 10.4f, 10.4f, 10.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
-//		flame.createBasicEmitter(1, 1, new Color(0.3f, 0.3f, 0.4f, 0.5f), new Color(0.3f, 0.3f, 0.4f, 0.5f), 0, -75, 0);
-//		flame.calculateParticles();
-//		flame.create();
-//		effect.addEmitter(flame, 
-//				0, 10, 0);
-//		visibleEmitters.add(effect);
 	}
 
 	@Override
 	public void render(float delta) 
 	{
-		if (controls.esc()) Gdx.app.exit();
+		if (controls.esc()) game.switchScreen(PirateGame.Screen.MAINMENU);
 		
 		GLOBALS.PROGRAM_TIME += delta;
 		
@@ -95,12 +94,12 @@ public abstract class AbstractScreen implements Screen {
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
 		
+		stage.act(delta);
+		
 		time = System.nanoTime();
 		queueRenderables(delta, renderer, decalBatch, trailBatch);
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
-		
-		stage.act(delta);
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -123,7 +122,7 @@ public abstract class AbstractScreen implements Screen {
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(false);
+		//Gdx.gl.glDepthMask(false);
 		decalBatch.flush();
 		averageDecal += System.nanoTime()-time;
 		averageDecal /= 2;
@@ -147,6 +146,7 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch.begin();
 		drawOrthogonals(delta, spriteBatch);
 		spriteBatch.end();
+		stage.draw();
 		averageOrthogonal += System.nanoTime()-time;
 		averageOrthogonal /= 2;
 
@@ -191,7 +191,7 @@ public abstract class AbstractScreen implements Screen {
         cam.near = 2f;
         cam.far = (GLOBALS.ANDROID) ? 202f : 2502f ;
 
-		stage.setViewport( width, height, true);
+		stage.setViewport(width, height, true);
 	}
 
 	@Override
@@ -199,6 +199,9 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch.dispose();
 		font.dispose();
 		stage.dispose();
+		renderer.dispose();
+		trailBatch.dispose();
+		decalBatch.dispose();
 		
 		superDispose();
 	}

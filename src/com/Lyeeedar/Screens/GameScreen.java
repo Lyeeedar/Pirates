@@ -32,6 +32,7 @@ import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
@@ -48,6 +49,8 @@ import com.badlogic.gdx.math.Vector3;
 
 public class GameScreen extends AbstractScreen {
 	
+	private EntityGraph world;
+	private SkyBox skybox;
 	private Entity player;
 	private final PositionalData pData = new PositionalData();
 	private final StatusData sData = new StatusData();
@@ -60,8 +63,8 @@ public class GameScreen extends AbstractScreen {
 	
 	Texture blank;
 
-	public GameScreen() {
-		super();
+	public GameScreen(PirateGame game) {
+		super(game);
 	}
 
 	@Override
@@ -79,11 +82,13 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity ship = new Entity();
 		ship.readData(pData, PositionalData.class);
-		pData.position.x = 10;
+		//pData.position.x = 10;
+		//pData.lastPos.set(pData.position);
 		//pData.scale.set(2.2f, 2.2f, 2.2f);
 		pData.calculateComposed();
 		ship.writeData(pData, PositionalData.class);
 		ship.setAI(new AI_Simple(ship));
+		mesh.setPosition(pData.position);
 		
 		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 		ship.setCollisionShapeInternal(mesh);
@@ -93,8 +98,8 @@ public class GameScreen extends AbstractScreen {
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
-		GLOBALS.WORLD.addEntity(ship, true);
-		GLOBALS.WORLD.setEntity(terrain, true);
+		world = new EntityGraph(terrain, null, true);
+		world.addEntity(ship, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
@@ -102,7 +107,7 @@ public class GameScreen extends AbstractScreen {
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		Weather weather = new Weather(skytex, glowtex);
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
-		GLOBALS.SKYBOX = new SkyBox(sea, weather);
+		skybox = new SkyBox(sea, weather);
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
@@ -119,6 +124,8 @@ public class GameScreen extends AbstractScreen {
 		CollisionRay ray = new CollisionRay();
 		ray.len = 1;
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
+		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
+
 		
 		player.readData(pData, PositionalData.class);
 		pData.position.set(4, 5, 0);
@@ -129,7 +136,7 @@ public class GameScreen extends AbstractScreen {
 		eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
-		GLOBALS.WORLD.addEntity(player, false);
+		world.addEntity(player, false);
 		
 		Random ran = new Random();
 		for (int i = 0; i < 15; i++)
@@ -139,7 +146,7 @@ public class GameScreen extends AbstractScreen {
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
 			ge.readData(pData, PositionalData.class);
-			pData.position.set(ran.nextFloat()*4, 15, ran.nextFloat()*4);
+			pData.position.set(ran.nextFloat()*24, 15, ran.nextFloat()*24);
 			ge.writeData(pData, PositionalData.class);
 			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
@@ -147,7 +154,7 @@ public class GameScreen extends AbstractScreen {
 			eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
 			ge.writeData(eData, EquipmentData.class);
 			
-			GLOBALS.WORLD.addEntity(ge, false);
+			world.addEntity(ge, false);
 			
 			s = new Sprite3D(1, 1, 4, 4);
 			s.setGender(true);
@@ -188,13 +195,13 @@ public class GameScreen extends AbstractScreen {
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
-		player.readData(pData, PositionalData.class);
-		((Terrain) GLOBALS.WORLD.getEntity()).render(cam, pData.position, GLOBALS.LIGHTS);
-		GLOBALS.SKYBOX.sea.render(cam, pData.position, GLOBALS.LIGHTS);
+		//player.readData(pData, PositionalData.class);
+		((Terrain) GLOBALS.WORLD.getEntity()).render(cam, cam.position, GLOBALS.LIGHTS);
+		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
 	}
 	@Override
 	public void hide() {
-		// TODO Auto-generated method stub
+		Gdx.input.setCursorCatched(false);
 
 	}
 	
@@ -235,7 +242,8 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void show() {
 		Gdx.input.setCursorCatched(true);
-
+		GLOBALS.WORLD = world;
+		GLOBALS.SKYBOX = skybox;
 	}
 
 	@Override

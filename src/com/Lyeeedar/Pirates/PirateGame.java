@@ -7,6 +7,7 @@ import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Screens.AbstractScreen;
 import com.Lyeeedar.Screens.GameScreen;
+import com.Lyeeedar.Screens.MainMenuScreen;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
@@ -39,14 +40,15 @@ public class PirateGame extends Game {
 		
 		GLOBALS.LIGHTS.add(l);
 		
-		screens.put(Screen.GAME, new GameScreen());
+		screens.put(Screen.GAME, new GameScreen(this));
+		screens.put(Screen.MAINMENU, new MainMenuScreen(this));
 		
 		for (Entry<Screen, AbstractScreen> entry : screens.entrySet())
 		{
 			entry.getValue().create();
 		}
 		
-		switchScreen(Screen.GAME);
+		switchScreen(Screen.MAINMENU);
 	}
 
 	public void switchScreen(Screen screen)

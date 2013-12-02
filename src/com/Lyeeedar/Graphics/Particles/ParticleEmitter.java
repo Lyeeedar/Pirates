@@ -35,6 +35,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ObjectMap.Entry;
 import com.badlogic.gdx.utils.OrderedMap;
@@ -864,7 +865,9 @@ public class ParticleEmitter implements Serializable {
 				}
 				else if (entry.key.equals("values"))
 				{
-					values = (float[]) entry.value;
+					Array array = (Array)entry.value;
+					values = new float[array.size];
+					for (int i = 0; i < array.size; i++) values[i] = (Float) array.get(i);
 				}
 				else if (entry.key.equals("interpolated"))
 				{
@@ -876,7 +879,9 @@ public class ParticleEmitter implements Serializable {
 				}
 				else if (entry.key.equals("value step"))
 				{
-					valueStep = (float[]) entry.value;
+					Array array = (Array)entry.value;
+					valueStep = new float[array.size];
+					for (int i = 0; i < array.size; i++) valueStep[i] = (Float) array.get(i);
 				}
 			}
 		}

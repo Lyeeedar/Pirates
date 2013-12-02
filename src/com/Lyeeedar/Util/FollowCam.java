@@ -21,6 +21,35 @@ public class FollowCam extends PerspectiveCamera {
 	private float angle = -25;
 	private float minDist = 0;
 	
+	public void setAngle(float angle)
+	{
+		this.angle = angle;
+	}
+	
+	public void updateBasic(PositionalData entityState)
+	{
+		position.set(entityState.position);
+		up.set(entityState.up);
+		direction.set(entityState.rotation);
+		Yrotate(angle);
+		update();
+		
+		float seaY = 0;
+		
+		for (int i = 0; i < 2; i++)
+		{
+			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
+			float diff = seaHeight - frustum.planePoints[i].y;
+			if (diff > seaY) seaY = diff;
+		}
+		
+		if (seaY > 0)
+		{
+			position.y += seaY;
+			update();
+		}
+	}
+	
 	public void update(PositionalData entityState)
 	{
 		angle -= controls.getDeltaY();

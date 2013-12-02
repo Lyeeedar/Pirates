@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.Spells;
 
 import java.util.ArrayList;
 
+import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Entities.Entity.PositionalData;
@@ -15,7 +16,8 @@ public class SpellAI_Bolt extends SpellAI {
 
 	public Vector3 velocity = new Vector3();
 	private Vector3 tmpVec = new Vector3();
-	public Sphere sphere = Pools.obtain(Sphere.class);
+	//public Sphere shape = Pools.obtain(Sphere.class);
+	public Box shape = Pools.obtain(Box.class);
 	public CollisionRay ray = Pools.obtain(CollisionRay.class);
 	
 	private ArrayList<EntityGraph> entities = new ArrayList<EntityGraph>();
@@ -26,7 +28,10 @@ public class SpellAI_Bolt extends SpellAI {
 	{
 		this.velocity.set(velocity);
 		this.ray.ray.direction.set(velocity).nor();
-		this.sphere.radius = radius;
+		//this.sphere.radius = radius;
+		shape.width = radius;
+		shape.height = radius;
+		shape.depth = radius;
 	}
 	
 	@Override
@@ -39,19 +44,18 @@ public class SpellAI_Bolt extends SpellAI {
 		ray.len = ray.ray.origin.dst(spell.position);
 		ray.reset();
 				
-		sphere.setPosition(spell.position);
+		shape.setPosition(spell.position);
 		
 		spell.caster.readData(pData, PositionalData.class);
 		
-		GLOBALS.WORLD.collide(sphere, pData.graph, entities);
+		GLOBALS.WORLD.collide(shape, pData.graph, entities);
 		
 		if (entities.size() > 0)
 		{
 			for (EntityGraph eg : entities)
 			{
-				System.out.println(eg);
 				eg.entity.readData(sData, StatusData.class);
-				sData.damage = 200;
+				sData.damage = 20;
 				eg.entity.writeData(sData, StatusData.class);
 			}
 			return false;
@@ -65,7 +69,7 @@ public class SpellAI_Bolt extends SpellAI {
 
 	@Override
 	public void dispose() {
-		Pools.free(sphere);
+		Pools.free(shape);
 		Pools.free(ray);
 		pData.dispose();
 		sData.dispose();

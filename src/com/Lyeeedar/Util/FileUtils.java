@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
@@ -15,8 +16,15 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.graphics.g3d.model.still.StillModel;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Json;
 
 public class FileUtils {
+	
+	public static ParticleEffect loadParticleEffect(String name)
+	{
+		Json json = new Json();
+		return json.fromJson(ParticleEffect.class, Gdx.files.internal(name));
+	}
 
 	public static HashMap<String, Texture> loadedTextures = new HashMap<String, Texture>();
 	/**
@@ -139,44 +147,5 @@ public class FileUtils {
 			entry.getValue().dispose();
 		}
 		loadedAtlases.clear();
-	}
-	
-	public static BufferedImage[] deconstructAtlas(TextureAtlas atlas)
-	{
-		Texture tex = atlas.getTextures().iterator().next();
-		tex.getTextureData().prepare();
-		Pixmap pixels = tex.getTextureData().consumePixmap();
-		
-		Array<AtlasRegion> regions = atlas.getRegions();
-		regions.sort(new Comparator<AtlasRegion>(){
-			@Override
-			public int compare(AtlasRegion a1, AtlasRegion a2) {
-				int val1 = Integer.parseInt(a1.name.replace("sprite", ""));
-				int val2 = Integer.parseInt(a2.name.replace("sprite", ""));
-				return val1 - val2;
-			}});
-		
-		BufferedImage[] images = new BufferedImage[regions.size];
-		
-		for (int i = 0; i < regions.size; i++)
-		{
-			AtlasRegion region = regions.get(i);
-			images[i] = new BufferedImage(region.getRegionWidth(), region.getRegionHeight(), BufferedImage.TYPE_INT_ARGB);
-			
-			for (int x = region.getRegionX(); x < region.getRegionX()+region.getRegionWidth(); x++)
-			{
-				for (int y = region.getRegionY(); y < region.getRegionY()+region.getRegionHeight(); y++)
-				{
-					Color c = new Color();
-					Color.rgba8888ToColor(c, pixels.getPixel(x, y));
-					
-					java.awt.Color cc = new java.awt.Color(c.r, c.g, c.b, c.a);
-					
-					images[i].setRGB(x-region.getRegionX(), y-region.getRegionY(), cc.getRGB());
-				}
-			}
-		}
-		
-		return images;
 	}
 }
