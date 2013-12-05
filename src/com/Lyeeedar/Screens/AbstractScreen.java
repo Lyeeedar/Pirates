@@ -191,7 +191,7 @@ public abstract class AbstractScreen implements Screen {
         cam.near = 2f;
         cam.far = (GLOBALS.ANDROID) ? 202f : 2502f ;
 
-		stage.setViewport(width, height, true);
+		stage.setViewport(width, height, false);
 	}
 
 	@Override

@@ -36,7 +36,7 @@ public final class GLOBALS {
 	public static final float GRAVITY = -85;
 
 	public static final int[] RESOLUTION = {1920, 1080};
-	public static final int[] SCREEN_SIZE = {800, 600};
+	public static final int[] SCREEN_SIZE = {RESOLUTION[0], RESOLUTION[1]};
 	
 	public static final float FOG_MIN = 2300.0f;
 	public static final float FOG_MAX = 2500.0f;
@@ -49,6 +49,7 @@ public final class GLOBALS {
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null, true);
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();
 	public static LightManager LIGHTS = new LightManager();
+	public static Entity player;
 	
 	public static ExecutorService threadPool = Executors.newFixedThreadPool(1);//Runtime.getRuntime().availableProcessors());
 	public static LinkedList<Future<?>> futureList = new LinkedList<Future<?>>();	

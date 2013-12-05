@@ -2,12 +2,16 @@ package com.Lyeeedar.Entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Entities.Items.Item;
+import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -501,12 +505,18 @@ public class Entity {
 	public static class EquipmentData implements EntityData<EquipmentData>
 	{
 		private final HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
+		private final HashMap<ITEM_TYPE, LinkedList<Item>> items = new HashMap<ITEM_TYPE, LinkedList<Item>>();
 		
 		public EquipmentData()
 		{
 			for (Equipment_Slot es : Equipment_Slot.values())
 			{
 				equipment.put(es, null);
+			}
+			
+			for (ITEM_TYPE it : ITEM_TYPE.values())
+			{
+				items.put(it, new LinkedList<Item>());
 			}
 		}
 		
@@ -519,7 +529,12 @@ public class Entity {
 			}
 		}
 		
-		public boolean addEquipment(Equipment_Slot slot, Equipment<?> e)
+		public void addItem(Item item)
+		{
+			items.get(item.description.item_type).add(item);
+		}
+		
+		public boolean equip(Equipment_Slot slot, Equipment<?> e)
 		{
 			boolean r = false;
 			if (equipment.get(slot) != null)
@@ -538,6 +553,11 @@ public class Entity {
 			return equipment.get(slot);
 		}
 
+		public LinkedList<Item> getItems(ITEM_TYPE it)
+		{
+			return items.get(it);
+		}
+		
 		@SuppressWarnings("unchecked")
 		@Override
 		public void write(EquipmentData data) {
@@ -569,6 +589,7 @@ public class Entity {
 					equipment.put(entry.getKey(), entry.getValue().copy());
 				}
 			}
+			items.putAll(data.items);
 		}
 
 		@Override
@@ -576,6 +597,10 @@ public class Entity {
 			target.write(this);
 		}
 
+		public Iterator<Equipment<?>> iterator()
+		{
+			return equipment.values().iterator();
+		}
 		
 		@Override
 		public void dispose() {

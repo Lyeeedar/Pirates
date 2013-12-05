@@ -2,9 +2,14 @@ package com.Lyeeedar.Entities.Items;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
+import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
+import com.badlogic.gdx.graphics.Color;
 
 
-public abstract class Equipment<E extends Equipment<E>> {
+public abstract class Equipment<E extends Equipment<E>> extends Item {
+	
+	public SPRITESHEET spritesheet = null;
 	
 	public String animationName = null;
 	public static final int START_FRAME = 0;
@@ -12,11 +17,14 @@ public abstract class Equipment<E extends Equipment<E>> {
 	
 	public Equipment()
 	{
+		super();
 	}
 	
-	public Equipment(String animationName)
+	public Equipment(String animationName, SPRITESHEET spritesheet, DESCRIPTION desc)
 	{
+		super(desc);
 		this.animationName = animationName;
+		this.spritesheet = spritesheet;
 	}
 	
 	public void playAnimation(AnimationData aData)
@@ -33,8 +41,16 @@ public abstract class Equipment<E extends Equipment<E>> {
 		aData.useDirection = true;
 	}
 	
-	public abstract E copy();
+	protected Equipment<E> sset(Equipment<E> other)
+	{
+		super.set(other);
+		this.animationName = other.animationName;
+		this.spritesheet = other.spritesheet;
+		return this;
+	}
+	
 	public abstract E set(E other);
+	public abstract E copy();
 	public abstract void update(float delta, Entity entity);
 	public abstract void use();
 	public abstract void stopUsing();

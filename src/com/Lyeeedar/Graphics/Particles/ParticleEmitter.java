@@ -1149,6 +1149,7 @@ public class ParticleEmitter implements Serializable {
 	static class ParticleEmitterComparator implements Comparator<ParticleEmitter>
 	{
 		public int compare(ParticleEmitter p1, ParticleEmitter p2) {
+			if (p1.distance == p2.distance) return 0;
 			return (p1.distance < p2.distance) ? 1 : -1;
 		}
 	}

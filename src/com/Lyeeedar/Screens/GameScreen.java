@@ -19,6 +19,9 @@ import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
+import com.Lyeeedar.Entities.Items.Armour;
+import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.Model;
@@ -26,6 +29,7 @@ import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Sprite3D;
+import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
@@ -70,7 +74,7 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create() {
 		
-		blank = FileUtils.loadTexture("data/textures/blank.png", true);
+		blank = FileUtils.loadTexture("data/textures/grass.png", true);
 
 		//IslandGenerator ig = new IslandGenerator();
 		//Mesh model = ig.getIsland(75, 75, 53);
@@ -115,10 +119,10 @@ public class GameScreen extends AbstractScreen {
 		s.setGender(true);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
-		s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
+		//s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
 		//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
-		s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
-		s.create();
+		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
+		//s.create();
 		player.addRenderable(s);
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		CollisionRay ray = new CollisionRay();
@@ -133,7 +137,8 @@ public class GameScreen extends AbstractScreen {
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
-		eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
+		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
 		world.addEntity(player, false);
@@ -151,7 +156,8 @@ public class GameScreen extends AbstractScreen {
 			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
 			ge.readData(eData, EquipmentData.class);
-			eData.addEquipment(Equipment_Slot.RARM, new Weapon("attack_1", 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
+			eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
+			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
 			ge.writeData(eData, EquipmentData.class);
 			
 			world.addEntity(ge, false);
@@ -160,9 +166,9 @@ public class GameScreen extends AbstractScreen {
 			s.setGender(true);
 			s.addAnimation("move", "move");
 			s.addAnimation("attack_1", "attack");
-			s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
+			//s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
 			//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
-			s.create();
+			//s.create();
 			
 			ge.addRenderable(s);
 			
@@ -181,7 +187,7 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawOrthogonals(float delta, SpriteBatch batch) {
 		player.readData(sData, StatusData.class);
-		spriteBatch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
+		batch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
 	}
 
 	@Override
@@ -244,6 +250,7 @@ public class GameScreen extends AbstractScreen {
 		Gdx.input.setCursorCatched(true);
 		GLOBALS.WORLD = world;
 		GLOBALS.SKYBOX = skybox;
+		GLOBALS.player = player;
 	}
 
 	@Override

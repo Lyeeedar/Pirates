@@ -9,10 +9,13 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Entities.Spells.SpellAI_Bolt;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
+import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
+import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Color;
@@ -43,9 +46,9 @@ public class Weapon extends Equipment<Weapon> {
 		super();
 	}
 	
-	public Weapon(String animationName, float dist, Vector3 hitBox, float speed, int damageMin, int damageVar)
+	public Weapon(String animationName, SPRITESHEET spritesheet, DESCRIPTION desc, float dist, Vector3 hitBox, float speed, int damageMin, int damageVar)
 	{
-		super(animationName);
+		super(animationName, spritesheet, desc);
 		this.dist = dist;
 		this.box.set(box.center, hitBox.x, hitBox.y, hitBox.z);
 		this.hitSpeed = speed;
@@ -53,9 +56,8 @@ public class Weapon extends Equipment<Weapon> {
 		this.damageVar = damageVar;
 	}
 
-	@Override
 	public Weapon set(Weapon other) {
-		animationName = other.animationName;
+		super.sset(other);
 		dist = other.dist;
 		swinging = other.swinging;
 		hitCD = other.hitCD;
@@ -108,16 +110,16 @@ public class Weapon extends Equipment<Weapon> {
 			
 			hitCD = hitSpeed;
 			
-			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
-			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
+//			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
+//			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/funky.effect");//new ParticleEffect(5);
 //			ParticleEmitter flame = 
 //			ParticleEmitter flame = new ParticleEmitter(0.5f, 0.5f, 0.005f, 0.4f, 0.4f, 0.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
 //			flame.createBasicEmitter(1, 1, new Color(0.99f, 0.99f, 0.0f, 0.7f), new Color(0.99f, 0.0f, 0.0f, 0.7f), pData.rotation.x*10, pData.rotation.y*10, pData.rotation.z*10);
 //			flame.calculateParticles();
 //			effect.addEmitter(flame, 
 //					0, 0, 0);
-			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
-			GLOBALS.SPELLS.add(s);
+//			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
+//			GLOBALS.SPELLS.add(s);
 		}
 	}
 

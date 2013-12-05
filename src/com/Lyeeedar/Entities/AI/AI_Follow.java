@@ -54,22 +54,22 @@ public class AI_Follow extends AI_Package {
 			
 			double a = GLOBALS.angle(entityPos.rotation, tmp.set(entityPos.position).sub(followPos.position).nor(), up);
 	
-			if (Math.abs(a) < delta*100)
+			if (Math.abs(a) < delta*500)
 			{
 				entityPos.rotate(0,  1, 0, (float) a);
 			}
 			else if (a > 0)
 			{
-				entityPos.rotate(0, 1, 0, (float) (-delta*100*Math.random()));
+				entityPos.rotate(0, 1, 0, (float) (-delta*500*Math.random()));
 			}
 			else
 			{
-				entityPos.rotate(0, 1, 0, (float) (delta*100*Math.random()));
+				entityPos.rotate(0, 1, 0, (float) (delta*500*Math.random()));
 			}
 			
 			boolean close = entityPos.position.dst2(followPos.position) < 2f; 
-			if (!close) entityPos.forward_backward(4);
-			basicAttack(Math.abs(a) > delta*100, Equipment_Slot.RARM, entityEquip);
+			if (!close) entityPos.forward_backward(10);
+			basicAttack(close, Equipment_Slot.RARM, entityEquip);
 			
 		}	
 		

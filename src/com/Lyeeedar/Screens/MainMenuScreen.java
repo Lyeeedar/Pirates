@@ -10,6 +10,7 @@ import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.PirateGame.Screen;
+import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -106,6 +107,16 @@ public class MainMenuScreen extends AbstractScreen {
 				return false;
 			}
 		});
+		
+		TextButton btnInventory = new TextButton("Inventory", skin);
+		btnInventory.getLabel().setAlignment(Align.left, Align.left);
+		btnInventory.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				game.switchScreen(Screen.INVENTORY);
+				return false;
+			}
+		});
+
 
 		int width = 300;
 		int height = 50;
@@ -130,6 +141,8 @@ public class MainMenuScreen extends AbstractScreen {
 		btable.add(btnCredits).width(width).height(height).padBottom(bpad).padLeft(lpad);
 		btable.row();
 		btable.add(btnExit).width(width).height(height).padBottom(bpad).padLeft(lpad);
+		btable.row();
+		btable.add(btnInventory).width(width).height(height).padBottom(bpad).padLeft(lpad);
 		
 		table.add(btable).left().expandY();
 		table.row();
@@ -149,8 +162,8 @@ public class MainMenuScreen extends AbstractScreen {
 		
 		pData.position.set(0, 10, 0);
 		((FollowCam)cam).setAngle(0);
+		
 	}
-
 	@Override
 	public void drawSkybox(float delta) {
 		Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -179,6 +192,7 @@ public class MainMenuScreen extends AbstractScreen {
 	@Override
 	public void drawOrthogonals(float delta, SpriteBatch batch) {
 		Table.drawDebug(stage);
+
 	}
 
 	boolean increase = true;
