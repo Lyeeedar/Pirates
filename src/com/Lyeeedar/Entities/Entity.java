@@ -505,7 +505,7 @@ public class Entity {
 	public static class EquipmentData implements EntityData<EquipmentData>
 	{
 		private final HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
-		private final HashMap<ITEM_TYPE, LinkedList<Item>> items = new HashMap<ITEM_TYPE, LinkedList<Item>>();
+		private final HashMap<ITEM_TYPE, HashMap<String, Item>> items = new HashMap<ITEM_TYPE, HashMap<String, Item>>();
 		
 		public EquipmentData()
 		{
@@ -516,7 +516,7 @@ public class Entity {
 			
 			for (ITEM_TYPE it : ITEM_TYPE.values())
 			{
-				items.put(it, new LinkedList<Item>());
+				items.put(it, new HashMap<String, Item>());
 			}
 		}
 		
@@ -531,7 +531,15 @@ public class Entity {
 		
 		public void addItem(Item item)
 		{
-			items.get(item.description.item_type).add(item);
+			HashMap<String, Item> hash = items.get(item.description.item_type);
+			if (hash.containsKey(item.description.name))
+			{
+				hash.get(item.description.name).num++;
+			}
+			else
+			{
+				hash.put(item.description.name, item);
+			}
 		}
 		
 		public boolean equip(Equipment_Slot slot, Equipment<?> e)
@@ -553,12 +561,11 @@ public class Entity {
 			return equipment.get(slot);
 		}
 
-		public LinkedList<Item> getItems(ITEM_TYPE it)
+		public HashMap<String, Item> getItems(ITEM_TYPE it)
 		{
 			return items.get(it);
 		}
 		
-		@SuppressWarnings("unchecked")
 		@Override
 		public void write(EquipmentData data) {
 			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
@@ -577,7 +584,7 @@ public class Entity {
 				
 				if (current == null) 
 				{
-					equipment.put(entry.getKey(), entry.getValue().copy());
+					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
 				}
 				else if (current.getClass().equals(entry.getValue().getClass()))
 				{
@@ -586,10 +593,37 @@ public class Entity {
 				else
 				{
 					Pools.free(current);
-					equipment.put(entry.getKey(), entry.getValue().copy());
+					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
 				}
 			}
-			items.putAll(data.items);
+			
+			
+			for (ITEM_TYPE it : ITEM_TYPE.values())
+			{
+				HashMap<String, Item> iitems = items.get(it);
+				HashMap<String, Item> ditems = data.items.get(it);
+				
+				for (Item i : iitems.values())
+				{
+					if (!ditems.containsKey(i.description.name))
+					{
+						Item rm = iitems.remove(i.description.name);
+						Pools.free(rm);
+					}
+				}
+				
+				for (Item i : ditems.values())
+				{
+					if (!iitems.containsKey(i.description.name))
+					{
+						iitems.put(i.description.name, i.copy());
+					}
+					else
+					{
+						iitems.get(i.description.name).set(i);
+					}
+				}
+			}
 		}
 
 		@Override

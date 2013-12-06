@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Pools;
 
 public class Item {
-	
+		
 	public enum ITEM_TYPE
 	{
 		ARMOUR_HEAD,
@@ -30,6 +30,7 @@ public class Item {
 	}
 
 	public DESCRIPTION description;
+	public int num = 1; 
 	
 	public Item ()
 	{
@@ -41,9 +42,10 @@ public class Item {
 		this.description = desc;
 	}
 	
-	public Item set(Item other)
+	public Item set(Item item)
 	{
-		this.description = other.description;
+		this.description = item.description;
+		this.num = item.num;
 		
 		return this;
 	}

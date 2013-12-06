@@ -12,7 +12,9 @@ import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
@@ -103,6 +105,9 @@ public class InventoryScreen extends AbstractScreen {
 
 	@Override
 	public void create() {
+		BitmapFont font = skin.getFont("default-font");
+		font.setColor(Color.BLACK);
+		//font.setScale(1.6f, 1.4f);
 		
 		stage.clear();
 		
@@ -168,8 +173,6 @@ public class InventoryScreen extends AbstractScreen {
 			}
 		});
 		
-		//skin.getFont("default-font").setScale(sclX(0.8f), sclY(1.0f));
-		
 		if (selected == 0) buildTreeArmour(tree, eData);
 		else if (selected == 1) buildTreeWeapon(tree, eData);
 		else if (selected == 2) buildTreeBuff(tree, eData);
@@ -187,7 +190,7 @@ public class InventoryScreen extends AbstractScreen {
 		left.row();
 		left.add(current).padTop(sclY(45)).left().padLeft(sclX(180));
 		left.row();
-		left.add(bl).expand().uniform().fill().top().padLeft(sclX(140)).padTop(sclY(30)).padBottom(sclY(133));
+		left.add(bl).expand().fill().top().padLeft(sclX(140)).padTop(sclY(30)).padBottom(sclY(133));
 		
 		tl.defaults().padTop(sclY(11)).width(sclX(50));
 		if (selected != 0)
@@ -285,33 +288,49 @@ public class InventoryScreen extends AbstractScreen {
 	private void buildTreeArmour(Tree tree, EquipmentData eData)
 	{
 		tree.add(buildNode("Head", ITEM_TYPE.ARMOUR_HEAD, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Torso", ITEM_TYPE.ARMOUR_TORSO, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Legs", ITEM_TYPE.ARMOUR_LEGS, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Feet", ITEM_TYPE.ARMOUR_FEET, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 	}
 	
 	private void buildTreeBuff(Tree tree, EquipmentData eData)
 	{
 		tree.add(buildNode("Temperature", ITEM_TYPE.BUFF_TEMPERATURE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Light", ITEM_TYPE.BUFF_LIGHT, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Life", ITEM_TYPE.BUFF_LIFE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Gaia", ITEM_TYPE.BUFF_GAIA, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Force", ITEM_TYPE.BUFF_FORCE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 	}
 	
 	private void buildTreeWeapon(Tree tree, EquipmentData eData)
 	{
 		tree.add(buildNode("Mundane", ITEM_TYPE.WEAPON_MUNDANE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Temperature", ITEM_TYPE.WEAPON_TEMPERATURE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Light", ITEM_TYPE.WEAPON_LIGHT, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Life", ITEM_TYPE.WEAPON_LIFE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Gaia", ITEM_TYPE.WEAPON_GAIA, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 		tree.add(buildNode("Force", ITEM_TYPE.WEAPON_FORCE, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 	}
 	
 	private void buildTreeMisc(Tree tree, EquipmentData eData)
 	{
 		tree.add(buildNode("Misc", ITEM_TYPE.MISC, eData));
+		tree.add(new Node(new Image(FileUtils.loadTexture("data/textures/swipe.png", true))));
 	}
 	
 	private Node buildNode(String title, ITEM_TYPE type, EquipmentData eData)
@@ -319,9 +338,9 @@ public class InventoryScreen extends AbstractScreen {
 		Node node = new Node(new Label(title, skin));
 		node.setExpanded(true);
 		Table stack = new Table();
-		for (final Item i : eData.getItems(type))
+		for (final Item i : eData.getItems(type).values())
 		{
-			final Button b = new Button(skin);
+			final Table b = new Table();
 			
 			b.add(new Image(i.description.icon)).size(50);
 			b.add(new Label(i.description.name, skin));
@@ -341,6 +360,7 @@ public class InventoryScreen extends AbstractScreen {
 		Node n = new Node(stack);
 		n.setSelectable(false);
 		node.add(n);
+		node.setSelectable(false);
 		return node;
 	}
 	

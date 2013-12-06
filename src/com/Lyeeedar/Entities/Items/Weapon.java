@@ -56,21 +56,25 @@ public class Weapon extends Equipment<Weapon> {
 		this.damageVar = damageVar;
 	}
 
-	public Weapon set(Weapon other) {
-		super.sset(other);
-		dist = other.dist;
-		swinging = other.swinging;
-		hitCD = other.hitCD;
-		hitSpeed = other.hitSpeed;
-		box.set(other.box);
-		damageMin = other.damageMin;
-		damageVar = other.damageVar;
+	@Override
+	public Item set(Item other) {
+		super.set(other);
+		
+		Weapon cother = (Weapon) other;
+		
+		dist = cother.dist;
+		swinging = cother.swinging;
+		hitCD = cother.hitCD;
+		hitSpeed = cother.hitSpeed;
+		box.set(cother.box);
+		damageMin = cother.damageMin;
+		damageVar = cother.damageVar;
 		
 		return this;
 	}
 
 	@Override
-	public Weapon copy() {
+	public Item copy() {
 		return Pools.obtain(Weapon.class).set(this);
 	}
 

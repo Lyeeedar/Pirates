@@ -19,13 +19,13 @@ public class Armour extends Equipment<Armour> {
 	}
 	
 	@Override
-	public Armour set(Armour other) {
-		super.sset(other);
+	public Item set(Item other) {
+		super.set(other);
 		return this;
 	}
 
 	@Override
-	public Armour copy() {
+	public Item copy() {
 		return Pools.obtain(Armour.class).set(this);
 	}
 

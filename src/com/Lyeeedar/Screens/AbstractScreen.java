@@ -49,9 +49,6 @@ public abstract class AbstractScreen implements Screen {
 	protected final Camera cam;
 	protected final Controls controls;
 
-//	protected SpriteBatch sB;
-//	protected BitmapFont fB;
-	
 	private long startTime;
 	private long time;
 	private long frameTime;

@@ -41,16 +41,16 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 		aData.useDirection = true;
 	}
 	
-	protected Equipment<E> sset(Equipment<E> other)
+	@Override
+	public Item set(Item other)
 	{
 		super.set(other);
-		this.animationName = other.animationName;
-		this.spritesheet = other.spritesheet;
+		Equipment<E> cother = (Equipment<E>)other;
+		this.animationName = cother.animationName;
+		this.spritesheet = cother.spritesheet;
 		return this;
 	}
 	
-	public abstract E set(E other);
-	public abstract E copy();
 	public abstract void update(float delta, Entity entity);
 	public abstract void use();
 	public abstract void stopUsing();
