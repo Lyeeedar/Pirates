@@ -114,16 +114,10 @@ public class Weapon extends Equipment<Weapon> {
 			
 			hitCD = hitSpeed;
 			
-//			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
-//			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/funky.effect");//new ParticleEffect(5);
-//			ParticleEmitter flame = 
-//			ParticleEmitter flame = new ParticleEmitter(0.5f, 0.5f, 0.005f, 0.4f, 0.4f, 0.4f, 0, GL20.GL_SRC_ALPHA, GL20.GL_ONE, "data/atlases/f.atlas", "flame");
-//			flame.createBasicEmitter(1, 1, new Color(0.99f, 0.99f, 0.0f, 0.7f), new Color(0.99f, 0.0f, 0.0f, 0.7f), pData.rotation.x*10, pData.rotation.y*10, pData.rotation.z*10);
-//			flame.calculateParticles();
-//			effect.addEmitter(flame, 
-//					0, 0, 0);
-//			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
-//			GLOBALS.SPELLS.add(s);
+			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
+			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/funky.effect");//new ParticleEffect(5);
+			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
+			GLOBALS.SPELLS.add(s);
 		}
 	}
 
