@@ -37,6 +37,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap.Entry;
 import com.badlogic.gdx.utils.OrderedMap;
 import com.badlogic.gdx.utils.Pools;
@@ -199,7 +200,7 @@ public class ParticleEmitter implements Serializable {
 			this.sprite[i].setInterpolated(true, this.sprite[i+1]);
 		}
 	}
-	
+
 	public void setSpriteTimeline(List<TimelineValue> values)
 	{
 		TimelineValue[] array = new TimelineValue[values.size()];
@@ -231,7 +232,7 @@ public class ParticleEmitter implements Serializable {
 			this.size[i].setInterpolated(true, this.size[i+1]);
 		}
 	}
-	
+
 	public void setSizeTimeline(List<TimelineValue> values)
 	{
 		TimelineValue[] array = new TimelineValue[values.size()];
@@ -263,7 +264,7 @@ public class ParticleEmitter implements Serializable {
 			this.colour[i].setInterpolated(true, this.colour[i+1]);
 		}
 	}
-	
+
 	public void setColourTimeline(List<TimelineValue> values)
 	{
 		TimelineValue[] array = new TimelineValue[values.size()];
@@ -295,7 +296,7 @@ public class ParticleEmitter implements Serializable {
 			this.velocity[i].setInterpolated(true, this.velocity[i+1]);
 		}
 	}
-	
+
 	public void setVelocityTimeline(List<TimelineValue> values)
 	{
 		TimelineValue[] array = new TimelineValue[values.size()];
@@ -353,14 +354,14 @@ public class ParticleEmitter implements Serializable {
 		tmpMat = Pools.obtain(Matrix4.class).idt();
 		tmpRot = Pools.obtain(Matrix4.class).idt();
 		pos = Pools.obtain(Vector3.class).set(0, 0, 0);
-		
+
 		calculateRadius();
 		reloadParticles();
 		reloadTextures();
-		
+
 		created = true;
 	}
-	
+
 	public void dispose()
 	{
 		if (quad != null) Pools.free(quad);
@@ -374,32 +375,32 @@ public class ParticleEmitter implements Serializable {
 		if (mesh != null) mesh.dispose();
 		mesh = null;
 	}
-	
+
 	public void getLight(LightManager lightManager)
 	{
 		if (lightColour == null) return;
-		
+
 		if (light != null)
 		{
 			lightManager.remove(light);
 			light = null;
 		}
-		
+
 		light = new Light(new Vector3(x+lightx+(ex/2f), y+lighty+ey, z+lightz+(ez/2)), lightColour.cpy(), lightAttenuation);
 
 		lightManager.add(light);
 	}
-	
+
 	public void calculateParticles()
 	{
 		maxParticles = (int) ((float)particleLifetime / (float)emissionTime);
 	}
-	
+
 	public void calculateRadius()
 	{
 		this.radius = ex+ey+ez;
 	}
-	
+
 	public void reloadParticles()
 	{
 		active = new Bag<Particle>(maxParticles);
@@ -412,7 +413,7 @@ public class ParticleEmitter implements Serializable {
 		}
 
 		vertices = new float[maxParticles*VERTEX_SIZE*4];
-		
+
 		if (mesh != null) mesh.dispose();
 		mesh = new Mesh(false, maxParticles*4, maxParticles*6,
 				new VertexAttribute(Usage.Position, 3, "a_position"),
@@ -422,7 +423,7 @@ public class ParticleEmitter implements Serializable {
 		mesh.setIndices(genIndices(maxParticles));
 
 	}
-	
+
 	public void reloadTextures()
 	{
 		atlas = FileUtils.loadAtlas(atlasName);
@@ -480,7 +481,7 @@ public class ParticleEmitter implements Serializable {
 	public void render()
 	{
 		if (!created) create();
-		
+
 		if (currentBlendSRC == blendFuncSRC && currentBlendDST == blendFuncDST)
 		{}
 		else {
@@ -506,7 +507,7 @@ public class ParticleEmitter implements Serializable {
 	public static void begin(Camera cam)
 	{
 		if (shader == null) return;
-		
+
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthMask(false);
@@ -518,7 +519,7 @@ public class ParticleEmitter implements Serializable {
 	public static void end()
 	{
 		if (shader == null) return;
-		
+
 		shader.end();
 
 		Gdx.gl.glDepthMask(true);
@@ -531,14 +532,14 @@ public class ParticleEmitter implements Serializable {
 	public void update(float delta, Camera cam)
 	{
 		if (!created) create();
-		
+
 		if (light != null)
 		{
 			light.position.set(x+lightx+(ex/2f), y+lighty+ey, z+lightz+(ez/2));
 			if (lightFlicker) light.attenuation = (float) (lightAttenuation *
 					(1-((1-((float)inactive.size / (float)active.size)))/2));
 		}
-		
+
 		tmpRot.set(cam.view).inv();
 		tmpRot.getValues()[Matrix4.M03] = 0;
 		tmpRot.getValues()[Matrix4.M13] = 0;
@@ -569,8 +570,8 @@ public class ParticleEmitter implements Serializable {
 			float[] colour = getAttributeValue(p.lifetime, ParticleAttribute.COLOUR);
 
 			quad
-				.set(-size[0]/2, size[1]/2, 0)
-				.mul(tmpMat);
+			.set(-size[0]/2, size[1]/2, 0)
+			.mul(tmpMat);
 
 			v = 0;
 
@@ -587,8 +588,8 @@ public class ParticleEmitter implements Serializable {
 			vertices[(i*VERTEX_SIZE*4)+v+8] = topLeftTexCoords[sprite][1];
 
 			quad
-				.set(size[0]/2, size[1]/2, 0)
-				.mul(tmpMat);
+			.set(size[0]/2, size[1]/2, 0)
+			.mul(tmpMat);
 
 			v += VERTEX_SIZE;
 
@@ -605,8 +606,8 @@ public class ParticleEmitter implements Serializable {
 			vertices[(i*VERTEX_SIZE*4)+v+8] = topRightTexCoords[sprite][1];
 
 			quad
-				.set(-size[0]/2, -size[1]/2, 0)
-				.mul(tmpMat);
+			.set(-size[0]/2, -size[1]/2, 0)
+			.mul(tmpMat);
 
 			v += VERTEX_SIZE;
 
@@ -623,8 +624,8 @@ public class ParticleEmitter implements Serializable {
 			vertices[(i*VERTEX_SIZE*4)+v+8] = botLeftTexCoords[sprite][1];
 
 			quad
-				.set(size[0]/2, -size[1]/2, 0)
-				.mul(tmpMat);
+			.set(size[0]/2, -size[1]/2, 0)
+			.mul(tmpMat);
 
 			v += VERTEX_SIZE;
 
@@ -647,7 +648,7 @@ public class ParticleEmitter implements Serializable {
 		emissionCD -= delta;
 
 		arrayLen = inactive.size;
-		
+
 		if (arrayLen == 0) return;
 
 		while (emissionCD < 0 && arrayLen > 0)
@@ -853,40 +854,31 @@ public class ParticleEmitter implements Serializable {
 			json.writeValue("interpolated", interpolated);
 			if (interpolated) json.writeValue("value step", valueStep);
 		}
-		
-		public void read (Json json, OrderedMap<String, Object> jsonMap) {
-			Iterator<Entry<String, Object>> itr = jsonMap.entries().iterator();
-			while (itr.hasNext())
+
+		@Override
+		public void read (Json json, JsonValue jsonData) {
+
+			time = jsonData.getFloat("time");
+
+			JsonValue array = jsonData.get("values");
+			values = new float[array.size];
+			for (int i = 0; i < array.size; i++) values[i] = array.getFloat(i);
+
+			interpolated = jsonData.getBoolean("interpolated");
+			if (interpolated)
 			{
-				Entry<String, Object> entry = itr.next();
-				if (entry.key.equals("time"))
-				{
-					time = (Float) entry.value;
-				}
-				else if (entry.key.equals("values"))
-				{
-					Array array = (Array)entry.value;
-					values = new float[array.size];
-					for (int i = 0; i < array.size; i++) values[i] = (Float) array.get(i);
-				}
-				else if (entry.key.equals("interpolated"))
-				{
-					interpolated = (Boolean) entry.value;
-					if (interpolated)
-					{
-						interpolatedValues = new float[values.length];
-					}
-				}
-				else if (entry.key.equals("value step"))
-				{
-					Array array = (Array)entry.value;
-					valueStep = new float[array.size];
-					for (int i = 0; i < array.size; i++) valueStep[i] = (Float) array.get(i);
-				}
+				interpolatedValues = new float[values.length];
+			}
+
+			array = jsonData.get("value step");
+			if (array != null)
+			{
+				valueStep = new float[array.size];
+				for (int i = 0; i < array.size; i++) valueStep[i] = array.getFloat(i);
 			}
 		}
 	}
-	
+
 	/**
 	 * Write this particle emitter to the given json instance.
 	 * @param json
@@ -938,7 +930,7 @@ public class ParticleEmitter implements Serializable {
 			}
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })
-			public ParticleEmitter read (Json json, Object jsonData, Class type) {
+			public ParticleEmitter read (Json json, JsonValue jsonData, Class type) {
 
 				// ----- Particle Parameters ----- //
 				TimelineValue[] sprite = null;
@@ -969,111 +961,37 @@ public class ParticleEmitter implements Serializable {
 				float lightx = 0, lighty = 0, lightz = 0;
 				// ----- End Light ----- //
 
-				OrderedMap<String, Object> jsonMap = (OrderedMap<String, Object>) jsonData;
-				Iterator<Entry<String, Object>> itr = jsonMap.entries();
+				sprite = json.readValue(TimelineValue[].class, jsonData.get("sprite"));
+				size = json.readValue(TimelineValue[].class, jsonData.get("size"));
+				colour = json.readValue(TimelineValue[].class, jsonData.get("colour"));
+				velocity = json.readValue(TimelineValue[].class, jsonData.get("velocity"));
 
-				while (itr.hasNext())
+				name = jsonData.getString("name");
+				maxParticles = jsonData.getInt("max particles");
+				particleLifetime = jsonData.getFloat("particle lifetime");
+				particleLifetimeVar = jsonData.getFloat("particle lifetime variance");
+				emissionTime = jsonData.getFloat("emission time");
+				ex = jsonData.getFloat("emission x");
+				ey = jsonData.getFloat("emission y");
+				ez = jsonData.getFloat("emission z");
+
+				emissionType = jsonData.getInt("emission type");
+				blendFuncSRC = jsonData.getInt("blend func SRC");
+				blendFuncDST = jsonData.getInt("blend func DST");
+
+				atlasName = jsonData.getString("atlas name");
+
+				JsonValue lc = jsonData.get("light colour");
+				if (lc != null)
 				{
-					Entry<String, Object> entry = itr.next();
-
-					if (entry.key.equals("sprite"))
-					{
-						sprite = json.readValue(TimelineValue[].class, entry.value);
-					}
-					else if (entry.key.equals("size"))
-					{
-						size = json.readValue(TimelineValue[].class, entry.value);
-					}
-					else if (entry.key.equals("colour"))
-					{
-						colour = json.readValue(TimelineValue[].class, entry.value);
-					}
-					else if (entry.key.equals("velocity"))
-					{
-						velocity = json.readValue(TimelineValue[].class, entry.value);
-					}
-
-					else if (entry.key.equals("name"))
-					{
-						name = (String) entry.value;
-					}
-					else if (entry.key.equals("max particles"))
-					{
-						maxParticles = ((Float) entry.value).intValue();
-					}
-					else if (entry.key.equals("particle lifetime"))
-					{
-						particleLifetime = (Float) entry.value;
-					}
-					else if (entry.key.equals("particle lifetime variance"))
-					{
-						particleLifetimeVar = (Float) entry.value;
-					}
-					else if (entry.key.equals("emission time"))
-					{
-						emissionTime = (Float) entry.value;
-					}
-					else if (entry.key.equals("emission x"))
-					{
-						ex = (Float) entry.value;
-					}
-					else if (entry.key.equals("emission y"))
-					{
-						ey = (Float) entry.value;
-					}
-					else if (entry.key.equals("emission z"))
-					{
-						ez = (Float) entry.value;
-					}
-					else if (entry.key.equals("emission type"))
-					{
-						emissionType = ((Float) entry.value).intValue();
-					}
-					else if (entry.key.equals("blend func SRC"))
-					{
-						blendFuncSRC = ((Float) entry.value).intValue();
-					}
-					else if (entry.key.equals("blend func DST"))
-					{
-						blendFuncDST = ((Float) entry.value).intValue();
-					}
-					else if (entry.key.equals("atlas name"))
-					{
-						atlasName = (String) entry.value;
-					}
-					
-					else if (entry.key.equals("light attenuation"))
-					{
-						lightAttenuation = (Float) entry.value;
-					}
-					else if (entry.key.equals("light power"))
-					{
-						lightPower = (Float) entry.value;
-					}
-					else if (entry.key.equals("light static"))
-					{
-						isLightStatic = (Boolean) entry.value;
-					}
-					else if (entry.key.equals("light flicker"))
-					{
-						lightFlicker = (Boolean) entry.value;
-					}
-					else if (entry.key.equals("light colour"))
-					{
-						lightColour = json.readValue(Color.class, entry.value);
-					}
-					else if (entry.key.equals("light offset x"))
-					{
-						lightx = (Float) entry.value;
-					}
-					else if (entry.key.equals("light offset y"))
-					{
-						lighty = (Float) entry.value;
-					}
-					else if (entry.key.equals("light offset z"))
-					{
-						lightz = (Float) entry.value;
-					}
+					lightColour = json.readValue(Color.class, lc);
+					lightAttenuation = jsonData.getFloat("light attenuation");
+					lightPower = jsonData.getFloat("light power");
+					isLightStatic = jsonData.getBoolean("light static");
+					lightFlicker = jsonData.getBoolean("light flicker");
+					lightx = jsonData.getFloat("light offset x");
+					lighty = jsonData.getFloat("light offset y");
+					lightz = jsonData.getFloat("light offset z");
 				}
 
 				ParticleEmitter emitter = new ParticleEmitter(particleLifetime, particleLifetimeVar, emissionTime, 
@@ -1084,7 +1002,7 @@ public class ParticleEmitter implements Serializable {
 				emitter.maxParticles = maxParticles;
 
 				emitter.setTimeline(sprite, size, colour, velocity);
-				
+
 				if (lightColour != null) emitter.addLight(isLightStatic, lightAttenuation, lightPower, lightColour, lightFlicker, lightx, lighty, lightz);
 
 				return emitter;
@@ -1111,8 +1029,8 @@ public class ParticleEmitter implements Serializable {
 	private static final String SHADER_VERTEX = 
 
 			"attribute vec3 a_position;" + "\n" +
-			"attribute vec4 a_colour;" + "\n" +
-			"attribute vec2 a_texCoords;" + "\n" +
+					"attribute vec4 a_colour;" + "\n" +
+					"attribute vec2 a_texCoords;" + "\n" +
 
 			"uniform mat4 u_pv;" + "\n" +
 
@@ -1128,9 +1046,9 @@ public class ParticleEmitter implements Serializable {
 
 	private static final String SHADER_FRAGMENT = 
 			"#ifdef GL_ES\n" +
-            "precision highp float;\n" + 
-            "#endif\n" + 
-            
+					"precision highp float;\n" + 
+					"#endif\n" + 
+
 			"uniform sampler2D u_texture;" + "\n" +
 
 			"varying vec4 v_colour;" + "\n" +
@@ -1139,13 +1057,13 @@ public class ParticleEmitter implements Serializable {
 			"void main() {" + "\n" +
 			"gl_FragColor = texture2D(u_texture, v_texCoords) * v_colour;" + "\n" +
 			"}";
-	
+
 	private static final ParticleEmitterComparator comparator = new ParticleEmitterComparator();
 	public static Comparator<ParticleEmitter> getComparator()
 	{
 		return comparator;
 	}
-	
+
 	static class ParticleEmitterComparator implements Comparator<ParticleEmitter>
 	{
 		public int compare(ParticleEmitter p1, ParticleEmitter p2) {

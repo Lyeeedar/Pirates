@@ -1,24 +1,57 @@
 package com.Lyeeedar.Util;
 
-import java.awt.image.BufferedImage;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
-import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
-import com.badlogic.gdx.graphics.g3d.model.still.StillModel;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.utils.Json;
 
 public class FileUtils {
+	
+	public static HashMap<String, HashMap<Integer, BitmapFont>> loadedFonts = new HashMap<String, HashMap<Integer, BitmapFont>>();
+	
+	public static BitmapFont getFont(String location, int size)
+	{
+		if (!Gdx.files.internal(location).exists()) {
+			throw new RuntimeException("Font "+location+" does not exist!");
+		}
+		
+		BitmapFont font = null;
+		if (loadedFonts.containsKey(location))
+		{
+			HashMap<Integer, BitmapFont> hash = loadedFonts.get(location);
+			if (hash.containsKey(size))
+			{
+				font = hash.get(size);
+			}
+			else
+			{
+				FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(location));
+				font = generator.generateFont(size);
+				generator.dispose();
+				hash.put(size, font);
+			}
+		}
+		else
+		{
+			HashMap<Integer, BitmapFont> hash = new HashMap<Integer, BitmapFont>();
+			loadedFonts.put(location, hash);
+			FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(location));
+			font = generator.generateFont(size);
+			generator.dispose();
+			hash.put(size, font);
+		}
+		return font;
+	}
 	
 	public static ParticleEffect loadParticleEffect(String name)
 	{
@@ -105,8 +138,8 @@ public class FileUtils {
 			throw new RuntimeException("Mesh "+meshName+" does not exist!");
 		}
 		ObjLoader loader = new ObjLoader();
-		StillModel model = loader.loadObj(Gdx.files.internal(meshLocation));
-		Mesh mesh = model.subMeshes[0].mesh;
+		Model model = loader.loadModel(Gdx.files.internal(meshLocation));
+		Mesh mesh = model.meshes.get(0);
 		
 		loadedMeshes.put(meshLocation, mesh);
 		

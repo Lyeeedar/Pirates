@@ -44,7 +44,6 @@ public abstract class AbstractScreen implements Screen {
 	protected final AbstractModelBatch renderer;
 	protected final BitmapFont font;
 	protected final Stage stage;
-	protected static final Skin skin = new Skin(Gdx.files.internal("data/skins/uiskin.json"));
 	
 	protected final Camera cam;
 	protected final Controls controls;

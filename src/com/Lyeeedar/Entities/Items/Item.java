@@ -57,12 +57,12 @@ public class Item {
 	
 	public static final class DESCRIPTION
 	{
-		public Texture icon;
+		public String icon;
 		public String name;
 		public String description;
 		public ITEM_TYPE item_type;
 		
-		public DESCRIPTION(String name, String description, ITEM_TYPE item_type, Texture icon)
+		public DESCRIPTION(String name, String description, ITEM_TYPE item_type, String icon)
 		{
 			this.icon = icon;
 			this.name = name;

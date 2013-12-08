@@ -10,6 +10,7 @@ import com.Lyeeedar.Util.Bag;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap.Entry;
 import com.badlogic.gdx.utils.OrderedMap;
 
@@ -231,32 +232,14 @@ public class ParticleEffect implements Serializable {
 		}
 
 		@Override
-		public void read(Json json, OrderedMap<String, Object> jsonData) {
+		public void read(Json json, JsonValue jsonData) {
 			ParticleEmitter.getJson(json);
 			
-			Iterator<Entry<String, Object>> itr = jsonData.entries().iterator();
+			x = jsonData.getFloat("x");
+			y = jsonData.getFloat("y");
+			z = jsonData.getFloat("z");
 			
-			while (itr.hasNext())
-			{
-				Entry<String, Object> entry = itr.next();
-				
-				if (entry.key.equals("emitter"))
-				{
-					emitter = json.readValue(ParticleEmitter.class, entry.value);
-				}
-				else if (entry.key.equals("x"))
-				{
-					x = (Float) entry.value;
-				}
-				else if (entry.key.equals("y"))
-				{
-					y = (Float) entry.value;
-				}
-				else if (entry.key.equals("z"))
-				{
-					z = (Float) entry.value;
-				}
-			}
+			emitter = json.readValue(ParticleEmitter.class, jsonData.get("emitter"));
 		}
 	}
 

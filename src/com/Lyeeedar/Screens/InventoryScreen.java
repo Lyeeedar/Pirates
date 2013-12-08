@@ -1,7 +1,12 @@
 package com.Lyeeedar.Screens;
 
+import java.util.HashMap;
+
 import com.Lyeeedar.Entities.Entity.EquipmentData;
+import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Items.Armour;
+import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
@@ -12,6 +17,7 @@ import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -27,41 +33,48 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Tree;
 import com.badlogic.gdx.scenes.scene2d.ui.Tree.Node;
+import com.badlogic.gdx.scenes.scene2d.ui.Tree.TreeStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 
 public class InventoryScreen extends AbstractScreen {
-	
+
 	int selected = 0;
-	
+
 	private final PositionalData oldpData = new PositionalData();
-	
+
 	private final PositionalData pData = new PositionalData();
 	private final PositionalData camData = new PositionalData();
 	private final EquipmentData eData = new EquipmentData();
-	
+
 	Table table = new Table();
-	
+
 	Table left = new Table();
 	Table tl = new Table();
 	Table bl = new Table();
-	
+
 	Table right = new Table();
 	Table tr = new Table();
 	Table br = new Table();
-	
+
 	Table rarmour = new Table();
 	Table rbuffs = new Table();
 	Table rattacks = new Table();
+
+	LabelStyle ls;
+	TreeStyle ts;
+	TextButtonStyle tbs;
 	
-	FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("data/skins/arial.ttf"));
-			
+	HashMap<Equipment_Slot, Object[]> equipped = new HashMap<Equipment_Slot, Object[]>();
+
 	public InventoryScreen(PirateGame game)
 	{
 		super(game);
@@ -94,174 +107,114 @@ public class InventoryScreen extends AbstractScreen {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	public void testItems()
 	{
 		for (int i = 0; i < 100; i++)
 		{
 			for (ITEM_TYPE it : ITEM_TYPE.values())
 			{
-				Item item = new Item(new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", it, FileUtils.loadTexture("data/skins/HAND.png", true)));
+				Item item = new Armour(null, null, new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", it, "data/skins/HAND.png"));
 				eData.addItem(item);
 			}
 		}
+		eData.equip(Equipment_Slot.HEAD, new Armour(null, null, new DESCRIPTION("A HEAD", "THis is a head. It is a big head and it looks funny and that is like super cool and usj vjrrdu vskrd pir snd stifff lovely banans darn thay stifff well thatysd a gpppf point DOWEHY!", ITEM_TYPE.ARMOUR_HEAD, "data/skins/TORSO.png")));
 	}
 
 	@Override
 	public void create() {
-		BitmapFont font = skin.getFont("default-font");
-		font.setColor(Color.BLACK);
-		//font.setScale(0.8f, 0.8f);
-		
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(20));
+
+		ts = new TreeStyle(new Skin(Gdx.files.internal("data/skins/uiskin.json")).get(TreeStyle.class));
+		ls = new LabelStyle();
+		ls.fontColor = Color.BLACK;
+		ls.font = font;
+		tbs = new TextButtonStyle();
+		tbs.font = font;
+
 		stage.clear();
-		
+
 		table = new Table();
-		
+
 		left = new Table();
 		tl = new Table();
 		bl = new Table();
-		
+
 		right = new Table();
 		tr = new Table();
 		br = new Table();
-		
+
 		rarmour = new Table();
 		rbuffs = new Table();
 		rattacks = new Table();
-		
+
 		table.setFillParent(true);
 		table.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/inventory.png", true))));
-		
+
 		table.add(left).expand().uniform().fill();
 		table.add(right).expand().uniform().fill();
-		
-		// BUILD LEFT
-		
-		final Tree tree = new Tree(skin);
-		tree.setPadding(0);
-		
-		final TextButton btnArmour = new TextButton("Armour", skin);
-		final TextButton btnBuffs = new TextButton("Buffs", skin);
-		final TextButton btnWeapons = new TextButton("Weapons", skin);
-		final TextButton btnMisc = new TextButton("Misc", skin);
-		
-		btnArmour.addListener(new InputListener() {
-			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-				selected = 0;
-				create();
-				return false;
-			}
-		});
-		
-		btnWeapons.addListener(new InputListener() {
-			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-				selected = 1;
-				create();
-				return false;
-			}
-		});
-		
-		btnBuffs.addListener(new InputListener() {
-			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-				selected = 2;
-				create();
-				return false;
-			}
-		});
-		
-		btnMisc.addListener(new InputListener() {
-			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-				selected = 3;
-				create();
-				return false;
-			}
-		});
-		
-		if (selected == 0) buildTreeArmour(tree, eData);
-		else if (selected == 1) buildTreeWeapon(tree, eData);
-		else if (selected == 2) buildTreeBuff(tree, eData);
-		else if (selected == 3) buildTreeMisc(tree, eData);
-		
-		
-		String cn = "";
-		if (selected == 0) cn = "Armour";
-		else if (selected == 1) cn = "Weapons";
-		else if (selected == 2) cn = "Buffs";
-		else if (selected == 3) cn = "Misc";
-		Label current = new Label(cn, skin);
-		
-		left.add(tl).padTop(sclY(100)).right().padRight(sclX(90));
-		left.row();
-		left.add(current).padTop(sclY(45)).left().padLeft(sclX(180));
-		left.row();
-		left.add(bl).expand().fill().top().padLeft(sclX(140)).padTop(sclY(30)).padBottom(sclY(133));
-		
-		tl.defaults().padTop(sclY(11)).width(sclX(50));
-		if (selected != 0)
-		{
-			tl.add(btnArmour);
-			tl.row();
-		}
-		if (selected != 1)
-		{
-			tl.add(btnWeapons);
-			tl.row();
-		}
-		if (selected != 2)
-		{
-			tl.add(btnBuffs);
-			tl.row();
-		}
-		if (selected != 3)
-		{
-			tl.add(btnMisc);
-			tl.row();
-		}
-		
-		Table scroll = new Table();
-		ScrollPane scrollPane = new ScrollPane(scroll);
-		
-		bl.add(scrollPane).expand().fill().top().left().expand();
-		scroll.add(tree).top().left().expand();
-		
-		// END LEFT
-		
-		// BUILD RIGHT
-		
-		Image head = new Image(FileUtils.loadTexture("data/skins/HEAD.png", true));
-		Image torso = new Image(FileUtils.loadTexture("data/skins/TORSO.png", true));
-		Image legs = new Image(FileUtils.loadTexture("data/skins/FEET.png", true));
-		Image feet = new Image(FileUtils.loadTexture("data/skins/FEET.png", true));
-		
-		Image larm = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		Image rarm = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		
-		Image temp = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		Image light = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		Image life = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		Image gaia = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		Image force = new Image(FileUtils.loadTexture("data/skins/HAND.png", true));
-		
+
+		buildLeft();
+		buildRightSlots();
+
+
+		stage.addActor(table);
+
+		pData.position.set(6, 3, 0);
+		camData.position.set(0, 0, 0);
+		camData.rotation.set(0, 0, -1);
+
+		((FollowCam)cam).setFollowDist(10);
+	}
+
+	public void buildRightDesc(DESCRIPTION desc)
+	{
+		br.clear();
+		br.add(getDesc(desc)).expand().fill().top();
+	}
+
+	public void buildRightSlots()
+	{
+		right.clear();
+		tr.clear();
+		rarmour.clear();
+		rbuffs.clear();
+		rattacks.clear();
+
+		Image head = getEquipSlot(eData, Equipment_Slot.HEAD, "data/skins/HEAD.png");
+		Image torso = getEquipSlot(eData, Equipment_Slot.TORSO, "data/skins/TORSO.png");
+		Image legs = getEquipSlot(eData, Equipment_Slot.LEGS, "data/skins/FEET.png");
+		Image feet = getEquipSlot(eData, Equipment_Slot.FEET, "data/skins/FEET.png");
+
+		Image larm = getEquipSlot(eData, Equipment_Slot.LARM, "data/skins/HEAD.png");
+		Image rarm = getEquipSlot(eData, Equipment_Slot.RARM, "data/skins/HEAD.png");
+
+		Image temp = getEquipSlot(eData, Equipment_Slot.TEMPERATURE, "data/skins/HEAD.png");
+		Image light = getEquipSlot(eData, Equipment_Slot.LIGHT, "data/skins/HEAD.png");
+		Image life = getEquipSlot(eData, Equipment_Slot.LIFE, "data/skins/HEAD.png");
+		Image gaia = getEquipSlot(eData, Equipment_Slot.GAIA, "data/skins/HEAD.png");
+		Image force = getEquipSlot(eData, Equipment_Slot.FORCE, "data/skins/HEAD.png");
+
 		right.add(tr).expand().uniform().fill();
 		right.row();
 		right.add(br).expand().uniform().fill();
-		
-		tr.add(rarmour).padLeft(sclX(134.5f)).padTop(sclY(85));
-		tr.add(new Table()).width(sclX(160)).expand();
-		tr.add(rbuffs).right().padRight(sclX(117)).padTop(sclY(125));
+
+		tr.add(rarmour).padLeft(GLOBALS.sclX(134.5f)).padTop(GLOBALS.sclY(85));
+		tr.add(new Table()).width(GLOBALS.sclX(160)).expand();
+		tr.add(rbuffs).right().padRight(GLOBALS.sclX(117)).padTop(GLOBALS.sclY(125));
 		tr.row();
-		tr.add(rattacks).colspan(3).padBottom(sclY(37)).padLeft(sclX(12));
-		
-		rarmour.defaults().width(sclX(30)).height(sclY(45)).pad(sclY(27), sclX(5), sclY(5), 0).right();
-		rarmour.add(head).padTop(sclY(40));
+		tr.add(rattacks).colspan(3).padBottom(GLOBALS.sclY(37)).padLeft(GLOBALS.sclX(12));
+
+		rarmour.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(GLOBALS.sclY(27), GLOBALS.sclX(5), GLOBALS.sclY(5), 0).right();
+		rarmour.add(head).padTop(GLOBALS.sclY(40));
 		rarmour.row();
 		rarmour.add(torso);
 		rarmour.row();
 		rarmour.add(legs);
 		rarmour.row();
 		rarmour.add(feet);
-		
-		rbuffs.defaults().width(sclX(30)).height(sclY(45)).pad(sclY(9), sclX(5), sclY(5), sclX(5));
+
+		rbuffs.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(GLOBALS.sclY(9), GLOBALS.sclX(5), GLOBALS.sclY(5), GLOBALS.sclX(5));
 		rbuffs.add(temp);
 		rbuffs.row();
 		rbuffs.add(light);
@@ -271,79 +224,165 @@ public class InventoryScreen extends AbstractScreen {
 		rbuffs.add(gaia);
 		rbuffs.row();
 		rbuffs.add(force);
-		
-		rattacks.defaults().width(sclX(30)).height(sclY(45)).pad(0, sclX(11), 0, sclX(5)).left();
+
+		rattacks.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(0, GLOBALS.sclX(11), 0, GLOBALS.sclX(5)).left();
 		rattacks.add(larm);
 		rattacks.add(rarm);
-		
-		br.add(getDesc(new DESCRIPTION("Iron Sword", "A sword made of dull grey iron. Spots of rust cover the metallic surface, and the slightly chipped edge gives the blade a malevolent serrated look.", ITEM_TYPE.WEAPON_MUNDANE, FileUtils.loadTexture("data/skins/HAND.png", true))))
-			.expand().fill().top();
-		// END RIGHT
-		
-		stage.addActor(table);
-		
-		pData.position.set(6, 3, 0);
-		camData.position.set(0, 0, 0);
-		camData.rotation.set(0, 0, -1);
-		
-		((FollowCam)cam).setFollowDist(10);
 	}
-	
+
+	public void buildLeft()
+	{
+		left.clear();
+		tl.clear();
+		bl.clear();
+		equipped.clear();
+
+		final Tree tree = new Tree(ts);
+		tree.setPadding(0);
+
+		final TextButton btnArmour = new TextButton("Armour", tbs);
+		final TextButton btnBuffs = new TextButton("Buffs", tbs);
+		final TextButton btnWeapons = new TextButton("Weapons", tbs);
+		final TextButton btnMisc = new TextButton("Misc", tbs);
+
+		btnArmour.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				selected = 0;
+				buildLeft();
+				return false;
+			}
+		});
+
+		btnWeapons.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				selected = 1;
+				buildLeft();
+				return false;
+			}
+		});
+
+		btnBuffs.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				selected = 2;
+				buildLeft();
+				return false;
+			}
+		});
+
+		btnMisc.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				selected = 3;
+				buildLeft();
+				return false;
+			}
+		});
+
+		if (selected == 0) buildTreeArmour(tree, eData);
+		else if (selected == 1) buildTreeWeapon(tree, eData);
+		else if (selected == 2) buildTreeBuff(tree, eData);
+		else if (selected == 3) buildTreeMisc(tree, eData);
+
+
+		String cn = "";
+		if (selected == 0) cn = "Armour";
+		else if (selected == 1) cn = "Weapons";
+		else if (selected == 2) cn = "Buffs";
+		else if (selected == 3) cn = "Misc";
+		Label current = new Label(cn, ls);
+
+		left.add(tl).padTop(GLOBALS.sclY(100)).right().padRight(GLOBALS.sclX(90));
+		left.row();
+		left.add(current).padTop(GLOBALS.sclY(45)).left().padLeft(GLOBALS.sclX(180));
+		left.row();
+		left.add(bl).expand().fill().top().padLeft(GLOBALS.sclX(140)).padTop(GLOBALS.sclY(30)).padBottom(GLOBALS.sclY(133));
+
+		tl.defaults().width(GLOBALS.sclX(50));
+		if (selected == 0)
+		{
+			btnArmour.setDisabled(true);
+			btnArmour.setVisible(false);
+		}
+		if (selected == 1)
+		{
+			btnWeapons.setDisabled(true);
+			btnWeapons.setVisible(false);
+		}
+		if (selected == 2)
+		{
+			btnBuffs.setDisabled(true);
+			btnBuffs.setVisible(false);
+		}
+		if (selected == 3)
+		{
+			btnMisc.setDisabled(true);
+			btnMisc.setVisible(false);
+		}
+		
+		tl.add(btnArmour);
+		tl.row();
+		tl.add(btnWeapons);
+		tl.row();
+		tl.add(btnBuffs);
+		tl.row();
+		tl.add(btnMisc);
+		tl.row();
+
+		Table scroll = new Table();
+		ScrollPane scrollPane = new ScrollPane(scroll);
+
+		bl.add(scrollPane).expand().fill().top().left().expand();
+		scroll.add(tree).top().left().expand();		
+	}
+
 	private void buildTreeArmour(Tree tree, EquipmentData eData)
 	{
-		tree.add(buildNode("Head", ITEM_TYPE.ARMOUR_HEAD, eData));
-		tree.add(buildNode("Torso", ITEM_TYPE.ARMOUR_TORSO, eData));
-		tree.add(buildNode("Legs", ITEM_TYPE.ARMOUR_LEGS, eData));
-		tree.add(buildNode("Feet", ITEM_TYPE.ARMOUR_FEET, eData));
+		tree.add(buildNode("Head", ITEM_TYPE.ARMOUR_HEAD, eData, Equipment_Slot.HEAD));
+		tree.add(buildNode("Torso", ITEM_TYPE.ARMOUR_TORSO, eData, Equipment_Slot.TORSO));
+		tree.add(buildNode("Legs", ITEM_TYPE.ARMOUR_LEGS, eData, Equipment_Slot.LEGS));
+		tree.add(buildNode("Feet", ITEM_TYPE.ARMOUR_FEET, eData, Equipment_Slot.FEET));
 	}
-	
+
 	private void buildTreeBuff(Tree tree, EquipmentData eData)
 	{
-		tree.add(buildNode("Temperature", ITEM_TYPE.BUFF_TEMPERATURE, eData));
-		tree.add(buildNode("Light", ITEM_TYPE.BUFF_LIGHT, eData));
-		tree.add(buildNode("Life", ITEM_TYPE.BUFF_LIFE, eData));
-		tree.add(buildNode("Gaia", ITEM_TYPE.BUFF_GAIA, eData));
-		tree.add(buildNode("Force", ITEM_TYPE.BUFF_FORCE, eData));
+		tree.add(buildNode("Temperature", ITEM_TYPE.BUFF_TEMPERATURE, eData, Equipment_Slot.TEMPERATURE));
+		tree.add(buildNode("Light", ITEM_TYPE.BUFF_LIGHT, eData, Equipment_Slot.LIGHT));
+		tree.add(buildNode("Life", ITEM_TYPE.BUFF_LIFE, eData, Equipment_Slot.LIFE));
+		tree.add(buildNode("Gaia", ITEM_TYPE.BUFF_GAIA, eData, Equipment_Slot.GAIA));
+		tree.add(buildNode("Force", ITEM_TYPE.BUFF_FORCE, eData, Equipment_Slot.FORCE));
 	}
-	
+
 	private void buildTreeWeapon(Tree tree, EquipmentData eData)
 	{
-		tree.add(buildNode("Mundane", ITEM_TYPE.WEAPON_MUNDANE, eData));
-		tree.add(buildNode("Temperature", ITEM_TYPE.WEAPON_TEMPERATURE, eData));
-		tree.add(buildNode("Light", ITEM_TYPE.WEAPON_LIGHT, eData));
-		tree.add(buildNode("Life", ITEM_TYPE.WEAPON_LIFE, eData));
-		tree.add(buildNode("Gaia", ITEM_TYPE.WEAPON_GAIA, eData));
-		tree.add(buildNode("Force", ITEM_TYPE.WEAPON_FORCE, eData));
+		tree.add(buildNode("Mundane", ITEM_TYPE.WEAPON_MUNDANE, eData, Equipment_Slot.LARM));
+		tree.add(buildNode("Temperature", ITEM_TYPE.WEAPON_TEMPERATURE, eData, Equipment_Slot.LARM));
+		tree.add(buildNode("Light", ITEM_TYPE.WEAPON_LIGHT, eData, Equipment_Slot.LARM));
+		tree.add(buildNode("Life", ITEM_TYPE.WEAPON_LIFE, eData, Equipment_Slot.LARM));
+		tree.add(buildNode("Gaia", ITEM_TYPE.WEAPON_GAIA, eData, Equipment_Slot.LARM));
+		tree.add(buildNode("Force", ITEM_TYPE.WEAPON_FORCE, eData, Equipment_Slot.LARM));
 	}
-	
+
 	private void buildTreeMisc(Tree tree, EquipmentData eData)
 	{
-		tree.add(buildNode("Misc", ITEM_TYPE.MISC, eData));
+		tree.add(buildNode("Misc", ITEM_TYPE.MISC, eData, null));
 	}
-	
-	private Node buildNode(String title, ITEM_TYPE type, EquipmentData eData)
+
+	private Node buildNode(String title, ITEM_TYPE type, final EquipmentData eData, final Equipment_Slot slot)
 	{
-		Node node = new Node(new Label(title, skin));
-		node.setExpanded(true);
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		LabelStyle ls = new LabelStyle();
+		ls.font = font;
+		ls.fontColor = Color.BLACK;
+
+		Node node = new Node(new Label(title, ls));
 		Table stack = new Table();
 		for (final Item i : eData.getItems(type).values())
 		{
 			final Table b = new Table();
 			b.defaults().left().expandX();
-			//b.add(new Image(i.description.icon)).size(50);
-			LabelStyle style = new LabelStyle();
-			style.font = generator.generateFont((int)sclX(20));
-			b.add(new Label(i.description.name, style));
-			b.add(new Label(" ("+i.num+")", style));
 			
-			b.addListener(new InputListener() {
-				public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-					br.clear();
-					br.add(getDesc(i.description));
-					return false;
-				}
-			});
-			stack.add(b).expandX().uniform().fill().width(sclX(200));
+			fillItemTable(b, i, slot);
+			
+			stack.add(b).expand().uniform().fill().width(GLOBALS.sclX(200));
 			stack.row();
 			stack.add(new Image(FileUtils.loadTexture("data/textures/swipe.png", true)));
 			stack.row();
@@ -355,38 +394,123 @@ public class InventoryScreen extends AbstractScreen {
 		return node;
 	}
 	
+	private void fillItemTable(final Table b, final Item i, final Equipment_Slot slot)
+	{
+		b.clearChildren();
+		
+		//b.add(new Image(i.description.icon)).size(50);
+		if (slot != null && ((Equipment<?>)i).equipped != null){
+			b.add(new Label("E ",ls));
+			equipped.put(((Equipment<?>)i).equipped, new Object[]{b, i});
+		}
+		else
+		{
+			b.add(new Label("  ",ls));
+		}
+		b.add(new Label(i.description.name,ls));
+		b.add(new Label("("+i.num+")", ls));
+		b.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/blank.png", true))));
+		b.setColor(231.0f/255.0f, 185.0f/255.0f, 145.0f/255.0f, 1.0f);
+
+		b.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				if (button == Buttons.RIGHT && slot != null)
+				{
+					Equipment<?> e = (Equipment<?>)i;
+					eData.equip(slot, e);
+					buildRightSlots();
+					
+					Object[] old = equipped.get(slot);
+					equipped.put(slot, new Object[]{b, i});
+					fillItemTable(b, i, slot);
+					if (old != null)
+					{
+						fillItemTable((Table)old[0], (Item)old[1], slot);
+					}
+				}
+				return false;
+			}
+			public void enter (InputEvent event, float x, float y, int pointer, Actor fromActor) {
+				buildRightDesc(i.description);
+				b.setColor(211.0f/255.0f, 165.0f/255.0f, 125.0f/255.0f, 1.0f);
+			}
+			public void exit (InputEvent event, float x, float y, int pointer, Actor fromActor) {
+				b.setColor(231.0f/255.0f, 185.0f/255.0f, 145.0f/255.0f, 1.0f);
+				br.clear();
+			}
+		});
+	}
+
+	private Image getEquipSlot(final EquipmentData eData, final Equipment_Slot slot, String fallback)
+	{
+		Image image = null;
+		
+		final Equipment<?> e = eData.getEquipment(slot);
+
+		if (e == null)
+		{
+			image = new Image(FileUtils.loadTexture(fallback, true));
+		}
+		else
+		{
+			image = new Image(FileUtils.loadTexture(e.description.icon, true));
+			final Image i = image;
+			image.addListener(new InputListener() {
+				public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+					if (button == Buttons.RIGHT)
+					{
+						br.clear();
+						eData.unequip(e.equipped);
+						buildRightSlots();
+						
+						Object[] old = equipped.get(slot);
+						equipped.put(slot, null);
+						if (old != null)
+						{
+							fillItemTable((Table)old[0], (Item)old[1], slot);
+						}
+					}
+					return false;
+				}
+				public void enter (InputEvent event, float x, float y, int pointer, Actor fromActor) {
+					buildRightDesc(e.description);
+					i.setColor(0.7f, 0.7f, 0.7f, 0.7f);
+				}
+				public void exit (InputEvent event, float x, float y, int pointer, Actor fromActor) {
+					i.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+					br.clear();
+				}
+			});
+		}
+
+		return image;
+	}
+
 	private Table getDesc(DESCRIPTION desc)
 	{
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(10));
+		LabelStyle ls = new LabelStyle();
+		ls.font = font;
+		ls.fontColor = Color.BLACK;
+
 		Table table = new Table();
-		
-		table.add(new Label(desc.name, skin)).top().padRight(sclX(100)).padTop(sclY(55));
+
+		table.add(new Label(desc.name, ls)).top().padRight(GLOBALS.sclX(100)).padTop(GLOBALS.sclY(55));
 		table.row();
 		Table main = new Table();
-		
-		main.add(new Image(desc.icon)).width(sclX(100)).height(sclY(150)).left().padRight(sclX(10)).padLeft(sclX(20));
-		Label l = new Label(desc.description, skin);
+
+		main.add(new Image(FileUtils.loadTexture(desc.icon, true))).width(GLOBALS.sclX(100)).height(GLOBALS.sclY(150)).left().padRight(GLOBALS.sclX(10)).padLeft(GLOBALS.sclX(20));
+		Label l = new Label(desc.description, ls);
 		l.setWrap(true);
-		main.add(l).width(sclX(180));
-		
-		table.add(main).expand().fill().padBottom(sclY(100));
-		
-		
-		
+		main.add(l).width(GLOBALS.sclX(180));
+
+		table.add(main).expand().fill().padBottom(GLOBALS.sclY(100));
+
+
+
 		return table;
 	}
-	
-	public float sclX(float val)
-	{
-		float tmp = val/1000.0f;
-		return tmp*((float)GLOBALS.RESOLUTION[0]);
-	}
-	
-	public float sclY(float val)
-	{
-		float tmp = val/1000.0f;
-		return tmp*((float)GLOBALS.RESOLUTION[1]);
-	}
-	
+
 	@Override
 	public void resize(int width, int height)
 	{
@@ -424,7 +548,7 @@ public class InventoryScreen extends AbstractScreen {
 	public void update(float delta) {
 		((FollowCam)cam).updateBasic(camData);
 		cooldown += delta;
-		
+
 		if (cooldown > 0.5f)
 		{
 			//create();

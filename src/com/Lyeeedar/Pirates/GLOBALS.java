@@ -159,4 +159,16 @@ public final class GLOBALS {
 		}
 		return 0;
 	}
+	
+	public static float sclX(float val)
+	{
+		float tmp = val/1000.0f;
+		return tmp*((float)RESOLUTION[0]);
+	}
+	
+	public static float sclY(float val)
+	{
+		float tmp = val/1000.0f;
+		return tmp*((float)RESOLUTION[1]);
+	}
 }

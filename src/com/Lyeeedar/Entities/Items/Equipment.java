@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.Items;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
 import com.badlogic.gdx.graphics.Color;
@@ -14,6 +15,8 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	public String animationName = null;
 	public static final int START_FRAME = 0;
 	public static final int END_FRAME = 3;
+	
+	public Equipment_Slot equipped = null;
 	
 	public Equipment()
 	{

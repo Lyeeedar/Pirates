@@ -115,7 +115,7 @@ public class Weapon extends Equipment<Weapon> {
 			hitCD = hitSpeed;
 			
 			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
-			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/funky.effect");//new ParticleEffect(5);
+			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/stupidshep.effect");//new ParticleEffect(5);
 			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
 			GLOBALS.SPELLS.add(s);
 		}

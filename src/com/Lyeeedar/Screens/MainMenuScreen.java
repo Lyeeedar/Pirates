@@ -13,9 +13,11 @@ import com.Lyeeedar.Pirates.PirateGame.Screen;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
@@ -24,6 +26,9 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.Tree.TreeStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
 
 public class MainMenuScreen extends AbstractScreen {
@@ -62,10 +67,24 @@ public class MainMenuScreen extends AbstractScreen {
 
 	@Override
 	public void create() {
-		Label lblTitle = new Label("Pirates! Arrrrrr!", skin);
+		
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40));
+		
+		LabelStyle ls = new LabelStyle();
+		ls.font = font;
+		ls.fontColor = Color.BLACK;
+		TextButtonStyle tbs = new TextButtonStyle();
+		tbs.font = font;
+		tbs.fontColor = Color.BLACK;
+		
+		LabelStyle lst = new LabelStyle();
+		lst.font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40));
+		lst.fontColor = Color.BLACK;
+		
+		Label lblTitle = new Label("Pirates! Arrrrrr!", lst);
 		lblTitle.setFontScale(5);
 		
-		TextButton btnContinue = new TextButton("Continue", skin);
+		TextButton btnContinue = new TextButton("Continue", tbs);
 		btnContinue.getLabel().setAlignment(Align.left, Align.left);
 		btnContinue.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -73,7 +92,7 @@ public class MainMenuScreen extends AbstractScreen {
 			}
 		});
 		
-		TextButton btnNewGame = new TextButton("New Game", skin);
+		TextButton btnNewGame = new TextButton("New Game", tbs);
 		btnNewGame.getLabel().setAlignment(Align.left, Align.left);
 		btnNewGame.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -83,7 +102,7 @@ public class MainMenuScreen extends AbstractScreen {
 		});
 
 		
-		TextButton btnOptions = new TextButton("Options", skin);
+		TextButton btnOptions = new TextButton("Options", tbs);
 		btnOptions.getLabel().setAlignment(Align.left, Align.left);
 		btnOptions.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -91,7 +110,7 @@ public class MainMenuScreen extends AbstractScreen {
 			}
 		});
 		
-		TextButton btnCredits = new TextButton("Credits", skin);
+		TextButton btnCredits = new TextButton("Credits", tbs);
 		btnCredits.getLabel().setAlignment(Align.left, Align.left);
 		btnCredits.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -99,7 +118,7 @@ public class MainMenuScreen extends AbstractScreen {
 			}
 		});
 		
-		TextButton btnExit = new TextButton("Exit", skin);
+		TextButton btnExit = new TextButton("Exit", tbs);
 		btnExit.getLabel().setAlignment(Align.left, Align.left);
 		btnExit.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -108,7 +127,7 @@ public class MainMenuScreen extends AbstractScreen {
 			}
 		});
 		
-		TextButton btnInventory = new TextButton("Inventory", skin);
+		TextButton btnInventory = new TextButton("Inventory", tbs);
 		btnInventory.getLabel().setAlignment(Align.left, Align.left);
 		btnInventory.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -147,7 +166,7 @@ public class MainMenuScreen extends AbstractScreen {
 		table.add(btable).left().expandY();
 		table.row();
 		
-		table.add(new Label("Version: Alpha 01", skin)).padTop(25).bottom();
+		table.add(new Label("Version: Alpha 01", ls)).padTop(25).bottom();
 
 		table.setFillParent(true);
 		stage.addActor(table);

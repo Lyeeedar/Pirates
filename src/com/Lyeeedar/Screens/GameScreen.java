@@ -20,7 +20,6 @@ import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.Items.Armour;
-import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Spells.Spell;
@@ -48,7 +47,6 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
-import com.badlogic.gdx.graphics.g3d.loaders.wavefront.ObjLoader;
 import com.badlogic.gdx.math.Vector3;
 
 public class GameScreen extends AbstractScreen {
@@ -79,9 +77,8 @@ public class GameScreen extends AbstractScreen {
 		//IslandGenerator ig = new IslandGenerator();
 		//Mesh model = ig.getIsland(75, 75, 53);
 		
-		ObjLoader loader = new ObjLoader();
 		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-        Mesh shipModel = loader.loadObj(Gdx.files.internal("data/models/shipMesh.obj"), true).subMeshes[0].mesh;
+        Mesh shipModel = FileUtils.loadMesh("data/models/shipMesh.obj");
 		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
 		
 		Entity ship = new Entity();

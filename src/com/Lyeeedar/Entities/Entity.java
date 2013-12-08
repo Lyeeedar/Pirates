@@ -31,11 +31,18 @@ public class Entity {
 	{
 		HEAD,
 		BODY,
+		TORSO,
 		LEGS,
 		FEET,
 		LARM,
 		RARM,
-		MISC
+		MISC,
+		
+		TEMPERATURE,
+		LIGHT,
+		LIFE,
+		GAIA,
+		FORCE
 	}
 	
 	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
@@ -542,18 +549,20 @@ public class Entity {
 			}
 		}
 		
-		public boolean equip(Equipment_Slot slot, Equipment<?> e)
+		public void equip(Equipment_Slot slot, Equipment<?> e)
 		{
-			boolean r = false;
 			if (equipment.get(slot) != null)
 			{
-				Pools.free(equipment.get(slot));
-				r = true;
+				equipment.get(slot).equipped = null;
 			}
-			
-			equipment.put(slot,  e);
-			
-			return r;
+			equipment.put(slot, e);
+			e.equipped = slot;
+		}
+		
+		public void unequip(Equipment_Slot slot)
+		{
+			equipment.get(slot).equipped = null;
+			equipment.put(slot, null);
 		}
 		
 		public Equipment<?> getEquipment(Equipment_Slot slot)
