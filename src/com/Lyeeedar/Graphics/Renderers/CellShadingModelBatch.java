@@ -20,34 +20,34 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 		if (shaderOutline == null) loadOutlineShader();
 		if (shaderBody == null) loadBodyShader();
 		
-		Gdx.gl.glCullFace(GL20.GL_FRONT);
-		
-		// ----- Draw outlines ----- //
-		
-		shaderOutline.begin();
-		shaderOutline.setUniformMatrix("u_pv", cam.combined);
-		
-		shaderOutline.setUniformf("fog_colour", lights.ambientColour);
-		shaderOutline.setUniformf("fog_min", GLOBALS.FOG_MIN);
-		shaderOutline.setUniformf("fog_max", GLOBALS.FOG_MAX);
-
-		for (int i = drawableManager.drawables.size; --i >= 0;) {
-
-			final Drawable drawable = drawableManager.drawables.get(i);
-			
-			shaderOutline.setUniformf("u_viewPos", cam.position);
-
-			shaderOutline.setUniformMatrix("u_mm", drawable.model_matrix);
-			shaderOutline.setUniformf("u_colour", black);
-			shaderOutline.setUniformf("u_cam", cam.position);
-			float min = (drawable.type == 1) ? 0.05f : 1.0f ;
-			shaderOutline.setUniformf("u_thickness_min", min);
-			float max = (drawable.type == 1) ? 0.01f : 0.2f ;
-			shaderOutline.setUniformf("u_thickness_max", max);
-
-			drawable.mesh.render(shaderOutline, drawable.primitiveType);
-		}
-		shaderOutline.end();
+//		// ----- Draw outlines ----- //
+//
+//		Gdx.gl.glCullFace(GL20.GL_FRONT);
+//		
+//		shaderOutline.begin();
+//		shaderOutline.setUniformMatrix("u_pv", cam.combined);
+//		
+//		shaderOutline.setUniformf("fog_colour", lights.ambientColour);
+//		shaderOutline.setUniformf("fog_min", GLOBALS.FOG_MIN);
+//		shaderOutline.setUniformf("fog_max", GLOBALS.FOG_MAX);
+//
+//		for (int i = drawableManager.drawables.size; --i >= 0;) {
+//
+//			final Drawable drawable = drawableManager.drawables.get(i);
+//			
+//			shaderOutline.setUniformf("u_viewPos", cam.position);
+//
+//			shaderOutline.setUniformMatrix("u_mm", drawable.model_matrix);
+//			shaderOutline.setUniformf("u_colour", black);
+//			shaderOutline.setUniformf("u_cam", cam.position);
+//			float min = (drawable.type == 1) ? 0.05f : 1.0f ;
+//			shaderOutline.setUniformf("u_thickness_min", min);
+//			float max = (drawable.type == 1) ? 0.01f : 0.2f ;
+//			shaderOutline.setUniformf("u_thickness_max", max);
+//
+//			drawable.mesh.render(shaderOutline, drawable.primitiveType);
+//		}
+//		shaderOutline.end();
 		
 		// ----- Fill in main body ----- //
 		

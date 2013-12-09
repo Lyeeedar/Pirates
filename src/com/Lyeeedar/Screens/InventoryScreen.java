@@ -232,6 +232,11 @@ public class InventoryScreen extends AbstractScreen {
 
 	public void buildLeft()
 	{
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		LabelStyle ls = new LabelStyle();
+		ls.font = font;
+		ls.fontColor = Color.BLACK;
+		
 		left.clear();
 		tl.clear();
 		bl.clear();
@@ -240,10 +245,10 @@ public class InventoryScreen extends AbstractScreen {
 		final Tree tree = new Tree(ts);
 		tree.setPadding(0);
 
-		final TextButton btnArmour = new TextButton("Armour", tbs);
-		final TextButton btnBuffs = new TextButton("Buffs", tbs);
-		final TextButton btnWeapons = new TextButton("Weapons", tbs);
-		final TextButton btnMisc = new TextButton("Misc", tbs);
+		final Label btnArmour = new Label("Armour", ls);
+		final Label btnBuffs = new Label("Buffs", ls);
+		final Label btnWeapons = new Label("Weapons", ls);
+		final Label btnMisc = new Label("Misc", ls);
 
 		btnArmour.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -290,7 +295,7 @@ public class InventoryScreen extends AbstractScreen {
 		else if (selected == 3) cn = "Misc";
 		Label current = new Label(cn, ls);
 
-		left.add(tl).padTop(GLOBALS.sclY(100)).right().padRight(GLOBALS.sclX(90));
+		left.add(tl).padTop(GLOBALS.sclY(70)).right().padRight(GLOBALS.sclX(90));
 		left.row();
 		left.add(current).padTop(GLOBALS.sclY(45)).left().padLeft(GLOBALS.sclX(180));
 		left.row();
@@ -299,22 +304,18 @@ public class InventoryScreen extends AbstractScreen {
 		tl.defaults().width(GLOBALS.sclX(50));
 		if (selected == 0)
 		{
-			btnArmour.setDisabled(true);
 			btnArmour.setVisible(false);
 		}
 		if (selected == 1)
 		{
-			btnWeapons.setDisabled(true);
 			btnWeapons.setVisible(false);
 		}
 		if (selected == 2)
 		{
-			btnBuffs.setDisabled(true);
 			btnBuffs.setVisible(false);
 		}
 		if (selected == 3)
 		{
-			btnMisc.setDisabled(true);
 			btnMisc.setVisible(false);
 		}
 		
@@ -396,6 +397,11 @@ public class InventoryScreen extends AbstractScreen {
 	
 	private void fillItemTable(final Table b, final Item i, final Equipment_Slot slot)
 	{
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		LabelStyle ls = new LabelStyle();
+		ls.font = font;
+		ls.fontColor = Color.BLACK;
+		
 		b.clearChildren();
 		
 		//b.add(new Image(i.description.icon)).size(50);
@@ -408,7 +414,7 @@ public class InventoryScreen extends AbstractScreen {
 			b.add(new Label("  ",ls));
 		}
 		b.add(new Label(i.description.name,ls));
-		b.add(new Label("("+i.num+")", ls));
+		if (i.num > 1) b.add(new Label("("+i.num+")", ls));
 		b.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/blank.png", true))));
 		b.setColor(231.0f/255.0f, 185.0f/255.0f, 145.0f/255.0f, 1.0f);
 

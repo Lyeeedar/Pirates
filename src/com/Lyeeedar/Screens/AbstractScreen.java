@@ -11,6 +11,8 @@
 package com.Lyeeedar.Screens;
 
 import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
+import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -22,6 +24,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
@@ -44,6 +47,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final AbstractModelBatch renderer;
 	protected final BitmapFont font;
 	protected final Stage stage;
+	protected final PostProcessor postprocessor;
 	
 	protected final Camera cam;
 	protected final Controls controls;
@@ -59,6 +63,7 @@ public abstract class AbstractScreen implements Screen {
 	private long averageDecal;
 	private long averageOrthogonal;
 	private long averageParticles;
+	private long averagePost;
 	protected int particleNum;
 
 	public AbstractScreen(PirateGame game)
@@ -74,6 +79,14 @@ public abstract class AbstractScreen implements Screen {
 		renderer = new CellShadingModelBatch();
 		stage = new Stage(0, 0, true, spriteBatch);
 		renderer.cam = cam;
+		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
+		
+		postprocessor.addEffect(Effect.EDGE_DETECT);
+		postprocessor.addEffect(Effect.BLOOM);
+		//postprocessor.addEffect(Effect.BLUR);
+		//postprocessor.addEffect(Effect.BLUR);
+		//postprocessor.addEffect(Effect.EDGE_DETECT);
+		
 	}
 
 	@Override
@@ -96,6 +109,8 @@ public abstract class AbstractScreen implements Screen {
 		queueRenderables(delta, renderer, decalBatch, trailBatch);
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
+		
+		postprocessor.begin();
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -137,6 +152,11 @@ public abstract class AbstractScreen implements Screen {
 		averageParticles /= 2;
 		
 		time = System.nanoTime();
+		postprocessor.end();
+		averagePost += System.nanoTime()-time;
+		averagePost /= 2;
+		
+		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		spriteBatch.begin();
@@ -159,6 +179,7 @@ public abstract class AbstractScreen implements Screen {
 	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
 	        Gdx.app.log("	Particles   ", ""+averageParticles);
 	        Gdx.app.log("	No Particles", ""+particleNum);
+	        Gdx.app.log("	PostProcess ", ""+averagePost);
 			startTime = System.currentTimeMillis();
 		}
 		
@@ -188,6 +209,8 @@ public abstract class AbstractScreen implements Screen {
         cam.far = (GLOBALS.ANDROID) ? 202f : 2502f ;
 
 		stage.setViewport(width, height, false);
+		
+		postprocessor.updateBufferSettings(Format.RGBA8888, width, height);
 	}
 
 	@Override
