@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.Lyeeedar.Collision.CollisionShape;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
@@ -113,6 +114,28 @@ public class EntityGraph {
 	{
 		list.add(entity.getRunnable(delta));
 		for (EntityGraph eg : children) eg.getRunnable(list, delta);
+	}
+	
+	public boolean getVisible(Camera cam, List<EntityGraph> list)
+	{
+		boolean collide = false;
+		
+		if (entity != null)
+		{
+			entity.readData(pData, PositionalData.class);
+			if (cam.frustum.pointInFrustum(pData.position))
+			{
+				list.add(this);
+				collide = true;
+			}
+		}
+		
+		for (EntityGraph eg : children) 
+		{
+			if (eg.getVisible(cam, list)) collide = true;
+		}
+		
+		return collide;
 	}
 	
 	public boolean collide(CollisionShape<?> source, EntityGraph graph, List<EntityGraph> list)

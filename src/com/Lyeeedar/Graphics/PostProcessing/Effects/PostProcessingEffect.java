@@ -32,7 +32,7 @@ public abstract class PostProcessingEffect {
 		create();
 	}
 	
-	abstract public void render(Texture texture, FrameBuffer buffer);
+	abstract public void render(Texture texture, FrameBuffer buffer, Texture depthTexture);
 	
 	public void dispose()
 	{

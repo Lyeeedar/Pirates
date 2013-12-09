@@ -94,11 +94,11 @@ public class GameScreen extends AbstractScreen {
 		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 		ship.setCollisionShapeInternal(mesh);
 		
-		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
+		Texture sand = FileUtils.loadTexture("data/textures/grass.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 5000, -100.0f)});
+		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
 		world = new EntityGraph(terrain, null, true);
 		world.addEntity(ship, true);
 
@@ -132,12 +132,16 @@ public class GameScreen extends AbstractScreen {
 		pData.position.set(4, 5, 0);
 		player.writeData(pData, PositionalData.class);
 		
+		player.readData(sData, StatusData.class);
+		sData.factions.add("Player");
+		player.writeData(sData, StatusData.class);
+		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(null, new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
+		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.2f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
 		world.addEntity(player, false);
@@ -161,13 +165,17 @@ public class GameScreen extends AbstractScreen {
 			
 			world.addEntity(ge, false);
 			
-			s = new Sprite3D(1, 1, 4, 4);
+			s = new Sprite3D(3, 3, 4, 4);
 			s.setGender(true);
 			s.addAnimation("move", "move");
 			s.addAnimation("attack_1", "attack");
 			//s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
 			//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
 			//s.create();
+			
+			ge.readData(sData, StatusData.class);
+			sData.factions.add("Enemy");
+			ge.writeData(sData, StatusData.class);
 			
 			ge.addRenderable(s);
 			
@@ -371,13 +379,13 @@ public class GameScreen extends AbstractScreen {
 		particleNum = 0;
 		for (Spell s : GLOBALS.SPELLS)
 		{
+			s.effect.update(delta, cam);
 			s.effect.getVisibleEmitters(visibleEmitters, cam);
 		}
 		Collections.sort(visibleEmitters, ParticleEmitter.getComparator());
 		ParticleEmitter.begin(cam);
 		for (ParticleEmitter p : visibleEmitters)
 		{
-			p.update(delta, cam);
 			particleNum += p.getActiveParticles();
 			p.render();
 		}

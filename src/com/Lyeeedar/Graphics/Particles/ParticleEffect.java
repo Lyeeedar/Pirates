@@ -146,6 +146,23 @@ public class ParticleEffect implements Serializable {
 		}
 	}
 	
+	public void modEmissionTime(float amount)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.emissionTime += amount;
+		}
+	}
+	public void modEmissionArea(float x, float y, float z)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.ex += x;
+			e.emitter.ey += y;
+			e.emitter.ez += z;
+		}
+	}
+	
 	public void render()
 	{
 		for (Emitter e : emitters)

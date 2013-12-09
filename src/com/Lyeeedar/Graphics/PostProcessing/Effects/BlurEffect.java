@@ -30,7 +30,7 @@ public class BlurEffect extends PostProcessingEffect {
 	}
 	
 	@Override
-	public void render(Texture texture, FrameBuffer buffer)
+	public void render(Texture texture, FrameBuffer buffer, Texture depthTexture)
 	{
 		batch.getProjectionMatrix().setToOrtho2D(0, 0, BUFFER_WIDTH, BUFFER_HEIGHT);
 		downsampleBuffer1.begin();

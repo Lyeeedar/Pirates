@@ -48,19 +48,7 @@ public class SpellAI_Bolt extends SpellAI {
 		
 		spell.caster.readData(pData, PositionalData.class);
 		
-		GLOBALS.WORLD.collide(shape, pData.graph, entities);
-		
-		if (entities.size() > 0)
-		{
-			for (EntityGraph eg : entities)
-			{
-				eg.entity.readData(sData, StatusData.class);
-				sData.damage = 20;
-				eg.entity.writeData(sData, StatusData.class);
-			}
-			return false;
-		}
-		
+		if (GLOBALS.WORLD.collide(shape, pData.graph) != null) return false;
 		if (GLOBALS.WORLD.collide(ray, pData.graph) != null) return false;
 		
 		return true;

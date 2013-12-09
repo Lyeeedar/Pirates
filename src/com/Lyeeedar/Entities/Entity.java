@@ -662,6 +662,8 @@ public class Entity {
 		public int currentHealth = MAX_HEALTH;
 		public int damage = 0;
 		
+		public ArrayList<String> factions = new ArrayList<String>();
+		
 		@Override
 		public void write(StatusData data) {
 			ALIVE = data.ALIVE;
@@ -670,6 +672,8 @@ public class Entity {
 			MAX_HEALTH = data.MAX_HEALTH;
 			currentHealth = data.currentHealth;
 			damage = data.damage;
+			factions.clear();
+			factions.addAll(data.factions);
 		}
 		
 		public void applyDamage()

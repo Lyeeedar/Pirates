@@ -38,8 +38,8 @@ public final class GLOBALS {
 	public static final int[] RESOLUTION = {1920, 1080};
 	public static final int[] SCREEN_SIZE = {RESOLUTION[0], RESOLUTION[1]};
 	
-	public static final float FOG_MIN = 2300.0f;
-	public static final float FOG_MAX = 2500.0f;
+	public static final float FOG_MIN = 7000.0f;
+	public static final float FOG_MAX = 7500.0f;
 
 	public static boolean ANDROID = false;
 	

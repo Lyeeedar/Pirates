@@ -12,25 +12,24 @@ public class EdgeDetectionEffect extends PostProcessingEffect {
 	public final int BUFFER_WIDTH;
 	public final int BUFFER_HEIGHT;
 	
-	private final FrameBuffer downsampleBuffer;
-	
-	private final BlurEffect blur;
-	
+	private final FrameBuffer depthBuffer;
+	private final FrameBuffer colourBuffer;
+		
 	public EdgeDetectionEffect(int BUFFER_WIDTH, int BUFFER_HEIGHT) 
 	{
 		this.BUFFER_WIDTH = BUFFER_WIDTH;
 		this.BUFFER_HEIGHT = BUFFER_HEIGHT;
 		
-		downsampleBuffer = new FrameBuffer(Format.RGBA8888, BUFFER_WIDTH, BUFFER_HEIGHT, false);
-		blur = new BlurEffect(0.94f, 1.5f, BUFFER_WIDTH, BUFFER_HEIGHT);
+		depthBuffer = new FrameBuffer(Format.RGBA4444, BUFFER_WIDTH, BUFFER_HEIGHT, false);
+		colourBuffer = new FrameBuffer(Format.RGBA4444, BUFFER_WIDTH, BUFFER_HEIGHT, false);
 	}
 	
 	@Override
-	public void render(Texture texture, FrameBuffer buffer)
-	{		
-		downsampleBuffer.begin();
+	public void render(Texture texture, FrameBuffer buffer, Texture depthTexture)
+	{	
+		colourBuffer.begin();
 		
-		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		Gdx.graphics.getGL20().glDisable(GL20.GL_DEPTH_TEST);		
@@ -39,12 +38,13 @@ public class EdgeDetectionEffect extends PostProcessingEffect {
 		batch.setShader(shader);
 		batch.getProjectionMatrix().setToOrtho2D(0, 0, BUFFER_WIDTH, BUFFER_HEIGHT);
 		
-//		shader.setUniformf("limit", -1.0f);
-//		shader.setUniformf("intensity", 10.0f);
-//		shader.setUniformf("imageWidthFactor", 100.0f);
-//		shader.setUniformf("imageHeightFactor", 100.0f);
-		
 		batch.begin();
+		
+		shader.setUniformf("u_threshold",1.3f);
+		shader.setUniformf("width", BUFFER_WIDTH/2.0f);
+		shader.setUniformf("height", BUFFER_HEIGHT/2.0f);
+		shader.setUniformf("darken", 0.2f, 0.2f, 0.2f);
+		shader.setUniformf("alpha_offset", -1.0f);
 				
 		batch.draw(texture, 0, 0, BUFFER_WIDTH, BUFFER_HEIGHT,
 				0, 0, texture.getWidth(), texture.getHeight(),
@@ -52,13 +52,32 @@ public class EdgeDetectionEffect extends PostProcessingEffect {
 		
 		batch.end();
 		
-		downsampleBuffer.end();
+		colourBuffer.end();
 		
-		//blur.render(downsampleBuffer.getColorBufferTexture(), downsampleBuffer);
+		depthBuffer.begin();
+		
+		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		Gdx.graphics.getGL20().glDisable(GL20.GL_DEPTH_TEST);		
+		Gdx.graphics.getGL20().glDisable(GL20.GL_CULL_FACE);
+
+		batch.setShader(shader);
+		batch.getProjectionMatrix().setToOrtho2D(0, 0, BUFFER_WIDTH, BUFFER_HEIGHT);
+		
+		batch.begin();
 				
+		batch.draw(depthTexture, 0, 0, BUFFER_WIDTH, BUFFER_HEIGHT,
+				0, 0, texture.getWidth(), texture.getHeight(),
+				false, true);
+		
+		batch.end();
+		
+		depthBuffer.end();
+						
 		buffer.begin();
 		
-		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		Gdx.graphics.getGL20().glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		Gdx.graphics.getGL20().glDisable(GL20.GL_DEPTH_TEST);		
@@ -68,16 +87,19 @@ public class EdgeDetectionEffect extends PostProcessingEffect {
 		batch.getProjectionMatrix().setToOrtho2D(0, 0, buffer.getWidth(), buffer.getHeight());
 		
 		batch.begin();
-		batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ONE);
-		
+	
+		batch.setBlendFunction(GL20.GL_DST_COLOR, GL20.GL_ZERO);
 		batch.draw(texture, 0, 0, buffer.getWidth(), buffer.getHeight(),
 				0, 0, texture.getWidth(), texture.getHeight(),
 				false, true);
 		
-		batch.setBlendFunction(GL20.GL_ZERO, GL20.GL_SRC_COLOR);
+		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		
-		batch.draw(downsampleBuffer.getColorBufferTexture(), 0, 0, buffer.getWidth(), buffer.getHeight(),
-				0, 0, downsampleBuffer.getColorBufferTexture().getWidth(), downsampleBuffer.getColorBufferTexture().getHeight(),
+//		batch.draw(depthBuffer.getColorBufferTexture(), 0, 0, buffer.getWidth(), buffer.getHeight(),
+//				0, 0, BUFFER_WIDTH, BUFFER_HEIGHT,
+//				false, true);
+		batch.draw(colourBuffer.getColorBufferTexture(), 0, 0, buffer.getWidth(), buffer.getHeight(),
+				0, 0, BUFFER_WIDTH, BUFFER_HEIGHT,
 				false, true);
 		
 		batch.end();

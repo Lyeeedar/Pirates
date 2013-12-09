@@ -11,7 +11,11 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Entities.Spells.SpellAI;
 import com.Lyeeedar.Entities.Spells.SpellAI_Bolt;
+import com.Lyeeedar.Entities.Spells.SpellAI_Explosion;
+import com.Lyeeedar.Entities.Spells.SpellAI_HomingBolt;
+import com.Lyeeedar.Entities.Spells.SpellAI_SimpleDamage;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
@@ -114,9 +118,10 @@ public class Weapon extends Equipment<Weapon> {
 			
 			hitCD = hitSpeed;
 			
-			SpellAI_Bolt ai = new SpellAI_Bolt(pData.rotation.scl(10), 0.5f);
-			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/stupidshep.effect");//new ParticleEffect(5);
-			Spell s = new Spell(pData.position.add(0, 1, 0), ai, effect, entity);
+			SpellAI aimove = new SpellAI_HomingBolt(pData.rotation, 0.5f, 20);
+			SpellAI aidam = new SpellAI_Explosion(50, 0.5f, 2, 2);
+			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
+			Spell s = new Spell(pData.position.add(0, 1, 0), aimove, aidam, effect, entity);
 			GLOBALS.SPELLS.add(s);
 		}
 	}

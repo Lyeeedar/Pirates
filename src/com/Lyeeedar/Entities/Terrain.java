@@ -105,11 +105,9 @@ public class Terrain extends Entity {
 		
 		lights.applyLights(shader);
 		
-		terrain[0].render(shader, GL20.GL_TRIANGLES);
-		terrain[1].render(shader, GL20.GL_TRIANGLES);
-		terrain[2].render(shader, GL20.GL_TRIANGLES);
-		terrain[3].render(shader, GL20.GL_TRIANGLES);
-		
+		for (Mesh t : terrain)
+			t.render(shader, GL20.GL_TRIANGLES);
+
 		shader.end();
 	}
 	
@@ -155,7 +153,27 @@ public class Terrain extends Entity {
 	
 	private static Mesh[] getTerrain(int size)
 	{	
-		Mesh mesh[] = new Mesh[4];
+		float offsets[][] = {
+				// High res close
+				{0, 0, 1},
+				{(-size*scale)+scale, 0, 1},
+				{0, (-size*scale)+scale, 1},
+				{(-size*scale)+scale, (-size*scale)+scale, 1},
+				
+				// Low res distance
+				// Edges
+				{(-size*scale)+2*scale, (size*scale)-2*scale, 2},
+				{(-size*scale)+2*scale, (-3*size*scale)+6*scale, 2},
+				{(size*scale)-2*scale, (-size*scale)+2*scale, 2},
+				{(-3*size*scale)+6*scale, (-size*scale)+2*scale, 2},
+				// Corners
+				{(size*scale)-2*scale, (size*scale)-2*scale, 2},
+				{(size*scale)-2*scale, (-3*size*scale)+6*scale, 2},
+				{(-3*size*scale)+6*scale, (size*scale)-2*scale, 2},
+				{(-3*size*scale)+6*scale, (-3*size*scale)+6*scale, 2}
+		};
+		
+		Mesh mesh[] = new Mesh[offsets.length];
 		float[] vertices = new float[size*size*3];
 		int i = 0;
 		
@@ -179,65 +197,23 @@ public class Terrain extends Entity {
 			}
 		}
 		
-		i = 0;
-		for (int ix = 0; ix < size; ix++)
+		for (int index = 0; index < offsets.length; index++)
 		{
-			for (int iz = 0; iz < size; iz++)
+			i = 0;
+			for (int ix = 0; ix < size; ix++)
 			{
-				vertices[i++] = (ix*scale);
-				vertices[i++] = 0;
-				vertices[i++] = (iz*scale);
+				for (int iz = 0; iz < size; iz++)
+				{
+					vertices[i++] = offsets[index][0]+(ix*(offsets[index][2]*scale));
+					vertices[i++] = 0;
+					vertices[i++] = offsets[index][1]+(iz*(offsets[index][2]*scale));
+				}
 			}
+			mesh[index] = new Mesh(true, size*size, indices.length, 
+					new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
+			mesh[index].setVertices(vertices);
+			mesh[index].setIndices(indices);
 		}
-		mesh[0] = new Mesh(true, size*size, indices.length, 
-				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-		mesh[0].setVertices(vertices);
-		mesh[0].setIndices(indices);
-		
-		i = 0;
-		for (int ix = 0; ix < size; ix++)
-		{
-			for (int iz = 0; iz < size; iz++)
-			{
-				vertices[i++] = (-size*scale)+(ix*scale)+scale;
-				vertices[i++] = 0;
-				vertices[i++] = (iz*scale);
-			}
-		}
-		mesh[1] = new Mesh(true, size*size, indices.length, 
-				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-		mesh[1].setVertices(vertices);
-		mesh[1].setIndices(indices);
-		
-		i = 0;
-		for (int ix = 0; ix < size; ix++)
-		{
-			for (int iz = 0; iz < size; iz++)
-			{
-				vertices[i++] = (ix*scale);
-				vertices[i++] = 0;
-				vertices[i++] = (-size*scale)+(iz*scale)+scale;
-			}
-		}
-		mesh[2] = new Mesh(true, size*size, indices.length, 
-				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-		mesh[2].setVertices(vertices);
-		mesh[2].setIndices(indices);
-		
-		i = 0;
-		for (int ix = 0; ix < size; ix++)
-		{
-			for (int iz = 0; iz < size; iz++)
-			{
-				vertices[i++] = (-size*scale)+(ix*scale)+scale;
-				vertices[i++] = 0;
-				vertices[i++] = (-size*scale)+(iz*scale)+scale;
-			}
-		}
-		mesh[3] = new Mesh(true, size*size, indices.length, 
-				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-		mesh[3].setVertices(vertices);
-		mesh[3].setIndices(indices);
 
 		return mesh;
 	}

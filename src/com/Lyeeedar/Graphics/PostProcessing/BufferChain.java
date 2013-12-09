@@ -24,6 +24,7 @@ public class BufferChain {
 	int currentBuffer;
 	
 	Texture texture;
+	Texture depthTexture;
 
 	public BufferChain(Format format, int width, int height) {
 		updateBuffers(format, width, height);
@@ -40,15 +41,16 @@ public class BufferChain {
 		currentBuffer = 0;
 	}
 	
-	public void begin(Texture texture)
+	public void begin(Texture texture, Texture depthTexture)
 	{
 		this.texture = texture;
+		this.depthTexture = depthTexture;
 	}
 	
 	public void applyEffect(PostProcessingEffect effect)
 	{
 		nextBuffer();
-		effect.render(texture, buffers[currentBuffer]);
+		effect.render(texture, buffers[currentBuffer], depthTexture);
 		texture = buffers[currentBuffer].getColorBufferTexture();
 	}
 	

@@ -26,7 +26,7 @@ public class BloomEffect extends PostProcessingEffect {
 	}
 
 	@Override
-	public void render(Texture texture, FrameBuffer buffer)
+	public void render(Texture texture, FrameBuffer buffer, Texture depthTexture)
 	{		
 		downsampleBuffer.begin();
 		
@@ -51,7 +51,7 @@ public class BloomEffect extends PostProcessingEffect {
 		
 		downsampleBuffer.end();
 		
-		blur.render(downsampleBuffer.getColorBufferTexture(), downsampleBuffer);
+		blur.render(downsampleBuffer.getColorBufferTexture(), downsampleBuffer, depthTexture);
 		
 		buffer.begin();
 		

@@ -64,7 +64,7 @@ public class PostProcessor {
 		
 		shader = new ShaderProgram(
 				Gdx.files.internal("data/shaders/postprocessing/default.vertex.glsl"),
-				Gdx.files.internal("data/shaders/postprocessing/default.fragment.glsl")
+				Gdx.files.internal("data/shaders/postprocessing/depth.fragment.glsl")
 				);
 		if (!shader.isCompiled()) Gdx.app.log("Problem loading shader:", shader.getLog());
 	}
@@ -115,7 +115,7 @@ public class PostProcessor {
 	{
 		captureBuffer.end();
 		
-		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		Gdx.graphics.getGL20().glDisable(GL20.GL_DEPTH_TEST);		
@@ -123,6 +123,7 @@ public class PostProcessor {
 		
 		Texture texture = applyEffectChain();
 
+		//batch.setShader(shader);
 		batch.begin();
 		batch.draw(texture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
 				0, 0, texture.getWidth(), texture.getHeight(),
@@ -132,7 +133,7 @@ public class PostProcessor {
 	
 	private Texture applyEffectChain()
 	{
-		bufferChain.begin(captureBuffer.getColorBufferTexture());
+		bufferChain.begin(captureBuffer.getColorBufferTexture(), captureBuffer.getDepthBufferTexture());
 		
 		for (Effect effect : effectChain)
 		{
