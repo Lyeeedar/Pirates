@@ -48,6 +48,7 @@ public final class GLOBALS {
 	public static SkyBox SKYBOX;
 	public static EntityGraph WORLD = new EntityGraph(new Entity(), null, true);
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();
+	public static LinkedList<Spell> pendingSPELLS = new LinkedList<Spell>();
 	public static LightManager LIGHTS = new LightManager();
 	public static Entity player;
 	

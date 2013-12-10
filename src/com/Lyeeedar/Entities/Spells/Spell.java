@@ -39,7 +39,7 @@ public class Spell {
 		effect.setPosition(position);
 		return alive;
 	}
-
+	
 	public void dispose()
 	{
 		aimove.dispose();

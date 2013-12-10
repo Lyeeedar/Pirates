@@ -29,13 +29,14 @@ public class SpellAI_HomingBolt extends SpellAI {
 	private StatusData sData1 = new StatusData();
 	private StatusData sData2 = new StatusData();
 	
-	public PerspectiveCamera cam = new PerspectiveCamera(45, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
+	public PerspectiveCamera cam;
 	public ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
 	public Vector3 tmp = new Vector3();
 	
 	public float speed;
+	public float home;
 	
-	public SpellAI_HomingBolt(Vector3 rotation, float radius, float speed)
+	public SpellAI_HomingBolt(Vector3 rotation, float radius, float speed, float home)
 	{
 		this.rotation.set(rotation);
 		this.ray.ray.direction.set(rotation);
@@ -44,6 +45,9 @@ public class SpellAI_HomingBolt extends SpellAI {
 		shape.height = radius;
 		shape.depth = radius;
 		this.speed = speed;
+		this.home = home;
+		
+		cam = new PerspectiveCamera(45*home, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
 	}
 	
 	@Override
@@ -96,9 +100,7 @@ public class SpellAI_HomingBolt extends SpellAI {
 			if (found != null)
 			{
 				found.readData(pData, PositionalData.class);
-				rotateTowards(pData.position.sub(spell.position), delta);
-				
-				System.out.println("turned");
+				rotateTowards(pData.position.sub(spell.position), delta*home);
 			}
 			
 			list.clear();

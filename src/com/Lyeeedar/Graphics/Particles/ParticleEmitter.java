@@ -35,11 +35,8 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.ObjectMap.Entry;
-import com.badlogic.gdx.utils.OrderedMap;
 import com.badlogic.gdx.utils.Pools;
 
 public class ParticleEmitter implements Serializable {
@@ -412,15 +409,17 @@ public class ParticleEmitter implements Serializable {
 			inactive.add(p);
 		}
 
-		vertices = new float[maxParticles*VERTEX_SIZE*4];
+		vertices = new float[maxParticles*VERTEX_SIZE*6];
 
 		if (mesh != null) mesh.dispose();
-		mesh = new Mesh(false, maxParticles*4, maxParticles*6,
+		mesh = new Mesh(false, maxParticles*6, 0,//maxParticles*6,
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 4, "a_colour"),
 				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoords"));
 		mesh.setVertices(vertices);
-		mesh.setIndices(genIndices(maxParticles));
+		//mesh.setIndices(genIndices(maxParticles));
+		
+		emissionCD = emissionTime;
 
 	}
 
@@ -501,7 +500,7 @@ public class ParticleEmitter implements Serializable {
 			currentAtlas = atlasName;
 		}
 
-		mesh.render(shader, GL20.GL_TRIANGLES, 0, active.size*4);
+		mesh.render(shader, GL20.GL_TRIANGLES, 0, active.size*6);
 	}
 
 	public static void begin(Camera cam)
@@ -511,6 +510,7 @@ public class ParticleEmitter implements Serializable {
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthMask(false);
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 
 		shader.begin();
 		shader.setUniformMatrix("u_pv", cam.combined);
@@ -569,89 +569,117 @@ public class ParticleEmitter implements Serializable {
 			float[] size = getAttributeValue(p.lifetime, ParticleAttribute.SIZE);
 			float[] colour = getAttributeValue(p.lifetime, ParticleAttribute.COLOUR);
 
+			// Triangle 1
+			
 			quad
 			.set(-size[0]/2, size[1]/2, 0)
 			.mul(tmpMat);
 
-			v = 0;
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
 
-			vertices[(i*VERTEX_SIZE*4)+v+0] = quad.x;
-			vertices[(i*VERTEX_SIZE*4)+v+1] = quad.y;
-			vertices[(i*VERTEX_SIZE*4)+v+2] = quad.z;
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
 
-			vertices[(i*VERTEX_SIZE*4)+v+3] = colour[0];
-			vertices[(i*VERTEX_SIZE*4)+v+4] = colour[1];
-			vertices[(i*VERTEX_SIZE*4)+v+5] = colour[2];
-			vertices[(i*VERTEX_SIZE*4)+v+6] = colour[3];
-
-			vertices[(i*VERTEX_SIZE*4)+v+7] = topLeftTexCoords[sprite][0];
-			vertices[(i*VERTEX_SIZE*4)+v+8] = topLeftTexCoords[sprite][1];
+			vertices[i++] = topLeftTexCoords[sprite][0];
+			vertices[i++] = topLeftTexCoords[sprite][1];
 
 			quad
 			.set(size[0]/2, size[1]/2, 0)
 			.mul(tmpMat);
 
-			v += VERTEX_SIZE;
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
 
-			vertices[(i*VERTEX_SIZE*4)+v+0] = quad.x;
-			vertices[(i*VERTEX_SIZE*4)+v+1] = quad.y;
-			vertices[(i*VERTEX_SIZE*4)+v+2] = quad.z;
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
 
-			vertices[(i*VERTEX_SIZE*4)+v+3] = colour[0];
-			vertices[(i*VERTEX_SIZE*4)+v+4] = colour[1];
-			vertices[(i*VERTEX_SIZE*4)+v+5] = colour[2];
-			vertices[(i*VERTEX_SIZE*4)+v+6] = colour[3];
-
-			vertices[(i*VERTEX_SIZE*4)+v+7] = topRightTexCoords[sprite][0];
-			vertices[(i*VERTEX_SIZE*4)+v+8] = topRightTexCoords[sprite][1];
+			vertices[i++] = topRightTexCoords[sprite][0];
+			vertices[i++] = topRightTexCoords[sprite][1];
 
 			quad
 			.set(-size[0]/2, -size[1]/2, 0)
 			.mul(tmpMat);
 
-			v += VERTEX_SIZE;
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
 
-			vertices[(i*VERTEX_SIZE*4)+v+0] = quad.x;
-			vertices[(i*VERTEX_SIZE*4)+v+1] = quad.y;
-			vertices[(i*VERTEX_SIZE*4)+v+2] = quad.z;
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
 
-			vertices[(i*VERTEX_SIZE*4)+v+3] = colour[0];
-			vertices[(i*VERTEX_SIZE*4)+v+4] = colour[1];
-			vertices[(i*VERTEX_SIZE*4)+v+5] = colour[2];
-			vertices[(i*VERTEX_SIZE*4)+v+6] = colour[3];
-
-			vertices[(i*VERTEX_SIZE*4)+v+7] = botLeftTexCoords[sprite][0];
-			vertices[(i*VERTEX_SIZE*4)+v+8] = botLeftTexCoords[sprite][1];
+			vertices[i++] = botLeftTexCoords[sprite][0];
+			vertices[i++] = botLeftTexCoords[sprite][1];
+			
+			// Triangle 2
 
 			quad
 			.set(size[0]/2, -size[1]/2, 0)
 			.mul(tmpMat);
 
-			v += VERTEX_SIZE;
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
 
-			vertices[(i*VERTEX_SIZE*4)+v+0] = quad.x;
-			vertices[(i*VERTEX_SIZE*4)+v+1] = quad.y;
-			vertices[(i*VERTEX_SIZE*4)+v+2] = quad.z;
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
 
-			vertices[(i*VERTEX_SIZE*4)+v+3] = colour[0];
-			vertices[(i*VERTEX_SIZE*4)+v+4] = colour[1];
-			vertices[(i*VERTEX_SIZE*4)+v+5] = colour[2];
-			vertices[(i*VERTEX_SIZE*4)+v+6] = colour[3];
+			vertices[i++] = botRightTexCoords[sprite][0];
+			vertices[i++] = botRightTexCoords[sprite][1];
+			
+			quad
+			.set(-size[0]/2, -size[1]/2, 0)
+			.mul(tmpMat);
 
-			vertices[(i*VERTEX_SIZE*4)+v+7] = botRightTexCoords[sprite][0];
-			vertices[(i*VERTEX_SIZE*4)+v+8] = botRightTexCoords[sprite][1];
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
 
-			i++;
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
+
+			vertices[i++] = botLeftTexCoords[sprite][0];
+			vertices[i++] = botLeftTexCoords[sprite][1];
+			
+			quad
+			.set(size[0]/2, size[1]/2, 0)
+			.mul(tmpMat);
+
+			vertices[i++] = quad.x;
+			vertices[i++] = quad.y;
+			vertices[i++] = quad.z;
+
+			vertices[i++] = colour[0];
+			vertices[i++] = colour[1];
+			vertices[i++] = colour[2];
+			vertices[i++] = colour[3];
+
+			vertices[i++] = topRightTexCoords[sprite][0];
+			vertices[i++] = topRightTexCoords[sprite][1];
 		}
 		mesh.setVertices(vertices);
 
-		emissionCD -= delta;
-
 		arrayLen = inactive.size;
+		
+		System.out.println(arrayLen);
 
 		if (arrayLen == 0) return;
+		
+		emissionCD -= delta;
 
-		while (emissionCD < 0 && arrayLen > 0)
+		if (emissionCD < 0)
 		{
 			Particle p = inactive.remove(0);
 
@@ -673,8 +701,7 @@ public class ParticleEmitter implements Serializable {
 			}
 			active.add(p);
 
-			emissionCD += emissionTime;
-			arrayLen--;
+			emissionCD = emissionTime;
 		}
 	}
 
@@ -1029,8 +1056,8 @@ public class ParticleEmitter implements Serializable {
 	private static final String SHADER_VERTEX = 
 
 			"attribute vec3 a_position;" + "\n" +
-					"attribute vec4 a_colour;" + "\n" +
-					"attribute vec2 a_texCoords;" + "\n" +
+			"attribute vec4 a_colour;" + "\n" +
+			"attribute vec2 a_texCoords;" + "\n" +
 
 			"uniform mat4 u_pv;" + "\n" +
 
@@ -1040,14 +1067,13 @@ public class ParticleEmitter implements Serializable {
 			"void main() {" + "\n" +
 			"v_colour = a_colour;" + "\n" +
 			"v_texCoords = a_texCoords;" + "\n" +
-
-				"gl_Position = u_pv * vec4(a_position, 1.0);" + "\n" +
-				"}";
+			"gl_Position = u_pv * vec4(a_position, 1.0);" + "\n" +
+			"}";
 
 	private static final String SHADER_FRAGMENT = 
 			"#ifdef GL_ES\n" +
-					"precision highp float;\n" + 
-					"#endif\n" + 
+				"precision highp float;\n" + 
+			"#endif\n" + 
 
 			"uniform sampler2D u_texture;" + "\n" +
 

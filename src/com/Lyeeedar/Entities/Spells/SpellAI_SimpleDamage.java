@@ -54,7 +54,7 @@ public class SpellAI_SimpleDamage extends SpellAI {
 		
 		cd -= delta;
 		
-		spell.effect.modEmissionTime(delta);
+		spell.effect.modEmissionTime(200);
 		
 		return cd > 0;
 		

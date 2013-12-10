@@ -23,8 +23,10 @@ public class SpellAI_Explosion extends SpellAI {
 	int dam;
 	float cd1;
 	float cd2;
+	float delta_size;
+	float delta_rate;
 		
-	public SpellAI_Explosion(int dam, float radius, float cd1, float cd2)
+	public SpellAI_Explosion(int dam, float radius, float cd1, float cd2, float delta_size, float delta_rate)
 	{
 		shape.width = radius;
 		shape.height = radius;
@@ -33,6 +35,9 @@ public class SpellAI_Explosion extends SpellAI {
 		this.cd1 = cd1;
 		this.cd2 = cd2;
 		this.dam = dam;
+		
+		this.delta_size = delta_size;
+		this.delta_rate = delta_rate;
 	}
 	
 	@Override
@@ -41,12 +46,12 @@ public class SpellAI_Explosion extends SpellAI {
 		if (cd1 > 0)
 		{
 			cd1 -= delta;
-			spell.effect.modEmissionTime(-delta);
-			spell.effect.modEmissionArea(delta, delta, delta);
+			spell.effect.modEmissionTime(-delta*delta_rate);
+			spell.effect.modEmissionArea(delta*delta_size, delta*delta_size, delta*delta_size);
 			
-			shape.depth += delta;
-			shape.width += delta;
-			shape.height += delta;
+			shape.depth += delta*delta_size;
+			shape.width += delta*delta_size;
+			shape.height += delta*delta_size;
 			
 			shape.setPosition(spell.position);
 			spell.caster.readData(pData, PositionalData.class);
@@ -64,7 +69,7 @@ public class SpellAI_Explosion extends SpellAI {
 		else
 		{
 			cd2 -= delta;
-			spell.effect.modEmissionTime(200*delta);
+			spell.effect.modEmissionTime(200);
 		}
 				
 		return cd2 > 0;
