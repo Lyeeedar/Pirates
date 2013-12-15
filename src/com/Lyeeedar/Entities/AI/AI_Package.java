@@ -5,6 +5,7 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Informable;
 
@@ -59,11 +60,13 @@ public abstract class AI_Package implements Informable {
 	{
 		if (attack)
 		{
-			eData.getEquipment(slot).use();
+			Equipment<?> e = eData.getEquipment(slot);
+			if (e != null) e.use();
 		}
 		else
 		{
-			eData.getEquipment(slot).stopUsing();
+			Equipment<?> e = eData.getEquipment(slot);
+			if (e != null) e.stopUsing();
 		}
 	}
 	

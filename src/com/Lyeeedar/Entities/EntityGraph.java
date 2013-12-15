@@ -1,9 +1,11 @@
 package com.Lyeeedar.Entities;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -17,7 +19,10 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.utils.Pools;
 
 public class EntityGraph {
 
@@ -26,6 +31,8 @@ public class EntityGraph {
 	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
 	private final Entity.PositionalData pData = new  Entity.PositionalData();
 	private final Entity.StatusData sData = new  Entity.StatusData();
+	public final Box bounds = new Box();
+	public final BoundingBox bb = new BoundingBox();
 	public boolean walkable = false;
 	
 	public EntityGraph(Entity entity, EntityGraph parent, boolean walkable)
@@ -34,7 +41,7 @@ public class EntityGraph {
 		this.parent = parent;
 		this.walkable = walkable;
 		if (parent != null) parent.children.add(this);
-		entity.setGraph(this);
+		if (entity != null) entity.setGraph(this);
 	}
 	
 	public void remove()
@@ -82,7 +89,12 @@ public class EntityGraph {
 
 	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
-		entity.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+		if (entity != null 
+				//&&
+				//cam.frustum.sphereInFrustum(bounds.center, Math.max(bounds.width, Math.max(bounds.height, bounds.depth)))
+				//cam.frustum.boundsInFrustum(bounds.getBoundingBox(bb))
+				) 
+			entity.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
 		
 		for (EntityGraph eg : children) {
 			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
@@ -112,7 +124,7 @@ public class EntityGraph {
 	
 	public void getRunnable(LinkedList<Runnable> list, float delta)
 	{
-		list.add(entity.getRunnable(delta));
+		if (entity != null) list.add(entity.getRunnable(delta));
 		for (EntityGraph eg : children) eg.getRunnable(list, delta);
 	}
 	
@@ -142,8 +154,16 @@ public class EntityGraph {
 	{
 		if (graph.equals(this)) return false;
 		
+//		CollisionShape<?> s2 = source.copy();
+//		if (!s2.collide(bounds))
+//		{
+//			s2.free();
+//			return false;
+//		}
+//		s2.free();
+		
 		boolean collide = false;
-		if (entity.collide(source)) 
+		if (entity != null && entity.collide(source)) 
 		{
 			list.add(this);
 			collide = true;
@@ -161,8 +181,16 @@ public class EntityGraph {
 	{
 		if (graph.equals(this)) return null;
 		
+//		CollisionShape<?> s2 = source.copy();
+//		if (!s2.collide(bounds))
+//		{
+//			s2.free();
+//			return null;
+//		}
+//		s2.free();
+		
 		EntityGraph collide = null;
-		if (entity.collide(source)) collide = this;
+		if (entity != null && entity.collide(source)) collide = this;
 		
 		for (EntityGraph eg : children) 
 		{
@@ -177,8 +205,16 @@ public class EntityGraph {
 	{
 		if (!walkable || graph.equals(this)) return null;
 		
+//		CollisionShape<?> s2 = source.copy();
+//		if (!s2.collide(bounds))
+//		{
+//			s2.free();
+//			return null;
+//		}
+//		s2.free();
+		
 		EntityGraph collide = null;
-		if (entity.collide(source)) collide = this;
+		if (entity != null && entity.collide(source)) collide = this;
 		
 		for (EntityGraph eg : children) 
 		{
@@ -205,13 +241,66 @@ public class EntityGraph {
 		new EntityGraph(e, this, walkable);
 	}
 	
-	public void getDeltaPos(Vector3 deltaPos)
+	public void getDeltaPos(Matrix4 mat, Vector3 position)
 	{
-		if (entity == null) return;
+		if (entity == null) 
+		{
+			mat.setToTranslation(position);
+			return;
+		}
 		
 		entity.readData(pData, Entity.PositionalData.class);
+		mat.set(pData.composed).translate(pData.position.set(position).mul(pData.lastInv));
+	}
+	
+	public void getDeltaRot(Matrix4 mat)
+	{
+		if (entity == null) 
+		{
+			mat.idt();
+			return;
+		}
 		
-		deltaPos.set(pData.position).sub(pData.lastPos);
+		entity.readData(pData, Entity.PositionalData.class);
+		pData.lastRot2.y = 0; pData.lastRot2.nor();
+		pData.rotation.y = 0; pData.rotation.nor();
+		mat.setToRotation(pData.lastRot2, pData.rotation);
+	}
+	
+	public boolean recalculateBounds()
+	{
+		Iterator<EntityGraph> itr = children.iterator();
+		while (itr.hasNext())
+		{
+			EntityGraph eg = itr.next();
+			if (!eg.recalculateBounds()) 
+			{
+				itr.remove();
+			}
+		}
+		
+		if (entity != null) entity.getCollisionShapeInternal().getBoundingBox(bb);
+		else if (children.size() == 0) 
+		{
+			return false;
+		}
+		else
+		{
+			children.iterator().next().bounds.getBoundingBox(bb);
+		}
+		
+		BoundingBox bb2 = Pools.obtain(BoundingBox.class);
+		for (EntityGraph eg : children) 
+		{
+			eg.bounds.getBoundingBox(bb2);
+			bb.ext(bb2.min);
+			bb.ext(bb2.max);
+		}
+		
+		bounds.set(bb.min, bb.max);
+		
+		Pools.free(bb2);
+		return true;
 	}
 
 }

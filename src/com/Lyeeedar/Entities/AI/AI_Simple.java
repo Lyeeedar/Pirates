@@ -24,8 +24,8 @@ public class AI_Simple extends AI_Package {
 	public void update(float delta) {
 		entity.readData(entityPos, PositionalData.class);
 		
-		//entityPos.forward_backward(1);
-		//entityPos.rotate(0,  1, 0, delta);
+		entityPos.forward_backward(10);
+		//entityPos.rotate(0,  1, 0, delta*100);
 		
 		entityPos.applyVelocity(delta);
 		entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);

@@ -22,18 +22,16 @@ public class SpellAI_Explosion extends SpellAI {
 	
 	int dam;
 	float cd1;
-	float cd2;
 	float delta_size;
 	float delta_rate;
 		
-	public SpellAI_Explosion(int dam, float radius, float cd1, float cd2, float delta_size, float delta_rate)
+	public SpellAI_Explosion(int dam, float radius, float cd1, float delta_size, float delta_rate)
 	{
 		shape.width = radius;
 		shape.height = radius;
 		shape.depth = radius;
 		
 		this.cd1 = cd1;
-		this.cd2 = cd2;
 		this.dam = dam;
 		
 		this.delta_size = delta_size;
@@ -43,36 +41,28 @@ public class SpellAI_Explosion extends SpellAI {
 	@Override
 	public boolean update(float delta, Spell spell) {
 		
-		if (cd1 > 0)
+		cd1 -= delta;
+		spell.effect.modEmissionTime(-delta*delta_rate);
+		spell.effect.modEmissionArea(delta*delta_size, delta*delta_size, delta*delta_size);
+		
+		shape.depth += delta*delta_size;
+		shape.width += delta*delta_size;
+		shape.height += delta*delta_size;
+		
+		shape.setPosition(spell.position);
+		spell.caster.readData(pData, PositionalData.class);
+		GLOBALS.WORLD.collide(shape, pData.graph, entities);
+		
+		for (EntityGraph eg : entities)
 		{
-			cd1 -= delta;
-			spell.effect.modEmissionTime(-delta*delta_rate);
-			spell.effect.modEmissionArea(delta*delta_size, delta*delta_size, delta*delta_size);
-			
-			shape.depth += delta*delta_size;
-			shape.width += delta*delta_size;
-			shape.height += delta*delta_size;
-			
-			shape.setPosition(spell.position);
-			spell.caster.readData(pData, PositionalData.class);
-			GLOBALS.WORLD.collide(shape, pData.graph, entities);
-			
-			for (EntityGraph eg : entities)
-			{
-				if (hit.contains(eg)) continue;
-				eg.entity.readData(sData, StatusData.class);
-				sData.damage = dam;
-				eg.entity.writeData(sData, StatusData.class);
-				hit.add(eg);
-			}
-		}
-		else
-		{
-			cd2 -= delta;
-			spell.effect.modEmissionTime(200);
+			if (hit.contains(eg)) continue;
+			eg.entity.readData(sData, StatusData.class);
+			sData.damage = dam;
+			eg.entity.writeData(sData, StatusData.class);
+			hit.add(eg);
 		}
 				
-		return cd2 > 0;
+		return cd1 > 0;
 		
 	}
 

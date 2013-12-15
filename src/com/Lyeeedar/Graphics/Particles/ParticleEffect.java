@@ -162,6 +162,22 @@ public class ParticleEffect implements Serializable {
 			e.emitter.ez += z;
 		}
 	}
+	public void setEmit(boolean emit)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.emit = emit;
+		}
+	}
+	public float getMaxLife()
+	{
+		float max = 0;
+		for (Emitter e : emitters)
+		{
+			if (e.emitter.particleLifetime > max) max = e.emitter.particleLifetime;
+		}
+		return max;
+	}
 	
 	public void render()
 	{

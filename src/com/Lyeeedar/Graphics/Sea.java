@@ -2,6 +2,7 @@ package com.Lyeeedar.Graphics;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.Shapes;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class Sea {
@@ -40,15 +42,15 @@ public class Sea {
 		
 		this.seaColour.set(seaColour);
 		
-		numWaves = 3;
+		numWaves = 2;
 				
-		amplitudes[0] = 0.02f;
-		wavelengths[0] = 1.1f;
-		speeds[0] = 1.0f;
-		directions[0] = 1.0f; directions[1] = 0.0f;
+		amplitudes[0] = 5.02f;
+		wavelengths[0] = 100.1f;
+		speeds[0] = 5.0f;
+		directions[0] = 0.0f; directions[1] = 1.0f;
 		
-		amplitudes[1] = 0.3f;
-		wavelengths[1] = 73.0f;
+		amplitudes[1] = 10.3f;
+		wavelengths[1] = 173.0f;
 		speeds[1] = 15.0f;
 		directions[2] = -1.0f; directions[3] = -1.0f;
 		
@@ -57,7 +59,7 @@ public class Sea {
 		speeds[2] = 51.1f;
 		directions[4] = 1.0f; directions[5] = 0.0f;
 		
-		sea = getSea(255);
+		sea = Shapes.getArea(255, scale);
 		
 		seaShader = new ShaderProgram(
 				Gdx.files.internal("data/shaders/sea.vertex.glsl"),
@@ -99,10 +101,7 @@ public class Sea {
 		
 		lights.applyLights(seaShader);
 		
-		for (Mesh s : sea)
-		{
-			s.render(seaShader, GL20.GL_TRIANGLES);
-		}
+		for (Mesh mesh : sea) mesh.render(seaShader, GL20.GL_TRIANGLES);
 		
 		seaShader.end();
 	}
@@ -118,7 +117,7 @@ public class Sea {
 	public float waveHeight(float x, float y) 
 	{
 	    float height = 0.0f;
-	    for (int i = 0; i < numWaves; ++i)
+	    for (int i = 0; i < numWaves; i++)
 	        height += wave(i, x, y);
 	    return height;
 	}
@@ -151,71 +150,4 @@ public class Sea {
 		velocity.z += z;
 	}
 	
-	private static Mesh[] getSea(int size)
-	{	
-		float offsets[][] = {
-				// High res close
-				{0, 0, 1},
-				{(-size*scale)+scale, 0, 1},
-				{0, (-size*scale)+scale, 1},
-				{(-size*scale)+scale, (-size*scale)+scale, 1},
-				
-				// Low res distance
-				// Edges
-				{(-size*scale)+2*scale, (size*scale)-2*scale, 2},
-				{(-size*scale)+2*scale, (-3*size*scale)+6*scale, 2},
-				{(size*scale)-2*scale, (-size*scale)+2*scale, 2},
-				{(-3*size*scale)+6*scale, (-size*scale)+2*scale, 2},
-				// Corners
-				{(size*scale)-2*scale, (size*scale)-2*scale, 2},
-				{(size*scale)-2*scale, (-3*size*scale)+6*scale, 2},
-				{(-3*size*scale)+6*scale, (size*scale)-2*scale, 2},
-				{(-3*size*scale)+6*scale, (-3*size*scale)+6*scale, 2}
-		};
-		
-		Mesh mesh[] = new Mesh[offsets.length];
-		float[] vertices = new float[size*size*3];
-		int i = 0;
-		
-		final short[] indices = new short[(size-1)*(size-1)*6];
-		
-		i = 0;
-		for (int ix = 0; ix < size-1; ix++)
-		{
-			for (int iz = 0; iz < size-1; iz++)
-			{
-				short start = (short) (ix+(iz*size));
-
-				indices[i++] = (short) (start);
-				indices[i++] = (short) (start+1);
-				indices[i++] = (short) (start+size);
-				
-				indices[i++] = (short) (start+1);
-				indices[i++] = (short) (start+1+size);
-				indices[i++] = (short) (start+size);
-			
-			}
-		}
-		
-		for (int index = 0; index < offsets.length; index++)
-		{
-			i = 0;
-			for (int ix = 0; ix < size; ix++)
-			{
-				for (int iz = 0; iz < size; iz++)
-				{
-					vertices[i++] = offsets[index][0]+(ix*(offsets[index][2]*scale));
-					vertices[i++] = 0;
-					vertices[i++] = offsets[index][1]+(iz*(offsets[index][2]*scale));
-				}
-			}
-			mesh[index] = new Mesh(true, size*size, indices.length, 
-					new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-			mesh[index].setVertices(vertices);
-			mesh[index].setIndices(indices);
-		}
-
-		return mesh;
-	}
-
 }

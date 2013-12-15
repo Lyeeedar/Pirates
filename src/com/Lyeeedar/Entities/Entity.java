@@ -322,11 +322,17 @@ public class Entity {
 	{
 		public final Vector3 lastPos = new Vector3();
 		public final Vector3 position = new Vector3();
+		public final Vector3 lastRot1 = new Vector3(GLOBALS.DEFAULT_ROTATION);
+		public final Vector3 lastRot2 = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
 		public final Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
 		public final Vector3 velocity = new Vector3();
+		
 		public final Matrix4 composed = new Matrix4();
+		public final Matrix4 rotationTra = new Matrix4();
+		public final Matrix4 inverse = new Matrix4();
+		public final Matrix4 lastInv = new Matrix4();
 		
 		public int jumpToken = 0;
 		
@@ -343,10 +349,16 @@ public class Entity {
 		{
 			lastPos.set(data.lastPos);
 			position.set(data.position);
+			lastRot1.set(data.lastRot1);
+			lastRot2.set(data.lastRot2);
 			rotation.set(data.rotation);		
 			velocity.set(data.velocity);
 			up.set(data.up);
 			composed.set(data.composed);
+			rotationTra.set(data.rotationTra);
+			inverse.set(data.inverse);
+			lastInv.set(data.lastInv);
+			
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			graph = data.graph;
@@ -372,6 +384,8 @@ public class Entity {
 		{
 			tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
 			composed.setToTranslationAndScaling(position, scale).mul(tmpMat);
+			rotationTra.set(tmpMat).tra();
+			inverse.set(rotationTra).scale(1.0f/scale.x, 1.0f/scale.y, 1.0f/scale.z).translate(-position.x, -position.y, -position.z);
 		}
 		
 		// ------------------------- ROTATE ------------------------- //
@@ -393,8 +407,6 @@ public class Entity {
 			tmpMat.setToRotation(axis, angle);
 			rotation.mul(tmpMat).nor();
 			up.mul(tmpMat).nor();
-			
-			calculateComposed();
 		}
 		// ------------------------- ROTATE ------------------------- //
 		
@@ -415,28 +427,38 @@ public class Entity {
 		public void applyVelocity(float delta)
 		{
 			lastPos.set(position);
+			lastRot2.set(lastRot1);
+			lastRot1.set(rotation);
+			lastInv.set(inverse);
 			
-			graph.parent.getDeltaPos(tmpVec);
-			position.add(tmpVec);
+			if (graph.parent != null)
+			{
+				graph.parent.getDeltaPos(tmpMat, position);
+				position.set(0, 0, 0).mul(tmpMat);
+				
+				graph.parent.getDeltaRot(tmpMat);
+				rotation.mul(tmpMat);
+				up.mul(tmpMat);
+			}
 			
 			if (velocity.len2() == 0) return;
 			
-			if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
-			else if (velocity.x > GLOBALS.MAX_SPEED_X) velocity.x = GLOBALS.MAX_SPEED_X;
-			
-			if (velocity.y < -GLOBALS.MAX_SPEED_Y) velocity.y = -GLOBALS.MAX_SPEED_Y;
-			else if (velocity.y > GLOBALS.MAX_SPEED_Y) velocity.y = GLOBALS.MAX_SPEED_Y;
-			
-			if (velocity.z < -GLOBALS.MAX_SPEED_Z) velocity.z = -GLOBALS.MAX_SPEED_Z;
-			else if (velocity.z > GLOBALS.MAX_SPEED_Z) velocity.z = GLOBALS.MAX_SPEED_Z;
-			
+//			if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
+//			else if (velocity.x > GLOBALS.MAX_SPEED_X) velocity.x = GLOBALS.MAX_SPEED_X;
+//			
+//			if (velocity.y < -GLOBALS.MAX_SPEED_Y) velocity.y = -GLOBALS.MAX_SPEED_Y;
+//			else if (velocity.y > GLOBALS.MAX_SPEED_Y) velocity.y = GLOBALS.MAX_SPEED_Y;
+//			
+//			if (velocity.z < -GLOBALS.MAX_SPEED_Z) velocity.z = -GLOBALS.MAX_SPEED_Z;
+//			else if (velocity.z > GLOBALS.MAX_SPEED_Z) velocity.z = GLOBALS.MAX_SPEED_Z;
+//			
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
 			
 			CollisionRay ray = Pools.obtain(CollisionRay.class);
 			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
 			ray.ray.direction.set(0, v.y, 0).nor();
-			ray.len = 0.25f+GLOBALS.STEP;
+			ray.len = v.y*v.y + GLOBALS.STEP;
 			ray.reset();
 			ray.calculateBoundingBox();
 
@@ -465,6 +487,36 @@ public class Entity {
 				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 				graph.popAndInsert(GLOBALS.WORLD);
 			}
+			
+			float angle = 0;
+			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
+			float waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+			if (point.y < waveHeight2)
+			{
+				point.y = waveHeight2;
+				angle = (float) Math.atan((point.y-position.y)/10);
+			}
+			else
+			{
+				angle = (float) Math.atan((position.y-point.y)/10);
+			}
+			
+			point = new Vector3(rotation).scl(-10).add(position).add(v);
+			waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+			if (point.y < waveHeight2)
+			{
+				point.y = waveHeight2;
+				angle += (float) Math.atan((point.y-position.y)/-10);
+			}
+			else
+			{
+				angle += (float) Math.atan((position.y-point.y)/-10);
+			}
+			angle/=2.0f;
+			if (angle > .1f) angle = .1f;
+			if (angle < -.1f) angle = -.1f;
+			Yrotate(angle);
+			
 			
 			jumpToken = 2;
 			

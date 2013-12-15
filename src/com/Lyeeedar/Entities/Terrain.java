@@ -2,12 +2,14 @@ package com.Lyeeedar.Entities;
 
 import java.util.ArrayList;
 
+import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
+import com.Lyeeedar.Util.Shapes;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -57,7 +59,7 @@ public class Terrain extends Entity {
 		
 		this.seaFloor = seaFloor;
 		
-		this.terrain = getTerrain(255);
+		this.terrain = Shapes.getArea(255, scale);
 		
 		this.shader = new ShaderProgram(
 				Gdx.files.internal("data/shaders/terrain.vertex.glsl"),
@@ -66,10 +68,14 @@ public class Terrain extends Entity {
 		if (!shader.isCompiled()) {
 			System.err.println(shader.getLog());
 		}
+		
+		this.setCollisionShapeInternal(new Box(new Vector3(), 1000, 1000, 1000));
 	}
 	
 	public void render(Camera cam, Vector3 position, LightManager lights)
 	{
+		this.getCollisionShapeInternal().setPosition(cam.position);
+		
 		shader.begin();
 		
 		mat41.set(cam.combined);
@@ -111,27 +117,27 @@ public class Terrain extends Entity {
 		shader.end();
 	}
 	
-//	public float getHeight(float x, float z)
-//	{
-//		float height = seaFloor;
-//	
-//		Vector3 tmpVec = Pools.obtain(Vector3.class);
-//		
-//		for (HeightMap hm : heightmaps)
-//		{
-//			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
-//			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
-//					tmpVec.z > 0 && tmpVec.z < 1.0f)
-//			{
-//				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]*hm.height);
-//				break;
-//			}
-//		}
-//		
-//		Pools.free(tmpVec);
-//		
-//		return height;
-//	}
+	public float getHeight(float x, float z)
+	{
+		float height = seaFloor;
+	
+		Vector3 tmpVec = Pools.obtain(Vector3.class);
+		
+		for (HeightMap hm : heightmaps)
+		{
+			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
+			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
+					tmpVec.z > 0 && tmpVec.z < 1.0f)
+			{
+				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]);
+				break;
+			}
+		}
+		
+		Pools.free(tmpVec);
+		
+		return height;
+	}
 	
 	public boolean collide(CollisionShape<?> collide)
 	{
@@ -150,74 +156,7 @@ public class Terrain extends Entity {
 		
 		return hit;
 	}
-	
-	private static Mesh[] getTerrain(int size)
-	{	
-		float offsets[][] = {
-				// High res close
-				{0, 0, 1},
-				{(-size*scale)+scale, 0, 1},
-				{0, (-size*scale)+scale, 1},
-				{(-size*scale)+scale, (-size*scale)+scale, 1},
-				
-				// Low res distance
-				// Edges
-				{(-size*scale)+2*scale, (size*scale)-2*scale, 2},
-				{(-size*scale)+2*scale, (-3*size*scale)+6*scale, 2},
-				{(size*scale)-2*scale, (-size*scale)+2*scale, 2},
-				{(-3*size*scale)+6*scale, (-size*scale)+2*scale, 2},
-				// Corners
-				{(size*scale)-2*scale, (size*scale)-2*scale, 2},
-				{(size*scale)-2*scale, (-3*size*scale)+6*scale, 2},
-				{(-3*size*scale)+6*scale, (size*scale)-2*scale, 2},
-				{(-3*size*scale)+6*scale, (-3*size*scale)+6*scale, 2}
-		};
-		
-		Mesh mesh[] = new Mesh[offsets.length];
-		float[] vertices = new float[size*size*3];
-		int i = 0;
-		
-		final short[] indices = new short[(size-1)*(size-1)*6];
-		
-		i = 0;
-		for (int ix = 0; ix < size-1; ix++)
-		{
-			for (int iz = 0; iz < size-1; iz++)
-			{
-				short start = (short) (ix+(iz*size));
 
-				indices[i++] = (short) (start);
-				indices[i++] = (short) (start+1);
-				indices[i++] = (short) (start+size);
-				
-				indices[i++] = (short) (start+1);
-				indices[i++] = (short) (start+1+size);
-				indices[i++] = (short) (start+size);
-			
-			}
-		}
-		
-		for (int index = 0; index < offsets.length; index++)
-		{
-			i = 0;
-			for (int ix = 0; ix < size; ix++)
-			{
-				for (int iz = 0; iz < size; iz++)
-				{
-					vertices[i++] = offsets[index][0]+(ix*(offsets[index][2]*scale));
-					vertices[i++] = 0;
-					vertices[i++] = offsets[index][1]+(iz*(offsets[index][2]*scale));
-				}
-			}
-			mesh[index] = new Mesh(true, size*size, indices.length, 
-					new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
-			mesh[index].setVertices(vertices);
-			mesh[index].setIndices(indices);
-		}
-
-		return mesh;
-	}
-	
 	public static class HeightMap
 	{
 		Texture texture;

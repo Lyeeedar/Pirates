@@ -114,7 +114,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		//Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -211,6 +211,8 @@ public abstract class AbstractScreen implements Screen {
 		stage.setViewport(width, height, false);
 		
 		postprocessor.updateBufferSettings(Format.RGBA8888, width, height);
+		
+		resized(width, height);
 	}
 
 	@Override
@@ -242,4 +244,5 @@ public abstract class AbstractScreen implements Screen {
 	
 	public abstract void superDispose();
 
+	public abstract void resized(int width, int height);
 }

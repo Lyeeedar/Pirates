@@ -1,7 +1,5 @@
 package com.Lyeeedar.Collision;
 
-import java.util.List;
-
 import com.Lyeeedar.Util.Pools;
 import com.Lyeeedar.Util.ThreadSafePlane;
 import com.badlogic.gdx.math.Plane;

@@ -43,8 +43,12 @@ public class AI_Player_Control extends AI_Package {
 		if (entityStatus.currentHealth > 0)
 		{
 			// Evaluate controls
-			byte speed = 10;
+			int speed = 10;
 			if (controls.sprint()) speed = 100;
+			if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
+			{
+				speed = 1500;
+			}
 			
 			if (controls.up()) entityPos.forward_backward(speed);
 			else if (controls.down()) entityPos.forward_backward(-speed);
@@ -60,6 +64,11 @@ public class AI_Player_Control extends AI_Package {
 			else if (!controls.jump())
 			{
 				jump = false;
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.B))
+			{
+				entityPos.position.y += 10;
 			}
 			
 			basicAttack(controls.leftClick(), Equipment_Slot.RARM, entityEquip);

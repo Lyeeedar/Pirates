@@ -55,7 +55,6 @@ public class SpellAI_Launcher extends SpellAI {
 			cam.update();
 			
 			GLOBALS.WORLD.getVisible(cam, list);
-			System.out.println(list.size());
 			if (list.size() > 0)
 			{
 				spell.caster.readData(sData1, StatusData.class);
@@ -98,11 +97,11 @@ public class SpellAI_Launcher extends SpellAI {
 				{
 					found.readData(pData, PositionalData.class);
 					
-					SpellAI aimove = new SpellAI_HomingBolt(pData.position.sub(spell.position), 0.5f, 50, 2);
-					SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 2, 0.3f, 6);
-					ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
-					Spell s = new Spell(spell.position, aimove, aidam, effect, spell.caster);
-					GLOBALS.pendingSPELLS.add(s);
+//					SpellAI aimove = new SpellAI_HomingBolt(pData.position.sub(spell.position), 0.5f, 20, 1);
+//					SpellAI aidam = new SpellAI_Explosion(1, 0.5f, 2, 0.3f, 6);
+//					ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
+//					Spell s = new Spell(spell.position, aimove, aidam, effect, spell.caster);
+//					GLOBALS.pendingSPELLS.add(s);
 				}
 				
 				list.clear();

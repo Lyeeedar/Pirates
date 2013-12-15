@@ -58,7 +58,6 @@ public class SpellAI_HomingBolt extends SpellAI {
 		cam.update();
 		
 		GLOBALS.WORLD.getVisible(cam, list);
-		System.out.println(list.size());
 		if (list.size() > 0)
 		{
 			spell.caster.readData(sData1, StatusData.class);

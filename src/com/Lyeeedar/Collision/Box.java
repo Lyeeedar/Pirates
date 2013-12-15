@@ -3,6 +3,7 @@ package com.Lyeeedar.Collision;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Box extends CollisionShape<Box> {
 	
@@ -13,18 +14,44 @@ public class Box extends CollisionShape<Box> {
 
 	public Box()
 	{
+		if (width == 0) width = 0.1f;
+		if (height == 0) height = 0.1f;
+		if (depth == 0) depth = 0.1f;
 		
+		if (width < 0) width *= -1;
+		if (height < 0) height *= -1;
+		if (depth < 0) depth *= -1;
 	}
 	
 	public Box(Vector3 center, float width, float height, float depth)
+	{
+		set(center, width, height, depth);
+	}
+	
+	public Box(Vector3 min, Vector3 max)
+	{
+		set(min, max);
+	}
+	
+	public Box set(Vector3 center, float width, float height, float depth)
 	{
 		this.center.set(center);
 		this.width = width;
 		this.height = height;
 		this.depth = depth;
+		
+		if (width == 0) width = 0.1f;
+		if (height == 0) height = 0.1f;
+		if (depth == 0) depth = 0.1f;
+		
+		if (width < 0) width *= -1;
+		if (height < 0) height *= -1;
+		if (depth < 0) depth *= -1;
+		
+		return this;
 	}
 	
-	public Box(Vector3 min, Vector3 max)
+	public Box set(Vector3 min, Vector3 max)
 	{
 		float minx = min.x;
 		float miny = min.y;
@@ -42,14 +69,14 @@ public class Box extends CollisionShape<Box> {
 		this.width = midx-minx;
 		this.height = midy-miny;
 		this.depth = midz-minz;
-	}
-	
-	public Box set(Vector3 center, float width, float height, float depth)
-	{
-		this.center.set(center);
-		this.width = width;
-		this.height = height;
-		this.depth = depth;
+		
+		if (width == 0) width = 0.1f;
+		if (height == 0) height = 0.1f;
+		if (depth == 0) depth = 0.1f;
+		
+		if (width < 0) width *= -1;
+		if (height < 0) height *= -1;
+		if (depth < 0) depth *= -1;
 		
 		return this;
 	}
@@ -132,7 +159,13 @@ public class Box extends CollisionShape<Box> {
 
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
+		if (width == 0) width = 0.1f;
+		if (height == 0) height = 0.1f;
+		if (depth == 0) depth = 0.1f;
+		
+		if (width < 0) width *= -1;
+		if (height < 0) height *= -1;
+		if (depth < 0) depth *= -1;
 		
 	}
 
@@ -152,7 +185,7 @@ public class Box extends CollisionShape<Box> {
 
 	@Override
 	public boolean checkBoundingBox(Box box) {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -169,6 +202,15 @@ public class Box extends CollisionShape<Box> {
 	@Override
 	public void setGeneric(CollisionShape<?> other) {
 		set((Box)other);
+	}
+	
+	@Override
+	public BoundingBox getBoundingBox(BoundingBox bb) {
+		
+		bb.min.set(center).sub(width, height, depth);
+		bb.min.set(center).add(width, height, depth);
+		
+		return bb;
 	}
 
 }

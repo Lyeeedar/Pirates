@@ -2,6 +2,7 @@ package com.Lyeeedar.Collision;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 
 
@@ -10,8 +11,13 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	@SuppressWarnings("rawtypes")
 	public boolean collide(CollisionShape shape)
 	{
-		//if (!checkBoundingBox(shape.getBoundingBox())) return false;
-		
+//		//System.out.println(shape.getClass()+": "+shape.getBoundingBox()+"     " + this.getClass() + ": " + getBoundingBox());
+//		if (!checkBoundingBox(shape.getBoundingBox())) 
+//		{
+//			//System.out.println("fail");
+//			return false;
+//		}
+//		
 		if (shape instanceof Sphere) return collide((Sphere) shape);
 		else if (shape instanceof Cylinder) return collide((Cylinder) shape);
 		else if (shape instanceof Box) return collide((Box) shape);
@@ -40,6 +46,8 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	public abstract void transformPosition(Matrix4 matrix);
 	public abstract void transformDirection(Matrix4 matrix);
 	public abstract void transformScaling(float scale);
+	
+	public abstract BoundingBox getBoundingBox(BoundingBox bb);
 	
 	public abstract void reset();
 	

@@ -3,6 +3,7 @@ package com.Lyeeedar.Collision;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Triangle extends CollisionShape<Triangle> {
 	
@@ -95,6 +96,8 @@ public class Triangle extends CollisionShape<Triangle> {
 		v1.mul(matrix);
 		v2.mul(matrix);
 		v3.mul(matrix);
+		
+		box.transformPosition(matrix);
 	}
 
 	@Override
@@ -117,12 +120,12 @@ public class Triangle extends CollisionShape<Triangle> {
 	@Override
 	public Vector3 getPosition()
 	{
-		return v1;
+		return box.getPosition();
 	}
 
 	@Override
 	public void setPosition(Vector3 position) {
-		
+		box.setPosition(position);
 	}
 
 	@Override
@@ -153,26 +156,30 @@ public class Triangle extends CollisionShape<Triangle> {
 		float maxz = v1.z;
 		
 		if (v2.x < minx) minx = v2.x;
-		if (v2.x < maxx) maxx = v2.x;
+		if (v2.x > maxx) maxx = v2.x;
 		
 		if (v2.y < miny) miny = v2.y;
-		if (v2.y < maxy) maxy = v2.y;
+		if (v2.y > maxy) maxy = v2.y;
 		
 		if (v2.z < minz) minz = v2.z;
-		if (v2.z < maxz) maxz = v2.z;
+		if (v2.z > maxz) maxz = v2.z;
 		
 		if (v3.x < minx) minx = v3.x;
-		if (v3.x < maxx) maxx = v3.x;
+		if (v3.x > maxx) maxx = v3.x;
 		
 		if (v3.y < miny) miny = v3.y;
-		if (v3.y < maxy) maxy = v3.y;
+		if (v3.y > maxy) maxy = v3.y;
 		
 		if (v3.z < minz) minz = v3.z;
-		if (v3.z < maxz) maxz = v3.z;
+		if (v3.z > maxz) maxz = v3.z;
 		
 		box.width = (maxx-minx)/2.0f;
 		box.height = (maxy-miny)/2.0f;
 		box.depth = (maxz-minz)/2.0f;
+		
+		box.center.set(minx+box.width, miny+box.height, minz+box.depth);
+		
+		box.reset();
 	}
 
 	@Override
@@ -200,5 +207,10 @@ public class Triangle extends CollisionShape<Triangle> {
 	@Override
 	public void setGeneric(CollisionShape<?> other) {
 		set((Triangle)other);
+	}
+	
+	@Override
+	public BoundingBox getBoundingBox(BoundingBox bb) {
+		return box.getBoundingBox(bb);
 	}
 }

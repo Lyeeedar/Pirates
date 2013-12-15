@@ -3,6 +3,7 @@ package com.Lyeeedar.Collision;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 
 public class CollisionRay extends CollisionShape<CollisionRay> {
@@ -18,6 +19,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	public CollisionRay()
 	{
 		reset();
+		calculateBoundingBox();
 	}
 	
 	public CollisionRay(Ray ray, float len)
@@ -26,6 +28,8 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 		this.len = len;
 		
 		reset();
+		
+		calculateBoundingBox();
 	}
 	
 	public CollisionRay set(Vector3 start, Vector3 end)
@@ -43,6 +47,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	{
 		intersection.set(ray.direction).scl(len).add(ray.origin);
 		dist = len;
+		calculateBoundingBox();
 	}
 
 	@Override
@@ -90,6 +95,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	public void transformPosition(Matrix4 matrix) {
 		ray.origin.mul(matrix);
 		intersection.mul(matrix);
+		box.transformPosition(matrix);
 	}
 
 	@Override
@@ -116,6 +122,7 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void setPosition(Vector3 position) {
 		ray.origin.set(position);
+		box.setPosition(position);
 	}
 
 	@Override
@@ -130,33 +137,31 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 
 	@Override
 	public void calculateBoundingBox() {
-		Vector3 end = Pools.obtain(Vector3.class);
-		
-		end.set(ray.direction).scl(len).add(ray.origin);
-		
+
 		float minx = ray.origin.x;
 		float miny = ray.origin.y;
 		float minz = ray.origin.z;
 		
 		float maxx = ray.origin.x;
-		float maxy = ray.origin.x;
-		float maxz = ray.origin.x;
+		float maxy = ray.origin.y;
+		float maxz = ray.origin.z;
 		
-		if (end.x < minx) minx = end.x;
-		if (end.x > maxx) maxx = end.x;
+		if (intersection.x < minx) minx = intersection.x;
+		if (intersection.x > maxx) maxx = intersection.x;
 		
-		if (end.y < miny) miny = end.y;
-		if (end.y > maxy) maxy = end.y;
+		if (intersection.y < miny) miny = intersection.y;
+		if (intersection.y > maxy) maxy = intersection.y;
 		
-		if (end.z < minz) minz = end.z;
-		if (end.z > maxz) maxz = end.z;
+		if (intersection.z < minz) minz = intersection.z;
+		if (intersection.z > maxz) maxz = intersection.z;
 		
 		box.width = (maxx-minx)/2.0f;
 		box.height = (maxy-miny)/2.0f;
 		box.depth = (maxz-minz)/2.0f;
 		
-		Pools.free(end);
+		box.center.set(minx+box.width, miny+box.height, minz+box.depth);
 		
+		box.reset();
 	}
 
 	@Override
@@ -196,5 +201,10 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	@Override
 	public void setGeneric(CollisionShape<?> other) {
 		set((CollisionRay)other);
+	}
+
+	@Override
+	public BoundingBox getBoundingBox(BoundingBox bb) {
+		return box.getBoundingBox(bb);
 	}
 }

@@ -11,7 +11,7 @@ public class FollowCam extends PerspectiveCamera {
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
 	private final CollisionRay ray = new CollisionRay();
-	private float followDist = 6.0f;
+	public float followDist = 4.0f;
 	
 	public FollowCam(Controls controls)
 	{
@@ -49,12 +49,11 @@ public class FollowCam extends PerspectiveCamera {
 	public void update(PositionalData entityState)
 	{
 		angle -= controls.getDeltaY();
-		
 		if (angle > 60) angle = 60;
 		if (angle < -65) angle = -65;
 		
 		up.set(entityState.up);
-		direction.set(entityState.rotation);
+		direction.set(entityState.rotation.x, 0, entityState.rotation.z).nor();
 		Yrotate(angle);
 		
 		ray.ray.origin.set(entityState.position).add(0, 1, 0);
@@ -88,9 +87,9 @@ public class FollowCam extends PerspectiveCamera {
 		
 		for (int i = 0; i < 2; i++)
 		{
-			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
-			float diff = seaHeight - frustum.planePoints[i].y;
-			if (diff > seaY) seaY = diff;
+//			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
+//			float diff = seaHeight - frustum.planePoints[i].y;
+//			if (diff > seaY) seaY = diff;
 		}
 		
 		if (seaY > 0)

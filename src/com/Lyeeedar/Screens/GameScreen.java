@@ -72,34 +72,42 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create() {
 		
-		blank = FileUtils.loadTexture("data/textures/grass.png", true);
-
-		//IslandGenerator ig = new IslandGenerator();
-		//Mesh model = ig.getIsland(75, 75, 53);
-		
-		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-        Mesh shipModel = FileUtils.loadMesh("data/models/shipMesh.obj");
-		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
-		
-		Entity ship = new Entity();
-		ship.readData(pData, PositionalData.class);
-		//pData.position.x = 10;
-		//pData.lastPos.set(pData.position);
-		//pData.scale.set(2.2f, 2.2f, 2.2f);
-		pData.calculateComposed();
-		ship.writeData(pData, PositionalData.class);
-		ship.setAI(new AI_Simple(ship));
-		mesh.setPosition(pData.position);
-		
-		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
-		ship.setCollisionShapeInternal(mesh);
-		
 		Texture sand = FileUtils.loadTexture("data/textures/grass.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
+		
+		terrain.readData(pData, PositionalData.class);
+		pData.calculateComposed();
+		terrain.writeData(pData, PositionalData.class);
+		
 		world = new EntityGraph(terrain, null, true);
+		
+		blank = FileUtils.loadTexture("data/textures/blank.png", true);
+
+		//IslandGenerator ig = new IslandGenerator();
+		//Mesh model = ig.getIsland(75, 75, 53);
+		
+		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
+        Mesh shipModel = FileUtils.loadMesh("data/models/boat.obj");
+		
+		Entity ship = new Entity();
+		ship.readData(pData, PositionalData.class);
+		//pData.position.x = 100;
+		//pData.lastPos.set(pData.position);
+		//pData.scale.set(20f, 20f, 20f);
+		pData.calculateComposed();
+		ship.writeData(pData, PositionalData.class);
+		ship.setAI(new AI_Simple(ship));
+		//ship.setAI(new AI_Player_Control(ship, controls));
+				
+		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
+		mesh.setPosition(pData.position);
+		ship.setCollisionShapeInternal(mesh);
+		
+		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
+		
 		world.addEntity(ship, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
@@ -112,6 +120,7 @@ public class GameScreen extends AbstractScreen {
 		
 		player = new Entity();
 		player.setAI(new AI_Player_Control(player, controls));
+		//player.setAI(new AI_Simple(player));
 		Sprite3D s = new Sprite3D(2, 2, 4, 4);
 		s.setGender(true);
 		s.addAnimation("move", "move");
@@ -123,13 +132,13 @@ public class GameScreen extends AbstractScreen {
 		player.addRenderable(s);
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		CollisionRay ray = new CollisionRay();
-		ray.len = 1;
+		ray.len = 0.5f;
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
 
 		
 		player.readData(pData, PositionalData.class);
-		pData.position.set(4, 5, 0);
+		pData.position.set(4, 12, 0);
 		player.writeData(pData, PositionalData.class);
 		
 		player.readData(sData, StatusData.class);
@@ -141,20 +150,20 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(null, new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 1.5f, 50, 50));
+		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
 		world.addEntity(player, false);
 		
 		Random ran = new Random();
-		for (int i = 0; i < 15; i++)
+		for (int i = 0; i < 0; i++)
 		{
 			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow(ge);
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
 			ge.readData(pData, PositionalData.class);
-			pData.position.set(ran.nextFloat()*24, 15, ran.nextFloat()*24);
+			pData.position.set(4450+ran.nextFloat()*24, 260, 3300+ran.nextFloat()*24);
 			ge.writeData(pData, PositionalData.class);
 			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
@@ -181,20 +190,68 @@ public class GameScreen extends AbstractScreen {
 			
 			ge.readData(pData, PositionalData.class);
 			ge.getCollisionShapeInternal().setPosition(pData.position);
-			while (GLOBALS.WORLD.collide(ge.getCollisionShapeInternal(), pData.graph) != null)
+			while (world.collide(ge.getCollisionShapeInternal(), pData.graph) != null)
 			{
 				ge.readData(pData, PositionalData.class);
-				pData.position.set(ran.nextFloat()*14, 15, ran.nextFloat()*14);
+				pData.position.set(4450+ran.nextFloat()*24, 260, 3300+ran.nextFloat()*24);
 				ge.writeData(pData, PositionalData.class);
 				ge.getCollisionShapeInternal().setPosition(pData.position);
 			}
+		}
+		
+		Mesh cModel = FileUtils.loadMesh("data/models/Bastion.obj");
+
+		Entity c = new Entity();
+		c.readData(pData, PositionalData.class);
+		pData.position.x = 4450;
+		pData.position.y = 245;
+		pData.position.z = 3530;
+		pData.Xrotate(180);
+		pData.lastPos.set(pData.position);
+		//pData.scale.set(20f, 20f, 20f);
+		pData.calculateComposed();
+		c.writeData(pData, PositionalData.class);
+
+		SymbolicMesh cmesh = SymbolicMesh.getSymbolicMesh(cModel);
+		cmesh.setPosition(pData.position);
+		c.setCollisionShapeInternal(cmesh);
+
+		c.addRenderable(new Model(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
+
+		world.addEntity(c, true);
+		
+		EntityGraph teg = new EntityGraph(null, world, false);
+		for (int i = 0; i < 0; i++)
+		{
+			if (i % 10 == 0)
+			{
+				teg = new EntityGraph(null, world, false);
+			}
+			Mesh treeMesh = FileUtils.loadMesh("data/models/tree.obj");
+			Entity tree = new Entity();
+			
+			tree.readData(pData, PositionalData.class);
+			pData.position.x = ran.nextInt(1000);
+			pData.position.y = 10;
+			pData.position.z = ran.nextInt(1000);
+			//pData.lastPos.set(pData.position);
+			pData.scale.set(20f, 20f, 20f);
+			pData.calculateComposed();
+			tree.writeData(pData, PositionalData.class);
+			
+			tree.addRenderable(new Model(treeMesh, GL20.GL_TRIANGLES, sand, new Vector3(0.4f, 1, 0.5f), 1));
+			
+			teg.addEntity(tree, true);
 		}
 	}
 
 	@Override
 	public void drawOrthogonals(float delta, SpriteBatch batch) {
 		player.readData(sData, StatusData.class);
+		player.readData(pData, PositionalData.class);
 		batch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
+		font.draw(spriteBatch, ""+pData.position, 20, screen_height-80);
+		font.draw(spriteBatch, ""+pData.rotation, 20, screen_height-120);
 	}
 
 	@Override
@@ -284,6 +341,8 @@ public class GameScreen extends AbstractScreen {
 		list.clear();
 		GLOBALS.waitTillTasksComplete();
 		
+		//GLOBALS.WORLD.recalculateBounds();
+		
 		GLOBALS.SKYBOX.update(delta);
 		
 		player.readData(pData, PositionalData.class);
@@ -299,7 +358,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			Spell s = itr.next();
 			boolean alive = s.update(delta);
-			if (!alive) 
+			if (!alive || s.position.dst2(cam.position) > GLOBALS.FOG_MAX*GLOBALS.FOG_MAX)
 			{
 				itr.remove();
 				s.dispose();
@@ -394,6 +453,10 @@ public class GameScreen extends AbstractScreen {
 		}
 		ParticleEmitter.end();
 		visibleEmitters.clear();
+	}
+
+	@Override
+	public void resized(int width, int height) {
 	}
 
 }

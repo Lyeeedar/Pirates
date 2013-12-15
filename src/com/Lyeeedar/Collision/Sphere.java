@@ -3,6 +3,7 @@ package com.Lyeeedar.Collision;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Sphere extends CollisionShape<Sphere> {
 
@@ -140,5 +141,10 @@ public class Sphere extends CollisionShape<Sphere> {
 	@Override
 	public void setGeneric(CollisionShape<?> other) {
 		set((Sphere)other);
+	}
+	
+	@Override
+	public BoundingBox getBoundingBox(BoundingBox bb) {
+		return box.getBoundingBox(bb);
 	}
 }

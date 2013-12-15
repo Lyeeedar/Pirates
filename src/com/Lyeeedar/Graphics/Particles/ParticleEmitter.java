@@ -106,12 +106,12 @@ public class ParticleEmitter implements Serializable {
 	private transient int signx;
 	private transient int signy;
 	private transient int signz;
-	private transient int v;
 	private transient float emissionCD;
 	private transient Light light;
 	private transient int i;
 	private transient int i2;
 	private transient int arrayLen;
+	public boolean emit = true;
 	public boolean created = false;
 	// ----- End Transient Variables ----- //
 
@@ -673,9 +673,7 @@ public class ParticleEmitter implements Serializable {
 
 		arrayLen = inactive.size;
 		
-		System.out.println(arrayLen);
-
-		if (arrayLen == 0) return;
+		if (arrayLen == 0 || !emit) return;
 		
 		emissionCD -= delta;
 
@@ -956,7 +954,7 @@ public class ParticleEmitter implements Serializable {
 				emitter.write(json);
 			}
 
-			@SuppressWarnings({ "unchecked", "rawtypes" })
+			@SuppressWarnings({ "rawtypes" })
 			public ParticleEmitter read (Json json, JsonValue jsonData, Class type) {
 
 				// ----- Particle Parameters ----- //

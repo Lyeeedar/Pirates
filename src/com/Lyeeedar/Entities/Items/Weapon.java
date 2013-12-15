@@ -14,6 +14,7 @@ import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Entities.Spells.SpellAI;
 import com.Lyeeedar.Entities.Spells.SpellAI_Bolt;
 import com.Lyeeedar.Entities.Spells.SpellAI_Explosion;
+import com.Lyeeedar.Entities.Spells.SpellAI_FadeOut;
 import com.Lyeeedar.Entities.Spells.SpellAI_HomingBolt;
 import com.Lyeeedar.Entities.Spells.SpellAI_Launcher;
 import com.Lyeeedar.Entities.Spells.SpellAI_SimpleDamage;
@@ -119,10 +120,10 @@ public class Weapon extends Equipment<Weapon> {
 			
 			hitCD = hitSpeed;
 			
-			SpellAI aimove = new SpellAI_Launcher(pData.rotation, 0.5f, 5);
-			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 2, 0.3f, 6);
-			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/ring.effect");//new ParticleEffect(5);
-			Spell s = new Spell(pData.position.add(0, 1, 0), aimove, aidam, effect, entity);
+			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1);
+			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6);
+			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
+			Spell s = new Spell(pData.position.add(0, 1, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
 			GLOBALS.SPELLS.add(s);
 		}
 	}

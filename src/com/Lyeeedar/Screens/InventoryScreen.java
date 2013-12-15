@@ -568,4 +568,11 @@ public class InventoryScreen extends AbstractScreen {
 
 	}
 
+
+	@Override
+	public void resized(int width, int height) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
