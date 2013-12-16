@@ -413,10 +413,10 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			t.v2.set(n2.x, n2.y, n2.z);
 			t.v3.set(n3.x, n3.y, n3.z);
 
-			tris.add(t);
+			if (!t.isLine()) tris.add(t);
 		}
 
-		Triangle[] triArray = new Triangle[triangles];
+		Triangle[] triArray = new Triangle[tris.size()];
 		tris.toArray(triArray);
 
 		return new SymbolicMesh(vertexNodes, triArray);
@@ -457,10 +457,10 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			t.v3.set(n3.x, n3.y, n3.z);
 			t.calculateBoundingBox();
 
-			tris.add(t);
+			if (!t.isLine()) tris.add(t);
 		}
 
-		Triangle[] triArray = new Triangle[triangles];
+		Triangle[] triArray = new Triangle[tris.size()];
 		tris.toArray(triArray);
 
 		return new SymbolicMesh(vertexNodes, triArray);
@@ -501,10 +501,10 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			t.v3.set(n3.x, n3.y, n3.z);
 			t.calculateBoundingBox();
 
-			tris.add(t);
+			if (!t.isLine()) tris.add(t);
 		}
 
-		Triangle[] triArray = new Triangle[triangles];
+		Triangle[] triArray = new Triangle[tris.size()];
 		tris.toArray(triArray);
 
 		return new SymbolicMesh(vertexNodes, triArray);
@@ -1001,7 +1001,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			String self = this.toString()+" depth: "+depth+" indices: "+indices.length+" min: "+minx+","+miny+","+minz+" max: "+maxx+","+maxy+","+maxz+"\n"+shape+"\n";
 			for (short s : indices)
 			{
-				self += tris[s].toString()+"\n";
+				self += s+"   "+tris[s].toString()+"\n";
 			}
 			self += "\nCHILDREN:\n";
 

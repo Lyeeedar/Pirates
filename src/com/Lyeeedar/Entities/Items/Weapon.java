@@ -123,7 +123,7 @@ public class Weapon extends Equipment<Weapon> {
 			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1);
 			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6);
 			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
-			Spell s = new Spell(pData.position.add(0, 1, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
+			Spell s = new Spell(pData.position.add(0, 2, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
 			GLOBALS.SPELLS.add(s);
 		}
 	}

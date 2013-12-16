@@ -213,4 +213,15 @@ public class Triangle extends CollisionShape<Triangle> {
 	public BoundingBox getBoundingBox(BoundingBox bb) {
 		return box.getBoundingBox(bb);
 	}
+	
+	public boolean isLine()
+	{
+		int count = 0;
+		
+		if (v1.x == v2.x && v1.x == v3.x) count ++;
+		if (v1.y == v2.y && v1.y == v3.y) count ++;
+		if (v1.z == v2.z && v1.z == v3.z) count ++;
+		
+		return count >= 2;
+	}
 }

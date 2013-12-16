@@ -9,6 +9,7 @@ import java.util.Random;
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.SymbolicMesh;
+import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
@@ -47,6 +48,7 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Vector3;
 
 public class GameScreen extends AbstractScreen {
@@ -62,6 +64,8 @@ public class GameScreen extends AbstractScreen {
 	
 	private final SpriteBatch sB = new SpriteBatch();
 	private final BitmapFont fB = new BitmapFont(true);
+		
+	SymbolicMesh sm;
 	
 	Texture blank;
 
@@ -71,7 +75,7 @@ public class GameScreen extends AbstractScreen {
 
 	@Override
 	public void create() {
-		
+				
 		Texture sand = FileUtils.loadTexture("data/textures/grass.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
@@ -207,12 +211,14 @@ public class GameScreen extends AbstractScreen {
 		pData.position.y = 245;
 		pData.position.z = 3530;
 		pData.Xrotate(180);
-		pData.lastPos.set(pData.position);
+		//pData.lastPos.set(pData.position);
 		//pData.scale.set(20f, 20f, 20f);
-		pData.calculateComposed();
+		pData.applyVelocity(0);
+		pData.applyVelocity(0);
 		c.writeData(pData, PositionalData.class);
 
 		SymbolicMesh cmesh = SymbolicMesh.getSymbolicMesh(cModel);
+		sm = cmesh;
 		cmesh.setPosition(pData.position);
 		c.setCollisionShapeInternal(cmesh);
 
@@ -257,6 +263,20 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
+//		int i = 0;
+//		while (i < sm.tris.length)
+//		{
+//			imr.begin(cam.combined, GL20.GL_TRIANGLES);
+//			for (int count = 0; count < 4999/9 && i < sm.tris.length; count++, i++)
+//			{
+//				Triangle tri = sm.tris[i];
+//				imr.vertex(tri.v1.x+sm.getPosition().x, tri.v1.y+sm.getPosition().y, tri.v1.z+sm.getPosition().z);
+//				imr.vertex(tri.v2.x+sm.getPosition().x, tri.v2.y+sm.getPosition().y, tri.v2.z+sm.getPosition().z);
+//				imr.vertex(tri.v3.x+sm.getPosition().x, tri.v3.y+sm.getPosition().y, tri.v3.z+sm.getPosition().z);
+//			}
+//			imr.end();
+//		}
+		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);

@@ -431,7 +431,7 @@ public class Entity {
 			lastRot1.set(rotation);
 			lastInv.set(inverse);
 			
-			if (graph.parent != null)
+			if (graph != null && graph.parent != null)
 			{
 				graph.parent.getDeltaPos(tmpMat, position);
 				position.set(0, 0, 0).mul(tmpMat);
@@ -441,7 +441,11 @@ public class Entity {
 				up.mul(tmpMat);
 			}
 			
-			if (velocity.len2() == 0) return;
+			if (velocity.len2() == 0) 
+			{
+				calculateComposed();
+				return;
+			}
 			
 //			if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
 //			else if (velocity.x > GLOBALS.MAX_SPEED_X) velocity.x = GLOBALS.MAX_SPEED_X;
