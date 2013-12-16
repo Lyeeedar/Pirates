@@ -28,7 +28,7 @@ import com.badlogic.gdx.utils.Pools;
 public class Terrain extends Entity {
 	
 	private final ShaderProgram shader;
-	private final Texture texture;
+	private final Texture[] textures;
 	
 	public final float seaFloor;
 	
@@ -47,9 +47,9 @@ public class Terrain extends Entity {
 	private final Matrix4 mat41 = new Matrix4();
 	private final Matrix4 mat42 = new Matrix4();
 
-	public Terrain(Texture texture, float seaFloor, HeightMap[] heightmaps)
+	public Terrain(Texture[] textures, float seaFloor, HeightMap[] heightmaps)
 	{
-		this.texture = texture;
+		this.textures = textures;
 		this.heightmaps = heightmaps;
 		
 		this.texBuf = new Texture[heightmaps.length];
@@ -82,12 +82,14 @@ public class Terrain extends Entity {
 		
 		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf);
 		
-		shader.setUniformi("u_hm1", 1);
-		shader.setUniformi("u_hm2", 2);
-		shader.setUniformi("u_hm3", 3);
+		
 		for (int i = 0; i < heightmaps.length; i++)
 		{
-			if (texBuf[i] != null) texBuf[i].bind(i+1);
+			if (texBuf[i] != null) 
+			{
+				shader.setUniformi("u_hm"+(i+1), i);
+				texBuf[i].bind(i);
+			}
 		}
 
 		shader.setUniformf("u_seaFloor", seaFloor);
@@ -102,12 +104,14 @@ public class Terrain extends Entity {
 		
 		shader.setUniformf("u_viewPos", position);
 		
-		shader.setUniformf("fog_colour", lights.ambientColour);
 		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
-		shader.setUniformi("u_texture", 0);
-		texture.bind(0);
+		for (int i = 0; i < textures.length; i++)
+		{
+			shader.setUniformi("u_texture"+(i+1), heightmaps.length+i);
+			textures[i].bind(heightmaps.length+i);
+		}
 		
 		lights.applyLights(shader);
 		
@@ -186,7 +190,7 @@ public class Terrain extends Entity {
 				for (int z = 0; z < size; z++)
 				{
 					Color.rgba8888ToColor(c, pm.getPixel((int)(((x*Terrain.scale)/(float)scale)*(float)pm.getWidth()), (int)(((z*Terrain.scale)/(float)scale)*(float)pm.getHeight())));
-					heights[x][z] = seaFloor+((c.r+c.g+c.b)/3.0f)*range;
+					heights[x][z] = seaFloor+c.a*range;
 				}
 			}
 		}

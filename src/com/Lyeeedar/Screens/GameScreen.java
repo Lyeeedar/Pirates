@@ -76,11 +76,20 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create() {
 				
-		Texture sand = FileUtils.loadTexture("data/textures/grass.png", true);
+		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
+		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true);
+		grass.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		
+		Texture dirt = FileUtils.loadTexture("data/textures/dirt.png", true);
+		dirt.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		
+		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
+		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		Terrain terrain = new Terrain(sand, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
+		Terrain terrain = new Terrain(new Texture[]{grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
@@ -388,7 +397,7 @@ public class GameScreen extends AbstractScreen {
 		GLOBALS.SPELLS.addAll(GLOBALS.pendingSPELLS);
 		GLOBALS.pendingSPELLS.clear();
 		
-		//lights.lights.get(0).position.set(pData.position).add(0, 1, 0);
+		GLOBALS.LIGHTS.lights.get(0).position.set(pData.position).add(0, 1, 0);
 		
 		delta /= 300;
 		

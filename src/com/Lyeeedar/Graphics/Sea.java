@@ -91,7 +91,6 @@ public class Sea {
 		
 		seaShader.setUniformf("u_viewPos", position);
 		
-		seaShader.setUniformf("fog_colour", tmpVec.set(seaColour).scl(lights.ambientColour));
 		seaShader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		seaShader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
