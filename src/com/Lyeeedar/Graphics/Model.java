@@ -54,4 +54,9 @@ public final class Model implements Renderable {
 	public void dispose() {
 		mesh.dispose();
 	}
+
+	@Override
+	public Renderable copy() {
+		return new Model(mesh, primitive_type, texture, colour, type);
+	}
 }

@@ -124,7 +124,9 @@ public class Weapon extends Equipment<Weapon> {
 			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6);
 			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
 			Spell s = new Spell(pData.position.add(0, 2, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
+			s.effect.getEmitter(0).addLight(false, 1.0f, 1.0f, Color.YELLOW, false, 0, 0, 0);
 			GLOBALS.SPELLS.add(s);
+			s.effect.getEmitter(0).getLight(GLOBALS.LIGHTS);
 		}
 	}
 

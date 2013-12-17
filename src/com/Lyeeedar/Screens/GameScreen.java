@@ -37,13 +37,16 @@ import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
+import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -61,6 +64,8 @@ public class GameScreen extends AbstractScreen {
 	
 	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
+	private final Bag<Entity> veggies = new Bag<Entity>();
+	private Camera veggieCam;
 	
 	private final SpriteBatch sB = new SpriteBatch();
 	private final BitmapFont fB = new BitmapFont(true);
@@ -75,6 +80,8 @@ public class GameScreen extends AbstractScreen {
 
 	@Override
 	public void create() {
+		
+		veggieCam = new FollowCam(controls);
 				
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -89,7 +96,8 @@ public class GameScreen extends AbstractScreen {
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		Terrain terrain = new Terrain(new Texture[]{grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
+		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		Terrain terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 800.0f, 10000, -100.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
@@ -144,8 +152,6 @@ public class GameScreen extends AbstractScreen {
 		//s.create();
 		player.addRenderable(s);
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
-		CollisionRay ray = new CollisionRay();
-		ray.len = 0.5f;
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
 
@@ -216,10 +222,10 @@ public class GameScreen extends AbstractScreen {
 
 		Entity c = new Entity();
 		c.readData(pData, PositionalData.class);
-		pData.position.x = 4450;
-		pData.position.y = 245;
-		pData.position.z = 3530;
-		pData.Xrotate(180);
+		pData.position.x = 965;
+		pData.position.y = 560;
+		pData.position.z = 1090;
+		//pData.Xrotate(180);
 		//pData.lastPos.set(pData.position);
 		//pData.scale.set(20f, 20f, 20f);
 		pData.applyVelocity(0);
@@ -235,29 +241,32 @@ public class GameScreen extends AbstractScreen {
 
 		world.addEntity(c, true);
 		
-		EntityGraph teg = new EntityGraph(null, world, false);
-		for (int i = 0; i < 0; i++)
-		{
-			if (i % 10 == 0)
-			{
-				teg = new EntityGraph(null, world, false);
-			}
-			Mesh treeMesh = FileUtils.loadMesh("data/models/tree.obj");
-			Entity tree = new Entity();
-			
-			tree.readData(pData, PositionalData.class);
-			pData.position.x = ran.nextInt(1000);
-			pData.position.y = 10;
-			pData.position.z = ran.nextInt(1000);
-			//pData.lastPos.set(pData.position);
-			pData.scale.set(20f, 20f, 20f);
-			pData.calculateComposed();
-			tree.writeData(pData, PositionalData.class);
-			
-			tree.addRenderable(new Model(treeMesh, GL20.GL_TRIANGLES, sand, new Vector3(0.4f, 1, 0.5f), 1));
-			
-			teg.addEntity(tree, true);
-		}
+		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 50000, 50);
+		
+//		EntityGraph teg = new EntityGraph(null, world, false);
+//		for (int i = 0; i < 1000; i++)
+//		{
+//			if (i % 10 == 0)
+//			{
+//				teg = new EntityGraph(null, world, false);
+//			}
+//			Mesh treeMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
+//			Entity tree = new Entity();
+//			
+//			tree.readData(pData, PositionalData.class);
+//			pData.position.x = ran.nextInt(1000);
+//			pData.position.y = 10;
+//			pData.position.z = ran.nextInt(1000);
+//			//pData.lastPos.set(pData.position);
+//			pData.scale.set(10f, 10f, 10f);
+//			pData.calculateComposed();
+//			tree.writeData(pData, PositionalData.class);
+//			
+//			tree.addRenderable(new Model(treeMesh, GL20.GL_TRIANGLES, sand, new Vector3(0.4f, 1, 0.5f), 1));
+//			
+//			teg.addEntity(tree, true);
+//		}
 	}
 
 	@Override
@@ -331,6 +340,15 @@ public class GameScreen extends AbstractScreen {
 				tp.render(decalBatch);
 			}
 		}
+		
+		for (Entity v : veggies)
+		{
+			v.readData(pData, PositionalData.class);
+			if (veggieCam.frustum.pointInFrustum(pData.position))
+			{
+				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
+			}
+		}
 	}
 
 	@Override
@@ -377,6 +395,7 @@ public class GameScreen extends AbstractScreen {
 		player.readData(pData, PositionalData.class);
 				
 		((FollowCam)cam).update(pData);
+		((FollowCam)veggieCam).update(pData);
 		
 		GLOBALS.WORLD.collectDead(deadList);
 		for (EntityGraph eg : deadList) eg.remove();
@@ -396,10 +415,8 @@ public class GameScreen extends AbstractScreen {
 		
 		GLOBALS.SPELLS.addAll(GLOBALS.pendingSPELLS);
 		GLOBALS.pendingSPELLS.clear();
-		
-		GLOBALS.LIGHTS.lights.get(0).position.set(pData.position).add(0, 1, 0);
-		
-		delta /= 300;
+				
+		delta /= 300.0f;
 		
 		if (increase) 
 		{
@@ -449,20 +466,20 @@ public class GameScreen extends AbstractScreen {
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
 //		
-//		strike_time -= delta;
-//		if (strike_time < 0.0f)
-//		{
-//			lights.ambientColour.set(0.05f, 0.07f, 0.12f);
-//		}
-//		else
-//		{
-//			lights.ambientColour.set(0.1f, 0.1f, 0.7f);
-//		}
-//		
-//		if (ran.nextInt(500) == 1)
-//		{
-//			strike_time = 0.1f;
-//		}
+		strike_time -= delta*3000.0f;
+		if (strike_time < 0.0f)
+		{
+			GLOBALS.LIGHTS.ambientColour.set(0.05f, 0.07f, 0.12f);
+		}
+		else
+		{
+			GLOBALS.LIGHTS.ambientColour.set(0.1f, 0.1f, 0.7f);
+		}
+		
+		if (ran.nextInt(500) == 1)
+		{
+			strike_time = 0.1f;
+		}
 	}
 
 	@Override
@@ -486,6 +503,10 @@ public class GameScreen extends AbstractScreen {
 
 	@Override
 	public void resized(int width, int height) {
+		veggieCam.viewportWidth = width;
+		veggieCam.viewportHeight = height;
+		veggieCam.near = 2f;
+		veggieCam.far = 502f;
 	}
 
 }

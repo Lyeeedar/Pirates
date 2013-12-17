@@ -1,11 +1,15 @@
 package com.Lyeeedar.Entities;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Model;
+import com.Lyeeedar.Graphics.Renderable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
@@ -121,26 +125,66 @@ public class Terrain extends Entity {
 		shader.end();
 	}
 	
-	public float getHeight(float x, float z)
-	{
-		float height = seaFloor;
+//	public float getHeight(float x, float z)
+//	{
+//		float height = seaFloor;
+//	
+//		Vector3 tmpVec = Pools.obtain(Vector3.class);
+//		
+//		for (HeightMap hm : heightmaps)
+//		{
+//			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
+//			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
+//					tmpVec.z > 0 && tmpVec.z < 1.0f)
+//			{
+//				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]);
+//				break;
+//			}
+//		}
+//		
+//		Pools.free(tmpVec);
+//		
+//		return height;
+//	}
 	
-		Vector3 tmpVec = Pools.obtain(Vector3.class);
+	public void vegetate(List<Entity> entities, Renderable renderable, int splat, int num, int maxTries)
+	{
+		HeightMap hm = heightmaps[0];
 		
-		for (HeightMap hm : heightmaps)
+		PositionalData pData = Pools.obtain(PositionalData.class);
+		Random ran = new Random();
+		for (int i = 0; i < num; i++)
 		{
-			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
-			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
-					tmpVec.z > 0 && tmpVec.z < 1.0f)
+			Entity v = new Entity();
+			
+			v.readData(pData, PositionalData.class);
+			
+			for (int rep = 0; rep < maxTries; rep++)
 			{
-				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]);
-				break;
+				pData.position.x = hm.position.x+ran.nextInt(hm.scale);
+				pData.position.z = hm.position.z+ran.nextInt(hm.scale);
+				tmpVec.set(pData.position.x, 0, pData.position.z).sub(hm.position).scl(1.0f/hm.scale);
+				
+				int x = (int) (tmpVec.x*hm.size);
+				int z = (int) (tmpVec.z*hm.size);
+				
+				if (hm.getSplat(x, z) == splat)
+				{
+					pData.position.y = hm.heights[x][z];
+					break;
+				}
 			}
+			
+			pData.scale.set(10f, 5f, 10f);
+			pData.applyVelocity(0);
+			
+			v.writeData(pData, PositionalData.class);
+			
+			v.addRenderable(renderable.copy());
+			
+			entities.add(v);
 		}
-		
-		Pools.free(tmpVec);
-		
-		return height;
+		Pools.free(pData);
 	}
 	
 	public boolean collide(CollisionShape<?> collide)
@@ -169,6 +213,7 @@ public class Terrain extends Entity {
 		int scale;
 		int size;
 		float[][] heights;
+		byte[][] splats;
 		
 		Triangle[] triangles = {new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle()};
 		
@@ -183,16 +228,29 @@ public class Terrain extends Entity {
 			
 			Pixmap pm = ImageUtils.TextureToPixmap(texture);
 			heights = new float[size][size];
+			splats = new byte[size][size];
 			
 			Color c = new Color();
 			for (int x = 0; x < size; x++)
 			{
 				for (int z = 0; z < size; z++)
 				{
-					Color.rgba8888ToColor(c, pm.getPixel((int)(((x*Terrain.scale)/(float)scale)*(float)pm.getWidth()), (int)(((z*Terrain.scale)/(float)scale)*(float)pm.getHeight())));
+					ImageUtils.sampleColour(pm, c, ((x*Terrain.scale)/(float)scale)*(float)pm.getWidth(), ((z*Terrain.scale)/(float)scale)*(float)pm.getHeight());
+					//Color.rgba8888ToColor(c, pm.getPixel((int)(((x*Terrain.scale)/(float)scale)*(float)pm.getWidth()), (int)(((z*Terrain.scale)/(float)scale)*(float)pm.getHeight())));
 					heights[x][z] = seaFloor+c.a*range;
+					
+					splats[x][z] = 0;
+					
+					if (c.r != 0.0f) splats[x][z] = 1;
+					if (c.g != 0.0f) splats[x][z] = 2;
+					if (c.b != 0.0f) splats[x][z] = 3;
 				}
 			}
+		}
+		
+		public byte getSplat(int x, int z)
+		{
+			return splats[x][z];
 		}
 		
 		public void fillBuffers(int index, Texture[] texBuf,  float[] posBuf, float[] heightBuf, float[] scaleBuf)

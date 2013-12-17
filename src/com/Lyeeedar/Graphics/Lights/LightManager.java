@@ -28,12 +28,14 @@ public class LightManager {
 	
 	public void remove(Light light)
 	{
+		light.manager = null;
 		lights.removeValue(light, true);
 		needsSort = true;
 	}
 	
 	public void add(Light light)
 	{
+		light.manager = this;
 		lights.add(light);
 		needsSort = true;
 	}

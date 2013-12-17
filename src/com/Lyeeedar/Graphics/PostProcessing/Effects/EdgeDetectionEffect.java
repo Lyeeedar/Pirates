@@ -43,7 +43,7 @@ public class EdgeDetectionEffect extends PostProcessingEffect {
 		shader.setUniformf("u_threshold",1.3f);
 		shader.setUniformf("width", BUFFER_WIDTH/2.0f);
 		shader.setUniformf("height", BUFFER_HEIGHT/2.0f);
-		shader.setUniformf("darken", 0.2f, 0.2f, 0.2f);
+		//shader.setUniformf("darken", 0.2f, 0.2f, 0.2f);
 		shader.setUniformf("alpha_offset", -1.0f);
 				
 		batch.draw(texture, 0, 0, BUFFER_WIDTH, BUFFER_HEIGHT,

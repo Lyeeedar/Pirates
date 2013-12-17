@@ -26,9 +26,9 @@ public final class GLOBALS {
 
 	public static final float STEP = 0.5f;
 
-	public static final int MAX_SPEED_X = 60;
-	public static final int MAX_SPEED_Y = 100;
-	public static final int MAX_SPEED_Z = 60;
+	public static final int MAX_SPEED_X = 1;
+	public static final int MAX_SPEED_Y = 1;
+	public static final int MAX_SPEED_Z = 1;
 
 	public static final Vector3 DEFAULT_UP = new Vector3(0, 1, 0);
 	public static final Vector3 DEFAULT_ROTATION = new Vector3(0, 0, 1);

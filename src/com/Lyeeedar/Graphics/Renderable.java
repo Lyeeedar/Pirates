@@ -15,5 +15,7 @@ public interface Renderable {
 	
 	public void update(float delta, Camera cam, LightManager lights);
 	
+	public Renderable copy();
+	
 	public void dispose();
 }

@@ -12,6 +12,8 @@ public class Light implements Comparable<Light> {
 	
 	public int distance = 0;
 	
+	public LightManager manager;
+	
 	public Light(Vector3 position, Vector3 colour, float attenuation)
 	{
 		this.position.set(position);
@@ -31,6 +33,11 @@ public class Light implements Comparable<Light> {
 		this.position.set(position);
 		this.direction.set(direction);
 		this.colour.set(colour);
+	}
+	
+	public void delete()
+	{
+		manager.remove(this);
 	}
 
 	@Override

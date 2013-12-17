@@ -489,4 +489,9 @@ public class Sprite3D implements Renderable {
 			entry.getValue().dispose();
 		}
 	}
+
+	@Override
+	public Renderable copy() {
+		return new Sprite3D(width, height, NUM_ANIMS, NUM_FRAMES);
+	}
 }

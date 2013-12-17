@@ -81,7 +81,7 @@ public abstract class AbstractScreen implements Screen {
 		renderer.cam = cam;
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
 		
-		postprocessor.addEffect(Effect.EDGE_DETECT);
+		//postprocessor.addEffect(Effect.EDGE_DETECT);
 		postprocessor.addEffect(Effect.BLOOM);
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.BLUR);
@@ -111,6 +111,8 @@ public abstract class AbstractScreen implements Screen {
 		queueRenderables(delta, renderer, decalBatch, trailBatch);
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
+		
+		GLOBALS.LIGHTS.sort(cam.position);
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);

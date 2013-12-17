@@ -2,14 +2,17 @@ package com.Lyeeedar.Util;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  *   Collection type a bit like ArrayList but does not preserve the order
  *   of its entities, speedwise it is very good, especially suited for games.
  */
 
-public class Bag<E> implements Serializable, Iterable<E> {
+public class Bag<E> implements List<E>, Serializable {
 	
 	private static final long serialVersionUID = 9141471894142964687L;
 	
@@ -58,7 +61,8 @@ public class Bag<E> implements Serializable, Iterable<E> {
 	 * @param o element to be removed from this list, if present
 	 * @return <tt>true</tt> if this list contained the specified element
 	 */
-	public boolean remove(E o) {
+	@Override
+	public boolean remove(Object o) {
 		for (int i = 0; i < size; i++) {
 			if (o == data[i]) {
 				data[i] = data[--size]; // overwrite item to remove with last element
@@ -123,14 +127,17 @@ public class Bag<E> implements Serializable, Iterable<E> {
 	 * if needed also increases the capacity of the bag.
 	 *
 	 * @param o element to be added to this list
+	 * @return 
 	 */
-	public void add(E o) {   
+	@Override
+	public boolean add(E o) {   
 		// if size greater than data capacity increase capacity
 		if(size == data.length) {
 			grow();
 		}
 
 		data[size++] = o;
+		return true;
 	}
 
 	private void grow() {
@@ -232,4 +239,100 @@ public class Bag<E> implements Serializable, Iterable<E> {
     {
     	Arrays.sort(data);
     }
+
+	@Override
+	public void add(int index, E element) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean contains(Object o) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int indexOf(Object o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int lastIndexOf(Object o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public ListIterator<E> listIterator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ListIterator<E> listIterator(int index) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public E set(int index, E element) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int size() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public List<E> subList(int fromIndex, int toIndex) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object[] toArray() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T> T[] toArray(T[] a) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

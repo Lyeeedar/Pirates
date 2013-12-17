@@ -371,6 +371,9 @@ public class ParticleEmitter implements Serializable {
 		pos = null;
 		if (mesh != null) mesh.dispose();
 		mesh = null;
+		if (light != null) light.delete();
+		light = null;
+		created = false;
 	}
 
 	public void getLight(LightManager lightManager)

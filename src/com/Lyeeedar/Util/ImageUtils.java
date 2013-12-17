@@ -198,5 +198,33 @@ public final class ImageUtils {
 		
 		return images;
 	}
+	
+	public static void sampleColour(Pixmap pixmap, Color colour, float x, float y)
+	{
+		int top = (int)(y+0.5f);
+		int bottom = (int) (y);
+		int left = (int) (x);
+		int right = (int) (x+0.5f);
+		
+		float ax = x-left;
+		float ay = y-bottom;
+		
+		Color tl = new Color();
+		Color tr = new Color();
+		Color bl = new Color();
+		Color br = new Color();
+		
+		Color.rgba8888ToColor(tl, pixmap.getPixel(left, top));
+		Color.rgba8888ToColor(tr, pixmap.getPixel(right, top));
+		
+		Color.rgba8888ToColor(bl, pixmap.getPixel(left, bottom));
+		Color.rgba8888ToColor(br, pixmap.getPixel(right, bottom));
+		
+		tl.lerp(tr, ax);
+		bl.lerp(br, ax);
+		bl.lerp(tl, ay);
+		
+		colour.set(bl);
+	}
 
 }
