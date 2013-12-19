@@ -201,10 +201,10 @@ public final class ImageUtils {
 	
 	public static void sampleColour(Pixmap pixmap, Color colour, float x, float y)
 	{
-		int top = (int)(y+0.5f);
 		int bottom = (int) (y);
+		int top = bottom + 1;
 		int left = (int) (x);
-		int right = (int) (x+0.5f);
+		int right = left + 1;
 		
 		float ax = x-left;
 		float ay = y-bottom;

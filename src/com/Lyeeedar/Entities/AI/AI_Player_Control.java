@@ -1,15 +1,20 @@
 package com.Lyeeedar.Entities.AI;
 
+import java.util.ArrayList;
+
+import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.math.Vector3;
 
 public class AI_Player_Control extends AI_Package {
 	
@@ -21,15 +26,19 @@ public class AI_Player_Control extends AI_Package {
 	private final EquipmentData entityEquip = new EquipmentData();
 	private final StatusData entityStatus = new StatusData();
 	
-	public AI_Player_Control(Entity entity, Controls controls)
+	private final PositionalData pData = new PositionalData();
+	private final ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
+	private Box box = new Box(new Vector3(), 0.5f, 0.5f, 0.5f);
+	
+	public AI_Player_Control(Controls controls)
 	{
-		super(entity);
+		super();
 		
 		this.controls = controls;
 	}
 
 	@Override
-	public void update(float delta) {
+	public void update(float delta, Entity entity) {
 		
 		entity.readData(entityPos, PositionalData.class);
 		entity.readData(entityAnim, AnimationData.class);
@@ -71,7 +80,18 @@ public class AI_Player_Control extends AI_Package {
 				entityPos.position.y += 10;
 			}
 			
-			basicAttack(controls.leftClick(), Equipment_Slot.RARM, entityEquip);
+			if (controls.leftClick()) use(Equipment_Slot.RARM, entityEquip);
+			else 
+			{
+				stopUsing(Equipment_Slot.RARM, entityEquip);
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.E))
+			{
+				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
+				Entity e = activate(box, entityPos.graph, list, entityPos.position, pData);
+				if (e != null) e.activate(entity);
+			}
 			
 			// Update animations
 			

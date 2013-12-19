@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
+import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity;
@@ -19,11 +21,15 @@ import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
+import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
+import com.Lyeeedar.Entities.AI.Action_AISwapper;
+import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Graphics.Clouds;
 import com.Lyeeedar.Graphics.Model;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
@@ -97,7 +103,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		Terrain terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 800.0f, 10000, -100.0f)});
+		Terrain terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -100.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
@@ -120,7 +126,8 @@ public class GameScreen extends AbstractScreen {
 		//pData.scale.set(20f, 20f, 20f);
 		pData.calculateComposed();
 		ship.writeData(pData, PositionalData.class);
-		ship.setAI(new AI_Simple(ship));
+		ship.setAI(new AI_Simple());
+		ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_Simple()));
 		//ship.setAI(new AI_Player_Control(ship, controls));
 				
 		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
@@ -135,12 +142,12 @@ public class GameScreen extends AbstractScreen {
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		Weather weather = new Weather(skytex, glowtex);
+		Weather weather = new Weather(skytex, glowtex, new Clouds(FileUtils.loadTexture("data/textures/cloud.png", true)));
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
 		skybox = new SkyBox(sea, weather);
 		
 		player = new Entity();
-		player.setAI(new AI_Player_Control(player, controls));
+		player.setAI(new AI_Player_Control(controls));
 		//player.setAI(new AI_Simple(player));
 		Sprite3D s = new Sprite3D(2, 2, 4, 4);
 		s.setGender(true);
@@ -178,7 +185,7 @@ public class GameScreen extends AbstractScreen {
 		for (int i = 0; i < 0; i++)
 		{
 			Entity ge = new Entity();
-			AI_Follow ai = new AI_Follow(ge);
+			AI_Follow ai = new AI_Follow();
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
 			ge.readData(pData, PositionalData.class);
@@ -242,7 +249,7 @@ public class GameScreen extends AbstractScreen {
 		world.addEntity(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 50000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 5000, 50);
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
 //		for (int i = 0; i < 1000; i++)
@@ -276,6 +283,42 @@ public class GameScreen extends AbstractScreen {
 		batch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
 		font.draw(spriteBatch, ""+pData.position, 20, screen_height-80);
 		font.draw(spriteBatch, ""+pData.rotation, 20, screen_height-120);
+		
+		player.readData(pData, PositionalData.class);
+		box.center.set(pData.rotation).scl(2).add(pData.position);
+		Entity e = activate(box, pData.graph, elist, pData.position, pData);
+		if (e != null)
+		{
+			font.draw(spriteBatch, ""+e.getActivationAction().getDesc(), 220, 220);
+		}
+	}
+	
+	private final ArrayList<EntityGraph> elist = new ArrayList<EntityGraph>();
+	private Box box = new Box(new Vector3(), 0.5f, 0.5f, 0.5f);
+	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)
+	{
+		boolean found = GLOBALS.WORLD.collide(shape, graph, list);
+		if (!found) return null;
+		
+		float min = Float.MAX_VALUE;
+		Entity chosen = null;
+		
+		for (EntityGraph eg : list)
+		{
+			if (eg.entity != null && eg.entity.hasActivationAction())
+			{
+				eg.entity.readData(pData, PositionalData.class);
+				float dist = pos.dst2(pData.position);
+				if (dist < min) 
+				{
+					min = dist;
+					chosen = eg.entity;
+				}
+			}
+		}
+		list.clear();
+		
+		return chosen;
 	}
 
 	@Override
@@ -450,7 +493,7 @@ public class GameScreen extends AbstractScreen {
 		
 		if (GLOBALS.LIGHTS.directionalLight.direction.y > 0.1f)
 		{
-			GLOBALS.LIGHTS.ambientColour.set(1.0f, 1.0f, 1.0f);
+			GLOBALS.LIGHTS.ambientColour.set(0.6f, 0.65f, 0.8f);
 		}
 		else if (GLOBALS.LIGHTS.directionalLight.direction.y < -0.5f)
 		{
@@ -466,20 +509,20 @@ public class GameScreen extends AbstractScreen {
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
 //		
-		strike_time -= delta*3000.0f;
-		if (strike_time < 0.0f)
-		{
-			GLOBALS.LIGHTS.ambientColour.set(0.05f, 0.07f, 0.12f);
-		}
-		else
-		{
-			GLOBALS.LIGHTS.ambientColour.set(0.1f, 0.1f, 0.7f);
-		}
-		
-		if (ran.nextInt(500) == 1)
-		{
-			strike_time = 0.1f;
-		}
+//		strike_time -= delta;
+//		if (strike_time < 0.0f)
+//		{
+//			GLOBALS.LIGHTS.ambientColour.set(0.05f, 0.07f, 0.12f);
+//		}
+//		else
+//		{
+//			GLOBALS.LIGHTS.ambientColour.set(0.1f, 0.1f, 0.7f);
+//		}
+//		
+//		if (ran.nextInt(500) == 1)
+//		{
+//			strike_time = 0.1f;
+//		}
 	}
 
 	@Override

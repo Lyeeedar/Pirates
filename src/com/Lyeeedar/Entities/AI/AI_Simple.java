@@ -7,8 +7,8 @@ import com.Lyeeedar.Pirates.GLOBALS;
 
 public class AI_Simple extends AI_Package {
 
-	public AI_Simple(Entity entity) {
-		super(entity);
+	public AI_Simple() {
+		super();
 	}
 	
 	private final PositionalData entityPos = new PositionalData();
@@ -21,11 +21,8 @@ public class AI_Simple extends AI_Package {
 	}
 
 	@Override
-	public void update(float delta) {
+	public void update(float delta, Entity entity) {
 		entity.readData(entityPos, PositionalData.class);
-		
-		entityPos.forward_backward(10);
-		//entityPos.rotate(0,  1, 0, delta*100);
 		
 		entityPos.applyVelocity(delta);
 		entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);

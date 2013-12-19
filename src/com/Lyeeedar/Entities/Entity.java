@@ -9,6 +9,7 @@ import java.util.Map;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.AI.AI_Package;
+import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
@@ -51,6 +52,7 @@ public class Entity {
 	private final EntityRunnable runnable = new EntityRunnable();
 	private final EntityRenderables renderables = new EntityRenderables();
 	private CollisionShape<?> collisionShapeInternal;
+	private ActivationAction aa;
 	
 	public Entity()
 	{
@@ -58,6 +60,27 @@ public class Entity {
 		entityData.put(AnimationData.class, new AnimationData());
 		entityData.put(EquipmentData.class, new EquipmentData());
 		entityData.put(StatusData.class, new StatusData());
+	}
+	
+	public void activate(Entity e)
+	{
+		aa.activate(e, this);
+	}
+	
+	public ActivationAction getActivationAction()
+	{
+		return aa;
+	}
+	
+	public boolean hasActivationAction()
+	{
+		return aa != null;
+	}
+	
+	public void setActivationAction(ActivationAction aa)
+	{
+		this.aa = aa;
+		aa.set(this);
 	}
 	
 	public void setCollisionShapeInternal(CollisionShape<?> internal)
@@ -127,9 +150,13 @@ public class Entity {
 		this.ai = ai;
 	}
 	
+	public AI_Package getAI() {
+		return ai;
+	}
+	
 	private void update(float delta)
 	{	
-		if (ai != null) ai.update(delta);
+		if (ai != null) ai.update(delta, this);
 		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 		
 		if (collisionShapeInternal != null) 

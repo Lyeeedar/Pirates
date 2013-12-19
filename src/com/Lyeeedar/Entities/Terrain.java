@@ -108,6 +108,7 @@ public class Terrain extends Entity {
 		
 		shader.setUniformf("u_viewPos", position);
 		
+		shader.setUniformf("fog_col", lights.ambientColour);
 		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		

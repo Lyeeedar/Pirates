@@ -22,8 +22,8 @@ public class AI_Follow extends AI_Package {
 	
 	float deathCD = 1f;
 
-	public AI_Follow(Entity entity) {
-		super(entity);
+	public AI_Follow() {
+		super();
 	}
 	
 	public void setFollowTarget(Entity entity)
@@ -32,7 +32,7 @@ public class AI_Follow extends AI_Package {
 	}
 
 	@Override
-	public void update(float delta) {
+	public void update(float delta, Entity entity) {
 		
 		entity.readData(entityPos, PositionalData.class);	
 		follow.readData(followPos, PositionalData.class);
@@ -68,8 +68,13 @@ public class AI_Follow extends AI_Package {
 			}
 			
 			boolean close = entityPos.position.dst2(followPos.position) < 2f; 
-			if (!close) entityPos.forward_backward(10);
-			basicAttack(close, Equipment_Slot.RARM, entityEquip);
+			
+			if (close) use(Equipment_Slot.RARM, entityEquip);
+			else 
+			{
+				stopUsing(Equipment_Slot.RARM, entityEquip);
+				entityPos.forward_backward(10);
+			}
 			
 		}	
 		

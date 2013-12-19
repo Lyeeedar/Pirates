@@ -47,7 +47,7 @@ public class LightManager {
 			for (Light l : lights)
 			{
 				float distance = position.dst2(l.position);
-				l.distance = (int)(PRIORITY_STEPS * (1.0f / (l.attenuation*distance)));
+				l.distance = PRIORITY_STEPS- (int)(PRIORITY_STEPS * (1.0f / (l.attenuation*distance)));
 			}
 			lights.sort();
 			

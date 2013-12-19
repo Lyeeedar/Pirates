@@ -55,7 +55,7 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 		
 		shaderBody.begin();
 		shaderBody.setUniformMatrix("u_pv", cam.combined);
-		shaderBody.setUniformf("fog_colour", lights.ambientColour);
+		shaderBody.setUniformf("fog_col", lights.ambientColour);
 		shaderBody.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shaderBody.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		lights.applyLights(shaderBody);

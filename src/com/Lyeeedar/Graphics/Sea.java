@@ -44,12 +44,12 @@ public class Sea {
 		
 		numWaves = 2;
 				
-		amplitudes[0] = 5.02f;
+		amplitudes[0] = 1.02f;
 		wavelengths[0] = 100.1f;
 		speeds[0] = 5.0f;
 		directions[0] = 0.0f; directions[1] = 1.0f;
 		
-		amplitudes[1] = 10.3f;
+		amplitudes[1] = 0.3f;
 		wavelengths[1] = 173.0f;
 		speeds[1] = 15.0f;
 		directions[2] = -1.0f; directions[3] = -1.0f;
@@ -91,6 +91,7 @@ public class Sea {
 		
 		seaShader.setUniformf("u_viewPos", position);
 		
+		seaShader.setUniformf("fog_col", lights.ambientColour);
 		seaShader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		seaShader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
