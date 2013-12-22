@@ -1,5 +1,7 @@
 package com.Lyeeedar.Entities.Spells;
 
+import com.badlogic.gdx.graphics.Camera;
+
 public class SpellAI_FadeOut extends SpellAI {
 
 	float cd = 0;
@@ -11,7 +13,7 @@ public class SpellAI_FadeOut extends SpellAI {
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
 		
 		if (!done)
 		{
@@ -29,5 +31,4 @@ public class SpellAI_FadeOut extends SpellAI {
 	@Override
 	public void dispose() {
 	}
-
 }

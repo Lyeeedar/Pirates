@@ -9,6 +9,7 @@ import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector3;
 
@@ -38,7 +39,7 @@ public class SpellAI_Launcher extends SpellAI {
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
 		
 		duration -= delta;
 		
@@ -114,7 +115,8 @@ public class SpellAI_Launcher extends SpellAI {
 	}
 
 	@Override
-	public void dispose() {
+	public void dispose()
+	{
 		pData.dispose();
 		sData2.dispose();
 	}

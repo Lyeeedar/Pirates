@@ -123,7 +123,6 @@ public class PostProcessor {
 		
 		Texture texture = applyEffectChain();
 
-		//batch.setShader(shader);
 		batch.begin();
 		batch.draw(texture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
 				0, 0, texture.getWidth(), texture.getHeight(),

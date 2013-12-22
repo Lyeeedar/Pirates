@@ -10,7 +10,9 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Sound.Sound3D;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.Matrix4;
@@ -20,7 +22,6 @@ public class SpellAI_HomingBolt extends SpellAI {
 
 	public Vector3 rotation = new Vector3();
 	private Vector3 tmpVec = new Vector3();
-	//public Sphere shape = Pools.obtain(Sphere.class);
 	public Box shape = Pools.obtain(Box.class);
 	public CollisionRay ray = Pools.obtain(CollisionRay.class);
 	
@@ -36,7 +37,9 @@ public class SpellAI_HomingBolt extends SpellAI {
 	public float speed;
 	public float home;
 	
-	public SpellAI_HomingBolt(Vector3 rotation, float radius, float speed, float home)
+	private Sound3D sound;
+	
+	public SpellAI_HomingBolt(Vector3 rotation, float radius, float speed, float home, Sound3D sound)
 	{
 		this.rotation.set(rotation);
 		this.ray.ray.direction.set(rotation);
@@ -48,10 +51,14 @@ public class SpellAI_HomingBolt extends SpellAI {
 		this.home = home;
 		
 		cam = new PerspectiveCamera(45*home, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
+		
+		this.sound = sound;
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
+		
+		sound.play();
 		
 		cam.position.set(spell.position);
 		cam.direction.set(rotation);
@@ -114,10 +121,16 @@ public class SpellAI_HomingBolt extends SpellAI {
 				
 		shape.setPosition(spell.position);
 		
+		sound.setPosition(spell.position);
+		sound.update(delta, cam);
+		
 		spell.caster.readData(pData, PositionalData.class);
 		
-		if (GLOBALS.WORLD.collide(shape, pData.graph) != null) return false;
-		if (GLOBALS.WORLD.collide(ray, pData.graph) != null) return false;
+		if (GLOBALS.WORLD.collide(shape, pData.graph)!= null || GLOBALS.WORLD.collide(ray, pData.graph) != null)
+		{
+			sound.stop();
+			return false;
+		}
 		
 		return true;
 		
@@ -135,6 +148,7 @@ public class SpellAI_HomingBolt extends SpellAI {
 		Pools.free(ray);
 		pData.dispose();
 		sData2.dispose();
+		sound.dispose();
 	}
 
 }

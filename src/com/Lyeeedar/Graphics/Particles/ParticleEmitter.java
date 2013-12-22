@@ -415,15 +415,13 @@ public class ParticleEmitter implements Serializable {
 		vertices = new float[maxParticles*VERTEX_SIZE*6];
 
 		if (mesh != null) mesh.dispose();
-		mesh = new Mesh(false, maxParticles*6, 0,//maxParticles*6,
+		mesh = new Mesh(false, maxParticles*6, 0,
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 4, "a_colour"),
 				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoords"));
 		mesh.setVertices(vertices);
-		//mesh.setIndices(genIndices(maxParticles));
 		
 		emissionCD = emissionTime;
-
 	}
 
 	public void reloadTextures()
@@ -442,10 +440,10 @@ public class ParticleEmitter implements Serializable {
 			if (index > maxIndex) maxIndex = index;
 		}
 
-		topLeftTexCoords = new float[maxIndex+1][2];
-		topRightTexCoords = new float[maxIndex+1][2];
-		botLeftTexCoords = new float[maxIndex+1][2];
-		botRightTexCoords = new float[maxIndex+1][2];
+		topLeftTexCoords 	= new float[maxIndex+1][2];
+		topRightTexCoords   = new float[maxIndex+1][2];
+		botLeftTexCoords 	= new float[maxIndex+1][2];
+		botRightTexCoords   = new float[maxIndex+1][2];
 
 		for (int i = 0; i < maxIndex+1; i++)
 		{
@@ -461,23 +459,6 @@ public class ParticleEmitter implements Serializable {
 			botLeftTexCoords[i] = bl;
 			botRightTexCoords[i] = br;
 		}
-	}
-
-	public short[] genIndices(int faces)
-	{
-		short[] indices = new short[faces * 6];
-
-		for (short i = 0; i < faces; i++)
-		{
-			indices[(i*6)+0] = (short) ((i*4)+0);
-			indices[(i*6)+1] = (short) ((i*4)+1);
-			indices[(i*6)+2] = (short) ((i*4)+2);
-
-			indices[(i*6)+3] = (short) ((i*4)+1);
-			indices[(i*6)+4] = (short) ((i*4)+3);
-			indices[(i*6)+5] = (short) ((i*4)+2);
-		}
-		return indices;
 	}
 
 	public void render()

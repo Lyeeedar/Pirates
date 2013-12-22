@@ -8,7 +8,9 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Sound.Sound3D;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.Camera;
 
 public class SpellAI_Explosion extends SpellAI {
 
@@ -24,8 +26,10 @@ public class SpellAI_Explosion extends SpellAI {
 	float cd1;
 	float delta_size;
 	float delta_rate;
+	
+	Sound3D sound;
 		
-	public SpellAI_Explosion(int dam, float radius, float cd1, float delta_size, float delta_rate)
+	public SpellAI_Explosion(int dam, float radius, float cd1, float delta_size, float delta_rate, Sound3D sound)
 	{
 		shape.width = radius;
 		shape.height = radius;
@@ -36,10 +40,14 @@ public class SpellAI_Explosion extends SpellAI {
 		
 		this.delta_size = delta_size;
 		this.delta_rate = delta_rate;
+		
+		this.sound = sound;
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
+		
+		sound.play();
 		
 		cd1 -= delta;
 		spell.effect.modEmissionTime(-delta*delta_rate);
@@ -61,8 +69,18 @@ public class SpellAI_Explosion extends SpellAI {
 			eg.entity.writeData(sData, StatusData.class);
 			hit.add(eg);
 		}
-				
-		return cd1 > 0;
+		
+		sound.setPosition(spell.position);
+		sound.update(delta, cam);
+		
+		boolean alive = cd1 > 0;
+		
+		if (!alive)
+		{
+			sound.stop();
+		}
+		
+		return alive;
 		
 	}
 
@@ -71,6 +89,7 @@ public class SpellAI_Explosion extends SpellAI {
 		Pools.free(shape);
 		pData.dispose();
 		sData.dispose();
+		sound.dispose();
 	}
 
 }

@@ -69,7 +69,7 @@ public class MainMenuScreen extends AbstractScreen {
 	@Override
 	public void create() {
 		
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40), false);
 		
 		LabelStyle ls = new LabelStyle();
 		ls.font = font;
@@ -79,7 +79,7 @@ public class MainMenuScreen extends AbstractScreen {
 		tbs.fontColor = Color.BLACK;
 		
 		LabelStyle lst = new LabelStyle();
-		lst.font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40));
+		lst.font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(40), false);
 		lst.fontColor = Color.BLACK;
 		
 		Label lblTitle = new Label("Pirates! Arrrrrr!", lst);

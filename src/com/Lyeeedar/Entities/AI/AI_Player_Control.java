@@ -30,6 +30,8 @@ public class AI_Player_Control extends AI_Package {
 	private final ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
 	private Box box = new Box(new Vector3(), 0.5f, 0.5f, 0.5f);
 	
+	boolean activatecd = false;
+	
 	public AI_Player_Control(Controls controls)
 	{
 		super();
@@ -86,11 +88,16 @@ public class AI_Player_Control extends AI_Package {
 				stopUsing(Equipment_Slot.RARM, entityEquip);
 			}
 			
-			if (Gdx.input.isKeyPressed(Keys.E))
+			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
 			{
 				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
 				Entity e = activate(box, entityPos.graph, list, entityPos.position, pData);
 				if (e != null) e.activate(entity);
+				activatecd = false;
+			}
+			else if (!Gdx.input.isKeyPressed(Keys.E))
+			{
+				activatecd = true;
 			}
 			
 			// Update animations
@@ -101,7 +108,8 @@ public class AI_Player_Control extends AI_Package {
 
 				entityAnim.animate_speed = 0.05f;
 			}
-			else {
+			else
+			{
 				if (entityAnim.animate_speed != 0.1f) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 

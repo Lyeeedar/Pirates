@@ -8,8 +8,7 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 
 public abstract class CollisionShape<E extends CollisionShape<E>> {
 	
-	@SuppressWarnings("rawtypes")
-	public boolean collide(CollisionShape shape)
+	public boolean collide(CollisionShape<?> shape)
 	{
 //		//System.out.println(shape.getClass()+": "+shape.getBoundingBox()+"     " + this.getClass() + ": " + getBoundingBox());
 //		if (!checkBoundingBox(shape.getBoundingBox())) 
@@ -18,12 +17,12 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 //			return false;
 //		}
 //		
-		if (shape instanceof Sphere) return collide((Sphere) shape);
-		else if (shape instanceof Cylinder) return collide((Cylinder) shape);
-		else if (shape instanceof Box) return collide((Box) shape);
-		else if (shape instanceof Triangle) return collide((Triangle) shape);
+		if      (shape instanceof Sphere)       return collide((Sphere) shape);
+		else if (shape instanceof Cylinder)    	return collide((Cylinder) shape);
+		else if (shape instanceof Box)          return collide((Box) shape);
+		else if (shape instanceof Triangle)     return collide((Triangle) shape);
 		else if (shape instanceof CollisionRay) return collide((CollisionRay) shape);
-		else throw new RuntimeException("Invalid Shape types: \n 	This: "+this+" \n	That: "+shape);
+		else throw new RuntimeException("Invalid Shape types:\n 	This: "+this+"\n	That: "+shape);
 	}
 	
 	public abstract void calculateBoundingBox();

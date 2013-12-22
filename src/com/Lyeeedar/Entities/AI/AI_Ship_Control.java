@@ -22,6 +22,8 @@ public class AI_Ship_Control extends AI_Package {
 	
 	float speed = 0;
 
+	boolean activatecd = false;
+	
 	public AI_Ship_Control(Controls controls) {
 		super();
 		this.controls = controls;
@@ -50,9 +52,14 @@ public class AI_Ship_Control extends AI_Package {
 			else if (controls.left()) entityPos.Xrotate(delta*5);
 			else if (controls.right()) entityPos.Xrotate(-delta*5);
 						
-			if (Gdx.input.isKeyPressed(Keys.E))
+			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
 			{
 				entity.activate(null);
+				activatecd = false;
+			}
+			else if (!Gdx.input.isKeyPressed(Keys.E))
+			{
+				activatecd = true;
 			}
 		}
 		

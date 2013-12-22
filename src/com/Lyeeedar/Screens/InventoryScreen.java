@@ -123,7 +123,7 @@ public class InventoryScreen extends AbstractScreen {
 
 	@Override
 	public void create() {
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(20));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(20), false);
 
 		ts = new TreeStyle(new Skin(Gdx.files.internal("data/skins/uiskin.json")).get(TreeStyle.class));
 		ls = new LabelStyle();
@@ -232,7 +232,7 @@ public class InventoryScreen extends AbstractScreen {
 
 	public void buildLeft()
 	{
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15), false);
 		LabelStyle ls = new LabelStyle();
 		ls.font = font;
 		ls.fontColor = Color.BLACK;
@@ -369,7 +369,7 @@ public class InventoryScreen extends AbstractScreen {
 
 	private Node buildNode(String title, ITEM_TYPE type, final EquipmentData eData, final Equipment_Slot slot)
 	{
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15), false);
 		LabelStyle ls = new LabelStyle();
 		ls.font = font;
 		ls.fontColor = Color.BLACK;
@@ -397,7 +397,7 @@ public class InventoryScreen extends AbstractScreen {
 	
 	private void fillItemTable(final Table b, final Item i, final Equipment_Slot slot)
 	{
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(15), false);
 		LabelStyle ls = new LabelStyle();
 		ls.font = font;
 		ls.fontColor = Color.BLACK;
@@ -494,7 +494,7 @@ public class InventoryScreen extends AbstractScreen {
 
 	private Table getDesc(DESCRIPTION desc)
 	{
-		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(10));
+		BitmapFont font = FileUtils.getFont("data/skins/parchment.ttf", (int)GLOBALS.sclX(10), false);
 		LabelStyle ls = new LabelStyle();
 		ls.font = font;
 		ls.fontColor = Color.BLACK;

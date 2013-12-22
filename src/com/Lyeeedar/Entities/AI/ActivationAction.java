@@ -1,8 +1,9 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Util.Informable;
 
-public class ActivationAction {
+public class ActivationAction implements Informable {
 	
 	String desc;
 	Entity e;
@@ -24,6 +25,11 @@ public class ActivationAction {
 	
 	public void activate(Entity activator, Entity Activatee)
 	{
+		
+	}
+
+	@Override
+	public void inform() {
 		
 	}
 

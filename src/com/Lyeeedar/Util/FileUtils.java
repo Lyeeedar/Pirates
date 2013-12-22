@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,9 +18,25 @@ import com.badlogic.gdx.utils.Json;
 
 public class FileUtils {
 	
-	public static HashMap<String, HashMap<Integer, BitmapFont>> loadedFonts = new HashMap<String, HashMap<Integer, BitmapFont>>();
+	public static HashMap<String, Sound> loadedSounds = new HashMap<String, Sound>();
 	
-	public static BitmapFont getFont(String location, int size)
+	public static Sound loadSound(String location)
+	{
+		if (loadedSounds.containsKey(location))
+		{
+			return loadedSounds.get(location);
+		}
+		
+		Sound s = Gdx.audio.newSound(Gdx.files.internal(location));
+		
+		loadedSounds.put(location, s);
+		
+		return s;
+	}
+	
+	public static HashMap<String, HashMap<Integer, BitmapFont[]>> loadedFonts = new HashMap<String, HashMap<Integer, BitmapFont[]>>();
+	
+	public static BitmapFont getFont(String location, int size, boolean flip)
 	{
 		if (!Gdx.files.internal(location).exists()) {
 			throw new RuntimeException("Font "+location+" does not exist!");
@@ -28,27 +45,45 @@ public class FileUtils {
 		BitmapFont font = null;
 		if (loadedFonts.containsKey(location))
 		{
-			HashMap<Integer, BitmapFont> hash = loadedFonts.get(location);
+			HashMap<Integer, BitmapFont[]> hash = loadedFonts.get(location);
 			if (hash.containsKey(size))
 			{
-				font = hash.get(size);
+				BitmapFont[] block = hash.get(size);
+				if (flip) font = block[1];
+				else font = block[0];
+				
+				if (font == null)
+				{
+					FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(location));
+					font = generator.generateFont(size, FreeTypeFontGenerator.DEFAULT_CHARS, flip);
+					generator.dispose();
+					
+					if (flip) block[1] = font;
+					else block[0] = font;
+				}
 			}
 			else
 			{
 				FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(location));
-				font = generator.generateFont(size);
+				font = generator.generateFont(size, FreeTypeFontGenerator.DEFAULT_CHARS, flip);
 				generator.dispose();
-				hash.put(size, font);
+				BitmapFont[] block = new BitmapFont[2];
+				if (flip) block[1] = font;
+				else block[0] = font;
+				hash.put(size, block);
 			}
 		}
 		else
 		{
-			HashMap<Integer, BitmapFont> hash = new HashMap<Integer, BitmapFont>();
+			HashMap<Integer, BitmapFont[]> hash = new HashMap<Integer, BitmapFont[]>();
 			loadedFonts.put(location, hash);
 			FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(location));
-			font = generator.generateFont(size);
+			font = generator.generateFont(size, FreeTypeFontGenerator.DEFAULT_CHARS, flip);
 			generator.dispose();
-			hash.put(size, font);
+			BitmapFont[] block = new BitmapFont[2];
+			if (flip) block[1] = font;
+			else block[0] = font;
+			hash.put(size, block);
 		}
 		return font;
 	}

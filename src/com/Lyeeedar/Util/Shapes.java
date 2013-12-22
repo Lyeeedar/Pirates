@@ -377,7 +377,7 @@ public class Shapes {
 		Vector3 tmp = Pools.obtain(Vector3.class);
 		for (int y = 0; y < ys; y++)
 		{
-			float alpha = 1.0f - (float)y / (float)ys;//1.0f / (float) y;
+			float alpha = 1.0f - (float)y / (float)ys;
 			tmp.set(vmin).lerp(vmax, alpha);
 			
 			ypoint[y] = alpha * (frustum.planePoints[e].z - frustum.planePoints[s].z) + yoffset;

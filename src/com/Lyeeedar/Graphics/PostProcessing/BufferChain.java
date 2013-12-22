@@ -56,7 +56,7 @@ public class BufferChain {
 	
 	public Texture getFinalImage()
 	{
-		return buffers[currentBuffer].getColorBufferTexture();
+		return texture;
 	}
 	
 	private void nextBuffer()

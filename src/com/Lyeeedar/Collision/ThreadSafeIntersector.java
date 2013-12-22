@@ -312,6 +312,8 @@ public class ThreadSafeIntersector {
 				(box1.center.z+box1.depth) > (box2.center.z-box2.depth)    // 1.maxz > 2.minz
 				);
 	}
+	
+	// {{{ lol
 
 	/**
 	 * Source: http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox2.txt
@@ -629,6 +631,8 @@ public class ThreadSafeIntersector {
 		Pools.free(e2);
 		return false;
 	}
+	
+	// }}}
 
 	public static boolean collide(Box box1, CollisionRay ray1)
 	{

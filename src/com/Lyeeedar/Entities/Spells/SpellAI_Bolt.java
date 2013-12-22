@@ -1,41 +1,40 @@
 package com.Lyeeedar.Entities.Spells;
 
-import java.util.ArrayList;
-
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
-import com.Lyeeedar.Collision.Sphere;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Entities.Entity.StatusData;
-import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Sound.Sound3D;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector3;
 
 public class SpellAI_Bolt extends SpellAI {
 
 	public Vector3 velocity = new Vector3();
 	private Vector3 tmpVec = new Vector3();
-	//public Sphere shape = Pools.obtain(Sphere.class);
 	public Box shape = Pools.obtain(Box.class);
 	public CollisionRay ray = Pools.obtain(CollisionRay.class);
 	
-	private ArrayList<EntityGraph> entities = new ArrayList<EntityGraph>();
 	private PositionalData pData = new PositionalData();
-	private StatusData sData = new StatusData();
 	
-	public SpellAI_Bolt(Vector3 velocity, float radius)
+	private Sound3D sound;
+	
+	public SpellAI_Bolt(Vector3 velocity, float radius, Sound3D sound)
 	{
 		this.velocity.set(velocity);
 		this.ray.ray.direction.set(velocity).nor();
-		//this.sphere.radius = radius;
 		shape.width = radius;
 		shape.height = radius;
 		shape.depth = radius;
+		
+		this.sound = sound;
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
+		
+		sound.play();
 		
 		tmpVec.set(velocity).scl(delta);
 		
@@ -46,10 +45,16 @@ public class SpellAI_Bolt extends SpellAI {
 				
 		shape.setPosition(spell.position);
 		
+		sound.setPosition(spell.position);
+		sound.update(delta, cam);
+		
 		spell.caster.readData(pData, PositionalData.class);
 		
-		if (GLOBALS.WORLD.collide(shape, pData.graph) != null) return false;
-		if (GLOBALS.WORLD.collide(ray, pData.graph) != null) return false;
+		if (GLOBALS.WORLD.collide(shape, pData.graph) != null || GLOBALS.WORLD.collide(ray, pData.graph) != null)
+		{
+			sound.stop();
+			return false;
+		}
 		
 		return true;
 		
@@ -60,7 +65,7 @@ public class SpellAI_Bolt extends SpellAI {
 		Pools.free(shape);
 		Pools.free(ray);
 		pData.dispose();
-		sData.dispose();
+		sound.dispose();
 	}
 
 }

@@ -24,6 +24,7 @@ import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.AI.Action_AISwapper;
+import com.Lyeeedar.Entities.AI.Action_Dialogue;
 import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
@@ -34,6 +35,7 @@ import com.Lyeeedar.Graphics.Model;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
+import com.Lyeeedar.Graphics.Sprite2D;
 import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
@@ -44,9 +46,13 @@ import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.Bag;
+import com.Lyeeedar.Util.Dialogue;
+import com.Lyeeedar.Util.Dialogue.DialogueAction;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
+import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -56,6 +62,8 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Vector3;
@@ -181,8 +189,53 @@ public class GameScreen extends AbstractScreen {
 		
 		world.addEntity(player, false);
 		
+		Entity npc = new Entity();
+		npc.setAI(new AI_Simple());
+		Object[] actionTree = {
+			DialogueAction.TEXT3D, "Test dialogue 123 This is Action 0. Text 3D. Advancing.", 1 ,
+			new Object[]{ DialogueAction.WAIT, 5, 
+			new Object[]{ DialogueAction.TEXT3D, "Waited 5 seconds. New dialogue shown.", 1 ,
+			new Object[]{ DialogueAction.WAIT, 5,
+			new Object[]{ DialogueAction.TEXT2D, "Now then, what do you want to do? 1: Stuff, 2: other stuff. Choose.", 
+			new Object[]{ DialogueAction.INPUT, 
+					Keys.NUM_1, 
+						new Object[]{ DialogueAction.TEXT3D, "You chose 1.", 1 ,
+						new Object[]{ DialogueAction.INPUT, Keys.E, null
+						}
+						},
+					Keys.NUM_2,
+						new Object[]{ DialogueAction.TEXT3D, "You chose 2.", 1 ,
+						new Object[]{ DialogueAction.INPUT, Keys.E, null
+						}
+						},
+			}
+			}
+			}
+			}
+			}
+		};
+		npc.setActivationAction(new Action_Dialogue("BOOOBIES", new Dialogue(new Entity[]{player, npc}, actionTree)));
+		s = new Sprite3D(2, 2, 4, 4);
+		s.setGender(false);
+		s.addAnimation("move", "move");
+		npc.addRenderable(s);
+		//npc.addRenderable(new Sprite2D(Decal.newDecal(new TextureRegion(ImageUtils.drawText(sB, fB, "I am an NPC with Boobies loool look at them theyre all big and stuff :p")))));
+		npc.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
+		npc.readData(pData, PositionalData.class);
+		pData.position.set(-4, 12, 0);
+		//pData.position.set(4500, 290, 3500);
+		npc.writeData(pData, PositionalData.class);
+		npc.readData(sData, StatusData.class);
+		sData.factions.add("Player");
+		npc.writeData(sData, StatusData.class);
+		npc.readData(eData, EquipmentData.class);
+		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
+		npc.writeData(eData, EquipmentData.class);
+		world.addEntity(npc, false);
+		
 		Random ran = new Random();
-		for (int i = 0; i < 0; i++)
+		for (int i = 0; i < 40; i++)
 		{
 			Entity ge = new Entity();
 			AI_Follow ai = new AI_Follow();
@@ -229,9 +282,9 @@ public class GameScreen extends AbstractScreen {
 
 		Entity c = new Entity();
 		c.readData(pData, PositionalData.class);
-		pData.position.x = 965;
-		pData.position.y = 560;
-		pData.position.z = 1090;
+		pData.position.x = 4500;
+		pData.position.y = 280;
+		pData.position.z = 3500;
 		//pData.Xrotate(180);
 		//pData.lastPos.set(pData.position);
 		//pData.scale.set(20f, 20f, 20f);
@@ -290,6 +343,11 @@ public class GameScreen extends AbstractScreen {
 		if (e != null)
 		{
 			font.draw(spriteBatch, ""+e.getActivationAction().getDesc(), 220, 220);
+		}
+		
+		for (Dialogue d : GLOBALS.DIALOGUES)
+		{
+			d.queue2D(batch);
 		}
 	}
 	
@@ -392,6 +450,11 @@ public class GameScreen extends AbstractScreen {
 				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
 			}
 		}
+		
+		for (Dialogue d : GLOBALS.DIALOGUES)
+		{
+			d.queue3D(decalBatch);
+		}
 	}
 
 	@Override
@@ -448,7 +511,7 @@ public class GameScreen extends AbstractScreen {
 		while(itr.hasNext())
 		{
 			Spell s = itr.next();
-			boolean alive = s.update(delta);
+			boolean alive = s.update(delta, cam);
 			if (!alive || s.position.dst2(cam.position) > GLOBALS.FOG_MAX*GLOBALS.FOG_MAX)
 			{
 				itr.remove();
@@ -458,6 +521,11 @@ public class GameScreen extends AbstractScreen {
 		
 		GLOBALS.SPELLS.addAll(GLOBALS.pendingSPELLS);
 		GLOBALS.pendingSPELLS.clear();
+		
+		for (Dialogue d : GLOBALS.DIALOGUES)
+		{
+			d.update(delta, cam);
+		}
 				
 		delta /= 300.0f;
 		

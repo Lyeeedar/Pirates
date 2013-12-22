@@ -11,12 +11,14 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.utils.Array;
 
 public final class ImageUtils {
@@ -116,22 +118,32 @@ public final class ImageUtils {
 		return np;
 	}
 	
-	public static Decal getTextDecal(float width, float height, SpriteBatch sB, BitmapFont font, String... text)
+	public static Decal getTextDecal(float width, float height, SpriteBatch sB, BitmapFont font, NinePatch np, String... text)
 	{
-		Texture tex = drawText(sB, font, text);
+		Texture tex = drawText(sB, font, np, text);
 		
 		TextureRegion region = new TextureRegion(tex, tex.getWidth(), 0, -tex.getWidth(), tex.getHeight());
+		
+		if (width == 0)
+		{
+			width = 0.25f * text[0].length();
+		}
+		if (height == 0)
+		{
+			height = 0.8f;
+		}
 		
 		Decal decal = Decal.newDecal(width, height, region, true);
 		
 		return decal;
 	}
 	
-	public static Texture drawText(SpriteBatch sB, BitmapFont font, String... text)
+	public static Texture drawText(SpriteBatch sB, BitmapFont font, NinePatch np, String... text)
 	{
 		float height = font.getLineHeight() * (text.length+1);
-		
 		float width = 0;
+		float xoffset = 0;
+		float yoffset = 0;
 		
 		float temp;
 		for (int i = 0; i < text.length; i++)
@@ -139,6 +151,15 @@ public final class ImageUtils {
 			temp = font.getBounds(text[i]).width;
 			
 			if (temp > width) width = temp;
+		}
+		
+		if (np != null)
+		{
+			width += np.getLeftWidth()+np.getRightWidth();
+			xoffset = np.getLeftWidth();
+			
+			height += np.getBottomHeight()+np.getTopHeight();
+			yoffset = np.getTopHeight();
 		}
 		
 		FrameBuffer fB = new FrameBuffer(Format.RGBA4444, (int) width, (int) height, false);
@@ -150,9 +171,14 @@ public final class ImageUtils {
 		sB.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 		sB.begin();
 		
+		if (np != null)
+		{
+			np.draw(sB, 0, 0, width, height);
+		}
+		
 		for (int line = 0; line < text.length; line++)
 		{
-			font.draw(sB, text[line], 0, (line+1)*font.getLineHeight());
+			font.draw(sB, text[line], xoffset, yoffset+(line+1)*font.getLineHeight());
 		}
 		sB.end();
 	

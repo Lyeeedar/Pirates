@@ -113,7 +113,7 @@ public class EntityGraph {
 				if (mag > 1.0f) mag = 1.0f;
 				
 				entity.readData(pData, Entity.PositionalData.class);
-				Decal decal = ImageUtils.getTextDecal(0.25f*GLOBALS.numDigits(sData.DAMAGED), 0.8f, sB, font, ""+sData.DAMAGED);
+				Decal decal = ImageUtils.getTextDecal(0.25f*GLOBALS.numDigits(sData.DAMAGED), 0.8f, sB, font, null, ""+sData.DAMAGED);
 				list.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0), new Vector3(1.0f, mag, 0.0f)));
 				sData.DAMAGED = 0;
 				entity.writeData(sData, Entity.StatusData.class);

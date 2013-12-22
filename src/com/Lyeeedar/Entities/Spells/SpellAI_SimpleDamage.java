@@ -8,6 +8,7 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.Camera;
 
 public class SpellAI_SimpleDamage extends SpellAI {
 
@@ -29,7 +30,7 @@ public class SpellAI_SimpleDamage extends SpellAI {
 	}
 	
 	@Override
-	public boolean update(float delta, Spell spell) {
+	public boolean update(float delta, Spell spell, Camera cam) {
 		
 		shape.setPosition(spell.position);
 		spell.caster.readData(pData, PositionalData.class);
@@ -52,5 +53,4 @@ public class SpellAI_SimpleDamage extends SpellAI {
 		pData.dispose();
 		sData.dispose();
 	}
-
 }
