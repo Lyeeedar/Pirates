@@ -54,12 +54,9 @@ public class Entity {
 	private CollisionShape<?> collisionShapeInternal;
 	private ActivationAction aa;
 	
-	public Entity()
+	public Entity(EntityData<?>... data)
 	{
-		entityData.put(PositionalData.class, new PositionalData());
-		entityData.put(AnimationData.class, new AnimationData());
-		entityData.put(EquipmentData.class, new EquipmentData());
-		entityData.put(StatusData.class, new StatusData());
+		for (EntityData<?> d : data) entityData.put((Class<? extends EntityData<?>>) d.getClass(),  d);
 	}
 	
 	public void activate(Entity e)
@@ -121,10 +118,13 @@ public class Entity {
 	
 	public void setGraph(EntityGraph eg)
 	{
-		PositionalData pd = readOnlyRead(PositionalData.class);
-		synchronized(pd)
+		if (entityData.containsKey(PositionalData.class))
 		{
-			pd.graph = eg;
+			PositionalData pd = readOnlyRead(PositionalData.class);
+			synchronized(pd)
+			{
+				pd.graph = eg;
+			}
 		}
 	}
 	
@@ -157,27 +157,43 @@ public class Entity {
 	public void update(float delta)
 	{	
 		if (ai != null) ai.update(delta, this);
-		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
+		if (entityData.containsKey(EquipmentData.class)) ((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 		
 		if (collisionShapeInternal != null) 
 		{
-			PositionalData pd = readOnlyRead(PositionalData.class);
-			
-			CollisionShape<?> shape = collisionShapeInternal;
-			synchronized(pd)
+			if (entityData.containsKey(PositionalData.class))
 			{
-				shape.setPosition(pd.position);
-				shape.setRotation(pd.rotation);
-				shape.setScaling(pd.scale);
+				PositionalData pd = readOnlyRead(PositionalData.class);
+				
+				CollisionShape<?> shape = collisionShapeInternal;
+				synchronized(pd)
+				{
+					shape.setPosition(pd.position);
+					shape.setRotation(pd.rotation);
+					shape.setScaling(pd.scale);
+				}
+				shape.reset();
+				shape.calculateBoundingBox();
 			}
-			shape.reset();
-			shape.calculateBoundingBox();
+			else if (entityData.containsKey(MinimalPositionalData.class))
+			{
+				MinimalPositionalData mpData = readOnlyRead(MinimalPositionalData.class);
+				
+				CollisionShape<?> shape = collisionShapeInternal;
+				synchronized(mpData)
+				{
+					shape.setPosition(mpData.position);
+				}
+				shape.reset();
+				shape.calculateBoundingBox();
+			}
 		}
 	}
 	
 	public <E extends EntityData<E>> void writeData(E data, Class<E> type)
 	{
-		@SuppressWarnings("unchecked")
+		if (!entityData.containsKey(type)) return;
+		
 		E target = (E) entityData.get(type);
 		synchronized(target)
 		{
@@ -186,7 +202,8 @@ public class Entity {
 	}	
 	public <E extends EntityData<E>> E readData(E target, Class<E> type)
 	{
-		@SuppressWarnings("unchecked")
+		if (!entityData.containsKey(type)) return null;
+		
 		E data = (E) entityData.get(type);
 		synchronized(data)
 		{
@@ -195,9 +212,11 @@ public class Entity {
 		
 		return target;
 	}
-	@SuppressWarnings("unchecked")
-	private <E extends EntityData<E>> E readOnlyRead(Class<E> type)
+
+	public <E extends EntityData<E>> E readOnlyRead(Class<E> type)
 	{
+		if (!entityData.containsKey(type)) return null;
+		
 		return (E) entityData.get(type);
 	}
 	
@@ -346,6 +365,29 @@ public class Entity {
 			
 		}
 	}
+	
+	public static class MinimalPositionalData implements EntityData<MinimalPositionalData>
+	{
+		public final Vector3 position = new Vector3();
+		
+		@Override
+		public void write(MinimalPositionalData data) {
+			position.set(data.position);
+		}
+
+		@Override
+		public void read(MinimalPositionalData target) {
+			target.write(this);
+		}
+
+		@Override
+		public void dispose() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
 	public static class PositionalData implements EntityData<PositionalData>
 	{
 		public final Vector3 lastPos = new Vector3();

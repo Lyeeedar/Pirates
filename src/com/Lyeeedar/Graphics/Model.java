@@ -1,6 +1,7 @@
 package com.Lyeeedar.Graphics;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
@@ -21,6 +22,7 @@ public final class Model implements Renderable {
 	public final Matrix4 model_matrix = new Matrix4();
 	
 	private final PositionalData pData = new PositionalData();
+	private final MinimalPositionalData mpData = new MinimalPositionalData();
 	
 	public Model(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
 	{
@@ -40,9 +42,15 @@ public final class Model implements Renderable {
 	@Override
 	public void set(Entity source) {
 		
-		source.readData(pData, PositionalData.class);
-		
-		model_matrix.set(pData.composed);
+		if (source.readData(pData, PositionalData.class) != null)
+		{
+			model_matrix.set(pData.composed);
+		}
+		else
+		{
+			source.readData(mpData, MinimalPositionalData.class);
+			model_matrix.setToTranslation(mpData.position);
+		}
 	}
 
 	@Override

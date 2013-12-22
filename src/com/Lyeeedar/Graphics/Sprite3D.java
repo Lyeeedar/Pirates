@@ -432,7 +432,7 @@ public class Sprite3D implements Renderable {
 		{
 			direction = 0;
 		}
-
+		
 		decal.setRotation(cam.direction, GLOBALS.DEFAULT_UP);
 		decal.setPosition(position.x, position.y, position.z);
 

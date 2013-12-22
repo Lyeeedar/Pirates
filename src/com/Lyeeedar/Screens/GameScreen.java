@@ -15,6 +15,7 @@ import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
+import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
@@ -134,7 +135,7 @@ public class GameScreen extends AbstractScreen {
 		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
         Mesh shipModel = FileUtils.loadMesh("data/models/boat.obj");
 		
-		Entity ship = new Entity();
+		Entity ship = new Entity(new PositionalData());
 		ship.readData(pData, PositionalData.class);
 		//pData.position.x = 100;
 		//pData.lastPos.set(pData.position);
@@ -161,7 +162,7 @@ public class GameScreen extends AbstractScreen {
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
 		skybox = new SkyBox(sea, weather);
 		
-		player = new Entity();
+		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		player.setAI(new AI_Player_Control(controls));
 		//player.setAI(new AI_Simple(player));
 		Sprite3D s = new Sprite3D(2, 2, 4, 4);
@@ -196,7 +197,7 @@ public class GameScreen extends AbstractScreen {
 		
 		world.add(player, false);
 		
-		Entity npc = new Entity();
+		Entity npc = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		npc.setAI(new AI_Simple());
 		Object[] actionTree = {
 			DialogueAction.TEXT3D, "Test dialogue 123 This is Action 0. Text 3D. Advancing.", 1 ,
@@ -244,7 +245,7 @@ public class GameScreen extends AbstractScreen {
 		Random ran = new Random();
 		for (int i = 0; i < 40; i++)
 		{
-			Entity ge = new Entity();
+			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			AI_Follow ai = new AI_Follow();
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
@@ -287,7 +288,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Mesh cModel = FileUtils.loadMesh("data/models/Bastion.obj");
 
-		Entity c = new Entity();
+		Entity c = new Entity(new PositionalData());
 		c.readData(pData, PositionalData.class);
 		pData.position.x = 4500;
 		pData.position.y = 280;
@@ -309,7 +310,7 @@ public class GameScreen extends AbstractScreen {
 		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 100000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 200000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		ego.divide(3);
 		for (Entity v : veggies)
