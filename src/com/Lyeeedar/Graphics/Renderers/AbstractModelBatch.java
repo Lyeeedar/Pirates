@@ -86,14 +86,13 @@ public abstract class AbstractModelBatch{
 			private static final int PRIORITY_DISCRETE_STEPS = 256;
 			Mesh mesh;
 			final Matrix4 model_matrix = new Matrix4();
-			final Matrix3 normal_matrix = new Matrix3();
 			
 			int type;
 
 			int distance;			
 			int primitiveType;
 			
-			final Vector3 colour = new Vector3();
+			final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 			Texture texture;
 			int textureHash;
 			
@@ -104,11 +103,11 @@ public abstract class AbstractModelBatch{
 				this.type = type;
 				this.mesh = mesh;
 				this.primitiveType = primitiveType;
-				this.colour.set(colour);
+				if (colour != null) this.colour.set(colour);
+				else this.colour.set(1.0f, 1.0f, 1.0f);
 				this.texture = texture;
 				textureHash = texture.hashCode();
 				this.model_matrix.set(model_matrix);
-				this.normal_matrix.set(model_matrix);
 				
 				tmp.set(0, 0, 0).mul(model_matrix);
 				distance = (int)(PRIORITY_DISCRETE_STEPS * tmp.dst2(cam.position));

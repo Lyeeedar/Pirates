@@ -6,7 +6,9 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Pools;
 
 public class CellShadingModelBatch extends AbstractModelBatch {
 	
@@ -59,6 +61,8 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 		shaderBody.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shaderBody.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		lights.applyLights(shaderBody);
+		
+		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
 
 		for (int i = drawableManager.drawables.size; --i >= 0;) {
 
@@ -67,7 +71,8 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 			shaderBody.setUniformf("u_viewPos", cam.position);
 
 			shaderBody.setUniformMatrix("u_mm", drawable.model_matrix);
-			shaderBody.setUniformMatrix("u_nm", drawable.normal_matrix);
+			normal_matrix.set(drawable.model_matrix);
+			shaderBody.setUniformMatrix("u_nm", normal_matrix);
 
 			if (textureHash != drawable.textureHash)
 			{
@@ -80,6 +85,8 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 
 			drawable.mesh.render(shaderBody, drawable.primitiveType);
 		}
+		
+		Pools.free(normal_matrix);
 
 		shaderBody.end();
 		textureHash = 0;

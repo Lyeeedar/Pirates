@@ -310,7 +310,7 @@ public class GameScreen extends AbstractScreen {
 		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 200000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, null, 1), 1, 200000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		ego.divide(3);
 		for (Entity v : veggies)

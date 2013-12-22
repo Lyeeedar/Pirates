@@ -21,9 +21,6 @@ public final class Model implements Renderable {
 	public final int type;
 	public final Matrix4 model_matrix = new Matrix4();
 	
-	private final PositionalData pData = new PositionalData();
-	private final MinimalPositionalData mpData = new MinimalPositionalData();
-	
 	public Model(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
 	{
 		this.mesh = mesh;
@@ -42,14 +39,13 @@ public final class Model implements Renderable {
 	@Override
 	public void set(Entity source) {
 		
-		if (source.readData(pData, PositionalData.class) != null)
+		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			model_matrix.set(pData.composed);
+			model_matrix.set(source.readOnlyRead(PositionalData.class).composed);
 		}
 		else
 		{
-			source.readData(mpData, MinimalPositionalData.class);
-			model_matrix.setToTranslation(mpData.position);
+			model_matrix.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position);
 		}
 	}
 
