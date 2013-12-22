@@ -16,12 +16,13 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 //			//System.out.println("fail");
 //			return false;
 //		}
-//		
+		
 		if      (shape instanceof Sphere)       return collide((Sphere) shape);
 		else if (shape instanceof Cylinder)    	return collide((Cylinder) shape);
 		else if (shape instanceof Box)          return collide((Box) shape);
 		else if (shape instanceof Triangle)     return collide((Triangle) shape);
 		else if (shape instanceof CollisionRay) return collide((CollisionRay) shape);
+		else if (shape instanceof SymbolicMesh) return collide((SymbolicMesh) shape);
 		else throw new RuntimeException("Invalid Shape types:\n 	This: "+this+"\n	That: "+shape);
 	}
 	
@@ -35,6 +36,7 @@ public abstract class CollisionShape<E extends CollisionShape<E>> {
 	public abstract boolean collide(Box rect);
 	public abstract boolean collide(Triangle tri);
 	public abstract boolean collide(CollisionRay ray);
+	public abstract boolean collide(SymbolicMesh mesh);
 	
 	public abstract void setScaling(Vector3 scale);
 	public abstract void setPosition(Vector3 position);

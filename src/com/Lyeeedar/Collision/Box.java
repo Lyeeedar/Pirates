@@ -208,9 +208,16 @@ public class Box extends CollisionShape<Box> {
 	public BoundingBox getBoundingBox(BoundingBox bb) {
 		
 		bb.min.set(center).sub(width, height, depth);
-		bb.min.set(center).add(width, height, depth);
+		bb.max.set(center).add(width, height, depth);
+		
+		bb.set(bb);
 		
 		return bb;
+	}
+
+	@Override
+	public boolean collide(SymbolicMesh mesh) {
+		return mesh.collide(this);
 	}
 
 }

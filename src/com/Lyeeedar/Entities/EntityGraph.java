@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
+import com.Lyeeedar.Collision.EntityGraphOcttree;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -31,9 +32,10 @@ public class EntityGraph {
 	public HashSet<EntityGraph> children = new HashSet<EntityGraph>();
 	private final Entity.PositionalData pData = new  Entity.PositionalData();
 	private final Entity.StatusData sData = new  Entity.StatusData();
-	public final Box bounds = new Box();
-	public final BoundingBox bb = new BoundingBox();
 	public boolean walkable = false;
+	BoundingBox bb = new BoundingBox();
+	
+	public EntityGraphOcttree octtree;
 	
 	public EntityGraph(Entity entity, EntityGraph parent, boolean walkable)
 	{
@@ -46,8 +48,16 @@ public class EntityGraph {
 	
 	public void remove()
 	{
-		parent.children.remove(this);
-		for (EntityGraph graph : children) graph.insert(parent);
+		if (parent != null) 
+		{
+			parent.children.remove(this);
+			for (EntityGraph graph : children) graph.insert(parent);
+		}
+		else
+		{
+			octtree.remove(this);
+			for (EntityGraph graph : children) octtree.insert(graph);
+		}
 		
 		pData.dispose();
 		if (entity != null) entity.dispose();
@@ -55,8 +65,15 @@ public class EntityGraph {
 	
 	public void pop()
 	{
-		parent.children.remove(this);
-		parent = null;
+		if (parent != null)
+		{
+			parent.children.remove(this);
+			parent = null;
+		}
+		else
+		{
+			octtree.pop(this);
+		}
 	}
 	
 	public void insert(EntityGraph parent)
@@ -69,9 +86,22 @@ public class EntityGraph {
 	
 	public void popAndInsert(EntityGraph parent)
 	{
-		if (this.parent == null || this.parent.equals(parent) || !parent.walkable) return;
+		if (parent.equals(this.parent) || !parent.walkable) return;
 		pop();
 		insert(parent);
+	}
+	
+	public void insert(EntityGraphOcttree ego)
+	{		
+		ego.insert(this);
+	}
+	
+	public void popAndInsert(EntityGraphOcttree ego)
+	{
+		if (this.octtree != null && this.octtree.equals(ego)) return;
+		
+		pop();
+		insert(ego);
 	}
 	
 	public void collectDead(List<EntityGraph> list)
@@ -89,12 +119,11 @@ public class EntityGraph {
 
 	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
 	{
-		if (entity != null 
-				//&&
-				//cam.frustum.sphereInFrustum(bounds.center, Math.max(bounds.width, Math.max(bounds.height, bounds.depth)))
-				//cam.frustum.boundsInFrustum(bounds.getBoundingBox(bb))
-				) 
+		if (entity != null) 
+		{
+			if (!cam.frustum.boundsInFrustum(entity.getCollisionShapeInternal().getBoundingBox(bb))) return;
 			entity.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+		}
 		
 		for (EntityGraph eg : children) {
 			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
@@ -154,14 +183,6 @@ public class EntityGraph {
 	{
 		if (graph.equals(this)) return false;
 		
-//		CollisionShape<?> s2 = source.copy();
-//		if (!s2.collide(bounds))
-//		{
-//			s2.free();
-//			return false;
-//		}
-//		s2.free();
-		
 		boolean collide = false;
 		if (entity != null && entity.collide(source)) 
 		{
@@ -181,14 +202,6 @@ public class EntityGraph {
 	{
 		if (graph.equals(this)) return null;
 		
-//		CollisionShape<?> s2 = source.copy();
-//		if (!s2.collide(bounds))
-//		{
-//			s2.free();
-//			return null;
-//		}
-//		s2.free();
-		
 		EntityGraph collide = null;
 		if (entity != null && entity.collide(source)) collide = this;
 		
@@ -204,14 +217,6 @@ public class EntityGraph {
 	public EntityGraph collideWalkables(CollisionShape<?> source, EntityGraph graph)
 	{
 		if (!walkable || graph.equals(this)) return null;
-		
-//		CollisionShape<?> s2 = source.copy();
-//		if (!s2.collide(bounds))
-//		{
-//			s2.free();
-//			return null;
-//		}
-//		s2.free();
 		
 		EntityGraph collide = null;
 		if (entity != null && entity.collide(source)) collide = this;
@@ -265,42 +270,6 @@ public class EntityGraph {
 		pData.lastRot2.y = 0; pData.lastRot2.nor();
 		pData.rotation.y = 0; pData.rotation.nor();
 		mat.setToRotation(pData.lastRot2, pData.rotation);
-	}
-	
-	public boolean recalculateBounds()
-	{
-		Iterator<EntityGraph> itr = children.iterator();
-		while (itr.hasNext())
-		{
-			EntityGraph eg = itr.next();
-			if (!eg.recalculateBounds()) 
-			{
-				itr.remove();
-			}
-		}
-		
-		if (entity != null) entity.getCollisionShapeInternal().getBoundingBox(bb);
-		else if (children.size() == 0) 
-		{
-			return false;
-		}
-		else
-		{
-			children.iterator().next().bounds.getBoundingBox(bb);
-		}
-		
-		BoundingBox bb2 = Pools.obtain(BoundingBox.class);
-		for (EntityGraph eg : children) 
-		{
-			eg.bounds.getBoundingBox(bb2);
-			bb.ext(bb2.min);
-			bb.ext(bb2.max);
-		}
-		
-		bounds.set(bb.min, bb.max);
-		
-		Pools.free(bb2);
-		return true;
 	}
 
 }

@@ -10,6 +10,7 @@ import java.util.Random;
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
+import com.Lyeeedar.Collision.EntityGraphOcttree;
 import com.Lyeeedar.Collision.SymbolicMesh;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity;
@@ -21,6 +22,7 @@ import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
+import com.Lyeeedar.Entities.AI.AI_RotOnly;
 import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.AI.Action_AISwapper;
@@ -70,15 +72,18 @@ import com.badlogic.gdx.math.Vector3;
 
 public class GameScreen extends AbstractScreen {
 	
-	private EntityGraph world;
+	private EntityGraphOcttree world;
 	private SkyBox skybox;
 	private Entity player;
+	Terrain terrain;
 	private final PositionalData pData = new PositionalData();
 	private final StatusData sData = new StatusData();
 	
 	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
 	private final Bag<Entity> veggies = new Bag<Entity>();
+	EntityGraphOcttree ego;
+	
 	private Camera veggieCam;
 	
 	private final SpriteBatch sB = new SpriteBatch();
@@ -111,13 +116,15 @@ public class GameScreen extends AbstractScreen {
 		
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		Terrain terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -100.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -100.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
 		terrain.writeData(pData, PositionalData.class);
 		
-		world = new EntityGraph(terrain, null, true);
+		world = new EntityGraphOcttree(null, new Vector3(-100000, -1000, -100000), new Vector3(100000, 1000, 100000));
+		world.divide(5);
+		world.add(terrain, true);
 		
 		blank = FileUtils.loadTexture("data/textures/blank.png", true);
 
@@ -135,7 +142,7 @@ public class GameScreen extends AbstractScreen {
 		pData.calculateComposed();
 		ship.writeData(pData, PositionalData.class);
 		ship.setAI(new AI_Simple());
-		ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_Simple()));
+		ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
 		//ship.setAI(new AI_Player_Control(ship, controls));
 				
 		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
@@ -144,7 +151,7 @@ public class GameScreen extends AbstractScreen {
 		
 		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 		
-		world.addEntity(ship, true);
+		world.add(ship, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
@@ -187,7 +194,7 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
 		player.writeData(eData, EquipmentData.class);
 		
-		world.addEntity(player, false);
+		world.add(player, false);
 		
 		Entity npc = new Entity();
 		npc.setAI(new AI_Simple());
@@ -232,7 +239,7 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
 		npc.writeData(eData, EquipmentData.class);
-		world.addEntity(npc, false);
+		world.add(npc, false);
 		
 		Random ran = new Random();
 		for (int i = 0; i < 40; i++)
@@ -251,7 +258,7 @@ public class GameScreen extends AbstractScreen {
 			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
 			ge.writeData(eData, EquipmentData.class);
 			
-			world.addEntity(ge, false);
+			world.add(ge, false);
 			
 			s = new Sprite3D(3, 3, 4, 4);
 			s.setGender(true);
@@ -299,10 +306,18 @@ public class GameScreen extends AbstractScreen {
 
 		c.addRenderable(new Model(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 
-		world.addEntity(c, true);
+		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 5000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, new Vector3(0.4f, 1, 0.5f), 1), 1, 100000, 50);
+		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
+		ego.divide(3);
+		for (Entity v : veggies)
+		{
+			v.setCollisionShapeInternal(new Box());
+			v.update(0);
+			ego.add(v, false);
+		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
 //		for (int i = 0; i < 1000; i++)
@@ -405,7 +420,8 @@ public class GameScreen extends AbstractScreen {
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		//player.readData(pData, PositionalData.class);
-		((Terrain) GLOBALS.WORLD.getEntity()).render(cam, cam.position, GLOBALS.LIGHTS);
+		//((Terrain) GLOBALS.WORLD.getEntity()).render(cam, cam.position, GLOBALS.LIGHTS);
+		terrain.render(cam, cam.position, GLOBALS.LIGHTS);
 		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
 	}
 	@Override
@@ -442,14 +458,15 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
-		for (Entity v : veggies)
-		{
-			v.readData(pData, PositionalData.class);
-			if (veggieCam.frustum.pointInFrustum(pData.position))
-			{
-				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
-			}
-		}
+//		for (Entity v : veggies)
+//		{
+//			v.readData(pData, PositionalData.class);
+//			if (veggieCam.frustum.pointInFrustum(pData.position))
+//			{
+//				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
+//			}
+//		}
+		ego.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{

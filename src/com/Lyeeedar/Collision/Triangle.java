@@ -50,6 +50,11 @@ public class Triangle extends CollisionShape<Triangle> {
 	public boolean collide(CollisionRay ray) {
 		return ThreadSafeIntersector.collide(this, ray);
 	}
+	
+	@Override
+	public boolean collide(SymbolicMesh mesh) {
+		return mesh.collide(this);
+	}
 
 	@Override
 	public Triangle set(Triangle other)

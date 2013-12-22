@@ -18,7 +18,7 @@ public class FollowCam extends PerspectiveCamera {
 		this.controls = controls;
 	}
 	
-	private float angle = -25;
+	private float angle = -15;
 	private float minDist = 0;
 	
 	public void setAngle(float angle)

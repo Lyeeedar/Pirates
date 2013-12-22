@@ -73,7 +73,7 @@ public class Terrain extends Entity {
 			System.err.println(shader.getLog());
 		}
 		
-		this.setCollisionShapeInternal(new Box(new Vector3(), 1000, 1000, 1000));
+		this.setCollisionShapeInternal(new Box(new Vector3(), 100000, 1000, 100000));
 	}
 	
 	public void render(Camera cam, Vector3 position, LightManager lights)

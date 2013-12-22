@@ -47,6 +47,11 @@ public class Sphere extends CollisionShape<Sphere> {
 	public boolean collide(CollisionRay ray) {
 		return ThreadSafeIntersector.collide(this, ray);
 	}
+	
+	@Override
+	public boolean collide(SymbolicMesh mesh) {
+		return mesh.collide(this);
+	}
 
 	@Override
 	public Sphere set(Sphere other)

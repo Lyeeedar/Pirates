@@ -154,7 +154,7 @@ public class Entity {
 		return ai;
 	}
 	
-	private void update(float delta)
+	public void update(float delta)
 	{	
 		if (ai != null) ai.update(delta, this);
 		((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
@@ -171,6 +171,7 @@ public class Entity {
 				shape.setScaling(pd.scale);
 			}
 			shape.reset();
+			shape.calculateBoundingBox();
 		}
 	}
 	

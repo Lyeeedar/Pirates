@@ -6,7 +6,7 @@ import com.badlogic.gdx.math.Vector3;
 
 public class Sound3D {
 	
-	private static final float max = 1.0f;
+	private static final float max = 10.0f;
 	private static final float lower = 0.1f;
 	
 	final Sound sound;

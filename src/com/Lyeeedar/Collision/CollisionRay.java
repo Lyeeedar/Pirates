@@ -74,6 +74,11 @@ public class CollisionRay extends CollisionShape<CollisionRay> {
 	public boolean collide(CollisionRay ray) {
 		return ThreadSafeIntersector.collide(this, ray);
 	}
+	
+	@Override
+	public boolean collide(SymbolicMesh mesh) {
+		return mesh.collide(this);
+	}
 
 	@Override
 	public CollisionRay set(CollisionRay other) {
