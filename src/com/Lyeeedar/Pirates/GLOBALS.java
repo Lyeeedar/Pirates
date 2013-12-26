@@ -21,6 +21,12 @@ import com.badlogic.gdx.math.Vector3;
 
 public final class GLOBALS {
 	
+	public enum GENDER
+	{
+		MALE,
+		FEMALE
+	}
+	
 	public enum ELEMENTS
 	{
 		TEMPERATURE, // Hot, cold

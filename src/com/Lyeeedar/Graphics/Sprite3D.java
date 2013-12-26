@@ -16,6 +16,7 @@ import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Informable;
@@ -209,10 +210,10 @@ public class Sprite3D implements Renderable {
 		return false;
 	}
 
-	public void setGender(boolean male)
+	public void setGender(GENDER gender)
 	{
-		if (male) gender = "male";
-		else gender = "female";
+		if (gender == GENDER.MALE) this.gender = "male";
+		else this.gender = "female";
 	}
 	public void addLayer(String spritesheet, Color tint, int priority, SpriteLayer layer)
 	{
