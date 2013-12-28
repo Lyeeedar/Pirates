@@ -49,6 +49,7 @@ import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.GLOBALS.GENDER;
+import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
 import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -116,7 +117,9 @@ public class GameScreen extends AbstractScreen {
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
+		SerkGenerator sg = new SerkGenerator(1024, 10000, 500, 153);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
+		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate()));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -100.0f)});
 		
@@ -310,8 +313,8 @@ public class GameScreen extends AbstractScreen {
 
 		world.add(c, true);
 		
-		Mesh grassMesh = FileUtils.loadMesh("data/models/flower.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, null, 1), 1, 100000, 50);
+		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 100000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		ego.divide(3);
 		for (Entity v : veggies)

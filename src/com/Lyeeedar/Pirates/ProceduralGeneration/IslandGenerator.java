@@ -7,7 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinNoise;
+import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinNoiseGenerator;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -170,7 +170,7 @@ class IslandCreator
 	List<Island> islands;
 
 	int seed = new Random().nextInt(999);
-	PerlinNoise noise = new PerlinNoise(0.4, 0.07, 2, 8, seed);
+	PerlinNoiseGenerator noise = new PerlinNoiseGenerator(seed);
 
 	boolean view = false;
 	public IslandCreator(int width, int height)
@@ -415,14 +415,13 @@ class IslandCreator
 	{
 		double hw = grid.length/2.0;
 		double hh = grid[0].length/2.0;
-		noise.Set(persistance/10.0, 0.05, 0.08, 8, seed);
 		double maxHeight = 0;
 
 		for (int x = 0; x < grid.length; x++)
 		{
 			for (int y = 0; y < grid[0].length; y++)
 			{
-				double height = noise.GetHeight(x/(grid.length/100.0), y/(grid[0].length/100.0));
+				double height = noise.noise(x/(grid.length/100.0f), y/(grid[0].length/100.0f));
 
 				height *= height;
 				height *= height;

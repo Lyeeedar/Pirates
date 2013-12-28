@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.Vector3;
 
 public class FollowCam extends PerspectiveCamera {
 	
+	private final float limit = 30;
+	
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
 	private final CollisionRay ray = new CollisionRay();
@@ -48,9 +50,9 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public void update(PositionalData entityState)
 	{
-		//angle -= controls.getDeltaY();
-		if (angle > 60) angle = 60;
-		if (angle < -65) angle = -65;
+		angle -= controls.getDeltaY();
+		if (angle > limit) angle = limit;
+		if (angle < -limit) angle = -limit;
 		
 		up.set(entityState.up);
 		direction.set(entityState.rotation.x, 0, entityState.rotation.z).nor();

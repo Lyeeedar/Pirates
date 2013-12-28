@@ -44,7 +44,13 @@ public final class ImageUtils {
 
 	public static Pixmap TextureToPixmap(Texture texture)
 	{
-		texture.getTextureData().prepare();
+		try {
+			texture.getTextureData().prepare();
+		}
+		catch (Exception e)
+		{
+			
+		}
 		return texture.getTextureData().consumePixmap();
 	}
 	
@@ -223,6 +229,59 @@ public final class ImageUtils {
 		}
 		
 		return images;
+	}
+	
+	public static BufferedImage pixmapToImage(Pixmap pm)
+	{
+		BufferedImage image = new BufferedImage(pm.getWidth(), pm.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		for (int x = 0; x < pm.getWidth(); x++)
+		{
+			for (int y = 0; y < pm.getHeight(); y++)
+			{
+				Color c = new Color();
+				Color.rgba8888ToColor(c, pm.getPixel(x, y));
+				
+				java.awt.Color cc = new java.awt.Color(c.r, c.g, c.b, c.a);
+				
+				image.setRGB(x, y, cc.getRGB());
+			}
+		}
+		
+		return image;
+	}
+	
+	public static BufferedImage arrayToImage(Color[][] array)
+	{
+		BufferedImage image = new BufferedImage(array.length, array[0].length, BufferedImage.TYPE_INT_ARGB);
+		for (int x = 0; x < array.length; x++)
+		{
+			for (int y = 0; y < array[0].length; y++)
+			{
+				Color c = array[x][y];
+				
+				java.awt.Color cc = new java.awt.Color(c.r, c.g, c.b, c.a);
+				
+				image.setRGB(x, y, cc.getRGB());
+			}
+		}
+		
+		return image;
+	}
+	
+	public static Pixmap arrayToPixmap(Color[][] array)
+	{
+		Pixmap image = new Pixmap(array.length, array[0].length, Format.RGBA8888);
+		for (int x = 0; x < array.length; x++)
+		{
+			for (int y = 0; y < array[0].length; y++)
+			{
+				Color c = array[x][y];
+				
+				image.drawPixel(x, y, Color.rgba8888(c));
+			}
+		}
+		
+		return image;
 	}
 	
 	public static void sampleColour(Pixmap pixmap, Color colour, float x, float y)

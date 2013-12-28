@@ -183,7 +183,7 @@ public class Terrain extends Entity {
 				}
 			}
 			
-			pData.scale = 2;
+			pData.scale = 0.5f;
 			v.writeData(pData, MinimalPositionalData.class);
 			
 			v.addRenderable(renderable.copy());
