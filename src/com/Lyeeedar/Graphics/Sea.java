@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics;
 
+import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Shapes;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -36,11 +38,15 @@ public class Sea {
 	private final Matrix4 mat41 = new Matrix4();
 	private final Matrix4 mat42 = new Matrix4();
 	
-	public Sea(Texture seaTexture, Vector3 seaColour)
+	private final Terrain terrain;
+	
+	public Sea(Texture seaTexture, Vector3 seaColour, Terrain terrain)
 	{
 		this.seaTexture = seaTexture;
 		
 		this.seaColour.set(seaColour);
+		
+		this.terrain = terrain;
 		
 		numWaves = 2;
 				
@@ -74,9 +80,11 @@ public class Sea {
 	{
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		
+		mat41.set(cam.combined);
+		
 		seaShader.begin();
 		
-		mat41.set(cam.combined);
+		int index = terrain.bindUniforms(seaShader, position);
 		
 		seaShader.setUniformf("delta", GLOBALS.PROGRAM_TIME);
 		seaShader.setUniformi("numWaves", numWaves);
@@ -96,8 +104,8 @@ public class Sea {
 		seaShader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
 		seaShader.setUniformf("u_colour", seaColour);
-		seaShader.setUniformi("u_texture", 0);
-		seaTexture.bind(0);
+		seaShader.setUniformi("u_texture", index);
+		seaTexture.bind(index);
 		
 		lights.applyLights(seaShader);
 		
@@ -116,10 +124,13 @@ public class Sea {
 
 	public float waveHeight(float x, float y) 
 	{
-	    float height = 0.0f;
+		float height = terrain.getHeight(x, y);
+		float scale = 1.0f - MathUtils.clamp((height-terrain.seaFloor)/Math.abs(terrain.seaFloor), 0.0f, 1.0f);
+		
+	    height = 0.0f;
 	    for (int i = 0; i < numWaves; i++)
 	        height += wave(i, x, y);
-	    return height;
+	    return height*scale;
 	}
 	
 	public float waveMax(int i) 

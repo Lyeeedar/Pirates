@@ -5,6 +5,7 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -45,7 +46,8 @@ public final class Model implements Renderable {
 		}
 		else
 		{
-			model_matrix.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position);
+			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
+			model_matrix.setToTranslationAndScaling(data.position.x, data.position.y, data.position.z, data.scale, data.scale, data.scale).rotate(GLOBALS.DEFAULT_ROTATION, data.rotation);
 		}
 	}
 

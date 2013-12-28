@@ -48,6 +48,7 @@ import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
+import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -159,14 +160,14 @@ public class GameScreen extends AbstractScreen {
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		Weather weather = new Weather(skytex, glowtex, new Clouds(FileUtils.loadTexture("data/textures/cloud.png", true)));
-		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f));
+		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), terrain);
 		skybox = new SkyBox(sea, weather);
 		
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		player.setAI(new AI_Player_Control(controls));
 		//player.setAI(new AI_Simple(player));
 		Sprite3D s = new Sprite3D(2, 2, 4, 4);
-		s.setGender(true);
+		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
 		//s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
@@ -224,7 +225,7 @@ public class GameScreen extends AbstractScreen {
 		};
 		npc.setActivationAction(new Action_Dialogue("BOOOBIES", new Dialogue(new Entity[]{player, npc}, actionTree)));
 		s = new Sprite3D(2, 2, 4, 4);
-		s.setGender(false);
+		s.setGender(GENDER.FEMALE);
 		s.addAnimation("move", "move");
 		npc.addRenderable(s);
 		//npc.addRenderable(new Sprite2D(Decal.newDecal(new TextureRegion(ImageUtils.drawText(sB, fB, "I am an NPC with Boobies loool look at them theyre all big and stuff :p")))));
@@ -262,7 +263,7 @@ public class GameScreen extends AbstractScreen {
 			world.add(ge, false);
 			
 			s = new Sprite3D(3, 3, 4, 4);
-			s.setGender(true);
+			s.setGender(GENDER.MALE);
 			s.addAnimation("move", "move");
 			s.addAnimation("attack_1", "attack");
 			//s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
@@ -309,8 +310,8 @@ public class GameScreen extends AbstractScreen {
 
 		world.add(c, true);
 		
-		Mesh grassMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, null, 1), 1, 200000, 50);
+		Mesh grassMesh = FileUtils.loadMesh("data/models/flower.obj");
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, grass, null, 1), 1, 100000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		ego.divide(3);
 		for (Entity v : veggies)
@@ -420,8 +421,6 @@ public class GameScreen extends AbstractScreen {
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
-		//player.readData(pData, PositionalData.class);
-		//((Terrain) GLOBALS.WORLD.getEntity()).render(cam, cam.position, GLOBALS.LIGHTS);
 		terrain.render(cam, cam.position, GLOBALS.LIGHTS);
 		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
 	}

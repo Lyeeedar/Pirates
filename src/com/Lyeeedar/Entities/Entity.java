@@ -369,10 +369,14 @@ public class Entity {
 	public static class MinimalPositionalData implements EntityData<MinimalPositionalData>
 	{
 		public final Vector3 position = new Vector3();
+		public final Vector3 rotation = new Vector3();
+		public float scale = 1.0f;
 		
 		@Override
 		public void write(MinimalPositionalData data) {
 			position.set(data.position);
+			rotation.set(data.rotation);
+			scale = data.scale;
 		}
 
 		@Override

@@ -135,6 +135,7 @@ public abstract class AbstractScreen implements Screen {
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		//Gdx.gl.glDepthMask(false);
 		decalBatch.flush();
 		averageDecal += System.nanoTime()-time;
@@ -161,6 +162,7 @@ public abstract class AbstractScreen implements Screen {
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		spriteBatch.begin();
 		drawOrthogonals(delta, spriteBatch);
 		spriteBatch.end();

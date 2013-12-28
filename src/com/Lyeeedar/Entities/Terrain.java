@@ -78,31 +78,36 @@ public class Terrain extends Entity {
 		this.setCollisionShapeInternal(new Box(new Vector3(), 100000, 1000, 100000));
 	}
 	
-	public void render(Camera cam, Vector3 position, LightManager lights)
+	public int bindUniforms(ShaderProgram s, Vector3 position)
 	{
-		this.getCollisionShapeInternal().setPosition(cam.position);
-		
-		shader.begin();
-		
-		mat41.set(cam.combined);
-		
-		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf);
-		
-		
 		for (int i = 0; i < heightmaps.length; i++)
 		{
 			if (texBuf[i] != null) 
 			{
-				shader.setUniformi("u_hm"+(i+1), i);
+				s.setUniformi("u_hm"+(i+1), i);
 				texBuf[i].bind(i);
 			}
 		}
 
-		shader.setUniformf("u_seaFloor", seaFloor);
+		s.setUniformf("u_seaFloor", seaFloor);
 		
-		shader.setUniform3fv("u_hm_pos", posBuf, 0, heightmaps.length*3);
-		shader.setUniform1fv("u_hm_height", heightBuf, 0, heightmaps.length);
-		shader.setUniform1fv("u_hm_scale", scaleBuf, 0, heightmaps.length);
+		s.setUniform3fv("u_hm_pos", posBuf, 0, heightmaps.length*3);
+		s.setUniform1fv("u_hm_height", heightBuf, 0, heightmaps.length);
+		s.setUniform1fv("u_hm_scale", scaleBuf, 0, heightmaps.length);
+		
+		return heightmaps.length;
+	}
+	
+	public void render(Camera cam, Vector3 position, LightManager lights)
+	{
+		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf);
+		
+		this.getCollisionShapeInternal().setPosition(cam.position);
+		mat41.set(cam.combined);
+		
+		shader.begin();
+		
+		int index = bindUniforms(shader, position);
 		
 		shader.setUniformi("u_posx", ((int)(position.x/(float)scale))*scale);
 		shader.setUniformi("u_posz", ((int)(position.z/(float)scale))*scale);
@@ -114,13 +119,13 @@ public class Terrain extends Entity {
 		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
+		lights.applyLights(shader);
+		
 		for (int i = 0; i < textures.length; i++)
 		{
-			shader.setUniformi("u_texture"+(i+1), heightmaps.length+i);
-			textures[i].bind(heightmaps.length+i);
+			shader.setUniformi("u_texture"+(i+1), index+i);
+			textures[i].bind(index+i);
 		}
-		
-		lights.applyLights(shader);
 		
 		for (Mesh t : terrain)
 			t.render(shader, GL20.GL_TRIANGLES);
@@ -128,27 +133,27 @@ public class Terrain extends Entity {
 		shader.end();
 	}
 	
-//	public float getHeight(float x, float z)
-//	{
-//		float height = seaFloor;
-//	
-//		Vector3 tmpVec = Pools.obtain(Vector3.class);
-//		
-//		for (HeightMap hm : heightmaps)
-//		{
-//			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
-//			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
-//					tmpVec.z > 0 && tmpVec.z < 1.0f)
-//			{
-//				height = seaFloor+(hm.heights[(int) (tmpVec.x*hm.heights.length)][(int) (tmpVec.z*hm.heights[0].length)]);
-//				break;
-//			}
-//		}
-//		
-//		Pools.free(tmpVec);
-//		
-//		return height;
-//	}
+	public float getHeight(float x, float z)
+	{
+		float height = seaFloor;
+	
+		Vector3 tmpVec = Pools.obtain(Vector3.class);
+		
+		for (HeightMap hm : heightmaps)
+		{
+			tmpVec.set(x, 0, z).sub(hm.position).scl(1.0f/hm.scale);
+			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
+					tmpVec.z > 0 && tmpVec.z < 1.0f)
+			{
+				height = hm.heights[(int) (tmpVec.x*hm.size)][(int) (tmpVec.z*hm.size)];
+				break;
+			}
+		}
+		
+		Pools.free(tmpVec);
+		
+		return height;
+	}
 	
 	public void vegetate(List<Entity> entities, Renderable renderable, int splat, int num, int maxTries)
 	{
@@ -178,6 +183,7 @@ public class Terrain extends Entity {
 				}
 			}
 			
+			pData.scale = 2;
 			v.writeData(pData, MinimalPositionalData.class);
 			
 			v.addRenderable(renderable.copy());
