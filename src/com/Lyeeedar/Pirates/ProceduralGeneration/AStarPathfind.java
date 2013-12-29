@@ -127,10 +127,8 @@ public class AStarPathfind
 				int tempy = currenty+offset[1];
 	
 				int heuristic = (int) (Math.pow(Math.abs(tempx-endx), 2)+Math.pow(Math.abs(tempy-endy), 2));
-				
-				if (grid[tempx][tempy].height < 10) heuristic *= 100;
-				
-				Node tempn = new Node(tempx, tempy, heuristic, current.distance+1, (int) Math.pow(grid[tempx][tempy].height-current.height, 3), grid[tempx][tempy].height);
+							
+				Node tempn = new Node(tempx, tempy, heuristic, current.distance+1, (int) (grid[tempx][tempy].height-current.height), grid[tempx][tempy].height);
 				addNodeToOpenList(tempn);
 			}
 		}

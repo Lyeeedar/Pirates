@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector3;
 
 public class FollowCam extends PerspectiveCamera {
 	
-	private final float limit = 30;
+	private final float limit = 60;
 	
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();

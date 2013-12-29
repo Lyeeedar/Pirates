@@ -65,31 +65,52 @@ public class SerkGenerator implements AbstractGenerator{
 		tiles = new AbstractTile[size][size];
 		
 		setHeight();
+		System.out.println("done heights");
 		
 		int reps = 5;
 		for (int i = 0 ; i < reps; i++)
 		{
 			placeLandmark(50, 50);
 		}
+		System.out.println("placed landmarks");
 
 		connectLandmarks();
+		System.out.println("connected landmarks");
 		
 		Color[][] array = new Color[size][size];
+		int iy = 0;
+		int ix = 0;
+		boolean b = true;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
 			{
 				Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f);
 				c.a = tiles[x][y].height / height;
-				c.r = 1.0f;
-				c.b = tiles[x][y].ground;
-				
-				//c.r = c.b;
-				//c.g = c.b;
+				float max = 0.0f;
+				for (float f : tiles[x][y].slope) if (f > max) max = f;
+				c.b = (max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
+				c.g = (1.0f-c.b)*tiles[x][y].ground;
+				c.r = (1.0f-c.b)*(1.0f-c.g);
 				
 				array[x][y] = c;
+				
+				iy++;
+				if (iy == 10)
+				{
+					iy = 0;
+					b = !b;
+				}
+			}
+			ix++;
+			if (ix == 10)
+			{
+				ix = 0;
+				b = !b;
 			}
 		}
+		
+		System.out.println("done colours");
 		
 		return array;
 	}
@@ -313,6 +334,19 @@ public class SerkGenerator implements AbstractGenerator{
 				tiles[x][y].height *= 1.0f - (dist/max);
 			}
 		}
+		
+		float step = (float)scale / (float)size;
+		for (int x = 0; x < size; x++)
+		{
+			for (int y = 0; y < size; y++)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					if (x+offsets[i][0] < 0 || x+offsets[i][0] >= size || y+offsets[i][1] < 0 || y+offsets[i][1] >= size) continue;
+					tiles[x][y].slope[i] = (float) Math.abs(Math.atan((tiles[x][y].height-tiles[x+offsets[i][0]][y+offsets[i][1]].height)/step));
+				}
+			}
+		}
 	}
 	
 	protected boolean placeLandmark(int width, int height)
@@ -467,7 +501,7 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	public static void main(String[] args)
 	{
-		SerkGenerator sg = new SerkGenerator(1024, 10, 500, 15);
+		SerkGenerator sg = new SerkGenerator(1024, 10, 1000, 15);
 		Color[][] array = sg.generate();
 		BufferedImage image = ImageUtils.arrayToImage(array);
 		System.err.println("done");

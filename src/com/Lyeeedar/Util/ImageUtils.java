@@ -18,6 +18,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.utils.Array;
 
@@ -310,6 +311,35 @@ public final class ImageUtils {
 		bl.lerp(tl, ay);
 		
 		colour.set(bl);
+	}
+	
+	public static float lerp(float s, float e, float a)
+	{
+		return s + (e-s)*a;
+	}
+	
+	public static float bilinearInterpolation(float[][] array, float x, float y)
+	{
+		x = MathUtils.clamp(x, 0, array.length-2);
+		y = MathUtils.clamp(y, 0, array[0].length-2);
+		
+		int bottom = (int) (y);
+		int top = bottom + 1;
+		int left = (int) (x);
+		int right = left + 1;
+		
+		float ax = x-left;
+		float ay = y-bottom;
+				
+		float tl = array[left][top];
+		float tr = array[right][top];
+		float bl = array[left][bottom];
+		float br = array[right][bottom];
+		
+		float t = lerp(tl, tr, ax);
+		float b = lerp(bl, br, ax);
+		
+		return bl;//lerp(b, t, ay);
 	}
 
 }

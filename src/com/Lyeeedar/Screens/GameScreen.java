@@ -70,6 +70,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Vector3;
 
@@ -117,11 +118,11 @@ public class GameScreen extends AbstractScreen {
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-		SerkGenerator sg = new SerkGenerator(1024, 10000, 500, 153);
+		SerkGenerator sg = new SerkGenerator(1000, 1000, 200, 153);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate()));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -100.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, FileUtils.loadTexture("data/textures/water.png", true)}, 0.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 200.0f, 10000, -0.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
@@ -156,7 +157,7 @@ public class GameScreen extends AbstractScreen {
 		
 		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 		
-		world.add(ship, true);
+		//world.add(ship, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
@@ -244,10 +245,10 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
 		npc.writeData(eData, EquipmentData.class);
-		world.add(npc, false);
+		//world.add(npc, false);
 		
 		Random ran = new Random();
-		for (int i = 0; i < 40; i++)
+		for (int i = 0; i < 0; i++)
 		{
 			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			AI_Follow ai = new AI_Follow();
@@ -314,7 +315,7 @@ public class GameScreen extends AbstractScreen {
 		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 100000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 50000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		ego.divide(3);
 		for (Entity v : veggies)
@@ -399,20 +400,23 @@ public class GameScreen extends AbstractScreen {
 		return chosen;
 	}
 
+	ImmediateModeRenderer imr = new ImmediateModeRenderer20(false, false, 0);
 	@Override
 	public void drawSkybox(float delta)
 	{
-//		int i = 0;
-//		while (i < sm.tris.length)
-//		{
+//		player.readData(pData, PositionalData.class);
+//		Triangle[] tris = terrain.getTris();
+//		if (tris != null) {
 //			imr.begin(cam.combined, GL20.GL_TRIANGLES);
-//			for (int count = 0; count < 4999/9 && i < sm.tris.length; count++, i++)
+//			for (int i = 0; i < tris.length; i++)
 //			{
-//				Triangle tri = sm.tris[i];
-//				imr.vertex(tri.v1.x+sm.getPosition().x, tri.v1.y+sm.getPosition().y, tri.v1.z+sm.getPosition().z);
-//				imr.vertex(tri.v2.x+sm.getPosition().x, tri.v2.y+sm.getPosition().y, tri.v2.z+sm.getPosition().z);
-//				imr.vertex(tri.v3.x+sm.getPosition().x, tri.v3.y+sm.getPosition().y, tri.v3.z+sm.getPosition().z);
+//				Triangle tri = tris[i];
+//				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
+//				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
+//				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
+//				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
 //			}
+//			
 //			imr.end();
 //		}
 		
@@ -637,7 +641,7 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.viewportWidth = width;
 		veggieCam.viewportHeight = height;
 		veggieCam.near = 2f;
-		veggieCam.far = 502f;
+		veggieCam.far = 2002f;
 	}
 
 }

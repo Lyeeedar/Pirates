@@ -44,6 +44,7 @@ public class Terrain extends Entity {
 	private final float[] posBuf;
 	private final float[] heightBuf;
 	private final float[] scaleBuf;
+	private final float[] sizeBuf;
 	
 	private static final int scale = 10;
 	
@@ -62,6 +63,7 @@ public class Terrain extends Entity {
 		this.posBuf = new float[heightmaps.length*3];
 		this.heightBuf = new float[heightmaps.length];
 		this.scaleBuf = new float[heightmaps.length];
+		this.sizeBuf = new float[heightmaps.length];
 		
 		this.seaFloor = seaFloor;
 		
@@ -94,13 +96,14 @@ public class Terrain extends Entity {
 		s.setUniform3fv("u_hm_pos", posBuf, 0, heightmaps.length*3);
 		s.setUniform1fv("u_hm_height", heightBuf, 0, heightmaps.length);
 		s.setUniform1fv("u_hm_scale", scaleBuf, 0, heightmaps.length);
+		s.setUniform1fv("u_hm_size", sizeBuf, 0, heightmaps.length);
 		
 		return heightmaps.length;
 	}
 	
 	public void render(Camera cam, Vector3 position, LightManager lights)
 	{
-		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf);
+		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf, sizeBuf);
 		
 		this.getCollisionShapeInternal().setPosition(cam.position);
 		mat41.set(cam.combined);
@@ -108,6 +111,8 @@ public class Terrain extends Entity {
 		shader.begin();
 		
 		int index = bindUniforms(shader, position);
+		
+		shader.setUniformi("u_step", scale);
 		
 		shader.setUniformi("u_posx", ((int)(position.x/(float)scale))*scale);
 		shader.setUniformi("u_posz", ((int)(position.z/(float)scale))*scale);
@@ -203,12 +208,18 @@ public class Terrain extends Entity {
 			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
 					tmpVec.z > 0 && tmpVec.z < 1.0f)
 			{
-				hit = hm.collide(collide, (int) ((tmpVec.x*hm.size)), (int) ((tmpVec.z*hm.size)));
+				hit = hm.collide(collide, (int)(tmpVec.x*(float)hm.size), (int)(tmpVec.z*(float)hm.size));
+				//hit = hm.collide(collide, collide.getPosition().x, collide.getPosition().z);
 				break;
 			}
 		}
 		
 		return hit;
+	}
+	
+	public Triangle[] getTris()
+	{
+		return heightmaps[0].getTris();
 	}
 
 	public static class HeightMap
@@ -219,7 +230,7 @@ public class Terrain extends Entity {
 		int scale;
 		int size;
 		float[][] heights;
-		byte[][] splats;
+		float[][] splats;
 		
 		Triangle[] triangles = {new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle()};
 		
@@ -230,19 +241,21 @@ public class Terrain extends Entity {
 			this.position = position;
 			this.range = range;
 			this.scale = scale;
-			this.size = scale / Terrain.scale;
 			
 			Pixmap pm = ImageUtils.TextureToPixmap(texture);
+			
+			this.size = pm.getWidth();
+			
 			heights = new float[size][size];
-			splats = new byte[size][size];
+			splats = new float[size][size];
 			
 			Color c = new Color();
 			for (int x = 0; x < size; x++)
 			{
 				for (int z = 0; z < size; z++)
 				{
-					ImageUtils.sampleColour(pm, c, ((x*Terrain.scale)/(float)scale)*(float)pm.getWidth(), ((z*Terrain.scale)/(float)scale)*(float)pm.getHeight());
-					//Color.rgba8888ToColor(c, pm.getPixel((int)(((x*Terrain.scale)/(float)scale)*(float)pm.getWidth()), (int)(((z*Terrain.scale)/(float)scale)*(float)pm.getHeight())));
+					//ImageUtils.sampleColour(pm, c, ((x*Terrain.scale)/(float)scale)*(float)pm.getWidth(), ((z*Terrain.scale)/(float)scale)*(float)pm.getHeight());
+					Color.rgba8888ToColor(c, pm.getPixel(x, z));
 					heights[x][z] = seaFloor+c.a*range;
 					
 					splats[x][z] = 0;
@@ -254,12 +267,18 @@ public class Terrain extends Entity {
 			}
 		}
 		
-		public byte getSplat(int x, int z)
+		public byte getSplat(float x, float z)
 		{
-			return splats[x][z];
+			return (byte) ImageUtils.bilinearInterpolation(splats, x, z);
 		}
 		
-		public void fillBuffers(int index, Texture[] texBuf,  float[] posBuf, float[] heightBuf, float[] scaleBuf)
+		public float getHeight(float x, float z)
+		{
+			float shift = -1;
+			return ImageUtils.bilinearInterpolation(heights, x+shift, z+shift);
+		}
+		
+		public void fillBuffers(int index, Texture[] texBuf,  float[] posBuf, float[] heightBuf, float[] scaleBuf, float[] sizeBuf)
 		{
 			texBuf[index] = texture;
 			
@@ -270,6 +289,7 @@ public class Terrain extends Entity {
 			heightBuf[index] = range;
 			
 			scaleBuf[index] = (float)scale;
+			sizeBuf[index] = (float)size;
 		}
 		
 		private static final int[][] locations = {
@@ -284,14 +304,9 @@ public class Terrain extends Entity {
 //			{1, -1},
 		};
 		
-		public boolean collide(CollisionShape<?> shape, int x, int y)
+		public boolean collide(CollisionShape<?> shape, float x, float y)
 		{
 			boolean collide = false;
-			
-			if (x < 2) x = 2;
-			if (y < 2) y = 2;
-			if (x > size-3) x = size-3;
-			if (y > size-3) y = size-3;
 
 			for (int[] loc : locations)
 			{
@@ -316,21 +331,26 @@ public class Terrain extends Entity {
 			{0, 0, 		0, 1, 		-1, 1},
 			};
 		
-		private void fillTriangles(int x, int y)
+		private void fillTriangles(float x, float y)
 		{
 			for (int i = 0; i < offsets.length; i++)
 			{
 				triangles[i].set(
-						(((float)x+(float)offsets[i][0])/(float)size)*scale, heights[x+offsets[i][0]][y+offsets[i][1]],
-						(((float)y+(float)offsets[i][1])/(float)size)*scale,
+						((x+offsets[i][0])/(float)size)*(float)scale, getHeight(x+offsets[i][0], y+offsets[i][1]),
+						((y+offsets[i][1])/(float)size)*(float)scale,
 						
-						(((float)x+(float)offsets[i][2])/(float)size)*scale, heights[x+offsets[i][2]][y+offsets[i][3]],
-						(((float)y+(float)offsets[i][3])/(float)size)*scale,
+						((x+offsets[i][2])/(float)size)*(float)scale, getHeight(x+offsets[i][2], y+offsets[i][3]),
+						((y+offsets[i][3])/(float)size)*(float)scale,
 						
-						(((float)x+(float)offsets[i][4])/(float)size)*scale, heights[x+offsets[i][4]][y+offsets[i][5]],
-						(((float)y+(float)offsets[i][5])/(float)size)*scale
+						((x+offsets[i][4])/(float)size)*(float)scale, getHeight(x+offsets[i][4], y+offsets[i][5]),
+						((y+offsets[i][5])/(float)size)*(float)scale
 						);
 			}
+		}
+		
+		public Triangle[] getTris()
+		{
+			return triangles;
 		}
 	}
 

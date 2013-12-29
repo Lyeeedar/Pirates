@@ -121,13 +121,13 @@ public class Weapon extends Equipment<Weapon> {
 			
 			hitCD = hitSpeed;
 			
-			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1, new Sound3D(FileUtils.loadSound("data/sfx/fire_loop_01.mp3"), 0.1f, 1.0f, true));
-			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6, new Sound3D(FileUtils.loadSound("data/sfx/explosion_distant_002.mp3"), 0.01f, 1.0f, false));
-			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
-			Spell s = new Spell(pData.position.add(0, 2, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
-			s.effect.getEmitter(0).addLight(false, 1.0f, 1.0f, Color.YELLOW, false, 0, 0, 0);
-			GLOBALS.SPELLS.add(s);
-			s.effect.getEmitter(0).getLight(GLOBALS.LIGHTS);
+//			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1, new Sound3D(FileUtils.loadSound("data/sfx/fire_loop_01.mp3"), 0.1f, 1.0f, true));
+//			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6, new Sound3D(FileUtils.loadSound("data/sfx/explosion_distant_002.mp3"), 0.01f, 1.0f, false));
+//			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");//new ParticleEffect(5);
+//			Spell s = new Spell(pData.position.add(0, 2, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
+//			s.effect.getEmitter(0).addLight(false, 1.0f, 1.0f, Color.YELLOW, false, 0, 0, 0);
+//			GLOBALS.SPELLS.add(s);
+//			s.effect.getEmitter(0).getLight(GLOBALS.LIGHTS);
 		}
 	}
 

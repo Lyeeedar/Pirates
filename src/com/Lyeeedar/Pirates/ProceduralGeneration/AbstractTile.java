@@ -14,4 +14,6 @@ public class AbstractTile {
 	
 	float ground = 0.0f;
 	
+	float[] slope = new float[4];
+	
 }
