@@ -112,24 +112,23 @@ public class GameScreen extends AbstractScreen {
 		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true);
 		grass.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-		Texture dirt = FileUtils.loadTexture("data/textures/dirt.png", true);
+		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true);
 		dirt.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-		SerkGenerator sg = new SerkGenerator(1000, 1000, 200, 153);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 15333);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate()));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		terrain = new Terrain(new Texture[]{sand, grass, dirt, FileUtils.loadTexture("data/textures/water.png", true)}, 0.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 200.0f, 10000, -0.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
 		
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
 		terrain.writeData(pData, PositionalData.class);
 		
-		world = new EntityGraphOcttree(null, new Vector3(-100000, -1000, -100000), new Vector3(100000, 1000, 100000));
-		world.divide(5);
+		world = new EntityGraphOcttree(null, new Vector3(-100000, -100, -100000), new Vector3(100000, 10000, 100000));
 		world.add(terrain, true);
 		
 		blank = FileUtils.loadTexture("data/textures/blank.png", true);
@@ -315,14 +314,22 @@ public class GameScreen extends AbstractScreen {
 		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 50000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 10000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
-		ego.divide(3);
 		for (Entity v : veggies)
 		{
 			v.setCollisionShapeInternal(new Box());
 			v.update(0);
 			ego.add(v, false);
+		}
+		
+		grassMesh = FileUtils.loadMesh("data/models/house.obj");
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), 2, 20, 50);
+		for (Entity v : veggies)
+		{
+			v.setCollisionShapeInternal(new Box(new Vector3(), 10, 10, 10));
+			v.update(0);
+			//ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
@@ -404,21 +411,21 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
-//		player.readData(pData, PositionalData.class);
-//		Triangle[] tris = terrain.getTris();
-//		if (tris != null) {
-//			imr.begin(cam.combined, GL20.GL_TRIANGLES);
-//			for (int i = 0; i < tris.length; i++)
-//			{
-//				Triangle tri = tris[i];
-//				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
-//				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
-//				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
-//				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
-//			}
-//			
-//			imr.end();
-//		}
+		player.readData(pData, PositionalData.class);
+		Triangle[] tris = terrain.getTris();
+		if (tris != null) {
+			imr.begin(cam.combined, GL20.GL_TRIANGLES);
+			for (int i = 0; i < tris.length; i++)
+			{
+				Triangle tri = tris[i];
+				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
+				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
+				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
+				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
+			}
+			
+			imr.end();
+		}
 		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);

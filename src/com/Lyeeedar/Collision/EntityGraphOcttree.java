@@ -5,18 +5,14 @@ import java.util.List;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
-import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
-import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Octtree;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -35,17 +31,23 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		return new EntityGraphOcttree(parent, min, max);
 	}
 	
+	@Override
+	public void informPlacement(EntityGraph e, Octtree<EntityGraph> o)
+	{
+		e.parent = null;
+		e.octtree = (EntityGraphOcttree) o;
+	}
+	
 	public void add(Entity e, boolean walkable)
 	{
 		EntityGraph eg = new EntityGraph(e, null, walkable);
-		EntityGraphOcttree ego = (EntityGraphOcttree) add(eg, e.getCollisionShapeInternal());
-		eg.octtree = ego;
+		add(eg, e.getCollisionShapeInternal());
 	}
 	
 	public void insert(EntityGraph eg)
 	{
-		eg.octtree = (EntityGraphOcttree) add(eg, eg.entity.getCollisionShapeInternal());
 		eg.parent = null;
+		add(eg, eg.entity.getCollisionShapeInternal());
 	}
 	
 	public void pop(EntityGraph eg)
@@ -60,12 +62,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		
 		if (!cam.frustum.boundsInFrustum(box.getBoundingBox(bb))) return;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements) 
+		{ 
+			EntityGraph eg = o.e;
 			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children) 
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			ego.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
@@ -76,12 +79,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 	{
 		if (numChildElements == 0 && elements.size == 0) return;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			eg.getText(list, sB, font);
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children) 
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			ego.getText(list, sB, font);
@@ -92,12 +96,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 	{
 		if (numChildElements == 0 && elements.size == 0) return;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			eg.getRunnable(list, delta);
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children) 
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			ego.getRunnable(list, delta);
@@ -108,12 +113,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 	{
 		if (numChildElements == 0 && elements.size == 0) return;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			eg.collectDead(list);
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children) 
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			ego.collectDead(list);
@@ -128,12 +134,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		
 		boolean collide = false;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			if (eg.getVisible(cam, list)) collide = true;
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children) 
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			if (ego.getVisible(cam, list)) collide = true;
@@ -156,12 +163,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		
 		boolean collide = false;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			if (eg.collide(source, graph, list)) collide = true;
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children)
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children)
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			if (ego.collide(source, graph, list)) collide = true;
@@ -184,13 +192,14 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		
 		EntityGraph collide = null;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			EntityGraph temp = eg.collide(source, graph);
 			if (temp != null) collide = temp;
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children)
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children)
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			EntityGraph temp = ego.collide(source, graph);
@@ -214,13 +223,14 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		
 		EntityGraph collide = null;
 		
-		for (EntityGraph eg : elements)
-		{
+		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements)  
+		{ 
+			EntityGraph eg = o.e;
 			EntityGraph temp = eg.collideWalkables(source, graph);
 			if (temp != null) collide = temp;
 		}
 		
-		if (children != null && numChildElements != 0) for (Octtree o : children)
+		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children)
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
 			EntityGraph temp = ego.collideWalkables(source, graph);

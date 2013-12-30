@@ -126,10 +126,13 @@ public class AStarPathfind
 				int tempx = currentx+offset[0];
 				int tempy = currenty+offset[1];
 	
-				int heuristic = (int) (Math.pow(Math.abs(tempx-endx), 2)+Math.pow(Math.abs(tempy-endy), 2));
-							
-				Node tempn = new Node(tempx, tempy, heuristic, current.distance+1, (int) (grid[tempx][tempy].height-current.height), grid[tempx][tempy].height);
-				addNodeToOpenList(tempn);
+				if (grid[tempx][tempy].height > 10)
+				{
+					int heuristic = (int) (Math.pow(Math.abs(tempx-endx), 2)+Math.pow(Math.abs(tempy-endy), 2));
+								
+					Node tempn = new Node(tempx, tempy, heuristic, current.distance+1, (int) Math.abs((grid[tempx][tempy].height-current.height)), grid[tempx][tempy].height);
+					addNodeToOpenList(tempn);
+				}
 			}
 		}
 	}
@@ -201,7 +204,7 @@ public class AStarPathfind
 			this.y = y;
 			this.heuristic = heuristic;
 			this.distance = distance;
-			this.cost = heuristic + distance + influence;
+			this.cost = heuristic + distance + (influence*10);
 		}
 	}
 

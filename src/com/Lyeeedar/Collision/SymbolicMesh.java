@@ -11,6 +11,7 @@ import java.util.Stack;
 
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Octtree;
+import com.Lyeeedar.Util.Octtree.OcttreeEntry;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttributes;
@@ -104,7 +105,7 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 		this.maxz = minz+max;
 		
 		octtree = new Octtree<Short>(null, new Vector3(minx, miny, minz), new Vector3(maxx, maxy, maxz));
-		octtree.divide(2);
+		//octtree.divide(2);
 
 		for (short i = 0; i < tris.length; i++)
 		{			
@@ -320,12 +321,12 @@ public final class SymbolicMesh extends CollisionShape<SymbolicMesh> {
 			}
 
 			boolean tcollide = false;
-			for (Short s : partition.elements) if (shape.collide(tris[s])) tcollide = true;
+			for (OcttreeEntry<Short, CollisionShape<?>> s : partition.elements) if (shape.collide(tris[s.e])) tcollide = true;
 			if (tcollide) collide = true;
 
 			if (fast && collide) break;
 
-			for (Octtree<Short> p : partition.children)
+			if (partition.children != null) for (Octtree<Short> p : partition.children)
 			{
 				check.reset();
 				if (p.numChildElements != 0 && p.elements.size > 0 && p.box.collide(check)) 

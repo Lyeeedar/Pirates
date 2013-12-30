@@ -313,9 +313,15 @@ public final class ImageUtils {
 		colour.set(bl);
 	}
 	
-	public static float lerp(float s, float e, float a)
+	public static final float lerp(float s, float e, float a)
 	{
 		return s + (e-s)*a;
+	}
+	
+	public static final float bilerp(float s00, float s01, float s10, float s11, float xfrac, float yfrac) {
+		float s0 = (s01 - s00)*xfrac + s00;
+		float s1 = (s11 - s10)*xfrac + s10;
+		return (s1 - s0)*yfrac + s0;
 	}
 	
 	public static float bilinearInterpolation(float[][] array, float x, float y)
@@ -327,19 +333,13 @@ public final class ImageUtils {
 		int top = bottom + 1;
 		int left = (int) (x);
 		int right = left + 1;
+
+		float s00 = array[left][bottom];
+		float s01 = array[right][bottom];
+		float s10 = array[left][top];
+		float s11 = array[right][top];
 		
-		float ax = x-left;
-		float ay = y-bottom;
-				
-		float tl = array[left][top];
-		float tr = array[right][top];
-		float bl = array[left][bottom];
-		float br = array[right][bottom];
-		
-		float t = lerp(tl, tr, ax);
-		float b = lerp(bl, br, ax);
-		
-		return bl;//lerp(b, t, ay);
+		return bilerp(s00, s01, s10, s11, x-(float)left, y-(float)bottom);
 	}
 
 }

@@ -24,6 +24,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -96,7 +97,7 @@ public class Terrain extends Entity {
 		s.setUniform3fv("u_hm_pos", posBuf, 0, heightmaps.length*3);
 		s.setUniform1fv("u_hm_height", heightBuf, 0, heightmaps.length);
 		s.setUniform1fv("u_hm_scale", scaleBuf, 0, heightmaps.length);
-		s.setUniform1fv("u_hm_size", sizeBuf, 0, heightmaps.length);
+		//s.setUniform1fv("u_hm_size", sizeBuf, 0, heightmaps.length);
 		
 		return heightmaps.length;
 	}
@@ -172,6 +173,7 @@ public class Terrain extends Entity {
 			
 			v.readData(pData, MinimalPositionalData.class);
 			
+			boolean placed = false;
 			for (int rep = 0; rep < maxTries; rep++)
 			{
 				pData.position.x = hm.position.x+ran.nextInt(hm.scale);
@@ -184,9 +186,12 @@ public class Terrain extends Entity {
 				if (hm.getSplat(x, z) == splat)
 				{
 					pData.position.y = hm.heights[x][z];
+					placed = true;
 					break;
 				}
 			}
+			
+			if (!placed) continue;
 			
 			pData.scale = 0.5f;
 			v.writeData(pData, MinimalPositionalData.class);
@@ -274,7 +279,7 @@ public class Terrain extends Entity {
 		
 		public float getHeight(float x, float z)
 		{
-			float shift = -1;
+			float shift = -0.5f;
 			return ImageUtils.bilinearInterpolation(heights, x+shift, z+shift);
 		}
 		

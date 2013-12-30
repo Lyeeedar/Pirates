@@ -49,14 +49,16 @@ public class SerkGenerator implements AbstractGenerator{
 	final int size;
 	final int scale;
 	final int height;
+	final int seaBed;
 	
-	public SerkGenerator(int size, int scale, int height, long seed)
+	public SerkGenerator(int size, int scale, int height, int seaBed, long seed)
 	{
 		this.ran = new Random(seed);
 		this.seed = seed;
 		this.size = size;
 		this.scale = scale;
 		this.height = height;
+		this.seaBed = seaBed;
 	}
 	
 	@Override
@@ -81,17 +83,18 @@ public class SerkGenerator implements AbstractGenerator{
 		int iy = 0;
 		int ix = 0;
 		boolean b = true;
+		boolean cc = true;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
 			{
 				Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-				c.a = tiles[x][y].height / height;
+				c.a = (tiles[x][y].height-seaBed) / height;
 				float max = 0.0f;
 				for (float f : tiles[x][y].slope) if (f > max) max = f;
-				c.b = (max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
+				c.b = (cc)?1.0f:0.0f;//(max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
 				c.g = (1.0f-c.b)*tiles[x][y].ground;
-				c.r = (1.0f-c.b)*(1.0f-c.g);
+				c.r = (tiles[x][y].height > 30) ? (1.0f-c.b)*(1.0f-c.g) : 0.0f ;
 				
 				array[x][y] = c;
 				
@@ -101,6 +104,7 @@ public class SerkGenerator implements AbstractGenerator{
 					iy = 0;
 					b = !b;
 				}
+				cc = !cc;
 			}
 			ix++;
 			if (ix == 10)
@@ -108,6 +112,7 @@ public class SerkGenerator implements AbstractGenerator{
 				ix = 0;
 				b = !b;
 			}
+			cc = !cc;
 		}
 		
 		System.out.println("done colours");
@@ -194,6 +199,13 @@ public class SerkGenerator implements AbstractGenerator{
 				for (int[] offset : offsets)
 				{
 					AbstractTile at = tiles[pos[0]+offset[0]*i][pos[1]+offset[1]*i];
+					
+					if (at.ground != 1.0f)
+					{
+						at.height += t.height;
+						at.height /= 2.0f;
+					}
+					
 					at.ground = 1.0f;
 				}
 			}
@@ -315,7 +327,7 @@ public class SerkGenerator implements AbstractGenerator{
 		noise.setScale(0.006f);
 		
 		int s2 = size/2;
-		float max = (s2*s2)*2;
+		float max = (s2*s2);
 		
 		for (int x = 0; x < size; x++)
 		{
@@ -324,14 +336,18 @@ public class SerkGenerator implements AbstractGenerator{
 				tiles[x][y] = new AbstractTile();
 				tiles[x][y].x = x * scale;
 				tiles[x][y].y = y * scale;
-				tiles[x][y].height = (float) ((noise.noise(x, y, 2, 0.5f, true)+1.0f)/2.0f) * height;
+				tiles[x][y].height = (float) ((noise.noise(x, y, 2, 0.5f, true)+1.0f)/2.0f);
+				tiles[x][y].height *= tiles[x][y].height;
+				tiles[x][y].height *= height;
 				
 				int mx = x - s2;
 				int my = y - s2;
 				
 				float dist = (mx*mx) + (my*my);
 							
-				tiles[x][y].height *= 1.0f - (dist/max);
+				tiles[x][y].height *= 1.0f - MathUtils.clamp(dist/max, 0.0f, 1.0f);
+				
+				tiles[x][y].height += seaBed;
 			}
 		}
 		
@@ -501,7 +517,7 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	public static void main(String[] args)
 	{
-		SerkGenerator sg = new SerkGenerator(1024, 10, 1000, 15);
+		SerkGenerator sg = new SerkGenerator(1024, 10, 1000, 10, 15);
 		Color[][] array = sg.generate();
 		BufferedImage image = ImageUtils.arrayToImage(array);
 		System.err.println("done");

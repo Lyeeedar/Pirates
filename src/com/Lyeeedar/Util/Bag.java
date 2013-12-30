@@ -146,6 +146,13 @@ public class Bag<E> implements List<E>, Serializable {
 		data = new Object[newCapacity];
 		System.arraycopy(oldData, 0, data, 0, oldData.length);
 	}
+	
+	public void set(Bag<E> other)
+	{
+		data = new Object[other.data.length];
+		System.arraycopy(other.data, 0, data, 0, other.data.length);
+		size = other.size;
+	}
 
 	/**
 	 * Removes all of the elements from this bag. The bag will

@@ -6,13 +6,15 @@ import com.badlogic.gdx.math.Vector3;
 
 public class Octtree <E> {
 	
+	private static final int CASCADE_THRESHOLD = 10;
+	
 	public final Octtree<E> parent;
 	public final Vector3 min = new Vector3();
 	public final Vector3 mid = new Vector3();
 	public final Vector3 max = new Vector3();
 	public final Box box = new Box();
 	public int numChildElements;
-	public final Bag<E> elements = new Bag<E>();
+	public final Bag<OcttreeEntry<E, CollisionShape<?>>> elements = new Bag<OcttreeEntry<E, CollisionShape<?>>>();
 	
 	public Octtree<E>[] children = null;
 	
@@ -71,19 +73,35 @@ public class Octtree <E> {
 	public void remove(E e)
 	{
 		if (e == null) numChildElements--;
-		else elements.remove(e);
+		else 
+		{
+			for (int i = 0; i < elements.size; i++)
+			{
+				if (elements.get(i).e.equals(e))
+				{
+					elements.remove(i);
+					break;
+				}
+			}
+		}
 		
 		if (parent != null) parent.remove(null);
 	}
 
-	public Octtree<E> add(E e, CollisionShape<?> shape) {
+	public void add(E e, CollisionShape<?> shape) {
+		
+		if (children == null && elements.size > CASCADE_THRESHOLD)
+		{
+			cascade();
+		}
 		
 		shape.reset();
-		if (!box.collide(shape)) return null;
+		if (!box.collide(shape)) return;
 		if (children == null)
 		{
-			elements.add(e);
-			return this;
+			elements.add(new OcttreeEntry<E, CollisionShape<?>>(e, shape));
+			informPlacement(e, this);
+			return;
 		}
 		
 		int collisions = 0;
@@ -100,17 +118,48 @@ public class Octtree <E> {
 		if (collisions == 1)
 		{
 			numChildElements++;
-			return chosen.add(e, shape);
+			chosen.add(e, shape);
 		}
 		else
 		{
-			elements.add(e);
-			return this;
+			elements.add(new OcttreeEntry<E, CollisionShape<?>>(e, shape));
+			informPlacement(e, this);
+		}
+	}
+	
+	public void informPlacement(E e, Octtree<E> o)
+	{
+		
+	}
+	
+	public void cascade()
+	{
+		divide(1);
+		
+		Bag<OcttreeEntry<E, CollisionShape<?>>> tempBag = new Bag<OcttreeEntry<E, CollisionShape<?>>>(0);
+		tempBag.set(elements);
+		elements.clear();
+		
+		for (OcttreeEntry<E, CollisionShape<?>> e : tempBag)
+		{
+			add(e.e, e.c);
 		}
 	}
 	
 	public Octtree<E> getOcttree(Octtree<E> parent, Vector3 min, Vector3 max)
 	{
 		return new Octtree<E>(parent, min, max);
+	}
+	
+	public static class OcttreeEntry<E, C extends CollisionShape<?>>
+	{
+		public E e;
+		public C c;
+		
+		public OcttreeEntry(E e, C c)
+		{
+			this.e = e;
+			this.c = c;
+		}
 	}
 }
