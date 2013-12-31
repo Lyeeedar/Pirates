@@ -1,18 +1,22 @@
 package com.Lyeeedar.Util;
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Frustum;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
 public class Shapes {
 	
-	public static Mesh getHemiSphereMesh(int theta, int phi, float scale, boolean normals)
+	public static Mesh getHemiSphereMesh(int theta, int phi, float scale, boolean normals, boolean texCoords)
 	{
 		int vertexSize = 3;
 		if (normals) vertexSize += 3;
+		if (texCoords) vertexSize += 2;
 		
 		// Calculate the delta step
 		double d_theta = Math.PI / ((theta*2)+2);
@@ -32,12 +36,18 @@ public class Shapes {
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = 1.0f;
+		
+		if (texCoords)
+		{
+			vertices[i++] = 0;
+			vertices[i++] = 0;
+		}
 
 		double c_theta = 0;
 		double c_phi = 0;
 
 		// Insert the vertex at each division specified by theta and phi
-		for (int r = 0; r < theta; r++)
+		for (int reps = 0; reps < theta; reps++)
 		{
 			c_theta += d_theta;
 			c_phi = 0;
@@ -55,6 +65,42 @@ public class Shapes {
 				if (normals) vertices[i++] = x;
 				if (normals) vertices[i++] = y;
 				if (normals) vertices[i++] = z;
+				
+				if (texCoords)
+				{
+					float r = (float) Math.sqrt(1.0f - z * z);
+					if (r < 0.001f)
+					{
+						vertices[i++] = 0;
+						vertices[i++] = 0;
+					}
+					else
+					{
+						float angle;
+						float refAngle = (float) Math.acos(Math.abs(x) / r);
+						if (x >= 0 && y >= 0)
+						{
+							angle = refAngle;
+						}
+						else if (x < 0 && y >= 0)
+						{
+							angle = (float) (Math.PI - refAngle);
+						}
+						else if (x < 0 && y < 0)
+						{
+							angle = (float) (Math.PI + refAngle);
+						}
+						else
+						{
+							angle = (float) (2.0f * Math.PI - refAngle);
+						}
+						float t = (z + 1.0f) / 2.0f;
+						float s = (float) (angle / (2.0f * Math.PI));
+
+						vertices[i++] = s;
+						vertices[i++] = t;
+					}
+				}
 			}
 		}
 
@@ -92,16 +138,12 @@ public class Shapes {
 		}
 		
 		VertexAttribute[] vas = null;
-		
-		if (normals)
-			vas = new VertexAttribute[]{
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				new VertexAttribute(Usage.Normal, 3, "a_normal")
-				};
-		else
-			vas = new VertexAttribute[]{
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				};
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (normals) vasa.add(new VertexAttribute(Usage.Normal, 3, "a_normal"));
+		if (texCoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
 		
 		Mesh mesh = new Mesh(true, num_vertices, num_indices, vas);
 
@@ -111,10 +153,11 @@ public class Shapes {
 		return mesh;
 	}
 	
-	public static Mesh getSphereMesh(int theta, int phi, float scale, boolean normals)
+	public static Mesh getSphereMesh(int theta, int phi, float scale, boolean normals, boolean texCoords)
 	{
 		int vertexSize = 3;
 		if (normals) vertexSize += 3;
+		if (texCoords) vertexSize += 2;
 		
 		// Calculate the delta step
 		double d_theta = Math.PI / (theta+2);
@@ -134,12 +177,18 @@ public class Shapes {
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = 1.0f;
+		
+		if (texCoords)
+		{
+			vertices[i++] = 0;
+			vertices[i++] = 0;
+		}
 
 		double c_theta = 0;
 		double c_phi = 0;
 
 		// Insert the vertex at each division specified by theta and phi
-		for (int r = 0; r < theta; r++)
+		for (int reps = 0; reps < theta; reps++)
 		{
 			c_theta += d_theta;
 			c_phi = 0;
@@ -157,6 +206,42 @@ public class Shapes {
 				if (normals) vertices[i++] = x;
 				if (normals) vertices[i++] = y;
 				if (normals) vertices[i++] = z;
+				
+				if (texCoords)
+				{
+					float r = (float) Math.sqrt(1.0f - z * z);
+					if (r < 0.001f)
+					{
+						vertices[i++] = 0;
+						vertices[i++] = 0;
+					}
+					else
+					{
+						float angle;
+						float refAngle = (float) Math.acos(Math.abs(x) / r);
+						if (x >= 0 && y >= 0)
+						{
+							angle = refAngle;
+						}
+						else if (x < 0 && y >= 0)
+						{
+							angle = (float) (Math.PI - refAngle);
+						}
+						else if (x < 0 && y < 0)
+						{
+							angle = (float) (Math.PI + refAngle);
+						}
+						else
+						{
+							angle = (float) (2.0f * Math.PI - refAngle);
+						}
+						float t = (z + 1.0f) / 2.0f;
+						float s = (float) (angle / (2.0f * Math.PI));
+
+						vertices[i++] = s;
+						vertices[i++] = t;
+					}
+				}
 			}
 		}
 
@@ -168,6 +253,12 @@ public class Shapes {
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = 0.0f;
 		if (normals) vertices[i++] = -1.0f;
+		
+		if (texCoords)
+		{
+			vertices[i++] = 1;
+			vertices[i++] = 1;
+		}
 
 		// Setup the indices buffer
 		int num_indices = ((2*phi) + ((theta-1)*(2*(phi)))) * 3;
@@ -212,18 +303,76 @@ public class Shapes {
 		}
 		
 		VertexAttribute[] vas = null;
-		
-		if (normals)
-			vas = new VertexAttribute[]{
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				new VertexAttribute(Usage.Normal, 3, "a_normal")
-				};
-		else
-			vas = new VertexAttribute[]{
-				new VertexAttribute(Usage.Position, 3, "a_position"),
-				};
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (normals) vasa.add(new VertexAttribute(Usage.Normal, 3, "a_normal"));
+		if (texCoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
 		
 		Mesh mesh = new Mesh(true, num_vertices, num_indices, vas);
+
+		mesh.setVertices(vertices);
+		mesh.setIndices(indices);
+
+		return mesh;
+	}
+	
+	public static Mesh getCurvedPlaneMesh(int size, float step, float edge, float mid, boolean texcoords)
+	{
+		int n = (int) ((size*2.0f)/step)+1;
+		
+		int vertexSize = 3;
+		if (texcoords) vertexSize += 2;
+
+		final float[] vertices = new float[n*n*vertexSize];
+		final short[] indices = new short[(n-1)*(n-1)*6];
+		
+		int i = 0;
+		for (int ix = 0; ix < n; ix++)
+		{
+			for (int iz = 0; iz < n; iz++)
+			{
+				vertices[i++] = ix*step-size;
+				vertices[i++] = ImageUtils.lerp(mid, edge, MathUtils.clamp(Vector3.dst(ix*step-size, 0, iz*step-size, 0, 0, 0)/(float)size, 0.0f, 1.0f));
+				vertices[i++] = iz*step-size;
+
+				if (texcoords) vertices[i++] = (float)ix/(float)(n);
+				if (texcoords) vertices[i++] = (float)iz/(float)(n);
+			}
+		}
+		
+		i = 0;
+		for (int ix = 0; ix < n-1; ix++)
+		{
+			for (int iz = 0; iz < n-1; iz++)
+			{
+				int t1p1 = iz+(ix*n);
+				int t1p2 = iz+1+((ix+1)*n);
+				int t1p3 = iz+((ix+1)*n);
+
+				indices[i++] = (short) t1p1;
+				indices[i++] = (short) t1p2;
+				indices[i++] = (short) t1p3;
+				
+				int t2p1 = iz+(ix*n);
+				int t2p2 = iz+1+(ix*n);
+				int t2p3 = iz+1+((ix+1)*n);
+
+				indices[i++] = (short) t2p1;
+				indices[i++] = (short) t2p2;
+				indices[i++] = (short) t2p3;
+			}
+		}
+		
+		VertexAttribute[] vas = null;
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (texcoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
+		
+		Mesh mesh = new Mesh(true, n*n, (n-1)*(n-1)*6, vas);
 
 		mesh.setVertices(vertices);
 		mesh.setIndices(indices);

@@ -176,7 +176,7 @@ public class MainMenuScreen extends AbstractScreen {
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		Weather weather = new Weather(skytex, glowtex, new Clouds(FileUtils.loadTexture("data/textures/cloud.png", true)));
+		Weather weather = new Weather(skytex, glowtex, new Clouds());
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), new Terrain(new Texture[]{}, -100.0f, new Terrain.HeightMap[]{}));
 		skybox = new SkyBox(sea, weather);
 		
