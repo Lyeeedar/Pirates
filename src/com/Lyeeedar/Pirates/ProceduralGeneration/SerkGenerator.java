@@ -14,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -22,7 +21,6 @@ import javax.imageio.ImageIO;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayPoint;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayTriangle;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.Triangulation;
-import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.SimplexNoiseGenerator;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.SimplexOctaveGenerator;
 import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.ImageUtils;
@@ -120,6 +118,11 @@ public class SerkGenerator implements AbstractGenerator{
 		return array;
 	}
 	
+	public Bag<Landmark> getLandmarks()
+	{
+		return landmarks;
+	}
+	
 	protected void connectLandmarks()
 	{
 		ArrayList<DelaunayPoint> landmarkPnts = new ArrayList<DelaunayPoint>();
@@ -150,7 +153,7 @@ public class SerkGenerator implements AbstractGenerator{
 
 		for (DelaunayPoint[] p : paths)
 		{
-			AStarPathfind pathFind = new AStarPathfind(tiles, (int)p[0].coord(0), (int)p[0].coord(1), (int)p[1].coord(0), (int)p[1].coord(1));
+			AStarPathfind<AbstractTile> pathFind = new AStarPathfind<AbstractTile>(tiles, (int)p[0].coord(0), (int)p[0].coord(1), (int)p[1].coord(0), (int)p[1].coord(1), new AbstractTile.AbstractTileHeuristic());
 			markPath(pathFind.getPath(), 2);
 		}
 	}
@@ -168,8 +171,8 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	protected void markPath(int[][] path, int width)
 	{
-		boolean landmark = tiles[path[0][0]][path[0][1]].landmark;
-		if (!landmark) System.err.println("Error! Landmark Linking path did not start in a Landmark!");
+		Landmark landmark = tiles[path[0][0]][path[0][1]].landmark;
+		if (landmark == null) System.err.println("Error! Landmark Linking path did not start in a Landmark!");
 		
 		AbstractTile t = null;
 		AbstractTile lt = null;
@@ -177,15 +180,17 @@ public class SerkGenerator implements AbstractGenerator{
 		{
 			lt = t;
 			t = tiles[pos[0]][pos[1]];
-			if (!landmark && t.landmark)
+			if (landmark == null && t.landmark != null)
 			{
 				lt.gate = true;
 				t.path = true;
+				lt.landmark.addEntrance(pos[0], pos[1]);
 			}
-			else if (landmark && !t.landmark)
+			else if (landmark != null && t.landmark == null)
 			{
 				t.gate = true;
 				t.path = true;
+				t.landmark.addEntrance(pos[0], pos[1]);
 			}
 			else
 			{
@@ -397,11 +402,15 @@ public class SerkGenerator implements AbstractGenerator{
 		
 		float h = tiles[mx][my].height;
 		
+		
+		Landmark landmark = new Landmark(px, py, width, height, h);
+		landmarks.add(landmark);
+		
 		for (int x = px; x < px+width; x++)
 		{
 			for (int y = py; y < py+height; y++)
 			{
-				tiles[x][y].landmark = true;
+				tiles[x][y].landmark = landmark;
 				tiles[x][y].influence = 0;
 				tiles[x][y].height = h;
 				tiles[x][y].ground = 1.0f;
@@ -491,9 +500,6 @@ public class SerkGenerator implements AbstractGenerator{
 				tiles[x][py+height+i].height = lerp(nh, dh, (float)i / (float)BLUR_STEPS);
 			}
 		}
-				
-		Landmark landmark = new Landmark(px, py, width, height);
-		landmarks.add(landmark);
 	}
 	
 	protected boolean checkLandmark(int px, int py, int rwidth, int rheight)
@@ -502,7 +508,7 @@ public class SerkGenerator implements AbstractGenerator{
 		{
 			for (int y = py-BLUR_STEPS; y < py+rheight+BLUR_STEPS; y++)
 			{
-				if (tiles[x][y].landmark)
+				if (tiles[x][y].landmark != null)
 				{
 					return false;
 				}

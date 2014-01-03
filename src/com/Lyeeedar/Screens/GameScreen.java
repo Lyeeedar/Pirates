@@ -118,7 +118,7 @@ public class GameScreen extends AbstractScreen {
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 15333);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 8008135);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate()));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -156,10 +156,12 @@ public class GameScreen extends AbstractScreen {
 		
 		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
 		
-		//world.add(ship, true);
+		world.add(ship, true);
 
 		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
+		skytex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
+		glowtex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		Weather weather = new Weather(skytex, glowtex, new Clouds());
@@ -314,13 +316,13 @@ public class GameScreen extends AbstractScreen {
 		world.add(c, true);
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 10000, 50);
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		for (Entity v : veggies)
 		{
-			v.setCollisionShapeInternal(new Box());
+			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
 			v.update(0);
-			ego.add(v, false);
+			world.add(v, false);
 		}
 		
 		grassMesh = FileUtils.loadMesh("data/models/house.obj");
@@ -411,21 +413,21 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
-		player.readData(pData, PositionalData.class);
-		Triangle[] tris = terrain.getTris();
-		if (tris != null) {
-			imr.begin(cam.combined, GL20.GL_TRIANGLES);
-			for (int i = 0; i < tris.length; i++)
-			{
-				Triangle tri = tris[i];
-				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
-				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
-				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
-				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
-			}
-			
-			imr.end();
-		}
+//		player.readData(pData, PositionalData.class);
+//		Triangle[] tris = terrain.getTris();
+//		if (tris != null) {
+//			imr.begin(cam.combined, GL20.GL_TRIANGLES);
+//			for (int i = 0; i < tris.length; i++)
+//			{
+//				Triangle tri = tris[i];
+//				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
+//				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
+//				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
+//				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
+//			}
+//			
+//			imr.end();
+//		}
 		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -648,7 +650,7 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.viewportWidth = width;
 		veggieCam.viewportHeight = height;
 		veggieCam.near = 2f;
-		veggieCam.far = 2002f;
+		veggieCam.far = 5002f;
 	}
 
 }

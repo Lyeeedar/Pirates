@@ -61,9 +61,6 @@ public class Weather {
 		mat41.set(cam.combined).mul(mat42.setToTranslation(cam.position));
 		skyShader.setUniformMatrix("u_mvp", mat41);
 		
-		//skyShader.setUniformf("colour_sea", tmpVec.set(GLOBALS.sea.seaColour).scl(lights.ambientColour));
-		///skyShader.setUniformf("sea_height", 0.0f);
-		
 		skyShader.setUniformf("sun_dir", lights.directionalLight.direction);
 		
 		glowTexture.bind(1);

@@ -10,42 +10,39 @@
  ******************************************************************************/
 package com.Lyeeedar.Pirates.ProceduralGeneration;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
 
-public class AStarPathfind
+public class AStarPathfind <E>
 {
 	Random ran = new Random();
-	AbstractTile[][] grid;
-	int startx;
-	int starty;
-	int endx;
-	int endy;
-	int currentx;
-	int currenty;
+	E[][] grid;
+	int[] startPos;
+	int[] endPos;
+	int[] currentPos;
 	Node[][] nodes;
 
 	LinkedList<Node> openList = new LinkedList<Node>();
 	HashSet<Node> closedList = new HashSet<Node>();
+	
+	AStarHeuristic<E> heuristicFunc;
 
-	public AStarPathfind(AbstractTile[][] grid, int startx, int starty, int endx, int endy)
+	public AStarPathfind(E[][] grid, int startx, int starty, int endx, int endy, AStarHeuristic<E> heuristicFunc)
 	{
 		this.grid = grid;
-		this.startx = startx;
-		this.starty = starty;
-		this.currentx = startx;
-		this.currenty = starty;
-		this.endx = endx;
-		this.endy = endy;
+		this.startPos = new int[]{startx, starty};
+		this.endPos = new int[]{endPos[0], endPos[1]};
+		this.currentPos = new int[]{startx, starty};
 
-		nodes = new Node[grid.length][grid.length];
+		this.heuristicFunc = heuristicFunc;
 
-		nodes[startx][starty] = new Node(startx, starty, 0, 0, 0, grid[startx][starty].height);
+		nodes = new Node[grid.length][grid[0].length];
+
+		nodes[startx][starty] = new Node(startx, starty, 0, heuristicFunc.getHeuristic(grid[startx][starty], grid[endPos[0]][endPos[1]], startPos, endPos, 0));
 		openList.add(nodes[startx][starty]);
 
-		while(currentx != endx || currenty != endy)
+		while(currentPos[0] != endPos[0] || currentPos[1] != endPos[1])
 		{
 			path();
 		}
@@ -55,14 +52,14 @@ public class AStarPathfind
 
 	public int[][] getPath()
 	{
-		int length = nodes[endx][endy].distance+1;
+		int length = nodes[endPos[0]][endPos[1]].distance+1;
 		int[][] path = new int[length][2];
 
-		path[length-1][0] = endx;
-		path[length-1][1] = endy;
+		path[length-1][0] = endPos[0];
+		path[length-1][1] = endPos[1];
 
-		int cx = endx;
-		int cy = endy;
+		int cx = endPos[0];
+		int cy = endPos[1];
 
 		for (int i = length-1; i > 0; i--)
 		{
@@ -78,7 +75,7 @@ public class AStarPathfind
 			{
 				cy--;
 			}
-			else if (cy+1 < grid.length && nodes[cx][cy+1] != null && nodes[cx][cy+1].distance <= i)
+			else if (cy+1 < grid[0].length && nodes[cx][cy+1] != null && nodes[cx][cy+1].distance <= i)
 			{
 				cy++;
 			}
@@ -108,31 +105,26 @@ public class AStarPathfind
 	private void path()
 	{
 		Node current = findBestNode();
-		currentx = current.x;
-		currenty = current.y;
+		currentPos[0] = current.x;
+		currentPos[1] = current.y;
 
 		for (int[] offset : offsets)
 		{
 			if (
-					currentx-2 <= 0 ||
-					currentx+1 >= grid.length ||
-					currenty-2 <= 0 ||
-					currenty+1 >= grid.length
+					currentPos[0]-2 <= 0 ||
+					currentPos[0]+1 >= grid.length ||
+					currentPos[1]-2 <= 0 ||
+					currentPos[1]+1 >= grid[0].length
 					)
 			{
 			}
 			else
 			{
-				int tempx = currentx+offset[0];
-				int tempy = currenty+offset[1];
-	
-				if (grid[tempx][tempy].height > 10)
-				{
-					int heuristic = (int) (Math.pow(Math.abs(tempx-endx), 2)+Math.pow(Math.abs(tempy-endy), 2));
-								
-					Node tempn = new Node(tempx, tempy, heuristic, current.distance+1, (int) Math.abs((grid[tempx][tempy].height-current.height)), grid[tempx][tempy].height);
-					addNodeToOpenList(tempn);
-				}
+				int tempx = currentPos[0]+offset[0];
+				int tempy = currentPos[1]+offset[1];
+		
+				Node tempn = new Node(tempx, tempy, current.distance+1, heuristicFunc.getHeuristic(grid[tempx][tempy], grid[endPos[0]][endPos[1]], currentPos, endPos, current.distance+1));
+				addNodeToOpenList(tempn);
 			}
 		}
 	}
@@ -185,27 +177,20 @@ public class AStarPathfind
 		closedList.add(best);
 		return best;
 	}
+}
 
-	class Node
+class Node
+{
+	int x;
+	int y;
+	int cost;
+	int distance;
+
+	public Node(int x, int y, int distance, int cost)
 	{
-		int x;
-		int y;
-		int cost;
-		int heuristic;
-		int distance;
-		int influence;
-		float height;
-
-		public Node(int x, int y, int heuristic, int distance, int influence, float height)
-		{
-			this.height = height;
-			this.influence = influence;
-			this.x = x;
-			this.y = y;
-			this.heuristic = heuristic;
-			this.distance = distance;
-			this.cost = heuristic + distance + (influence*10);
-		}
+		this.x = x;
+		this.y = y;
+		this.distance = distance;
+		this.cost = cost;
 	}
-
 }

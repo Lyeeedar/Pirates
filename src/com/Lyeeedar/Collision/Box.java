@@ -14,9 +14,9 @@ public class Box extends CollisionShape<Box> {
 
 	public Box()
 	{
-		if (width == 0) width = 0.1f;
-		if (height == 0) height = 0.1f;
-		if (depth == 0) depth = 0.1f;
+//		if (width == 0) width = 0.1f;
+//		if (height == 0) height = 0.1f;
+//		if (depth == 0) depth = 0.1f;
 		
 		if (width < 0) width *= -1;
 		if (height < 0) height *= -1;
@@ -40,9 +40,9 @@ public class Box extends CollisionShape<Box> {
 		this.height = height;
 		this.depth = depth;
 		
-		if (width == 0) width = 0.1f;
-		if (height == 0) height = 0.1f;
-		if (depth == 0) depth = 0.1f;
+//		if (width == 0) width = 0.1f;
+//		if (height == 0) height = 0.1f;
+//		if (depth == 0) depth = 0.1f;
 		
 		if (width < 0) width *= -1;
 		if (height < 0) height *= -1;
@@ -70,9 +70,9 @@ public class Box extends CollisionShape<Box> {
 		this.height = midy-miny;
 		this.depth = midz-minz;
 		
-		if (width == 0) width = 0.1f;
-		if (height == 0) height = 0.1f;
-		if (depth == 0) depth = 0.1f;
+//		if (width == 0) width = 0.1f;
+//		if (height == 0) height = 0.1f;
+//		if (depth == 0) depth = 0.1f;
 		
 		if (width < 0) width *= -1;
 		if (height < 0) height *= -1;
@@ -159,9 +159,9 @@ public class Box extends CollisionShape<Box> {
 
 	@Override
 	public void reset() {
-		if (width == 0) width = 0.1f;
-		if (height == 0) height = 0.1f;
-		if (depth == 0) depth = 0.1f;
+//		if (width == 0) width = 0.1f;
+//		if (height == 0) height = 0.1f;
+//		if (depth == 0) depth = 0.1f;
 		
 		if (width < 0) width *= -1;
 		if (height < 0) height *= -1;

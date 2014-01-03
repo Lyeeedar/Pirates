@@ -77,10 +77,10 @@ public class Clouds {
 	public void update(float delta)
 	{
 		time += delta;
-		if (time >= 1.0f) time -= 1.0f;
+		//if (time >= 1.0f) time -= 1.0f;
 		
-		CloudCover += (up)?delta:-delta;
-		if (CloudCover > 1.0f || CloudCover < 0.0f) up = !up;
+		//CloudCover += (up)?delta:-delta;
+		//if (CloudCover > 1.0f || CloudCover < 0.0f) up = !up;
 		
 	}
 	
@@ -99,7 +99,7 @@ public class Clouds {
 		shader.setUniformf("u_time", time);
 		shader.setUniformf("u_height", 1000.0f);
 		
-		shader.setUniformf("u_ambient", lights.ambientColour);
+		shader.setUniformf("u_ambient", 1, 1, 1);//lights.ambientColour);
 		
 		shader.setUniformf("CloudCover", CloudCover);
 		shader.setUniformf("CloudSharpness", CloudSharpness);
