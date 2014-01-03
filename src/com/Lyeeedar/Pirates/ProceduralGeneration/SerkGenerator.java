@@ -184,19 +184,18 @@ public class SerkGenerator implements AbstractGenerator{
 			{
 				lt.gate = true;
 				t.path = true;
-				lt.landmark.addEntrance(pos[0], pos[1]);
+				t.landmark.addEntrance(pos[0], pos[1]);
 			}
 			else if (landmark != null && t.landmark == null)
 			{
 				t.gate = true;
 				t.path = true;
-				t.landmark.addEntrance(pos[0], pos[1]);
+				landmark.addEntrance(pos[0], pos[1]);
 			}
 			else
 			{
 				t.path = true;
 			}
-			t.influence = 0;
 			landmark = t.landmark;
 			
 			for (int i = 1; i <= width; i++)
@@ -411,7 +410,6 @@ public class SerkGenerator implements AbstractGenerator{
 			for (int y = py; y < py+height; y++)
 			{
 				tiles[x][y].landmark = landmark;
-				tiles[x][y].influence = 0;
 				tiles[x][y].height = h;
 				tiles[x][y].ground = 1.0f;
 			}

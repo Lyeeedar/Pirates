@@ -6,7 +6,6 @@ public class AbstractTile {
 	
 	float x, y;
 	float height;
-	int influence;
 	
 	float gn, gs, ge, gw;
 	
@@ -21,9 +20,9 @@ public class AbstractTile {
 	public static class AbstractTileHeuristic implements AStarHeuristic<AbstractTile>
 	{
 		@Override
-		public int getHeuristic(AbstractTile current, AbstractTile dst, int[] currentPos, int[] endPos, int distance)
+		public int getHeuristic(AbstractTile current, AbstractTile previous, AbstractTile dst, int[] currentPos, int[] endPos, int distance)
 		{
-			return (int) (Vector3.dst(currentPos[0], currentPos[1], 0, endPos[0], endPos[1], 0) + distance + Math.abs(current.height-dst.height));
+			return (int) (Vector3.dst(currentPos[0], currentPos[1], 0, endPos[0], endPos[1], 0)*2 + distance + Math.abs(current.height-previous.height));
 		}
 	}
 	

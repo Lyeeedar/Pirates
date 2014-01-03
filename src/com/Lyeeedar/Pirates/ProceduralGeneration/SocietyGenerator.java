@@ -12,22 +12,22 @@ import com.badlogic.gdx.math.Vector3;
 
 public class SocietyGenerator {
 	
-	public static Bag<Entity> fillVillage(Landmark landmark)
-	{
-		Byte[][] grid = new Byte[landmark.width][landmark.height];
-		grid[landmark.width/2][landmark.height/2] = 1;
-		
-		for (int[] entrance : landmark.entrances)
-		{
-			AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, entrance[0], entrance[1], landmark.width/2, landmark.height/2, new ByteHeuristic());
-			int[][] path = pathFind.getPath();
-			
-			for (int[] pos : path)
-			{
-				grid[pos[0]][pos[1]] = 1;
-			}
-		}
-	}
+//	public static Bag<Entity> fillVillage(Landmark landmark)
+//	{
+//		Byte[][] grid = new Byte[landmark.width][landmark.height];
+//		grid[landmark.width/2][landmark.height/2] = 1;
+//		
+//		for (int[] entrance : landmark.entrances)
+//		{
+//			AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, entrance[0], entrance[1], landmark.width/2, landmark.height/2, new ByteHeuristic());
+//			int[][] path = pathFind.getPath();
+//			
+//			for (int[] pos : path)
+//			{
+//				grid[pos[0]][pos[1]] = 1;
+//			}
+//		}
+//	}
 	
 	public static Village createVillage(int numHouses, Relationship defaultAttitude, long seed)
 	{
@@ -67,8 +67,8 @@ class ByteHeuristic implements AStarHeuristic<Byte>
 {
 
 	@Override
-	public int getHeuristic(Byte current, Byte dst, int[] currentPos, int[] endPos, int distance) {
-		return (int) (Vector3.dst(currentPos[0], currentPos[1], 0, endPos[0], endPos[1], 0) + distance);
+	public int getHeuristic(Byte current, Byte previous, Byte dst, int[] currentPos, int[] endPos, int distance) {
+		return (int) (Vector3.dst2(currentPos[0], currentPos[1], 0, endPos[0], endPos[1], 0) + distance);
 	}
 	
 }
