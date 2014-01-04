@@ -3,7 +3,6 @@ package com.Lyeeedar.Graphics;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.OctaveGenerator;
-import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.PerlinOctaveGenerator;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.SimplexOctaveGenerator;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Shapes;
@@ -12,20 +11,19 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 
 public class Clouds {
 	
 	Mesh mesh;
 	Texture[] cloudTex;
 	float time;
-	Matrix4 mm = new Matrix4();//.setToLookAt(new Vector3(0, -1, 0), new Vector3(0, 0, 1));
+	Matrix4 mm = new Matrix4();
 	
 	ShaderProgram shader;
 	
@@ -50,7 +48,7 @@ public class Clouds {
 	
 	public Texture getCloudTex(int size, float layer)
 	{
-		OctaveGenerator noise = new SimplexOctaveGenerator("Clouds".hashCode(), 1);
+		OctaveGenerator noise = new SimplexOctaveGenerator(("CloudsAreAwesome!"+layer).hashCode(), 1);
 		noise.setScale(0.1f);
 		
 		Color[][] grid = new Color[size][size];
@@ -63,7 +61,8 @@ public class Clouds {
 			}
 		}
 		
-		Texture tex = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(grid));
+		Pixmap pixmap = ImageUtils.arrayToPixmap(grid);
+		Texture tex = ImageUtils.PixmapToTexture(pixmap);
 		tex.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
 		tex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		
