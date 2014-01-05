@@ -25,7 +25,7 @@ public class NameGenerator {
 		this.order = order;
 		this.prior = prior;
 		
-		this.ran = new Random();
+		this.ran = new Random(seed);
 		
 		String fp = "";
 		for (int i = 0; i < order; i++) fp += prefix;
@@ -174,7 +174,7 @@ public class NameGenerator {
 	public static void main(String[] args)
 	{
 		String[] names = {};
-		NameGenerator namegen = new NameGenerator(names, 4, 0, 130667);
+		NameGenerator namegen = new NameGenerator(names, 3, 0, 8008135);
 		
 		BufferedReader br = null;
 		 

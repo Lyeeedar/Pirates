@@ -118,9 +118,11 @@ public class GameScreen extends AbstractScreen {
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
+		ArrayList<Entity> ae = new ArrayList<Entity>();
+		
 		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 8008135);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
-		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate()));
+		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate(ae)));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
 		
@@ -130,6 +132,11 @@ public class GameScreen extends AbstractScreen {
 		
 		world = new EntityGraphOcttree(null, new Vector3(-100000, -100, -100000), new Vector3(100000, 10000, 100000));
 		world.add(terrain, true);
+		
+		for (Entity e : ae)
+		{
+			world.add(e, true);
+		}
 		
 		blank = FileUtils.loadTexture("data/textures/blank.png", true);
 
@@ -171,7 +178,7 @@ public class GameScreen extends AbstractScreen {
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		player.setAI(new AI_Player_Control(controls));
 		//player.setAI(new AI_Simple(player));
-		Sprite3D s = new Sprite3D(2, 2, 4, 4);
+		Sprite3D s = new Sprite3D(4, 4, 4, 4);
 		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
@@ -234,7 +241,7 @@ public class GameScreen extends AbstractScreen {
 		s.addAnimation("move", "move");
 		npc.addRenderable(s);
 		//npc.addRenderable(new Sprite2D(Decal.newDecal(new TextureRegion(ImageUtils.drawText(sB, fB, "I am an NPC with Boobies loool look at them theyre all big and stuff :p")))));
-		npc.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
+		npc.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 2.0f, 0.5f));
 		npc.readData(pData, PositionalData.class);
 		pData.position.set(-4, 12, 0);
 		//pData.position.set(4500, 290, 3500);
@@ -323,15 +330,6 @@ public class GameScreen extends AbstractScreen {
 			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
 			v.update(0);
 			world.add(v, false);
-		}
-		
-		grassMesh = FileUtils.loadMesh("data/models/house.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), 2, 20, 50);
-		for (Entity v : veggies)
-		{
-			v.setCollisionShapeInternal(new Box(new Vector3(), 10, 10, 10));
-			v.update(0);
-			//ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);

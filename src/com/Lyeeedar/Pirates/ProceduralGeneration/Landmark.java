@@ -5,6 +5,7 @@ import com.Lyeeedar.Util.Bag;
 public class Landmark {
 	int x;
 	int y;
+	
 	int width;
 	int height;
 	float elevation;

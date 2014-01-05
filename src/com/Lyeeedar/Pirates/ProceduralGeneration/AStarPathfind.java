@@ -45,7 +45,6 @@ public class AStarPathfind <E>
 		while(nodes[endPos[0]][endPos[1]] == null)
 		{
 			path();
-			//printGrid();
 		}
 	}
 

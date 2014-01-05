@@ -55,7 +55,7 @@ public class AI_Player_Control extends AI_Package {
 		{
 			// Evaluate controls
 			int speed = 10;
-			if (controls.sprint()) speed = 100;
+			if (controls.sprint()) speed = 30;
 			if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
 			{
 				speed = 1500;

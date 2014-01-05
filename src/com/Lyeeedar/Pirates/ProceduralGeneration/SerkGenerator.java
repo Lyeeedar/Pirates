@@ -14,10 +14,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayPoint;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayTriangle;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.Triangulation;
@@ -41,6 +44,7 @@ public class SerkGenerator implements AbstractGenerator{
 	protected static final int LANDMARK_PLACE_ATTEMPTS = 150;
 
 	final Bag<Landmark> landmarks = new Bag<Landmark>();
+	final Building[] buildings = {new Building(15, 15), new Building(5, 5), new Building(10, 10), new Building(10, 5)};
 	AbstractTile[][] tiles;
 	final Random ran;
 	final long seed;
@@ -60,7 +64,7 @@ public class SerkGenerator implements AbstractGenerator{
 	}
 	
 	@Override
-	public Color[][] generate()
+	public Color[][] generate(List<Entity> entities)
 	 {
 		tiles = new AbstractTile[size][size];
 		
@@ -76,6 +80,28 @@ public class SerkGenerator implements AbstractGenerator{
 
 		connectLandmarks();
 		System.out.println("connected landmarks");
+		
+		for (Landmark landmark : landmarks)
+		{
+			Byte[][] lgrid = new Byte[landmark.width][landmark.height];
+			List<Entity> houses = SocietyGenerator.fillVillage(lgrid, landmark, buildings, seed);
+			for (Entity e : houses)
+			{
+				PositionalData pData = e.readOnlyRead(PositionalData.class);
+				pData.position.x /= (float)size; pData.position.x *= (float)scale;
+				pData.position.z /= (float)size; pData.position.z *= (float)scale;
+				pData.calculateComposed();
+				e.update(0);
+			}
+			entities.addAll(houses);
+			for (int x = 0; x < lgrid.length; x++)
+			{
+				for (int y = 0; y < lgrid[0].length; y++)
+				{
+					tiles[x+landmark.x][y+landmark.y].ground = (lgrid[x][y] != 0) ? 1.0f : 0.0f;
+				}
+			}
+		}
 		
 		Color[][] array = new Color[size][size];
 		int iy = 0;
@@ -112,7 +138,6 @@ public class SerkGenerator implements AbstractGenerator{
 			}
 			cc = !cc;
 		}
-		
 		System.out.println("done colours");
 		
 		return array;
@@ -522,7 +547,7 @@ public class SerkGenerator implements AbstractGenerator{
 	public static void main(String[] args)
 	{
 		SerkGenerator sg = new SerkGenerator(1024, 10, 1000, 10, 15);
-		Color[][] array = sg.generate();
+		Color[][] array = sg.generate(new ArrayList<Entity>());
 		BufferedImage image = ImageUtils.arrayToImage(array);
 		System.err.println("done");
 		try {

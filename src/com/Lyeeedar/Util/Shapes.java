@@ -438,6 +438,9 @@ public class Shapes {
 	{
 		int vertSize = 3;
 		
+		if (normals) vertSize += 3;
+		if (texcoords) vertSize += 2;
+		
 		float[] cubeVerts = {
 				-x, -y, -z, // bottom
 				-x, -y, z,
@@ -468,14 +471,93 @@ public class Shapes {
 				x, -y, z,
 				x, y, z,
 				x, y, -z};
+		
+		float[] cubeNormals = {
+				0, -1, 0, // bottom
+				0, -1, 0,
+				0, -1, 0,
+				0, -1, 0,
+
+				0, 1, 0, // top
+				0, 1, 0,
+				0, 1, 0,
+				0, 1, 0,
+
+				0, 0, -1, // back
+				0, 0, -1,
+				0, 0, -1,
+				0, 0, -1,
+
+				0, 0, 1, // front
+				0, 0, 1,
+				0, 0, 1,
+				0, 0, 1,
+
+				-1, 0, 0, // left
+				-1, 0, 0,
+				-1, 0, 0,
+				-1, 0, 0,
+
+				1, 0, 0, // right
+				1, 0, 0,
+				1, 0, 0,
+				1, 0, 0};
+		
+		float[] cubeTex = {
+
+				0, 0, // bottom
+				0, 1,
+				1, 1,
+				1, 0,
+
+				1, 0, // top
+				1, 1,
+				0, 1,
+				0, 0,
+
+				1, 1, // back
+				1, 0,
+				0, 0,
+				0, 1,
+
+				1, 1, // front
+				1, 0,
+				0, 0,
+				0, 1,
+
+				1, 1, // left
+				0, 1,
+				0, 0,
+				1, 0,
+
+				1, 1, // right
+				0, 1,
+				0, 0,
+				1, 0
+
+		};
 
 		float[] vertices = new float[24 * vertSize];
 		int pIdx = 0;
+		int nIdx = 0;
 		int tIdx = 0;
 		for (int i = 0; i < vertices.length;) {
 			vertices[i++] = cubeVerts[pIdx++];
 			vertices[i++] = cubeVerts[pIdx++];
 			vertices[i++] = cubeVerts[pIdx++];
+			
+			if (normals)
+			{
+				vertices[i++] = cubeNormals[nIdx++];
+				vertices[i++] = cubeNormals[nIdx++];
+				vertices[i++] = cubeNormals[nIdx++];
+			}
+			
+			if (texcoords)
+			{
+				vertices[i++] = cubeTex[tIdx++];
+				vertices[i++] = cubeTex[tIdx++];
+			}
 		}
 
 		short[] indices = {
@@ -498,8 +580,15 @@ public class Shapes {
 				20, 22, 21
 		};
 		
-		Mesh box = new Mesh(true, 24, 36, 
-				new VertexAttribute(Usage.Position, 3, "a_position"));
+		VertexAttribute[] vas = null;
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (normals) vasa.add(new VertexAttribute(Usage.Normal, 3, "a_normal"));
+		if (texcoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
+		
+		Mesh box = new Mesh(true, 24, 36, vas);
 		
 		box.setVertices(vertices);
 		box.setIndices(indices);
