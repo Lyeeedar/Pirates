@@ -28,6 +28,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 public class Sprite3D implements Renderable {
 
@@ -113,10 +114,9 @@ public class Sprite3D implements Renderable {
 	}
 
 	@Override
-	public void queue(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
+	public void queue(float delta, HashMap<Class, Batch> batches) {
 		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
-		decalBatch.add(decal);
+		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 
 	}
 
@@ -172,13 +172,13 @@ public class Sprite3D implements Renderable {
 	}
 	
 	@Override
-	public void set(Entity source) {
+	public void set(Entity source, Vector3 offset) {
 		source.readData(pData, PositionalData.class);
 		source.readData(aData, AnimationData.class);
 
 		updateSpritesheets(source);
 		
-		setPosition(pData.position);
+		setPosition(pData.position.add(offset));
 		setRotation(pData.rotation);
 		if (aData.updateAnimations){
 			playAnimationLoop(aData.anim, aData.animation, aData.useDirection);

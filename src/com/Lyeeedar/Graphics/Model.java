@@ -1,5 +1,7 @@
 package com.Lyeeedar.Graphics;
 
+import java.util.HashMap;
+
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
@@ -12,6 +14,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pools;
 
 public final class Model implements Renderable {
 
@@ -32,22 +36,21 @@ public final class Model implements Renderable {
 	}
 
 	@Override
-	public void queue(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
-		modelBatch.add(mesh, primitive_type, texture, colour, model_matrix, primitive_type);
+	public void queue(float delta, HashMap<Class, Batch> batches) {
+		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, texture, colour, model_matrix, primitive_type);
 	}
 
 	@Override
-	public void set(Entity source) {
+	public void set(Entity source, Vector3 offset) {
 		
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			model_matrix.set(source.readOnlyRead(PositionalData.class).composed);
+			model_matrix.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
 		}
 		else
 		{
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			model_matrix.setToTranslationAndScaling(data.position.x, data.position.y, data.position.z, data.scale, data.scale, data.scale).rotate(GLOBALS.DEFAULT_ROTATION, data.rotation);
+			model_matrix.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
 		}
 	}
 

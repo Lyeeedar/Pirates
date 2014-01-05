@@ -60,6 +60,7 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 		shaderBody.setUniformf("fog_col", lights.ambientColour);
 		shaderBody.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shaderBody.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		shaderBody.setUniformf("u_viewPos", cam.position);
 		lights.applyLights(shaderBody);
 		
 		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
@@ -68,8 +69,6 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 
 			final Drawable drawable = drawableManager.drawables.get(i);
 			
-			shaderBody.setUniformf("u_viewPos", cam.position);
-
 			shaderBody.setUniformMatrix("u_mm", drawable.model_matrix);
 			normal_matrix.set(drawable.model_matrix);
 			shaderBody.setUniformMatrix("u_nm", normal_matrix);

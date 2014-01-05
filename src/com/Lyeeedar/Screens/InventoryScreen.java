@@ -10,6 +10,8 @@ import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
+import com.Lyeeedar.Graphics.Batch;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -44,6 +46,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Tree.TreeStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
+import com.badlogic.gdx.utils.Array;
 
 public class InventoryScreen extends AbstractScreen {
 
@@ -531,8 +534,7 @@ public class InventoryScreen extends AbstractScreen {
 	}
 
 	@Override
-	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) {		
+	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {		
 		//GLOBALS.player.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
 	}
 

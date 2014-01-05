@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Renderers;
 
+import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
@@ -10,7 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 
-public abstract class AbstractModelBatch{
+public abstract class AbstractModelBatch implements Batch {
 	
 	public Camera cam;
 	public boolean drawing;

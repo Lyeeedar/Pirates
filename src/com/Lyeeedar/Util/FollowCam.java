@@ -13,7 +13,8 @@ public class FollowCam extends PerspectiveCamera {
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
 	private final CollisionRay ray = new CollisionRay();
-	public float followDist = 10.0f;
+	public float followDist = 20.0f;
+	public float followHeight = 5.0f;
 	
 	public FollowCam(Controls controls)
 	{
@@ -39,7 +40,7 @@ public class FollowCam extends PerspectiveCamera {
 		direction.set(entityState.rotation);
 		Yrotate(angle);
 		
-		ray.ray.origin.set(entityState.position).add(0, 1, 0);
+		ray.ray.origin.set(entityState.position).add(0, followHeight, 0);
 		ray.ray.direction.set(direction).scl(-1.0f);
 		ray.len = followDist;
 		ray.reset();

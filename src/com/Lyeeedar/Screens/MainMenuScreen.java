@@ -1,8 +1,12 @@
 package com.Lyeeedar.Screens;
 
+import java.util.HashMap;
+
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
@@ -31,6 +35,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Tree.TreeStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
+import com.badlogic.gdx.utils.Array;
 
 public class MainMenuScreen extends AbstractScreen {
 	
@@ -197,8 +202,7 @@ public class MainMenuScreen extends AbstractScreen {
 	}
 
 	@Override
-	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
+	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
 		// TODO Auto-generated method stub
 
 	}

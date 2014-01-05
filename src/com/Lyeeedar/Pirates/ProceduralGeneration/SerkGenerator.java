@@ -116,9 +116,9 @@ public class SerkGenerator implements AbstractGenerator{
 				c.a = (tiles[x][y].height-seaBed) / height;
 				float max = 0.0f;
 				for (float f : tiles[x][y].slope) if (f > max) max = f;
-				c.b = (cc)?1.0f:0.0f;//(max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
+				c.b = (max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
 				c.g = (1.0f-c.b)*tiles[x][y].ground;
-				c.r = (tiles[x][y].height > 30) ? (1.0f-c.b)*(1.0f-c.g) : 0.0f ;
+				c.r = (tiles[x][y].height > 30) ? (1.0f-(c.b+c.g)) : 0.0f ;
 				
 				array[x][y] = c;
 				

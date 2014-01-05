@@ -193,10 +193,9 @@ public class Terrain extends Entity {
 			
 			if (!placed) continue;
 			
-			pData.scale = 0.5f;
 			v.writeData(pData, MinimalPositionalData.class);
 			
-			v.addRenderable(renderable.copy());
+			v.addRenderable(renderable.copy(), new Vector3());
 			
 			entities.add(v);
 		}

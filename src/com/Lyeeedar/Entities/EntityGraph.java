@@ -1,5 +1,6 @@
 package com.Lyeeedar.Entities;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -9,6 +10,8 @@ import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.EntityGraphOcttree;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batch;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
@@ -23,6 +26,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pools;
 
 public class EntityGraph {
@@ -117,16 +121,16 @@ public class EntityGraph {
 		}
 	}
 
-	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
 	{
 		if (entity != null) 
 		{
 			if (!cam.frustum.boundsInFrustum(entity.getCollisionShapeInternal().getBoundingBox(bb))) return;
-			entity.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+			entity.queueRenderables(cam, lights, delta, batches);
 		}
 		
 		for (EntityGraph eg : children) {
-			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+			eg.queueRenderables(cam, lights, delta, batches);
 		}
 	}
 	

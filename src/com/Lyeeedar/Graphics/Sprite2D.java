@@ -1,5 +1,7 @@
 package com.Lyeeedar.Graphics;
 
+import java.util.HashMap;
+
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -10,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 public class Sprite2D implements Renderable {
 	
@@ -28,17 +31,16 @@ public class Sprite2D implements Renderable {
 	}
 
 	@Override
-	public void queue(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) 
+	public void queue(float delta, HashMap<Class, Batch> batches) 
 	{
 		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
-		decalBatch.add(decal);
+		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 	}
 
 	@Override
-	public void set(Entity source) {
+	public void set(Entity source, Vector3 offset) {
 		source.readData(pData, PositionalData.class);
-		position.set(pData.position);
+		position.set(pData.position).add(offset);
 	}
 
 	@Override

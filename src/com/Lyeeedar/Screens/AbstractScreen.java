@@ -10,6 +10,12 @@
  ******************************************************************************/
 package com.Lyeeedar.Screens;
 
+import java.util.HashMap;
+
+import com.Lyeeedar.Graphics.Batch;
+import com.Lyeeedar.Graphics.DecalBatcher;
+import com.Lyeeedar.Graphics.ModelBatcher;
+import com.Lyeeedar.Graphics.ModelBatcher.ModelBatchers;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
@@ -32,6 +38,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.utils.Array;
  
 
 public abstract class AbstractScreen implements Screen {
@@ -48,6 +55,9 @@ public abstract class AbstractScreen implements Screen {
 	protected final BitmapFont font;
 	protected final Stage stage;
 	protected final PostProcessor postprocessor;
+	protected final Array<ModelBatcher> modelBatchers;
+	
+	protected final HashMap<Class, Batch> batches;
 	
 	protected final Camera cam;
 	protected final Controls controls;
@@ -73,10 +83,18 @@ public abstract class AbstractScreen implements Screen {
 		cam = new FollowCam(controls);
 		
 		font = new BitmapFont();
+		
 		spriteBatch = new SpriteBatch();
 		decalBatch = new DecalBatch(new DiscardCameraGroupStrategy(cam));
 		trailBatch = new MotionTrailBatch();
 		renderer = new CellShadingModelBatch();
+		modelBatchers = new Array<ModelBatcher>();
+		
+		batches = new HashMap<Class, Batch>();
+		batches.put(AbstractModelBatch.class, renderer);
+		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
+		batches.put(ModelBatchers.class, new ModelBatchers());
+		
 		stage = new Stage(0, 0, true, spriteBatch);
 		renderer.cam = cam;
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
@@ -108,7 +126,7 @@ public abstract class AbstractScreen implements Screen {
 		stage.act(delta);
 		
 		time = System.nanoTime();
-		queueRenderables(delta, renderer, decalBatch, trailBatch);
+		queueRenderables(delta, batches);
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
 		
@@ -116,7 +134,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		//Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -127,7 +145,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
 		time = System.nanoTime();
-		renderer.flush(GLOBALS.LIGHTS);
+		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS);
 		drawSkybox(delta);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
@@ -136,18 +154,15 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		//Gdx.gl.glDepthMask(false);
-		decalBatch.flush();
+		((DecalBatcher) batches.get(DecalBatcher.class)).flush();
 		averageDecal += System.nanoTime()-time;
 		averageDecal /= 2;
 		
-//		time = System.nanoTime();
-//		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-//		Gdx.gl.glEnable(GL20.GL_BLEND);
-//		Gdx.gl.glDepthMask(false);
-//		trailBatch.flush(cam);
-//		averageTrail += System.nanoTime()-time;
-//		averageTrail /= 2;
+		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glDepthMask(true);
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		((ModelBatchers) batches.get(ModelBatchers.class)).render(GLOBALS.LIGHTS, cam);
 		
 		time = System.nanoTime();
 		drawParticles(delta);
@@ -238,7 +253,7 @@ public abstract class AbstractScreen implements Screen {
 
 	public abstract void drawSkybox(float delta);
 	
-	public abstract void queueRenderables(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch);
+	public abstract void queueRenderables(float delta, HashMap<Class, Batch> batches);
 	
 	public abstract void drawParticles(float delta);
 

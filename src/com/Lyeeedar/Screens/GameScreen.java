@@ -2,6 +2,7 @@ package com.Lyeeedar.Screens;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,8 +34,10 @@ import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
 import com.Lyeeedar.Graphics.Model;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
@@ -73,6 +76,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
 	
@@ -135,7 +139,7 @@ public class GameScreen extends AbstractScreen {
 		
 		for (Entity e : ae)
 		{
-			world.add(e, true);
+			world.add(e, false);
 		}
 		
 		blank = FileUtils.loadTexture("data/textures/blank.png", true);
@@ -161,7 +165,7 @@ public class GameScreen extends AbstractScreen {
 		mesh.setPosition(pData.position);
 		ship.setCollisionShapeInternal(mesh);
 		
-		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
+		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 		
 		world.add(ship, true);
 
@@ -178,7 +182,7 @@ public class GameScreen extends AbstractScreen {
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		player.setAI(new AI_Player_Control(controls));
 		//player.setAI(new AI_Simple(player));
-		Sprite3D s = new Sprite3D(4, 4, 4, 4);
+		Sprite3D s = new Sprite3D(8, 8, 4, 4);
 		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
@@ -186,7 +190,7 @@ public class GameScreen extends AbstractScreen {
 		//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
 		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
 		//s.create();
-		player.addRenderable(s);
+		player.addRenderable(s, new Vector3(0, -1.5f, 0));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
@@ -239,7 +243,7 @@ public class GameScreen extends AbstractScreen {
 		s = new Sprite3D(2, 2, 4, 4);
 		s.setGender(GENDER.FEMALE);
 		s.addAnimation("move", "move");
-		npc.addRenderable(s);
+		npc.addRenderable(s, new Vector3(0, -2, 0));
 		//npc.addRenderable(new Sprite2D(Decal.newDecal(new TextureRegion(ImageUtils.drawText(sB, fB, "I am an NPC with Boobies loool look at them theyre all big and stuff :p")))));
 		npc.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 2.0f, 0.5f));
 		npc.readData(pData, PositionalData.class);
@@ -286,7 +290,7 @@ public class GameScreen extends AbstractScreen {
 			sData.factions.add("Enemy");
 			ge.writeData(sData, StatusData.class);
 			
-			ge.addRenderable(s);
+			ge.addRenderable(s, new Vector3());
 			
 			ge.readData(pData, PositionalData.class);
 			ge.getCollisionShapeInternal().setPosition(pData.position);
@@ -318,18 +322,28 @@ public class GameScreen extends AbstractScreen {
 		cmesh.setPosition(pData.position);
 		c.setCollisionShapeInternal(cmesh);
 
-		c.addRenderable(new Model(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1));
+		c.addRenderable(new Model(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 
 		world.add(c, true);
 		
+		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
+		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
-		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		for (Entity v : veggies)
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
 			v.update(0);
 			world.add(v, false);
+		}
+		
+		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
+		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/shr2.png", true), null, 1), 1, 10000, 50);
+		for (Entity v : veggies)
+		{
+			v.setCollisionShapeInternal(new Box(new Vector3(), 1, 1, 1));
+			v.update(0);
+			ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
@@ -451,10 +465,9 @@ public class GameScreen extends AbstractScreen {
 	}
 	
 	@Override
-	public void queueRenderables(float delta, AbstractModelBatch modelBatch,
-			DecalBatch decalBatch, MotionTrailBatch trailBatch) {
+	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
 		
-		GLOBALS.WORLD.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
+		GLOBALS.WORLD.queueRenderables(cam, GLOBALS.LIGHTS, delta, batches);
 		GLOBALS.WORLD.getText(tParticles, sB, fB);
 		Iterator<TextParticle> itr = tParticles.iterator();
 		while (itr.hasNext())
@@ -480,7 +493,7 @@ public class GameScreen extends AbstractScreen {
 //				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
 //			}
 //		}
-		ego.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
+		ego.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
@@ -648,7 +661,7 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.viewportWidth = width;
 		veggieCam.viewportHeight = height;
 		veggieCam.near = 2f;
-		veggieCam.far = 5002f;
+		veggieCam.far = 3002f;
 	}
 
 }

@@ -1,10 +1,13 @@
 package com.Lyeeedar.Collision;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.EntityGraph;
+import com.Lyeeedar.Graphics.Batch;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
@@ -16,6 +19,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.utils.Array;
 
 public class EntityGraphOcttree extends Octtree<EntityGraph> {
 
@@ -56,7 +60,7 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		eg.octtree = null;
 	}
 	
-	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
 	{
 		if (numChildElements == 0 && elements.size == 0) return;
 		
@@ -65,13 +69,13 @@ public class EntityGraphOcttree extends Octtree<EntityGraph> {
 		for (OcttreeEntry<EntityGraph, CollisionShape<?>> o : elements) 
 		{ 
 			EntityGraph eg = o.e;
-			eg.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+			eg.queueRenderables(cam, lights, delta, batches);
 		}
 		
 		if (children != null && numChildElements != 0) for (Octtree<EntityGraph> o : children) 
 		{
 			EntityGraphOcttree ego = (EntityGraphOcttree) o;
-			ego.queueRenderables(cam, lights, delta, modelBatch, decalBatch, trailBatch);
+			ego.queueRenderables(cam, lights, delta, batches);
 		}
 	}
 	

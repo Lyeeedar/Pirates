@@ -13,6 +13,8 @@ import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
+import com.Lyeeedar.Graphics.Batch;
+import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Renderable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -25,6 +27,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.utils.Array;
 
 public class Entity {
 	
@@ -128,21 +131,16 @@ public class Entity {
 		}
 	}
 	
-	public void addRenderable(Renderable r)
+	public void addRenderable(Renderable r, Vector3 position)
 	{
-		renderables.add(r);
+		renderables.add(new EntityRenderable(r, position));
 	}
 	
-	public void removeRenderable(Renderable r)
-	{
-		renderables.remove(r);
-	}
-	
-	public void queueRenderables(Camera cam, LightManager lights, float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
 	{
 		renderables.set(this);
 		renderables.update(delta, cam, lights);
-		renderables.queue(delta, modelBatch, decalBatch, trailBatch);
+		renderables.queue(delta, batches);
 	}
 	
 	public void setAI(AI_Package ai)
@@ -244,51 +242,51 @@ public class Entity {
 	
 	public static class EntityRenderables 
 	{
-		private final ArrayList<Renderable> renderables = new ArrayList<Renderable>();
+		private final ArrayList<EntityRenderable> renderables = new ArrayList<EntityRenderable>();
 		
 		public EntityRenderables()
 		{
 		}
 		
-		public void add(Renderable r)
+		public void add(EntityRenderable r)
 		{
 			renderables.add(r);
 		}
 		
-		public void remove(Renderable r)
+		public void remove(EntityRenderable r)
 		{
 			renderables.remove(r);
 		}
 		
 		public void set(Entity source)
 		{
-			for (Renderable r : renderables)
+			for (EntityRenderable r : renderables)
 			{
-				r.set(source);
+				r.renderable.set(source, r.position);
 			}
 		}
 		
 		public void update(float delta, Camera cam, LightManager lights)
 		{
-			for (Renderable r : renderables)
+			for (EntityRenderable r : renderables)
 			{
-				r.update(delta, cam, lights);
+				r.renderable.update(delta, cam, lights);
 			}
 		}
 		
-		public void queue(float delta, AbstractModelBatch modelBatch, DecalBatch decalBatch, MotionTrailBatch trailBatch)
+		public void queue(float delta, HashMap<Class, Batch> batches)
 		{
-			for (Renderable r : renderables)
+			for (EntityRenderable r : renderables)
 			{
-				r.queue(delta, modelBatch, decalBatch, trailBatch);
+				r.renderable.queue(delta, batches);
 			}
 		}
 		
 		public void dispose()
 		{
-			for (Renderable r : renderables)
+			for (EntityRenderable r : renderables)
 			{
-				r.dispose();
+				r.renderable.dispose();
 			}
 		}
 	}
@@ -301,6 +299,18 @@ public class Entity {
 		}
 		renderables.dispose();
 		ai.dispose();
+	}
+	
+	public class EntityRenderable
+	{
+		Renderable renderable;
+		Vector3 position = new Vector3();
+		
+		public EntityRenderable(Renderable renderable, Vector3 position)
+		{
+			this.renderable = renderable;
+			this.position.set(position);
+		}
 	}
 	
 	public interface EntityData<E extends EntityData<E>>
@@ -369,14 +379,10 @@ public class Entity {
 	public static class MinimalPositionalData implements EntityData<MinimalPositionalData>
 	{
 		public final Vector3 position = new Vector3();
-		public final Vector3 rotation = new Vector3();
-		public float scale = 1.0f;
 		
 		@Override
 		public void write(MinimalPositionalData data) {
 			position.set(data.position);
-			rotation.set(data.rotation);
-			scale = data.scale;
 		}
 
 		@Override
@@ -409,7 +415,7 @@ public class Entity {
 		public final Matrix4 lastInv = new Matrix4();
 		
 		public int jumpToken = 0;
-		
+				
 		private final Vector3 tmpVec = new Vector3();
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 v = new Vector3();
@@ -436,7 +442,7 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			graph = data.graph;
-			
+						
 			if (shape.getClass().equals(data.shape.getClass()))
 			{
 				shape.setGeneric(data.shape);
@@ -547,7 +553,7 @@ public class Entity {
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
-				if (ray.dist > 0) position.y = ray.intersection.y;
+				position.y = ray.intersection.y;
 				graph.popAndInsert(base);
 			}
 			else
