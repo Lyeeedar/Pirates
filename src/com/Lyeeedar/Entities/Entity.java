@@ -218,6 +218,18 @@ public class Entity {
 		return (E) entityData.get(type);
 	}
 	
+	public Vector3 getPosition()
+	{
+		if (entityData.containsKey(PositionalData.class))
+		{
+			return ((PositionalData)entityData.get(PositionalData.class)).position;
+		}
+		else
+		{
+			return ((MinimalPositionalData)entityData.get(MinimalPositionalData.class)).position;
+		}
+	}
+	
 	public Runnable getRunnable(float delta)
 	{
 		runnable.set(delta, this);

@@ -49,7 +49,9 @@ public class AI_Player_Control extends AI_Package {
 		
 		evaluateDamage(entityStatus, entityAnim, delta);
 		
-		entityPos.Xrotate(-controls.getDeltaX());
+		//entityPos.Xrotate(-controls.getDeltaX());
+		if (controls.left()) entityPos.Xrotate(-delta*100);
+		if (controls.right()) entityPos.Xrotate(delta*100);
 		
 		if (entityStatus.currentHealth > 0)
 		{
@@ -64,8 +66,8 @@ public class AI_Player_Control extends AI_Package {
 			if (controls.up()) entityPos.forward_backward(speed);
 			else if (controls.down()) entityPos.forward_backward(-speed);
 			
-			if (controls.left()) entityPos.left_right(speed);
-			else if (controls.right()) entityPos.left_right(-speed);
+			//if (controls.left()) entityPos.left_right(speed);
+			//else if (controls.right()) entityPos.left_right(-speed);
 			
 			if (controls.jump() && entityPos.jumpToken > 0 && !jump) {
 				entityPos.velocity.set(0, 30, 0);

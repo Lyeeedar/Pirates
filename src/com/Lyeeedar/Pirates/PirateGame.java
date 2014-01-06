@@ -32,7 +32,7 @@ public class PirateGame extends Game {
 //		GLOBALS.queue_all_assets();
 //		GLOBALS.ASSET_MANAGER.finishLoading();
 		
-		GLOBALS.mixer = new Mixer("data/bgm/Skye Cuillin.mp3", 1.0f);
+		//GLOBALS.mixer = new Mixer("data/bgm/Skye Cuillin.mp3", 1.0f);
 		
 		GLOBALS.RESOLUTION[0] = Gdx.graphics.getWidth();
 		GLOBALS.RESOLUTION[1] = Gdx.graphics.getHeight();

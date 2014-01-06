@@ -23,6 +23,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -126,6 +127,7 @@ public class EntityGraph {
 		if (entity != null) 
 		{
 			if (!cam.frustum.boundsInFrustum(entity.getCollisionShapeInternal().getBoundingBox(bb))) return;
+			
 			entity.queueRenderables(cam, lights, delta, batches);
 		}
 		

@@ -176,8 +176,8 @@ public class Terrain extends Entity {
 			boolean placed = false;
 			for (int rep = 0; rep < maxTries; rep++)
 			{
-				pData.position.x = hm.position.x+ran.nextInt(hm.scale);
-				pData.position.z = hm.position.z+ran.nextInt(hm.scale);
+				pData.position.x = hm.position.x+ran.nextFloat()*hm.scale;
+				pData.position.z = hm.position.z+ran.nextFloat()*hm.scale;
 				tmpVec.set(pData.position.x, 0, pData.position.z).sub(hm.position).scl(1.0f/hm.scale);
 				
 				int x = (int) (tmpVec.x*hm.size);

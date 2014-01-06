@@ -17,6 +17,7 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
@@ -35,9 +36,8 @@ public class ModelBatcher implements Renderable {
 	private final int primitive_type;
 	private final Texture texture;
 	private final Vector3 colour = new Vector3();
-	private final boolean transparent;
 	
-	private final Array<BatchedInstance> instances = new Array<BatchedInstance>(true, 100);
+	private final Array<BatchedInstance> instances = new Array<BatchedInstance>(false, 100);
 	
 	private final float[] pos_array;
 	
@@ -56,7 +56,7 @@ public class ModelBatcher implements Renderable {
 		}
 	};
 	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, boolean transparent)
+	public ModelBatcher(Mesh mesh, int primitive_type, Texture texture, Vector3 colour)
 	{
 		this.indexLen = mesh.getNumIndices();
 		int[] mi = new int[1];
@@ -65,7 +65,6 @@ public class ModelBatcher implements Renderable {
 		this.primitive_type = primitive_type;
 		this.texture = texture;
 		this.colour.set(colour);
-		this.transparent = transparent;
 		
 		pos_array = new float[max_instances*3];
 	}
@@ -108,22 +107,26 @@ public class ModelBatcher implements Renderable {
 	
 	public void add(Vector3 position)
 	{
-		if (cam != null) instances.add(pool.obtain().set(position, cam));
+		if (cam == null) return;
+		Vector3 pos = position;
+		float d = cam.position.dst(pos);
+		float quarter = (cam.far)/4.0f;
+		float dd = Math.max(d-quarter, 0.0f);
+		float threshold = 1.0f - (dd / (cam.far-quarter));
+		float a = Math.abs(pos.x);
+		float dst = a-MathUtils.floor(a);
+		
+		if (dst <= threshold) 
+		{
+			float fadestart = (-(dst-1.0f)*(cam.far-quarter))+quarter;
+			float fade = Math.min((fadestart-d)/1000, 1.0f);
+			if (fade > 0.0f) instances.add(pool.obtain().set(position, cam, fade));
+		}
 	}
 	
 	public void render()
 	{
-		if (transparent) instances.sort(transparentComparator);
-		else instances.sort(solidComparator);
-		
-		if (transparent)
-		{
-			Gdx.gl.glEnable(GL20.GL_BLEND);
-		}
-		else
-		{
-			Gdx.gl.glDisable(GL20.GL_BLEND);
-		}
+		instances.sort(transparentComparator);
 		
 		shader.setUniformi("u_texture", 0);
 		texture.bind(0);
@@ -141,6 +144,7 @@ public class ModelBatcher implements Renderable {
 				pos_array[i++] = p.x;
 				pos_array[i++] = p.y;
 				pos_array[i++] = p.z;
+				shader.setUniformf("u_fade", instances.get(index).fade);
 			}
 			
 			shader.setUniform3fv("instance_positions", pos_array, 0, i);
@@ -156,6 +160,8 @@ public class ModelBatcher implements Renderable {
 	
 	public static void begin(LightManager lights, Camera cam)
 	{
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+		
 		if (shader == null) loadShader();
 		ModelBatcher.cam = cam;
 		shader.begin();
@@ -315,15 +321,15 @@ public class ModelBatcher implements Renderable {
 	
 	class BatchedInstance
 	{
-		private static final int PRIORITY_DISCRETE_STEPS = 256;
-
-		private int dist;
+		private float dist;
 		public final Vector3 position = new Vector3();
+		public float fade;
 		
-		public BatchedInstance set(Vector3 position, Camera cam)
+		public BatchedInstance set(Vector3 position, Camera cam, float fade)
 		{
 			this.position.set(position);
-			this.dist = (int) (PRIORITY_DISCRETE_STEPS * cam.position.dst2(position));
+			this.dist = cam.position.dst2(position);
+			this.fade = fade;
 			return this;
 		}	
 	}
@@ -332,7 +338,7 @@ public class ModelBatcher implements Renderable {
 	{
 		@Override
 		public int compare(BatchedInstance o1, BatchedInstance o2) {
-			return o1.dist-o2.dist;
+			return (int) ((o1.dist-o2.dist)*100);
 		}
 	}
 	
@@ -340,7 +346,7 @@ public class ModelBatcher implements Renderable {
 	{
 		@Override
 		public int compare(BatchedInstance o1, BatchedInstance o2) {
-			return o2.dist-o1.dist;
+			return (int) ((o2.dist-o1.dist)*100);
 		}
 	}
 }

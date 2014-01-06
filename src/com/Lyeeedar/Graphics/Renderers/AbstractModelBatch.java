@@ -96,7 +96,7 @@ public abstract class AbstractModelBatch implements Batch {
 			final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 			Texture texture;
 			int textureHash;
-			
+						
 			final Vector3 tmp = new Vector3();
 
 			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {

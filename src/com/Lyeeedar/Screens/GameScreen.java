@@ -329,7 +329,7 @@ public class GameScreen extends AbstractScreen {
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), new Vector3(1, 1, 1)), 1, 5000, 50);
 		for (Entity v : veggies)
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
@@ -338,7 +338,7 @@ public class GameScreen extends AbstractScreen {
 		}
 		
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
-		terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/shr2.png", true), null, 1), 1, 10000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/shr2.png", true), new Vector3(1, 1, 1)), 1, 10000, 50);
 		for (Entity v : veggies)
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 1, 1, 1));
@@ -448,6 +448,7 @@ public class GameScreen extends AbstractScreen {
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
+		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		terrain.render(cam, cam.position, GLOBALS.LIGHTS);
 		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
@@ -571,7 +572,7 @@ public class GameScreen extends AbstractScreen {
 			d.update(delta, cam);
 		}
 				
-		delta /= 300.0f;
+		delta /= 300000.0f;
 		
 		if (increase) 
 		{
@@ -616,6 +617,8 @@ public class GameScreen extends AbstractScreen {
 			float brightness = (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
 			GLOBALS.LIGHTS.ambientColour.set(brightness, brightness, brightness);
 		}
+		
+		resized(GLOBALS.SCREEN_SIZE[0], GLOBALS.SCREEN_SIZE[1]);
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
@@ -661,7 +664,7 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.viewportWidth = width;
 		veggieCam.viewportHeight = height;
 		veggieCam.near = 2f;
-		veggieCam.far = 3002f;
+		veggieCam.far = 1502f;
 	}
 
 }
