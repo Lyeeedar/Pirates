@@ -16,12 +16,14 @@ import java.util.Map;
 
 import com.Lyeeedar.Graphics.PostProcessing.Effects.BloomEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.BlurEffect;
+import com.Lyeeedar.Graphics.PostProcessing.Effects.DepthOfFieldEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.EdgeDetectionEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.PostProcessingEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -32,7 +34,8 @@ public class PostProcessor {
 	public enum Effect {
 		BLUR,
 		BLOOM,
-		EDGE_DETECT
+		EDGE_DETECT,
+		DOF
 	}
 	
 	public static boolean ON = true;
@@ -93,6 +96,7 @@ public class PostProcessor {
 		effects.put(Effect.BLUR, new BlurEffect(1.0f, 2.0f, 800, 600));
 		effects.put(Effect.BLOOM, new BloomEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.EDGE_DETECT, new EdgeDetectionEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
+		effects.put(Effect.DOF, new DepthOfFieldEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 	}
 	
 	public void updateBufferSettings(Format format, int f, int g) {
@@ -132,6 +136,7 @@ public class PostProcessor {
 	
 	private Texture applyEffectChain()
 	{
+		captureBuffer.getDepthBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		bufferChain.begin(captureBuffer.getColorBufferTexture(), captureBuffer.getDepthBufferTexture());
 		
 		for (Effect effect : effectChain)

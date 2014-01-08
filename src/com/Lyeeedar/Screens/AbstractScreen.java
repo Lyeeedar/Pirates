@@ -99,8 +99,9 @@ public abstract class AbstractScreen implements Screen {
 		renderer.cam = cam;
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
 		
-		//postprocessor.addEffect(Effect.EDGE_DETECT);
 		postprocessor.addEffect(Effect.BLOOM);
+		postprocessor.addEffect(Effect.DOF);
+		
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.EDGE_DETECT);

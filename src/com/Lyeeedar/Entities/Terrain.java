@@ -262,7 +262,7 @@ public class Terrain extends Entity {
 					Color.rgba8888ToColor(c, pm.getPixel(x, z));
 					heights[x][z] = seaFloor+c.a*range;
 					
-					float msplat = 1.0f - (c.r+c.g+c.b);
+					float msplat = 0;//1.0f - (c.r+c.g+c.b);
 					splats[x][z] = 0;				
 					if (c.r > msplat) splats[x][z] = 1; msplat = c.r;
 					if (c.g > msplat) splats[x][z] = 2; msplat = c.g;

@@ -63,24 +63,29 @@ public class FollowCam extends PerspectiveCamera {
 		ray.len = followDist;
 		ray.reset();
 		
+		if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
+		{
+			
+		}
+		
 		position.set(ray.intersection);
 		update();
 				
-		for (int i = 0; i < 4; i++)
-		{
-			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
-			ray.reset();
-			
-			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
-			{
-				ray.intersection.sub(frustum.planePoints[i]);
-				if (ray.intersection.x > 0.0f && ray.intersection.y > 0.0f && ray.intersection.z > 0.0f) 
-				{
-					position.add(ray.intersection);
-					update();
-				}
-			}
-		}
+//		for (int i = 0; i < 4; i++)
+//		{
+//			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
+//			ray.reset();
+//			
+//			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
+//			{
+//				ray.intersection.sub(frustum.planePoints[i]);
+//				if (ray.intersection.x > 0.0f && ray.intersection.y > 0.0f && ray.intersection.z > 0.0f) 
+//				{
+//					position.add(ray.intersection);
+//					update();
+//				}
+//			}
+//		}
 		
 		float seaY = 0;
 		

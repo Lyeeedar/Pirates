@@ -331,7 +331,7 @@ public class GameScreen extends AbstractScreen {
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), new Vector3(1, 1, 1)), 1, 5000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), new Vector3(1, 1, 1)), 1, 2500, 50);
 		//terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
 		for (Entity v : veggies)
 		{
