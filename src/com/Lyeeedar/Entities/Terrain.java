@@ -262,11 +262,11 @@ public class Terrain extends Entity {
 					Color.rgba8888ToColor(c, pm.getPixel(x, z));
 					heights[x][z] = seaFloor+c.a*range;
 					
-					splats[x][z] = 0;
-					
-					if (c.r != 0.0f) splats[x][z] = 1;
-					if (c.g != 0.0f) splats[x][z] = 2;
-					if (c.b != 0.0f) splats[x][z] = 3;
+					float msplat = 1.0f - (c.r+c.g+c.b);
+					splats[x][z] = 0;				
+					if (c.r > msplat) splats[x][z] = 1; msplat = c.r;
+					if (c.g > msplat) splats[x][z] = 2; msplat = c.g;
+					if (c.b > msplat) splats[x][z] = 3; msplat = c.b;
 				}
 			}
 		}

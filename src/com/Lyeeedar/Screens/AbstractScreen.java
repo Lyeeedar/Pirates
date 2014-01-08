@@ -146,7 +146,6 @@ public abstract class AbstractScreen implements Screen {
 
 		time = System.nanoTime();
 		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS);
-		drawSkybox(delta);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		
@@ -162,7 +161,9 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		drawSkybox(delta);
 		((ModelBatchers) batches.get(ModelBatchers.class)).render(GLOBALS.LIGHTS, cam);
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		
 		time = System.nanoTime();
 		drawParticles(delta);

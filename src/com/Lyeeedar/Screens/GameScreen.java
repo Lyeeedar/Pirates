@@ -198,6 +198,8 @@ public class GameScreen extends AbstractScreen {
 		
 		player.readData(pData, PositionalData.class);
 		pData.position.set(4, 12, 0);
+		pData.position.set(2500, 1000, 2500);
+		pData.Xrotate(30);
 		player.writeData(pData, PositionalData.class);
 		
 		player.readData(sData, StatusData.class);
@@ -344,7 +346,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 1, 1, 1));
 			v.update(0);
-			//ego.add(v, false);
+			ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
