@@ -140,7 +140,7 @@ public class Entity {
 	{
 		renderables.set(this);
 		renderables.update(delta, cam, lights);
-		renderables.queue(delta, batches);
+		renderables.queue(delta, cam, batches);
 	}
 	
 	public void setAI(AI_Package ai)
@@ -286,11 +286,11 @@ public class Entity {
 			}
 		}
 		
-		public void queue(float delta, HashMap<Class, Batch> batches)
+		public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 		{
 			for (EntityRenderable r : renderables)
 			{
-				r.renderable.queue(delta, batches);
+				r.renderable.queue(delta, cam, batches);
 			}
 		}
 		

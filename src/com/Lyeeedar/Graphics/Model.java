@@ -36,7 +36,7 @@ public final class Model implements Renderable {
 	}
 
 	@Override
-	public void queue(float delta, HashMap<Class, Batch> batches) {
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
 		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, texture, colour, model_matrix, primitive_type);
 	}
 

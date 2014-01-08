@@ -114,7 +114,7 @@ public class Sprite3D implements Renderable {
 	}
 
 	@Override
-	public void queue(float delta, HashMap<Class, Batch> batches) {
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
 		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
 		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 

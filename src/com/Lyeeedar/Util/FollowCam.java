@@ -22,7 +22,6 @@ public class FollowCam extends PerspectiveCamera {
 	}
 	
 	private float angle = -15;
-	private float minDist = 0;
 	
 	public void setAngle(float angle)
 	{
@@ -66,33 +65,30 @@ public class FollowCam extends PerspectiveCamera {
 		
 		position.set(ray.intersection);
 		update();
-		
-		minDist = ray.dist;
-		
+				
 		for (int i = 0; i < 4; i++)
 		{
 			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
 			ray.reset();
 			
-			GLOBALS.WORLD.collideWalkables(ray, entityState.graph);
-			
-			if ( ray.dist < minDist) minDist = ray.dist;
+			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
+			{
+				ray.intersection.sub(frustum.planePoints[i]);
+				if (ray.intersection.x > 0.0f && ray.intersection.y > 0.0f && ray.intersection.z > 0.0f) 
+				{
+					position.add(ray.intersection);
+					update();
+				}
+			}
 		}
-		
-		ray.len = minDist;
-		ray.ray.direction.set(direction).scl(-1.0f);
-		ray.reset();
-		
-		position.set(ray.intersection);
-		update();
 		
 		float seaY = 0;
 		
 		for (int i = 0; i < 2; i++)
 		{
-//			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
-//			float diff = seaHeight - frustum.planePoints[i].y;
-//			if (diff > seaY) seaY = diff;
+			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
+			float diff = seaHeight - frustum.planePoints[i].y;
+			if (diff > seaY) seaY = diff;
 		}
 		
 		if (seaY > 0)

@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.Array;
 
 public interface Renderable {
 
-	public void queue(float delta, HashMap<Class, Batch> batches);
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches);
 	
 	public void set(Entity source, Vector3 offset);
 	

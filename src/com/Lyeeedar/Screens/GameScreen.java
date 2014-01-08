@@ -330,6 +330,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), new Vector3(1, 1, 1)), 1, 5000, 50);
+		//terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
 		for (Entity v : veggies)
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
@@ -343,7 +344,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			v.setCollisionShapeInternal(new Box(new Vector3(), 1, 1, 1));
 			v.update(0);
-			ego.add(v, false);
+			//ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
@@ -486,14 +487,6 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
-//		for (Entity v : veggies)
-//		{
-//			v.readData(pData, PositionalData.class);
-//			if (veggieCam.frustum.pointInFrustum(pData.position))
-//			{
-//				v.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
-//			}
-//		}
 		ego.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
@@ -546,7 +539,9 @@ public class GameScreen extends AbstractScreen {
 		player.readData(pData, PositionalData.class);
 				
 		((FollowCam)cam).update(pData);
-		((FollowCam)veggieCam).update(pData);
+		veggieCam.position.set(cam.position);
+		veggieCam.direction.set(cam.direction);
+		veggieCam.update();
 		
 		GLOBALS.WORLD.collectDead(deadList);
 		for (EntityGraph eg : deadList) eg.remove();
@@ -616,9 +611,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			float brightness = (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
 			GLOBALS.LIGHTS.ambientColour.set(brightness, brightness, brightness);
-		}
-		
-		resized(GLOBALS.SCREEN_SIZE[0], GLOBALS.SCREEN_SIZE[1]);
+		}	
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;

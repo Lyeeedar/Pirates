@@ -45,7 +45,7 @@ public class ModelBatcher implements Renderable {
 	
 	private int index;
 	
-	private static Camera cam;
+	private Camera cam;
 	
 	boolean queued = false;
 	
@@ -71,12 +71,13 @@ public class ModelBatcher implements Renderable {
 	
 
 	@Override
-	public void queue(float delta, HashMap<Class, Batch> batches) 
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) 
 	{
 		if (!queued) 
 		{
 			((ModelBatchers) batches.get(ModelBatchers.class)).add(this);
 			queued = true;
+			this.cam = cam;
 		}
 	}
 
@@ -108,20 +109,27 @@ public class ModelBatcher implements Renderable {
 	public void add(Vector3 position)
 	{
 		if (cam == null) return;
-		Vector3 pos = position;
-		float d = cam.position.dst(pos);
-		float quarter = (cam.far)/4.0f;
-		float dd = Math.max(d-quarter, 0.0f);
-		float threshold = 1.0f - (dd / (cam.far-quarter));
-		float a = Math.abs(pos.x);
-		float dst = a-MathUtils.floor(a);
-		
-		if (dst <= threshold) 
-		{
-			float fadestart = (-(dst-1.0f)*(cam.far-quarter))+quarter;
-			float fade = Math.min((fadestart-d)/1000, 1.0f);
-			if (fade > 0.0f) instances.add(pool.obtain().set(position, cam, fade));
-		}
+		instances.add(pool.obtain().set(position, cam, 1.0f));
+//		Vector3 pos = position;
+//		float d = cam.position.dst(pos);
+//		
+//		float cam2 = cam.far;
+//		float quarter = (cam2)/4.0f;
+//		float ncam = cam2-quarter;
+//		
+//		float dd = Math.max(d-quarter, 0.0f);
+//		
+//		float threshold = 1.0f - (dd / (ncam));
+//		float a = Math.abs(pos.x);
+//		float dst = a-MathUtils.floor(a);
+//				
+//		if (dst <= threshold) 
+//		{
+//			float fadestart = (1.0f-dst)*(ncam)+quarter;
+//			float fade = Math.min((fadestart-d)/(quarter/2.0f), 1.0f);
+//			
+//			if (fade > 0.0f) instances.add(pool.obtain().set(position, cam, fade));
+//		}
 	}
 	
 	public void render()
@@ -163,14 +171,13 @@ public class ModelBatcher implements Renderable {
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		
 		if (shader == null) loadShader();
-		ModelBatcher.cam = cam;
 		shader.begin();
 		
 		lights.applyLights(shader);
 		shader.setUniformf("fog_col", lights.ambientColour);
-		shader.setUniformMatrix("u_pv", cam.combined);
 		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		shader.setUniformMatrix("u_pv", cam.combined);
 		shader.setUniformf("u_viewPos", cam.position);
 	}
 	
