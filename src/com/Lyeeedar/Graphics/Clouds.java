@@ -35,7 +35,7 @@ public class Clouds {
 			cloudTex[i] = getCloudTex(64*(2*(i+1)), i);
 		}
 		
-		this.mesh = Shapes.getCurvedPlaneMesh((int) GLOBALS.FOG_MAX, 100, 0, 1, false);
+		this.mesh = Shapes.getCurvedPlaneMesh((int) GLOBALS.FOG_MAX+2000, 100, 0, 1, false);
 		
 		this.shader = new ShaderProgram(
 				Gdx.files.internal("data/shaders/clouds.vertex.glsl"),
@@ -70,7 +70,7 @@ public class Clouds {
 	}
 	
 	public float CloudCover = 0.5f;
-	public float CloudSharpness = 0.7f;
+	public float CloudSharpness = 0.9f;
 	
 	boolean up = false;
 	public void update(float delta)
@@ -98,7 +98,7 @@ public class Clouds {
 		shader.setUniformf("u_time", time);
 		shader.setUniformf("u_height", 1000.0f);
 		
-		shader.setUniformf("u_ambient", 1, 1, 1);//lights.ambientColour);
+		shader.setUniformf("u_ambient", lights.ambientColour);
 		
 		shader.setUniformf("CloudCover", CloudCover);
 		shader.setUniformf("CloudSharpness", CloudSharpness);

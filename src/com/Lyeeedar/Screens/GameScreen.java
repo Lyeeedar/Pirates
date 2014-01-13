@@ -76,6 +76,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -112,19 +113,23 @@ public class GameScreen extends AbstractScreen {
 				
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		sand.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
 		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true);
 		grass.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		grass.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
 		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true);
 		dirt.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		dirt.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
 		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		rock.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 8008135);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 245);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate(ae)));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -169,13 +174,10 @@ public class GameScreen extends AbstractScreen {
 		
 		world.add(ship, true);
 
-		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
-		skytex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
-		glowtex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		Weather weather = new Weather(skytex, glowtex, new Clouds());
+		//seatex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
+		Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), terrain);
 		skybox = new SkyBox(sea, weather);
 		
@@ -331,20 +333,26 @@ public class GameScreen extends AbstractScreen {
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), new Vector3(1, 1, 1)), 1, 2500, 50);
+		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true);
+		pinetex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1)), 1, 2500, 50);
 		//terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
+		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{
-			v.setCollisionShapeInternal(new Box(new Vector3(), 0.001f, 150, 0.001f));
+			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
 			v.update(0);
 			world.add(v, false);
 		}
 		
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/shr2.png", true), new Vector3(1, 1, 1)), 1, 10000, 50);
+		Texture shrtex = FileUtils.loadTexture("data/textures/shr2.png", true);
+		shrtex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1)), 1, 50000, 50);
+		bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{
-			v.setCollisionShapeInternal(new Box(new Vector3(), 1, 1, 1));
+			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
 			v.update(0);
 			ego.add(v, false);
 		}
@@ -568,71 +576,6 @@ public class GameScreen extends AbstractScreen {
 		{
 			d.update(delta, cam);
 		}
-				
-		delta /= 300000.0f;
-		
-		if (increase) 
-		{
-			GLOBALS.LIGHTS.directionalLight.direction.y += delta;
-			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-			}
-		}
-		else 
-		{
-			GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
-			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-			}
-		}
-		
-		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
-		if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
-		
-		if (GLOBALS.LIGHTS.directionalLight.direction.y > 0.1f)
-		{
-			GLOBALS.LIGHTS.ambientColour.set(0.6f, 0.65f, 0.8f);
-		}
-		else if (GLOBALS.LIGHTS.directionalLight.direction.y < -0.5f)
-		{
-			GLOBALS.LIGHTS.ambientColour.set(0.0f, 0.0f, 0.0f);
-		}
-		else
-		{
-			float brightness = (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
-			GLOBALS.LIGHTS.ambientColour.set(brightness, brightness, brightness);
-		}	
-//		
-//		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
-//		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
-//		lights.ambientColour.z = (lights.directionalLight.direction.y+1)/2;
-//		
-//		strike_time -= delta;
-//		if (strike_time < 0.0f)
-//		{
-//			GLOBALS.LIGHTS.ambientColour.set(0.05f, 0.07f, 0.12f);
-//		}
-//		else
-//		{
-//			GLOBALS.LIGHTS.ambientColour.set(0.1f, 0.1f, 0.7f);
-//		}
-//		
-//		if (ran.nextInt(500) == 1)
-//		{
-//			strike_time = 0.1f;
-//		}
 	}
 
 	@Override

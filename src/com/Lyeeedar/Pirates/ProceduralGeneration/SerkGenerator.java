@@ -90,6 +90,7 @@ public class SerkGenerator implements AbstractGenerator{
 				PositionalData pData = e.readOnlyRead(PositionalData.class);
 				pData.position.x /= (float)size; pData.position.x *= (float)scale;
 				pData.position.z /= (float)size; pData.position.z *= (float)scale;
+				pData.position.y -= 4;
 				pData.calculateComposed();
 				e.update(0);
 			}

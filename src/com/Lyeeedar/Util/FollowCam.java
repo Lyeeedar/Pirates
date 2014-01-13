@@ -58,34 +58,27 @@ public class FollowCam extends PerspectiveCamera {
 		direction.set(entityState.rotation.x, 0, entityState.rotation.z).nor();
 		Yrotate(angle);
 		
-		ray.ray.origin.set(entityState.position).add(0, 1, 0);
+		ray.ray.origin.set(entityState.position).add(0, followHeight, 0);
 		ray.ray.direction.set(direction).scl(-1.0f);
 		ray.len = followDist;
 		ray.reset();
 		
-		if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
-		{
-			
-		}
+		GLOBALS.WORLD.collideWalkables(ray, entityState.graph);
 		
 		position.set(ray.intersection);
 		update();
-				
-//		for (int i = 0; i < 4; i++)
-//		{
-//			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
-//			ray.reset();
-//			
-//			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
-//			{
-//				ray.intersection.sub(frustum.planePoints[i]);
-//				if (ray.intersection.x > 0.0f && ray.intersection.y > 0.0f && ray.intersection.z > 0.0f) 
-//				{
-//					position.add(ray.intersection);
-//					update();
-//				}
-//			}
-//		}
+		
+		for (int i = 0; i < 4; i++)
+		{
+			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
+			ray.reset();
+			
+			tmp.set(frustum.planePoints[i]).sub(position);
+			
+			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
+				position.add(tmp.add(ray.intersection).sub(ray.ray.direction)).scl(0.5f);
+		}
+		update();
 		
 		float seaY = 0;
 		

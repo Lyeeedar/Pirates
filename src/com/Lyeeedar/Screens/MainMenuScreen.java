@@ -177,11 +177,9 @@ public class MainMenuScreen extends AbstractScreen {
 		table.setFillParent(true);
 		stage.addActor(table);
 		
-		Texture skytex = new Texture(Gdx.files.internal("data/textures/sky.png"));
-		Texture glowtex = new Texture(Gdx.files.internal("data/textures/glow.png"));
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		Weather weather = new Weather(skytex, glowtex, new Clouds());
+		Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), new Terrain(new Texture[]{}, -100.0f, new Terrain.HeightMap[]{}));
 		skybox = new SkyBox(sea, weather);
 		
@@ -219,57 +217,11 @@ public class MainMenuScreen extends AbstractScreen {
 
 	}
 
-	boolean increase = true;
 	@Override
 	public void update(float delta) {
 		GLOBALS.SKYBOX.update(delta);
 		((FollowCam)cam).updateBasic(pData);
 		
-		delta /= 5;
-		
-		if (increase) 
-		{
-			GLOBALS.LIGHTS.directionalLight.direction.y += delta;
-			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-			}
-		}
-		else 
-		{
-			GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
-			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-			}
-			else
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-			}
-		}
-		
-		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
-		if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
-		
-		if (GLOBALS.LIGHTS.directionalLight.direction.y > 0.1f)
-		{
-			GLOBALS.LIGHTS.ambientColour.set(1.0f, 1.0f, 1.0f);
-		}
-		else if (GLOBALS.LIGHTS.directionalLight.direction.y < -0.5f)
-		{
-			GLOBALS.LIGHTS.ambientColour.set(0.0f, 0.0f, 0.0f);
-		}
-		else
-		{
-			float brightness = (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
-			GLOBALS.LIGHTS.ambientColour.set(brightness, brightness, brightness);
-		}
 	}
 
 	@Override

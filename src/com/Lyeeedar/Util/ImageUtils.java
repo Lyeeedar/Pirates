@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.utils.Array;
 
@@ -316,6 +317,12 @@ public final class ImageUtils {
 	public static final float lerp(float s, float e, float a)
 	{
 		return s + (e-s)*a;
+	}
+	
+	public static final Vector3 lerp(Vector3 s, Vector3 e, float a, Vector3 dst)
+	{
+		dst.set(e).sub(s).scl(a).add(s);		
+		return dst;
 	}
 	
 	public static final float bilerp(float s00, float s01, float s10, float s11, float xfrac, float yfrac) {

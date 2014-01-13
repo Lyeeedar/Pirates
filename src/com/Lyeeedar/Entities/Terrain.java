@@ -185,7 +185,7 @@ public class Terrain extends Entity {
 				
 				if (hm.getSplat(x, z) == splat)
 				{
-					pData.position.y = hm.heights[x][z];
+					pData.position.y = hm.getHeight(x, z);
 					placed = true;
 					break;
 				}
