@@ -335,7 +335,7 @@ public class GameScreen extends AbstractScreen {
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true);
 		pinetex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1)), 1, 2500, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1), false), 1, 2500, 50);
 		//terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
 		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
@@ -348,7 +348,7 @@ public class GameScreen extends AbstractScreen {
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
 		Texture shrtex = FileUtils.loadTexture("data/textures/shr2.png", true);
 		shrtex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1)), 1, 50000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1), true), 1, 50000, 50);
 		bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{

@@ -31,9 +31,13 @@ public class ModelBatcher implements Renderable {
 	private final int primitive_type;
 	private final Texture texture;
 	private final Vector3 colour = new Vector3();
+	private final boolean transparent;
 	
-	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
+	private final PriorityQueue<BatchedInstance> solidInstances = new PriorityQueue<BatchedInstance>();
+	private final PriorityQueue<BatchedInstance> transparentInstances = new PriorityQueue<BatchedInstance>();
 		
+	private static ShaderProgram solidShader;
+	private static ShaderProgram transparentShader;
 	private static ShaderProgram shader;
 		
 	private Camera cam;
@@ -47,12 +51,13 @@ public class ModelBatcher implements Renderable {
 		}
 	};
 	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture texture, Vector3 colour)
+	public ModelBatcher(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, boolean transparent)
 	{
-		this.mesh = mesh;//makeInstanceable(mesh, mi);
+		this.mesh = mesh;
 		this.primitive_type = primitive_type;
 		this.texture = texture;
 		this.colour.set(colour);
+		this.transparent = transparent;
 	}
 	
 
@@ -113,11 +118,24 @@ public class ModelBatcher implements Renderable {
 			float fadestart = (1.0f-dst)*(ncam)+quarter;
 			float fade = Math.min((fadestart-d)/(quarter/2.0f), 1.0f);
 			
-			if (fade > 0.0f) instances.add(pool.obtain().set(position, cam, fade));
+			if (fade > 0.0f) 
+			{
+				if (transparent || fade < 1.0f) transparentInstances.add(pool.obtain().set(position, cam.position.dst2(position), fade));
+				else solidInstances.add(pool.obtain().set(position, -cam.position.dst2(position), fade));
+			}
 		}
 	}
 	
-	public void render()
+	public void renderSolid()
+	{
+		flush(solidInstances);
+	}
+	public void renderTransparent()
+	{
+		flush(transparentInstances);
+	}
+	
+	private void flush(PriorityQueue<BatchedInstance> instances)
 	{
 		shader.setUniformi("u_texture", 0);
 		texture.bind(0);
@@ -146,11 +164,28 @@ public class ModelBatcher implements Renderable {
 		queued = false;
 	}
 	
-	public static void begin(LightManager lights, Camera cam)
+	public static void beginSolid(LightManager lights, Camera cam)
 	{
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		
-		if (shader == null) loadShader();
+		if (solidShader == null) loadSolidShader();
+		shader = solidShader;
+		shader.begin();
+		
+		lights.applyLights(shader);
+		shader.setUniformf("fog_col", lights.ambientColour);
+		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
+		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		shader.setUniformMatrix("u_pv", cam.combined);
+		shader.setUniformf("u_viewPos", cam.position);
+	}
+	
+	public static void beginTransparent(LightManager lights, Camera cam)
+	{
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+		
+		if (transparentShader == null) loadTransparentShader();
+		shader = transparentShader;
 		shader.begin();
 		
 		lights.applyLights(shader);
@@ -164,13 +199,21 @@ public class ModelBatcher implements Renderable {
 	public static void end()
 	{
 		shader.end();
+		shader = null;
 	}
 	
-	public static void loadShader()
+	public static void loadSolidShader()
 	{
 		String vert = Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
 		String frag = Gdx.files.internal("data/shaders/modelbatcher.fragment.glsl").readString();
-		shader = new ShaderProgram(vert, frag);
+		solidShader = new ShaderProgram(vert, frag);
+	}
+	
+	public static void loadTransparentShader()
+	{
+		String vert = Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
+		String frag = "#define HAS_TRANSPARENT\n" + Gdx.files.internal("data/shaders/modelbatcher.fragment.glsl").readString();
+		transparentShader = new ShaderProgram(vert, frag);
 	}
 	
 	public static class ModelBatchers implements Batch
@@ -187,12 +230,22 @@ public class ModelBatcher implements Renderable {
 			modelBatchers.add(mb);
 		}
 		
-		public void render(LightManager lights, Camera cam)
+		public void renderSolid(LightManager lights, Camera cam)
 		{
-			ModelBatcher.begin(lights, cam);
+			ModelBatcher.beginSolid(lights, cam);
 			for (ModelBatcher mb : modelBatchers)
 			{
-				mb.render();
+				mb.renderSolid();
+			}
+			ModelBatcher.end();
+		}
+		
+		public void renderTransparent(LightManager lights, Camera cam)
+		{
+			ModelBatcher.beginTransparent(lights, cam);
+			for (ModelBatcher mb : modelBatchers)
+			{
+				mb.renderTransparent();
 			}
 			ModelBatcher.end();
 			modelBatchers.clear();
@@ -205,10 +258,9 @@ public class ModelBatcher implements Renderable {
 		public final Vector3 position = new Vector3();
 		public float fade;
 		
-		public BatchedInstance set(Vector3 position, Camera cam, float fade)
+		public BatchedInstance set(Vector3 position, float dist, float fade)
 		{
 			this.position.set(position);
-			this.dist = cam.position.dst2(position);
 			this.fade = fade;
 			return this;
 		}
