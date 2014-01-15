@@ -128,14 +128,14 @@ public class ModelBatcher implements Renderable {
 	
 	public void renderSolid()
 	{
-		flush(solidInstances);
+		flush(solidInstances, false);
 	}
 	public void renderTransparent()
 	{
-		flush(transparentInstances);
+		flush(transparentInstances, true);
 	}
 	
-	private void flush(PriorityQueue<BatchedInstance> instances)
+	private void flush(PriorityQueue<BatchedInstance> instances, boolean t)
 	{
 		shader.setUniformi("u_texture", 0);
 		texture.bind(0);
@@ -151,7 +151,7 @@ public class ModelBatcher implements Renderable {
 			
 			if (fade != bi.fade) 
 			{
-				shader.setUniformf("u_fade", bi.fade);
+				if (t) shader.setUniformf("u_fade", bi.fade);
 				fade = bi.fade;
 			}
 			shader.setUniformf("instance_position", p);
@@ -252,7 +252,7 @@ public class ModelBatcher implements Renderable {
 		}
 	}
 	
-	class BatchedInstance implements Comparable<BatchedInstance>
+	private class BatchedInstance implements Comparable<BatchedInstance>
 	{
 		private float dist;
 		public final Vector3 position = new Vector3();

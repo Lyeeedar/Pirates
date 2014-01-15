@@ -17,7 +17,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pools;
 
-public final class Model implements Renderable {
+public final class TexturedMesh implements Renderable {
 
 	public final Mesh mesh;
 	public final int primitive_type;
@@ -26,7 +26,7 @@ public final class Model implements Renderable {
 	public final int type;
 	public final Matrix4 model_matrix = new Matrix4();
 	
-	public Model(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
+	public TexturedMesh(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
@@ -37,7 +37,7 @@ public final class Model implements Renderable {
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, texture, colour, model_matrix, primitive_type);
+		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, texture, colour, model_matrix, primitive_type, cam);
 	}
 
 	@Override
@@ -66,6 +66,6 @@ public final class Model implements Renderable {
 
 	@Override
 	public Renderable copy() {
-		return new Model(mesh, primitive_type, texture, colour, type);
+		return new TexturedMesh(mesh, primitive_type, texture, colour, type);
 	}
 }

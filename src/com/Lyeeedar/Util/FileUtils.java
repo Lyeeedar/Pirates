@@ -13,8 +13,10 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.UBJsonReader;
 
 public class FileUtils {
 	
@@ -188,6 +190,33 @@ public class FileUtils {
 			entry.getValue().dispose();
 		}
 		loadedMeshes.clear();
+	}
+	
+	public static HashMap<String, Model> loadedModels = new HashMap<String, Model>();
+	public static Model loadModel(String modelName)
+	{
+		String location = modelName;
+		
+		if (loadedModels.containsKey(location)) return loadedModels.get(location);
+		
+		if (!Gdx.files.internal(location).exists()) {
+			throw new RuntimeException("Mesh "+modelName+" does not exist!");
+		}
+		G3dModelLoader loader = new G3dModelLoader(new UBJsonReader());
+		Model model = loader.loadModel(Gdx.files.internal(location));
+		
+		loadedModels.put(location, model);
+		
+		return model;
+	}
+	
+	public static void unloadModels()
+	{
+		for (Entry<String, Model> entry : loadedModels.entrySet())
+		{
+			entry.getValue().dispose();
+		}
+		loadedModels.clear();
 	}
 	
 	public static HashMap<String, TextureAtlas> loadedAtlases = new HashMap<String, TextureAtlas>();

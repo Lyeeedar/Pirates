@@ -34,9 +34,10 @@ import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Graphics.AnimatedModel;
 import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
-import com.Lyeeedar.Graphics.Model;
+import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
@@ -129,7 +130,7 @@ public class GameScreen extends AbstractScreen {
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 245);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 80085);
 		Texture hm = new Texture(Gdx.files.internal("data/textures/heightmap.png"));
 		hm = ImageUtils.PixmapToTexture(ImageUtils.arrayToPixmap(sg.generate(ae)));
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -170,7 +171,7 @@ public class GameScreen extends AbstractScreen {
 		mesh.setPosition(pData.position);
 		ship.setCollisionShapeInternal(mesh);
 		
-		ship.addRenderable(new Model(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
+		ship.addRenderable(new TexturedMesh(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 		
 		world.add(ship, true);
 
@@ -192,7 +193,8 @@ public class GameScreen extends AbstractScreen {
 		//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
 		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
 		//s.create();
-		player.addRenderable(s, new Vector3(0, -1.5f, 0));
+		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
+		player.addRenderable(new AnimatedModel(FileUtils.loadModel("data/models/untitled.g3db")), new Vector3(0, 0, 0));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
@@ -326,7 +328,7 @@ public class GameScreen extends AbstractScreen {
 		cmesh.setPosition(pData.position);
 		c.setCollisionShapeInternal(cmesh);
 
-		c.addRenderable(new Model(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
+		c.addRenderable(new TexturedMesh(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 
 		world.add(c, true);
 		

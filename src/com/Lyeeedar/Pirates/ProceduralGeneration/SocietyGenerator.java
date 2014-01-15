@@ -10,7 +10,7 @@ import java.util.Random;
 import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.Model;
+import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Family;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Person;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Relationship;
@@ -99,7 +99,7 @@ public class SocietyGenerator {
 					pData.rotation.mul(building.rot);
 					pData.calculateComposed();
 					Entity house = new Entity(pData);
-					house.addRenderable(new Model(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), new Vector3());
+					house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), new Vector3());
 					house.setCollisionShape(new Box(pData.position, building.width, 20, building.height));
 					entities.add(house);
 				}

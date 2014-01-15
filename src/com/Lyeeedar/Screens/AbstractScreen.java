@@ -12,6 +12,7 @@ package com.Lyeeedar.Screens;
 
 import java.util.HashMap;
 
+import com.Lyeeedar.Graphics.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.DecalBatcher;
 import com.Lyeeedar.Graphics.ModelBatcher;
@@ -33,8 +34,12 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -52,6 +57,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final DecalBatch decalBatch;
 	protected final MotionTrailBatch trailBatch;
 	protected final AbstractModelBatch renderer;
+	protected final AnimatedModelBatch modelBatch;
 	protected final BitmapFont font;
 	protected final Stage stage;
 	protected final PostProcessor postprocessor;
@@ -75,7 +81,7 @@ public abstract class AbstractScreen implements Screen {
 	private long averageParticles;
 	private long averagePost;
 	protected int particleNum;
-
+	
 	public AbstractScreen(PirateGame game)
 	{
 		this.game = game;
@@ -90,13 +96,15 @@ public abstract class AbstractScreen implements Screen {
 		renderer = new CellShadingModelBatch();
 		modelBatchers = new Array<ModelBatcher>();
 		
+		modelBatch = new AnimatedModelBatch();
+		
 		batches = new HashMap<Class, Batch>();
 		batches.put(AbstractModelBatch.class, renderer);
+		batches.put(AnimatedModelBatch.class, modelBatch);
 		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
 		batches.put(ModelBatchers.class, new ModelBatchers());
 		
 		stage = new Stage(0, 0, true, spriteBatch);
-		renderer.cam = cam;
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
 		
 		postprocessor.addEffect(Effect.BLOOM);
@@ -146,8 +154,9 @@ public abstract class AbstractScreen implements Screen {
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
 		time = System.nanoTime();
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS);
+		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS, cam);
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
+		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		

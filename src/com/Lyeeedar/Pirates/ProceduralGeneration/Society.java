@@ -16,21 +16,39 @@ public class Society {
 		DUTY
 	}
 	
-	public enum AGE_GROUP
-	{
-		CHILD,
-		TEENAGER,
-		ADULT,
-		OAP
-	}
-	
 	public String name;
 	public Relationship defaultAttitude;
 	public HashMap<Society, Relationship> relationships;
+	public HashMap<String, SocietyAttribute> attributes;
 	
-	public static class Village extends Society
+	public static class SocietyAttribute
 	{
-		public Society[] families;		
+		public enum Scope
+		{
+			GLOBAL, // Everyone knows
+			COMMON, // All entities from one level up know this
+			PERSONAL, // Only this entites children know this
+			SECRET // Only a select few know
+		}
+		
+		String attribute;
+		Scope scope;
+		Object[] values;
+	}
+	
+	public static class Island extends Society
+	{
+		public Village[] villages;
+	}
+	
+	public static class Landmark extends Society
+	{
+		public Island island;
+	}
+	
+	public static class Village extends Landmark
+	{		
+		public Family[] families;		
 	}
 	
 	public static class Family extends Society
@@ -44,6 +62,14 @@ public class Society {
 	
 	public static class Person extends Society
 	{
+		public enum AGE_GROUP
+		{
+			CHILD,
+			TEENAGER,
+			ADULT,
+			OAP
+		}
+		
 		public Family family;
 		
 		public GENDER gender;

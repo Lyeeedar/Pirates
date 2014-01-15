@@ -13,7 +13,6 @@ import com.badlogic.gdx.utils.Pool;
 
 public abstract class AbstractModelBatch implements Batch {
 	
-	public Camera cam;
 	public boolean drawing;
 	protected DrawableManager drawableManager = new DrawableManager();
 	
@@ -21,20 +20,26 @@ public abstract class AbstractModelBatch implements Batch {
 	{
 	}
 
-	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
-		//if (cam != null) if (!cam.frustum.sphereInFrustum(attributes.getSortCenter(), attributes.getBoundingSphereRadius()*2)) return;
-		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix, type);
+	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
+		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix, type, cam);
 	}
 	
-	public void flush(LightManager lights) {
+	public void flushNoClear(LightManager lights, Camera cam) {
 		drawableManager.drawables.sort();
 		lights.sort(cam.position);
-		render(lights);
+		render(lights, cam);
+		drawing = false;
+	}
+	
+	public void flush(LightManager lights, Camera cam) {
+		drawableManager.drawables.sort();
+		lights.sort(cam.position);
+		render(lights, cam);
 		drawing = false;
 		drawableManager.clear();
 	}
 	
-	protected abstract void render(LightManager lights);
+	protected abstract void render(LightManager lights, Camera cam);
 	public abstract void dispose();
 	
 	/**
@@ -61,9 +66,9 @@ public abstract class AbstractModelBatch implements Batch {
 		 * @param colour
 		 * @param model_matrix
 		 */
-		public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
+		public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
 			Drawable drawable = drawablePool.obtain();
-			drawable.setCommon(mesh, primitiveType, texture, colour, model_matrix, type);
+			drawable.setCommon(mesh, primitiveType, texture, colour, model_matrix, type, cam);
 			drawables.add(drawable);
 		}
 
@@ -84,13 +89,12 @@ public abstract class AbstractModelBatch implements Batch {
 		 *
 		 */
 		class Drawable implements Comparable<Drawable> {
-			private static final int PRIORITY_DISCRETE_STEPS = 256;
 			Mesh mesh;
 			final Matrix4 model_matrix = new Matrix4();
 			
 			int type;
 
-			int distance;			
+			float distance;			
 			int primitiveType;
 			
 			final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
@@ -99,7 +103,7 @@ public abstract class AbstractModelBatch implements Batch {
 						
 			final Vector3 tmp = new Vector3();
 
-			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type) {
+			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
 				
 				this.type = type;
 				this.mesh = mesh;
@@ -111,14 +115,14 @@ public abstract class AbstractModelBatch implements Batch {
 				this.model_matrix.set(model_matrix);
 				
 				tmp.set(0, 0, 0).mul(model_matrix);
-				distance = (int)(PRIORITY_DISCRETE_STEPS * tmp.dst2(cam.position));
+				distance = tmp.dst2(cam.position);
 
 			}
 
 			@Override
 			public int compareTo (Drawable other) {
 				if (other.distance == distance) return other.textureHash - textureHash;
-				else return other.distance - this.distance;
+				else return (int) (other.distance - this.distance)*10;
 			}
 		}
 	}

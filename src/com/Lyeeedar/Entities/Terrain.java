@@ -8,7 +8,7 @@ import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.Model;
+import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.Renderable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
