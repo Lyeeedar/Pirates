@@ -3,6 +3,7 @@ package com.Lyeeedar.Graphics;
 import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -40,6 +41,9 @@ public class AnimatedModel implements Renderable {
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
 			model.transform.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
 		}
+		
+		AnimationData aData = source.readOnlyRead(AnimationData.class);
+		if (aData.updateAnimations) anim.animate(aData.anim, -1, aData.animate_speed, null, 0.1f);
 	}
 
 	@Override

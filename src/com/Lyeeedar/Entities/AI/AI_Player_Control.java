@@ -105,30 +105,30 @@ public class AI_Player_Control extends AI_Package {
 			// Update animations
 			
 			if (controls.sprint()) {
-				if (entityAnim.animate_speed != 0.05f) entityAnim.updateAnimations = true;
+				if (entityAnim.animate_speed != 5f) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 
-				entityAnim.animate_speed = 0.05f;
+				entityAnim.animate_speed = 5f;
 			}
 			else
 			{
-				if (entityAnim.animate_speed != 0.1f) entityAnim.updateAnimations = true;
+				if (entityAnim.animate_speed != 1f) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 
-				entityAnim.animate_speed = 0.1f;
+				entityAnim.animate_speed = 1f;
 			}
-			
-			entityAnim.anim = "move";
 			
 			if (controls.up() || controls.down() || controls.left() || controls.right()) {
 				if (entityAnim.animate) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = true;
+				entityAnim.anim = "walk";
 			}
 			else {
 				if (!entityAnim.animate) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = false;
+				entityAnim.anim = "idle";
 			}
 			
 			entityAnim.animationLock = false;

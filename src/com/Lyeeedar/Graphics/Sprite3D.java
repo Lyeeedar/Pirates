@@ -182,7 +182,7 @@ public class Sprite3D implements Renderable {
 		setRotation(pData.rotation);
 		if (aData.updateAnimations){
 			playAnimationLoop(aData.anim, aData.animation, aData.useDirection);
-			setAnimation(aData.animate, aData.animate_speed);
+			setAnimation(aData.animate, 1.0f/aData.animate_speed);
 		}
 		if (aData.animationLock)
 		{
