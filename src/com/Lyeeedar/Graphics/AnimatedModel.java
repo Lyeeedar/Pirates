@@ -8,6 +8,8 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
@@ -15,19 +17,23 @@ import com.badlogic.gdx.math.Vector3;
 
 public class AnimatedModel implements Renderable {
 	
-	ModelInstance model;
-	AnimationController anim;
+	public ModelInstance model;
+	public AnimationController anim;
+	public Texture texture;
+	public Vector3 colour = new Vector3();
 	
-	public AnimatedModel(Model model)
+	public AnimatedModel(Model model, Texture texture, Vector3 colour)
 	{
 		this.model = new ModelInstance(model);
 		anim = new AnimationController(this.model);
 		anim.setAnimation("walk", -1);
+		this.texture = texture;
+		this.colour.set(colour);
 	}
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model);
+		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, texture, colour);
 	}
 
 	@Override
@@ -53,7 +59,7 @@ public class AnimatedModel implements Renderable {
 
 	@Override
 	public Renderable copy() {
-		return new AnimatedModel(model.model);
+		return new AnimatedModel(model.model, texture, colour);
 	}
 
 	@Override

@@ -96,7 +96,7 @@ public abstract class AbstractScreen implements Screen {
 		renderer = new CellShadingModelBatch();
 		modelBatchers = new Array<ModelBatcher>();
 		
-		modelBatch = new AnimatedModelBatch();
+		modelBatch = new AnimatedModelBatch(12);
 		
 		batches = new HashMap<Class, Batch>();
 		batches.put(AbstractModelBatch.class, renderer);

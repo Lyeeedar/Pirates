@@ -194,7 +194,7 @@ public class GameScreen extends AbstractScreen {
 		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
 		//s.create();
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		player.addRenderable(new AnimatedModel(FileUtils.loadModel("data/models/untitled2.g3db")), new Vector3(0, 0, 0));
+		player.addRenderable(new AnimatedModel(FileUtils.loadModel("data/models/untitled2.g3db"), FileUtils.loadTexture("data/textures/Untitled3.png", true), new Vector3(1, 1, 1)), new Vector3(0, 0, 0));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
