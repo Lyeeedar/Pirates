@@ -12,8 +12,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 public class AnimatedModel implements Renderable {
 	
@@ -21,19 +24,47 @@ public class AnimatedModel implements Renderable {
 	public AnimationController anim;
 	public Texture texture;
 	public Vector3 colour = new Vector3();
+	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
+	public String defaultAnim;
 	
-	public AnimatedModel(Model model, Texture texture, Vector3 colour)
+	public AnimatedModel(Model model, Texture texture, Vector3 colour, String defaultAnim)
 	{
+		for (Node n : model.nodes)
+		{
+			print_nodes(n);
+		}
+		
 		this.model = new ModelInstance(model);
+		
 		anim = new AnimationController(this.model);
-		anim.setAnimation("walk", -1);
+		anim.setAnimation(defaultAnim, -1);
 		this.texture = texture;
 		this.colour.set(colour);
+		this.defaultAnim = defaultAnim;
 	}
 
+	public void print_nodes(Node n)
+	{
+		System.out.println(n.id);
+		for (Node nn : n.children)
+		{
+			print_nodes(nn);
+		}
+	}
+	
+	public void attachModel(String node, AnimatedModel model)
+	{
+		attachedModels.add(new ATTACHED_MODEL(model.model.getNode(node, true), model));
+	}
+	
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, texture, colour);
+		
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.queue(delta, cam, batches);
+		}
 	}
 
 	@Override
@@ -49,21 +80,48 @@ public class AnimatedModel implements Renderable {
 		}
 		
 		AnimationData aData = source.readOnlyRead(AnimationData.class);
-		if (aData.updateAnimations) anim.animate(aData.anim, -1, aData.animate_speed, null, 0.1f);
+		if (aData.updateAnimations) if (model.getAnimation(aData.anim) != null) anim.animate(aData.anim, -1, aData.animate_speed, null, 0.1f);
+		
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.set(source, offset);
+			am.model.transform(am.node.globalTransform);
+		}
+	}
+	
+	public void transform(Matrix4 mat)
+	{
+		model.transform.mul(mat);
 	}
 
 	@Override
 	public void update(float delta, Camera cam, LightManager lights) {
 		if (anim != null) anim.update(delta);
+		
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.update(delta, cam, lights);
+		}
 	}
 
 	@Override
 	public Renderable copy() {
-		return new AnimatedModel(model.model, texture, colour);
+		return new AnimatedModel(model.model, texture, colour, defaultAnim);
 	}
 
 	@Override
 	public void dispose() {
 	}
 
+	private class ATTACHED_MODEL
+	{
+		public Node node;
+		public AnimatedModel model;
+		
+		public ATTACHED_MODEL(Node node, AnimatedModel model)
+		{
+			this.node = node;
+			this.model = model;
+		}
+	}
 }

@@ -194,7 +194,9 @@ public class GameScreen extends AbstractScreen {
 		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
 		//s.create();
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		player.addRenderable(new AnimatedModel(FileUtils.loadModel("data/models/untitled2.g3db"), FileUtils.loadTexture("data/textures/Untitled3.png", true), new Vector3(1, 1, 1)), new Vector3(0, 0, 0));
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man.g3db"), FileUtils.loadTexture("data/textures/Untitled4.png", true), new Vector3(0.7f, 0.7f, 0.7f), "idle");
+		player.addRenderable(am, new Vector3(0, 0, 0));
+		//am.attachModel("DEF-forearm_01_L", (AnimatedModel)am.copy());
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
@@ -203,7 +205,8 @@ public class GameScreen extends AbstractScreen {
 		player.readData(pData, PositionalData.class);
 		pData.position.set(4, 12, 0);
 		pData.position.set(2500, 1000, 2500);
-		pData.Xrotate(30);
+		//pData.Xrotate(30);
+		pData.scale.set(2, 2, 2);
 		player.writeData(pData, PositionalData.class);
 		
 		player.readData(sData, StatusData.class);
@@ -515,6 +518,7 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void show() {
 		Gdx.input.setCursorCatched(true);
+		Gdx.input.setInputProcessor(controls.ip);
 		GLOBALS.WORLD = world;
 		GLOBALS.SKYBOX = skybox;
 		GLOBALS.player = player;
@@ -547,10 +551,8 @@ public class GameScreen extends AbstractScreen {
 		//GLOBALS.WORLD.recalculateBounds();
 		
 		GLOBALS.SKYBOX.update(delta);
-		
-		player.readData(pData, PositionalData.class);
-				
-		((FollowCam)cam).update(pData);
+						
+		((FollowCam)cam).update(player);
 		veggieCam.position.set(cam.position);
 		veggieCam.direction.set(cam.direction);
 		veggieCam.update();

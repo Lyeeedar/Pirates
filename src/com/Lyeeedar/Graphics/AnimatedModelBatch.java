@@ -70,7 +70,7 @@ public class AnimatedModelBatch implements Batch {
 	protected final RenderablePool renderablesPool = new RenderablePool();  
 	protected final Array<Renderable> renderables = new Array<Renderable>();
 	int current_shader = -1;
-	long textureHash;
+	int textureHash;
 	
 	public void render(LightManager lights, Camera cam)
 	{
@@ -117,16 +117,16 @@ public class AnimatedModelBatch implements Batch {
 			}
 			
 			shaders[current_shader].setUniformMatrix("u_mm", bi.instance.worldTransform);
-			normal_matrix.set(bi.instance.worldTransform);
+			normal_matrix.set(bi.instance.worldTransform).inv().transpose();
 			shaders[current_shader].setUniformMatrix("u_nm", normal_matrix);
 			
 			shaders[current_shader].setUniformf("u_colour", bi.colour);
 
-			if (textureHash != bi.tex.hashCode())
+			if (textureHash != bi.texHash)
 			{
 				bi.tex.bind(0);
 				shaders[current_shader].setUniformi("u_texture", 0);
-				textureHash = bi.tex.hashCode();
+				textureHash = bi.texHash;
 			}
 						
 			bi.instance.mesh.render(shaders[current_shader], bi.instance.primitiveType, bi.instance.meshPartOffset, bi.instance.meshPartSize);
@@ -186,6 +186,7 @@ public class AnimatedModelBatch implements Batch {
 		public int bone_num;
 		public Texture tex;
 		public Vector3 colour = new Vector3();
+		public int texHash;
 		
 		public BatchedInstance set(Renderable instance, Texture tex, Vector3 colour, float dist)
 		{
@@ -199,6 +200,7 @@ public class AnimatedModelBatch implements Batch {
 			
 			this.instance = instance;
 			this.tex = tex;
+			this.texHash = tex.hashCode();
 			this.colour.set(colour);
 			return this;
 		}
@@ -206,6 +208,7 @@ public class AnimatedModelBatch implements Batch {
 		@Override
 		public int compareTo(BatchedInstance bi) {
 			if (equals(bi)) return 0;
+			if (bi.dist == dist) return bi.texHash - texHash;
 			return (int) ((bi.dist - dist)*100);
 		}	
 	}

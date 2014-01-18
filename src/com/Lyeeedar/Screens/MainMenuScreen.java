@@ -184,7 +184,7 @@ public class MainMenuScreen extends AbstractScreen {
 		skybox = new SkyBox(sea, weather);
 		
 		pData.position.set(0, 10, 0);
-		((FollowCam)cam).setAngle(0);
+		((FollowCam)cam).setYAngle(0);
 		
 	}
 	@Override

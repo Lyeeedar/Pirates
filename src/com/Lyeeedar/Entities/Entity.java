@@ -336,7 +336,7 @@ public class Entity {
 		public boolean updateAnimations = false;
 		public String anim = "";
 		public byte animation = 0;
-		public float animate_speed = 0.1f;
+		public float animate_speed = 1f;
 		public boolean useDirection = true;
 		public boolean animate = true;
 		

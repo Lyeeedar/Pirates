@@ -49,10 +49,6 @@ public class AI_Player_Control extends AI_Package {
 		
 		evaluateDamage(entityStatus, entityAnim, delta);
 		
-		//entityPos.Xrotate(-controls.getDeltaX());
-		if (controls.left()) entityPos.Xrotate(-delta*100);
-		if (controls.right()) entityPos.Xrotate(delta*100);
-		
 		if (entityStatus.currentHealth > 0)
 		{
 			// Evaluate controls
@@ -66,8 +62,8 @@ public class AI_Player_Control extends AI_Package {
 			if (controls.up()) entityPos.forward_backward(speed);
 			else if (controls.down()) entityPos.forward_backward(-speed);
 			
-			//if (controls.left()) entityPos.left_right(speed);
-			//else if (controls.right()) entityPos.left_right(-speed);
+			if (controls.left()) entityPos.left_right(speed);
+			else if (controls.right()) entityPos.left_right(-speed);
 			
 			if (controls.jump() && entityPos.jumpToken > 0 && !jump) {
 				entityPos.velocity.set(0, 30, 0);
@@ -104,25 +100,27 @@ public class AI_Player_Control extends AI_Package {
 			
 			// Update animations
 			
-			if (controls.sprint()) {
-				if (entityAnim.animate_speed != 5f) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-
-				entityAnim.animate_speed = 5f;
-			}
-			else
-			{
-				if (entityAnim.animate_speed != 1f) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-
-				entityAnim.animate_speed = 1f;
-			}
+//			if (controls.sprint()) {
+//				if (entityAnim.animate_speed != 5f) entityAnim.updateAnimations = true;
+//				else entityAnim.updateAnimations = false;
+//
+//				entityAnim.animate_speed = 5f;
+//			}
+//			else
+//			{
+//				if (entityAnim.animate_speed != 1f) entityAnim.updateAnimations = true;
+//				else entityAnim.updateAnimations = false;
+//
+//				entityAnim.animate_speed = 1f;
+//			}
 			
 			if (controls.up() || controls.down() || controls.left() || controls.right()) {
 				if (entityAnim.animate) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = true;
-				entityAnim.anim = "walk";
+				
+				if (controls.sprint()) entityAnim.anim = "run";
+				else entityAnim.anim = "walk";
 			}
 			else {
 				if (!entityAnim.animate) entityAnim.updateAnimations = true;

@@ -55,8 +55,8 @@ public class Weather {
 	{
 		clouds.update(delta);
 		
-		delta /= 5;
-		//delta /= 300000.0f;
+		//delta /= 5;
+		delta /= 300000.0f;
 		
 		if (increase) 
 		{

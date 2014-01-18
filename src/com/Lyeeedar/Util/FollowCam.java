@@ -1,9 +1,11 @@
 package com.Lyeeedar.Util;
 
 import com.Lyeeedar.Collision.CollisionRay;
+import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
 public class FollowCam extends PerspectiveCamera {
@@ -13,19 +15,27 @@ public class FollowCam extends PerspectiveCamera {
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
 	private final CollisionRay ray = new CollisionRay();
-	public float followDist = 20.0f;
+	public float followDist = 10.0f;
 	public float followHeight = 5.0f;
+	
+	private final Vector3 lPos = new Vector3();
 	
 	public FollowCam(Controls controls)
 	{
 		this.controls = controls;
 	}
 	
-	private float angle = -15;
+	private float Yangle = -15;
+	private float Xangle = 0;
 	
-	public void setAngle(float angle)
+	public void setYAngle(float angle)
 	{
-		this.angle = angle;
+		this.Yangle = angle;
+	}
+	
+	public void setXAngle(float angle)
+	{
+		this.Xangle = angle;
 	}
 	
 	public void setFollowDist(float dist)
@@ -33,13 +43,13 @@ public class FollowCam extends PerspectiveCamera {
 		this.followDist = dist;
 	}
 	
-	public void updateBasic(PositionalData entityState)
+	public void updateBasic(PositionalData pData)
 	{
-		up.set(entityState.up);
-		direction.set(entityState.rotation);
-		Yrotate(angle);
+		up.set(pData.up);
+		direction.set(pData.rotation);
+		Yrotate(Yangle);
 		
-		ray.ray.origin.set(entityState.position).add(0, followHeight, 0);
+		ray.ray.origin.set(pData.position).add(0, followHeight, 0);
 		ray.ray.direction.set(direction).scl(-1.0f);
 		ray.len = followDist;
 		ray.reset();
@@ -48,34 +58,49 @@ public class FollowCam extends PerspectiveCamera {
 		update();
 	}
 	
-	public void update(PositionalData entityState)
+	public void update(Entity entity)
 	{
-		//angle -= controls.getDeltaY();
-		if (angle > limit) angle = limit;
-		if (angle < -limit) angle = -limit;
+		followDist += controls.scrolled();
+		followDist = MathUtils.clamp(followDist, 5, 50);
 		
-		up.set(entityState.up);
-		direction.set(entityState.rotation.x, 0, entityState.rotation.z).nor();
-		Yrotate(angle);
+		Xangle -= controls.getDeltaX();
+		Yangle -= controls.getDeltaY();
 		
-		ray.ray.origin.set(entityState.position).add(0, followHeight, 0);
+		if (Yangle > limit) Yangle = limit;
+		if (Yangle < -limit) Yangle = -limit;
+		
+		PositionalData pData = entity.readOnlyRead(PositionalData.class);
+		
+		if (lPos.dst2(pData.position) > 1)
+		{
+			pData.Xrotate(Xangle);
+			Xangle = 0;
+			lPos.set(pData.position);
+		}
+		
+		up.set(pData.up);
+		direction.set(pData.rotation.x, 0, pData.rotation.z).nor();
+		direction.rotate(Xangle, 0, 1, 0);
+		Yrotate(Yangle);
+		
+		ray.ray.origin.set(pData.position).add(0, followHeight, 0);
 		ray.ray.direction.set(direction).scl(-1.0f);
 		ray.len = followDist;
 		ray.reset();
 		
-		GLOBALS.WORLD.collideWalkables(ray, entityState.graph);
+		GLOBALS.WORLD.collideWalkables(ray, pData.graph);
 		
 		position.set(ray.intersection);
 		update();
 		
 		for (int i = 0; i < 4; i++)
 		{
-			ray.ray.direction.set(frustum.planePoints[i]).sub(entityState.position).nor();
+			ray.ray.direction.set(frustum.planePoints[i]).sub(pData.position).nor();
 			ray.reset();
 			
 			tmp.set(frustum.planePoints[i]).sub(position);
 			
-			if (GLOBALS.WORLD.collideWalkables(ray, entityState.graph) != null)
+			if (GLOBALS.WORLD.collideWalkables(ray, pData.graph) != null)
 				position.add(tmp.add(ray.intersection).sub(ray.ray.direction)).scl(0.5f);
 		}
 		update();
