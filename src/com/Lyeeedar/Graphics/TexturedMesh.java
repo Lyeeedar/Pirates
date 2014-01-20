@@ -17,7 +17,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pools;
 
-public final class TexturedMesh implements Renderable {
+public final class TexturedMesh implements Queueable {
 
 	public final Mesh mesh;
 	public final int primitive_type;
@@ -65,7 +65,7 @@ public final class TexturedMesh implements Renderable {
 	}
 
 	@Override
-	public Renderable copy() {
+	public Queueable copy() {
 		return new TexturedMesh(mesh, primitive_type, texture, colour, type);
 	}
 }

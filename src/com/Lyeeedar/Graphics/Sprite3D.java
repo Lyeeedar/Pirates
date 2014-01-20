@@ -30,7 +30,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-public class Sprite3D implements Renderable {
+public class Sprite3D implements Queueable {
 
 	private static final String FILE_PREFIX = "data/sprites/";
 	private static final String FILE_SEPERATOR = ".";
@@ -492,7 +492,7 @@ public class Sprite3D implements Renderable {
 	}
 
 	@Override
-	public Renderable copy() {
+	public Queueable copy() {
 		return new Sprite3D(width, height, NUM_ANIMS, NUM_FRAMES);
 	}
 }

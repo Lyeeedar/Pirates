@@ -16,7 +16,7 @@ public class FollowCam extends PerspectiveCamera {
 	private final Vector3 tmp = new Vector3();
 	private final CollisionRay ray = new CollisionRay();
 	public float followDist = 10.0f;
-	public float followHeight = 5.0f;
+	public float followHeight = 7.0f;
 	
 	private final Vector3 lPos = new Vector3();
 	

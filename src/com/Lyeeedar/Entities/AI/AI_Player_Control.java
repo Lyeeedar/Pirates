@@ -114,11 +114,18 @@ public class AI_Player_Control extends AI_Package {
 //				entityAnim.animate_speed = 1f;
 //			}
 			
-			if (controls.up() || controls.down() || controls.left() || controls.right()) {
+			if (controls.leftClick())
+			{
+				if (!entityAnim.animate) entityAnim.updateAnimations = true;
+				else entityAnim.updateAnimations = false;
+				entityAnim.anim = "attack_1";
+				entityAnim.animate_speed = 2f;
+			}
+			else if (controls.up() || controls.down() || controls.left() || controls.right()) {
 				if (entityAnim.animate) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = true;
-				
+				entityAnim.animate_speed = 1f;
 				if (controls.sprint()) entityAnim.anim = "run";
 				else entityAnim.anim = "walk";
 			}
@@ -127,6 +134,7 @@ public class AI_Player_Control extends AI_Package {
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = false;
 				entityAnim.anim = "idle";
+				entityAnim.animate_speed = 1f;
 			}
 			
 			entityAnim.animationLock = false;

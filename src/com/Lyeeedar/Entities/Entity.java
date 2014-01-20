@@ -16,7 +16,7 @@ import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
-import com.Lyeeedar.Graphics.Renderable;
+import com.Lyeeedar.Graphics.Queueable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -131,7 +131,7 @@ public class Entity {
 		}
 	}
 	
-	public void addRenderable(Renderable r, Vector3 position)
+	public void addRenderable(Queueable r, Vector3 position)
 	{
 		renderables.add(new EntityRenderable(r, position));
 	}
@@ -315,10 +315,10 @@ public class Entity {
 	
 	public class EntityRenderable
 	{
-		Renderable renderable;
+		Queueable renderable;
 		Vector3 position = new Vector3();
 		
-		public EntityRenderable(Renderable renderable, Vector3 position)
+		public EntityRenderable(Queueable renderable, Vector3 position)
 		{
 			this.renderable = renderable;
 			this.position.set(position);

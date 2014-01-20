@@ -37,6 +37,7 @@ import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.AnimatedModel;
 import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
+import com.Lyeeedar.Graphics.MotionTrail;
 import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.ModelBatcher;
 import com.Lyeeedar.Graphics.MotionTrailBatch;
@@ -76,6 +77,7 @@ import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
@@ -102,6 +104,9 @@ public class GameScreen extends AbstractScreen {
 	SymbolicMesh sm;
 	
 	Texture blank;
+	
+	AnimatedModel sword;
+	MotionTrail swordTrail;
 
 	public GameScreen(PirateGame game) {
 		super(game);
@@ -195,8 +200,13 @@ public class GameScreen extends AbstractScreen {
 		//s.create();
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
 		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man.g3db"), FileUtils.loadTexture("data/textures/Untitled4.png", true), new Vector3(0.7f, 0.7f, 0.7f), "idle");
+		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), FileUtils.loadTexture("data/textures/hair.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
+		sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
+		swordTrail = new MotionTrail(60, Color.WHITE, grass);
 		player.addRenderable(am, new Vector3(0, 0, 0));
-		//am.attachModel("DEF-forearm_01_L", (AnimatedModel)am.copy());
+		
+		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90));
+		am.attachModel("DEF-palm_01_L", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
@@ -481,6 +491,9 @@ public class GameScreen extends AbstractScreen {
 
 	}
 	
+	Vector3 bot = new Vector3();
+	Vector3 top = new Vector3();
+	Matrix4 tmp = new Matrix4();
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
 		
@@ -508,6 +521,11 @@ public class GameScreen extends AbstractScreen {
 		{
 			d.queue3D(decalBatch);
 		}
+		
+		bot.set(0, 0, 0).mul(tmp.set(sword.model.transform).mul(sword.model.getNode("bottom").globalTransform));
+		top.set(0, 0, 0).mul(tmp.set(sword.model.transform).mul(sword.model.getNode("top").globalTransform));
+		swordTrail.update(bot, top);
+		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).add(swordTrail);
 	}
 
 	@Override

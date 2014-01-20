@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 
-public class MotionTrailBatch {
+public class MotionTrailBatch implements Batch {
 	
 	private ShaderProgram shader = null;
 	private long textureHash = 0L;

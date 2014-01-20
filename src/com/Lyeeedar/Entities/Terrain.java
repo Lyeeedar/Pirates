@@ -9,7 +9,7 @@ import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.TexturedMesh;
-import com.Lyeeedar.Graphics.Renderable;
+import com.Lyeeedar.Graphics.Queueable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
@@ -161,7 +161,7 @@ public class Terrain extends Entity {
 		return height;
 	}
 	
-	public void vegetate(List<Entity> entities, Renderable renderable, int splat, int num, int maxTries)
+	public void vegetate(List<Entity> entities, Queueable renderable, int splat, int num, int maxTries)
 	{
 		HeightMap hm = heightmaps[0];
 		

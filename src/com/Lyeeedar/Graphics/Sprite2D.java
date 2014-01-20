@@ -14,7 +14,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-public class Sprite2D implements Renderable {
+public class Sprite2D implements Queueable {
 	
 	private final Decal decal;
 	private final Vector3 position = new Vector3();
@@ -53,7 +53,7 @@ public class Sprite2D implements Renderable {
 	}
 
 	@Override
-	public Renderable copy() {
+	public Queueable copy() {
 		return new Sprite2D(decal);
 	}
 

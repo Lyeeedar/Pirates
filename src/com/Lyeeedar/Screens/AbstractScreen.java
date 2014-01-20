@@ -103,6 +103,7 @@ public abstract class AbstractScreen implements Screen {
 		batches.put(AnimatedModelBatch.class, modelBatch);
 		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
 		batches.put(ModelBatchers.class, new ModelBatchers());
+		batches.put(MotionTrailBatch.class, trailBatch);
 		
 		stage = new Stage(0, 0, true, spriteBatch);
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
@@ -177,6 +178,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		
 		time = System.nanoTime();
+		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
 		drawParticles(delta);
 		averageParticles += System.nanoTime()-time;
 		averageParticles /= 2;

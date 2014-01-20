@@ -23,7 +23,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 
-public class ModelBatcher implements Renderable {
+public class ModelBatcher implements Queueable {
 	
 	public static final int MAX_INSTANCES = 1;
 		
@@ -89,7 +89,7 @@ public class ModelBatcher implements Renderable {
 	}
 
 	@Override
-	public Renderable copy() {
+	public Queueable copy() {
 		return this;
 	}
 

@@ -6,6 +6,7 @@ import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -42,7 +43,7 @@ public class AnimatedModelBatch implements Batch {
 		}
 	};
 	
-	protected static class RenderablePool extends Pool<Renderable> {
+	public static class RenderablePool extends Pool<Renderable> {
 		protected Array<Renderable> obtained = new Array<Renderable>();
 		
 		@Override
@@ -74,6 +75,8 @@ public class AnimatedModelBatch implements Batch {
 	
 	public void render(LightManager lights, Camera cam)
 	{
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		
 		this.cam = cam;
 		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
 
@@ -208,7 +211,11 @@ public class AnimatedModelBatch implements Batch {
 		@Override
 		public int compareTo(BatchedInstance bi) {
 			if (equals(bi)) return 0;
-			if (bi.dist == dist) return bi.texHash - texHash;
+			if (bi.dist == dist) 
+			{
+				if (bone_num == bi.bone_num) return bi.texHash - texHash;
+				return bi.bone_num - bone_num;
+			}
 			return (int) ((bi.dist - dist)*100);
 		}	
 	}

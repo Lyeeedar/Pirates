@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-public interface Renderable {
+public interface Queueable {
 
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches);
 	
@@ -19,7 +19,7 @@ public interface Renderable {
 	
 	public void update(float delta, Camera cam, LightManager lights);
 	
-	public Renderable copy();
+	public Queueable copy();
 	
 	public void dispose();
 }
