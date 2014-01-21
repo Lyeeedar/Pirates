@@ -24,6 +24,7 @@ import com.Lyeeedar.Util.Informable;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
@@ -347,7 +348,7 @@ public class Entity {
 		public byte nextAnimation = 0;
 		public byte startFrame = 0;
 		public byte endFrame = 0;
-		public Informable informable;
+		public AnimationListener listener;
 		
 		public final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 		public float alpha = 1.0f;
@@ -369,7 +370,7 @@ public class Entity {
 			nextAnimation = data.nextAnimation;
 			startFrame = data.startFrame;
 			endFrame = data.endFrame;
-			informable = data.informable;
+			listener = data.listener;
 			
 			colour.set(data.colour);
 			alpha = data.alpha;

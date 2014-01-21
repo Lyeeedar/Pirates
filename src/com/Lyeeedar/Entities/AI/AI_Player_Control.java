@@ -51,41 +51,44 @@ public class AI_Player_Control extends AI_Package {
 		
 		if (entityStatus.currentHealth > 0)
 		{
-			// Evaluate controls
-			int speed = 30;
-			if (controls.sprint()) speed = 50;
-			if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
+			if (!entityAnim.animationLock)
 			{
-				speed = 1500;
+				// Evaluate controls
+				int speed = 10;
+				if (controls.sprint()) speed = 50;
+				if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
+				{
+					speed = 1500;
+				}
+				
+				if (controls.up()) entityPos.forward_backward(speed);
+				else if (controls.down()) entityPos.forward_backward(-speed);
+				
+				if (controls.left()) entityPos.left_right(speed);
+				else if (controls.right()) entityPos.left_right(-speed);
+				
+				if (controls.jump() && entityPos.jumpToken > 0 && !jump) {
+					entityPos.velocity.set(0, 30, 0);
+					entityPos.jumpToken--;
+					jump = true;
+				}
+				else if (!controls.jump())
+				{
+					jump = false;
+				}
+				
+				if (Gdx.input.isKeyPressed(Keys.B))
+				{
+					entityPos.position.y += 10;
+				}
 			}
-			
-			if (controls.up()) entityPos.forward_backward(speed);
-			else if (controls.down()) entityPos.forward_backward(-speed);
-			
-			if (controls.left()) entityPos.left_right(speed);
-			else if (controls.right()) entityPos.left_right(-speed);
-			
-			if (controls.jump() && entityPos.jumpToken > 0 && !jump) {
-				entityPos.velocity.set(0, 30, 0);
-				entityPos.jumpToken--;
-				jump = true;
-			}
-			else if (!controls.jump())
-			{
-				jump = false;
-			}
-			
-			if (Gdx.input.isKeyPressed(Keys.B))
-			{
-				entityPos.position.y += 10;
-			}
-			
-			if (controls.leftClick()) use(Equipment_Slot.RARM, entityEquip);
+
+			if (controls.rightClick()) use(Equipment_Slot.RARM, entityEquip);
 			else 
 			{
 				stopUsing(Equipment_Slot.RARM, entityEquip);
 			}
-			
+
 			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
 			{
 				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
@@ -100,26 +103,9 @@ public class AI_Player_Control extends AI_Package {
 			
 			// Update animations
 			
-//			if (controls.sprint()) {
-//				if (entityAnim.animate_speed != 5f) entityAnim.updateAnimations = true;
-//				else entityAnim.updateAnimations = false;
-//
-//				entityAnim.animate_speed = 5f;
-//			}
-//			else
-//			{
-//				if (entityAnim.animate_speed != 1f) entityAnim.updateAnimations = true;
-//				else entityAnim.updateAnimations = false;
-//
-//				entityAnim.animate_speed = 1f;
-//			}
-			
-			if (controls.leftClick())
+			if (entityAnim.animationLock)
 			{
-				if (!entityAnim.animate) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-				entityAnim.anim = "attack_1";
-				entityAnim.animate_speed = 2f;
+				
 			}
 			else if (controls.up() || controls.down() || controls.left() || controls.right()) {
 				if (entityAnim.animate) entityAnim.updateAnimations = true;
@@ -134,10 +120,8 @@ public class AI_Player_Control extends AI_Package {
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = false;
 				entityAnim.anim = "idle";
-				entityAnim.animate_speed = 1f;
+				entityAnim.animate_speed = 0.5f;
 			}
-			
-			entityAnim.animationLock = false;
 
 		}
 		

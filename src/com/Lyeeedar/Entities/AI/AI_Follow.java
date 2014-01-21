@@ -45,12 +45,9 @@ public class AI_Follow extends AI_Package {
 		
 		if (entityStatus.currentHealth > 0)
 		{
-			if (!animationLock)
-			{
-				entityAnim.updateAnimations = true;
-				entityAnim.animation = 0;
-				entityAnim.anim = "move";
-			}
+			entityAnim.updateAnimations = true;
+			entityAnim.animation = 0;
+			entityAnim.anim = "move";
 			
 			double a = GLOBALS.angle(entityPos.rotation, tmp.set(entityPos.position).sub(followPos.position).nor(), up);
 	

@@ -199,14 +199,15 @@ public class GameScreen extends AbstractScreen {
 		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
 		//s.create();
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man.g3db"), FileUtils.loadTexture("data/textures/Untitled4.png", true), new Vector3(0.7f, 0.7f, 0.7f), "idle");
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), FileUtils.loadTexture("data/textures/skin.png", true), new Vector3(0.7f, 0.7f, 0.7f), "walk");
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), FileUtils.loadTexture("data/textures/hair.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
 		sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
-		swordTrail = new MotionTrail(60, Color.WHITE, grass);
-		player.addRenderable(am, new Vector3(0, 0, 0));
+		swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
+		player.addRenderable(am, new Vector3());
+		player.addRenderable(swordTrail, new Vector3());
 		
-		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90));
-		am.attachModel("DEF-palm_01_L", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180));
+		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0, 0.5f, 0));
+		am.attachModel("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 10).scl(1, 3, 1));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
@@ -228,7 +229,7 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(null, new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50));
+		eData.equip(Equipment_Slot.RARM, new Weapon("attack1_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
 		world.add(player, false);
@@ -292,7 +293,7 @@ public class GameScreen extends AbstractScreen {
 			
 			ge.readData(eData, EquipmentData.class);
 			eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
-			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5));
+			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5, null, null));
 			ge.writeData(eData, EquipmentData.class);
 			
 			world.add(ge, false);
@@ -522,10 +523,6 @@ public class GameScreen extends AbstractScreen {
 			d.queue3D(decalBatch);
 		}
 		
-		bot.set(0, 0, 0).mul(tmp.set(sword.model.transform).mul(sword.model.getNode("bottom").globalTransform));
-		top.set(0, 0, 0).mul(tmp.set(sword.model.transform).mul(sword.model.getNode("top").globalTransform));
-		swordTrail.update(bot, top);
-		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).add(swordTrail);
 	}
 
 	@Override

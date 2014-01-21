@@ -17,13 +17,6 @@ public class AI_RotOnly extends AI_Package {
 	
 	private final PositionalData entityPos = new PositionalData();
 
-
-	@Override
-	public void inform() {
-		// TODO Auto-generated method stub
-
-	}
-
 	@Override
 	public void update(float delta, Entity entity) {
 		entity.readData(entityPos, PositionalData.class);

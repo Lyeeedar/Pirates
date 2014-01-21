@@ -10,7 +10,12 @@ package com.Lyeeedar.Graphics;
  *     Philip Collin - initial API and implementation
  ******************************************************************************/
 
+import java.util.HashMap;
+
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Util.CircularArrayRing;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -20,7 +25,7 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.math.Vector3;
 
-public class MotionTrail {
+public class MotionTrail implements Queueable {
 	
 	private final CircularArrayRing<Vector3> trailRing;
 	private final int vertNum;
@@ -33,6 +38,10 @@ public class MotionTrail {
 	
 	private boolean up = false;
 	private short side = 0;
+	
+	private boolean shouldDraw = false;
+	private boolean drawing = false; 
+	private int drawCooldown = 0;
 
 	public MotionTrail(int vertsNum, Color colour, Texture texture) 
 	{		
@@ -54,6 +63,22 @@ public class MotionTrail {
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 2, "a_texCoord0"));
 		this.vertices = new float[this.vertNum * 5];
+	}
+	
+	public void draw(Vector3 bottom, Vector3 top)
+	{
+		if (!drawing)
+		{
+			reset(bottom, top);
+		}
+		drawCooldown = vertNum2;
+		shouldDraw = true;
+		drawing = true;
+	}
+	
+	public void stopDraw()
+	{
+		shouldDraw = false;
 	}
 	
 	public void reset(Vector3 bottom, Vector3 top)
@@ -93,12 +118,46 @@ public class MotionTrail {
 	{
 		addVert(bottom);
 		addVert(top);
-		
-		updateVerts();
 	}
 	
 	public void dispose()
 	{
 		mesh.dispose();
+	}
+
+	@Override
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
+		if (drawing) ((MotionTrailBatch) batches.get(MotionTrailBatch.class)).add(this);
+	}
+
+	@Override
+	public void set(Entity source, Vector3 offset) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void update(float delta, Camera cam, LightManager lights) {
+		if (drawing && !shouldDraw)
+		{
+			Vector3 b = trailRing.get(1);
+			Vector3 t = trailRing.get(0);
+			
+			addVert(b);
+			addVert(t);
+			
+			drawCooldown--;
+			if (drawCooldown == 0)
+			{
+				drawing = false;
+			}
+		}
+		
+		if (drawing) updateVerts();
+	}
+
+	@Override
+	public Queueable copy() {
+		return new MotionTrail(vertNum2, colour, texture);
 	}
 }

@@ -27,6 +27,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
@@ -89,7 +90,7 @@ public class Sprite3D implements Queueable {
 	private boolean animateStore;
 	private boolean directionStore;
 	private byte endFrame;
-	private Informable informable;
+	private AnimationListener listener;
 
 	private final PositionalData pData = new PositionalData();
 	private final AnimationData aData = new AnimationData();
@@ -186,7 +187,7 @@ public class Sprite3D implements Queueable {
 		}
 		if (aData.animationLock)
 		{
-			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.informable);
+			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.listener);
 		}
 
 		colour.set(aData.colour);
@@ -336,7 +337,7 @@ public class Sprite3D implements Queueable {
 		}
 		this.useDirection = useDirection;
 	}
-	public void playAnimationSingle(String anim, byte animation, String nextAnim, byte nextAnimation, byte startFrame, byte endFrame, boolean useDirection, Informable informable)
+	public void playAnimationSingle(String anim, byte animation, String nextAnim, byte nextAnimation, byte startFrame, byte endFrame, boolean useDirection, AnimationListener listener)
 	{
 		if (lock) return;
 
@@ -345,7 +346,7 @@ public class Sprite3D implements Queueable {
 		this.nextAnim = nextAnim;
 		this.nextAnimation = nextAnimation;
 		this.endFrame = endFrame;
-		this.informable = informable;
+		this.listener = listener;
 
 		playAnimationLoop(anim, animation, useDirection);
 		this.frame = startFrame;
@@ -356,7 +357,7 @@ public class Sprite3D implements Queueable {
 	private void finishAnimationSingle()
 	{
 		this.lock = false;
-		if (this.informable != null) this.informable.inform();
+		if (this.listener != null) this.listener.onEnd(null);
 		this.frame = 0;
 		playAnimationLoop(nextAnim, nextAnimation, directionStore);
 		this.animate = animateStore;

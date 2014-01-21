@@ -12,10 +12,9 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Util.Informable;
 import com.badlogic.gdx.math.Vector3;
 
-public abstract class AI_Package implements Informable {
+public abstract class AI_Package {
 	
 	public AI_Package()
 	{
@@ -56,9 +55,7 @@ public abstract class AI_Package implements Informable {
 			if (deathCD < 0) sData.ALIVE = false;
 		}
 	}
-	
-	protected boolean animationLock = false;
-	
+		
 	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)
 	{
 		boolean found = GLOBALS.WORLD.collide(shape, graph, list);
@@ -95,11 +92,6 @@ public abstract class AI_Package implements Informable {
 	{
 		Equipment<?> e = eData.getEquipment(slot);
 		if (e != null) e.stopUsing();
-	}
-	
-	@Override
-	public void inform() {
-		animationLock = false;
 	}
 	
 	public abstract void update(float delta, Entity entity);
