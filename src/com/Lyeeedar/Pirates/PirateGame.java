@@ -3,6 +3,7 @@ package com.Lyeeedar.Pirates;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.Lyeeedar.Collision.BulletTest;
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Screens.AbstractScreen;
@@ -13,6 +14,7 @@ import com.Lyeeedar.Sound.Mixer;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.Bullet;
 
 public class PirateGame extends Game {
 	
@@ -29,6 +31,7 @@ public class PirateGame extends Game {
 	@Override
 	public void create() {
 		
+		Bullet.init();
 //		GLOBALS.queue_all_assets();
 //		GLOBALS.ASSET_MANAGER.finishLoading();
 		
@@ -53,7 +56,7 @@ public class PirateGame extends Game {
 		{
 			entry.getValue().create();
 		}
-		
+				
 		switchScreen(Screen.MAINMENU);
 	}
 

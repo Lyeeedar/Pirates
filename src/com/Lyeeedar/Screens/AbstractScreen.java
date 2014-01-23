@@ -31,6 +31,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -158,6 +159,7 @@ public abstract class AbstractScreen implements Screen {
 		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS, cam);
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
+		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		
@@ -178,6 +180,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		
 		time = System.nanoTime();
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
 		drawParticles(delta);
 		averageParticles += System.nanoTime()-time;

@@ -1,6 +1,7 @@
 package com.Lyeeedar.Util;
 
 import java.awt.image.BufferedImage;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -22,6 +23,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.BufferUtils;
 
 public final class ImageUtils {
 	
@@ -44,6 +46,25 @@ public final class ImageUtils {
 		return images;
 	}
 
+	public static FloatBuffer extractAlpha(Pixmap pm)
+	{
+		FloatBuffer fb = BufferUtils.newFloatBuffer(pm.getWidth()*pm.getHeight());
+		
+		Color color = new Color();
+		for (int x = 0; x < pm.getWidth(); x++)
+		{
+			for (int y = 0; y < pm.getHeight(); y++)
+			{
+				int cval = pm.getPixel(x, y);
+				Color.rgba8888ToColor(color, cval);
+				System.out.println(color.a);
+				fb.put(color.a);
+			}
+		}
+		
+		return fb;
+	}
+	
 	public static Pixmap TextureToPixmap(Texture texture)
 	{
 		try {

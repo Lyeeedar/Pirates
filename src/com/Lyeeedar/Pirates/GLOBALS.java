@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.EntityGraphOcttree;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.Entity;
@@ -56,7 +57,9 @@ public final class GLOBALS {
 	public static boolean ANDROID = false;
 	
 	public static float PROGRAM_TIME = 0.0f;
-			
+	
+	public static BulletWorld physicsWorld;
+	
 	public static SkyBox SKYBOX;
 	public static EntityGraphOcttree WORLD = new EntityGraphOcttree(null, new Vector3(-100000, -1000, -100000), new Vector3(100000, 1000, 100000));
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();

@@ -39,7 +39,7 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	protected static final float NOISE_PERSISTANCE = 4.0f;
 	protected static final int NOISE_OCTAVES = 2;
-	protected static final int BLUR_STEPS = 50;
+	protected static final int BLUR_STEPS = 1;
 	
 	protected static final int LANDMARK_PLACE_ATTEMPTS = 150;
 
@@ -74,7 +74,7 @@ public class SerkGenerator implements AbstractGenerator{
 		int reps = 5;
 		for (int i = 0 ; i < reps; i++)
 		{
-			placeLandmark(50, 50);
+			placeLandmark(5, 5);
 		}
 		System.out.println("placed landmarks");
 
@@ -114,7 +114,7 @@ public class SerkGenerator implements AbstractGenerator{
 			for (int y = 0; y < size; y++)
 			{
 				Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-				c.a = (tiles[x][y].height-seaBed) / height;
+				c.a = (tiles[x][y].height-seaBed) / (height/10);
 				float max = 0.0f;
 				for (float f : tiles[x][y].slope) if (f > max) max = f;
 				c.b = (max < 1.0f) ? 0.0f : (float) (max/(Math.PI/2.0));
@@ -159,10 +159,11 @@ public class SerkGenerator implements AbstractGenerator{
 			landmarkPnts.add(p);
 		}
 
+		int dsize = size * 10;
 		DelaunayTriangle initialTriangle = new DelaunayTriangle(
-				new DelaunayPoint(-10000, -10000),
-				new DelaunayPoint(10000, -10000),
-				new DelaunayPoint(0, 10000));
+				new DelaunayPoint(-dsize, -dsize),
+				new DelaunayPoint(dsize, -dsize),
+				new DelaunayPoint(0, dsize));
 		Triangulation dt = new Triangulation(initialTriangle);
 		
 		for (DelaunayPoint p : landmarkPnts)
@@ -301,11 +302,11 @@ public class SerkGenerator implements AbstractGenerator{
     	{
     		ignorePnts.add(new DelaunayPoint[]{p1, p2});
     	}
-    	else if (p1.coord(0) > 1000 || p2.coord(0) > 1000)
+    	else if (p1.coord(0) > size || p2.coord(0) > size)
     	{
     		ignorePnts.add(new DelaunayPoint[]{p1, p2});
     	}
-    	else if (p1.coord(1) > 1000 || p2.coord(1) > 1000)
+    	else if (p1.coord(1) > size || p2.coord(1) > size)
     	{
     		ignorePnts.add(new DelaunayPoint[]{p1, p2});
     	}
@@ -368,7 +369,7 @@ public class SerkGenerator implements AbstractGenerator{
 				tiles[x][y].y = y * scale;
 				tiles[x][y].height = (float) ((noise.noise(x, y, 2, 0.5f, true)+1.0f)/2.0f);
 				tiles[x][y].height *= tiles[x][y].height;
-				tiles[x][y].height *= height;
+				tiles[x][y].height *= (float)height;
 				
 				int mx = x - s2;
 				int my = y - s2;
@@ -378,6 +379,8 @@ public class SerkGenerator implements AbstractGenerator{
 				tiles[x][y].height *= 1.0f - MathUtils.clamp(dist/max, 0.0f, 1.0f);
 				
 				tiles[x][y].height += seaBed;
+				
+				System.out.println(tiles[x][y].height);
 			}
 		}
 		

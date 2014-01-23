@@ -9,6 +9,7 @@ import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
 import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
@@ -54,8 +55,8 @@ public class AI_Player_Control extends AI_Package {
 			if (!entityAnim.animationLock)
 			{
 				// Evaluate controls
-				int speed = 10;
-				if (controls.sprint()) speed = 50;
+				int speed = 50;
+				if (controls.sprint()) speed = 10;
 				if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
 				{
 					speed = 1500;
@@ -67,8 +68,8 @@ public class AI_Player_Control extends AI_Package {
 				if (controls.left()) entityPos.left_right(speed);
 				else if (controls.right()) entityPos.left_right(-speed);
 				
-				if (controls.jump() && entityPos.jumpToken > 0 && !jump) {
-					entityPos.velocity.set(0, 30, 0);
+				if (controls.jump() && !jump) {
+					entityPos.velocity.y = 70;
 					entityPos.jumpToken--;
 					jump = true;
 				}
@@ -77,10 +78,6 @@ public class AI_Player_Control extends AI_Package {
 					jump = false;
 				}
 				
-				if (Gdx.input.isKeyPressed(Keys.B))
-				{
-					entityPos.position.y += 10;
-				}
 			}
 
 			if (controls.rightClick()) use(Equipment_Slot.RARM, entityEquip);
@@ -107,12 +104,28 @@ public class AI_Player_Control extends AI_Package {
 			{
 				
 			}
+			else if (entityPos.location == LOCATION.AIR)
+			{
+				if (!entityAnim.animate) entityAnim.updateAnimations = true;
+				else entityAnim.updateAnimations = false;
+				entityAnim.animate = false;
+				entityAnim.animate_speed = 1f;
+				entityAnim.anim = "fall";
+			}
+			else if (entityPos.location == LOCATION.SEA)
+			{
+				if (entityAnim.animate) entityAnim.updateAnimations = true;
+				else entityAnim.updateAnimations = false;
+				entityAnim.animate = true;
+				entityAnim.animate_speed = 1f;
+				entityAnim.anim = "swim";
+			}
 			else if (controls.up() || controls.down() || controls.left() || controls.right()) {
 				if (entityAnim.animate) entityAnim.updateAnimations = true;
 				else entityAnim.updateAnimations = false;
 				entityAnim.animate = true;
 				entityAnim.animate_speed = 1f;
-				if (controls.sprint()) entityAnim.anim = "run";
+				if (!controls.sprint()) entityAnim.anim = "run";
 				else entityAnim.anim = "walk";
 			}
 			else {

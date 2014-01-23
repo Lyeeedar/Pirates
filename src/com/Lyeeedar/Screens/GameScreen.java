@@ -1,5 +1,6 @@
 package com.Lyeeedar.Screens;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.Lyeeedar.Collision.Box;
+import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Collision.EntityGraphOcttree;
@@ -67,6 +69,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
@@ -80,6 +83,11 @@ import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.physics.bullet.collision.PHY_ScalarType;
+import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
+import com.badlogic.gdx.physics.bullet.collision.btCapsuleShape;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -112,8 +120,14 @@ public class GameScreen extends AbstractScreen {
 		super(game);
 	}
 
+	FloatBuffer fb;
 	@Override
 	public void create() {
+		
+		BulletWorld bw = new BulletWorld();
+		btCollisionShape plane = new btBoxShape(new Vector3(1000, 10, 1000));
+		//bw.addStatic(plane, new Matrix4());
+		GLOBALS.physicsWorld = bw;
 		
 		veggieCam = new FollowCam(controls);
 				
@@ -144,6 +158,12 @@ public class GameScreen extends AbstractScreen {
 		terrain.readData(pData, PositionalData.class);
 		pData.calculateComposed();
 		terrain.writeData(pData, PositionalData.class);
+		
+//		fb = ImageUtils.extractAlpha(hmpm);
+//		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, true);
+//		hf.setUseDiamondSubdivision(true);
+//		hf.setLocalScaling(new Vector3(100, 100, 100));
+//		bw.addStatic(hf, new Matrix4().setToTranslation(5000, 500, 5000));
 		
 		world = new EntityGraphOcttree(null, new Vector3(-100000, -100, -100000), new Vector3(100000, 10000, 100000));
 		world.add(terrain, true);
@@ -178,7 +198,7 @@ public class GameScreen extends AbstractScreen {
 		
 		ship.addRenderable(new TexturedMesh(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 		
-		world.add(ship, true);
+		//world.add(ship, true);
 
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -206,18 +226,19 @@ public class GameScreen extends AbstractScreen {
 		player.addRenderable(am, new Vector3());
 		player.addRenderable(swordTrail, new Vector3());
 		
-		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0, 0.5f, 0));
-		am.attachModel("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 10).scl(1, 3, 1));
+		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
+		am.attachModel("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
 		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
 		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
 
 		
 		player.readData(pData, PositionalData.class);
-		pData.position.set(4, 12, 0);
-		pData.position.set(2500, 1000, 2500);
+		//pData.position.set(4, 12, 0);
+		//pData.position.set(2500, 200, 2500);
 		//pData.Xrotate(30);
 		pData.scale.set(2, 2, 2);
+		pData.physicsBody = bw.addDynamic(new btCapsuleShape(1, 10), new Matrix4().translate(25, 50, 25), 0, 0);
 		player.writeData(pData, PositionalData.class);
 		
 		player.readData(sData, StatusData.class);
@@ -333,8 +354,8 @@ public class GameScreen extends AbstractScreen {
 		//pData.Xrotate(180);
 		//pData.lastPos.set(pData.position);
 		//pData.scale.set(20f, 20f, 20f);
-		pData.applyVelocity(0);
-		pData.applyVelocity(0);
+		//pData.applyVelocity(0);
+		//pData.applyVelocity(0);
 		c.writeData(pData, PositionalData.class);
 
 		SymbolicMesh cmesh = SymbolicMesh.getSymbolicMesh(cModel);
@@ -344,7 +365,7 @@ public class GameScreen extends AbstractScreen {
 
 		c.addRenderable(new TexturedMesh(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 
-		world.add(c, true);
+		//world.add(c, true);
 		
 		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
 		
@@ -358,7 +379,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
 			v.update(0);
-			world.add(v, false);
+			//world.add(v, false);
 		}
 		
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
@@ -370,7 +391,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
 			v.update(0);
-			ego.add(v, false);
+			//ego.add(v, false);
 		}
 		
 //		EntityGraph teg = new EntityGraph(null, world, false);
@@ -452,6 +473,7 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void drawSkybox(float delta)
 	{
+		
 //		player.readData(pData, PositionalData.class);
 //		Triangle[] tris = terrain.getTris();
 //		if (tris != null) {
@@ -467,7 +489,7 @@ public class GameScreen extends AbstractScreen {
 //			
 //			imr.end();
 //		}
-		
+//		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
@@ -558,6 +580,8 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void update(float delta) {
 		
+		GLOBALS.physicsWorld.update(delta);
+		
 		GLOBALS.WORLD.getRunnable(list, delta);
 		GLOBALS.submitTasks(list);
 		list.clear();
@@ -595,6 +619,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			d.update(delta, cam);
 		}
+		
 	}
 
 	@Override

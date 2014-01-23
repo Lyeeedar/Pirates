@@ -31,6 +31,7 @@ public class AnimatedModel implements Queueable {
 	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
 	public String defaultAnim;
 	public Matrix4 tmp = new Matrix4();
+	public String currentAnim = "";
 	
 	public AnimatedModel(Model model, Texture texture, Vector3 colour, String defaultAnim)
 	{
@@ -102,10 +103,12 @@ public class AnimatedModel implements Queueable {
 		if(aData.animationLock && model.getAnimation(aData.playAnim) != null)
 		{
 			anim.animate(aData.playAnim, 1, aData.animate_speed, aData.listener, 0.1f);
+			currentAnim = "";
 		}
-		else if (aData.updateAnimations && model.getAnimation(aData.anim) != null)
+		else if (!currentAnim.equals(aData.anim) && model.getAnimation(aData.anim) != null)
 		{
 			anim.animate(aData.anim, -1, aData.animate_speed, aData.listener, 0.1f);
+			currentAnim = aData.anim;
 		}
 		
 		for (ATTACHED_MODEL am : attachedModels)

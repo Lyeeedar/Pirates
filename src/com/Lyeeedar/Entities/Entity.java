@@ -28,6 +28,14 @@ import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.collision.ClosestRayResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.Collision;
+import com.badlogic.gdx.physics.bullet.collision.RayResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.dynamics.btKinematicCharacterController;
+import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import com.badlogic.gdx.utils.Array;
 
 public class Entity {
@@ -413,6 +421,14 @@ public class Entity {
 	
 	public static class PositionalData implements EntityData<PositionalData>
 	{
+		public enum LOCATION 
+		{
+			GROUND,
+			SEA,
+			AIR
+		}
+		public LOCATION location = LOCATION.AIR;
+		
 		public final Vector3 lastPos = new Vector3();
 		public final Vector3 position = new Vector3();
 		public final Vector3 lastRot1 = new Vector3(GLOBALS.DEFAULT_ROTATION);
@@ -430,6 +446,8 @@ public class Entity {
 		public int jumpToken = 0;
 				
 		private final Vector3 tmpVec = new Vector3();
+		private final Vector3 tmpVec2 = new Vector3();
+		private final btVector3 btvec = new btVector3();
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 v = new Vector3();
 		
@@ -437,9 +455,17 @@ public class Entity {
 		
 		public CollisionShape<?> shape = Pools.obtain(CollisionRay.class).set(new Ray(position, rotation), 0.5f);
 		
+		public btRigidBody physicsBody;
+		
+		public float locationCD = 0;
+		
+		private final ClosestRayResultCallback ray = new ClosestRayResultCallback(new Vector3(), new Vector3());
+		
 		@Override
 		public void write(PositionalData data)
 		{
+			location = data.location;
+			
 			lastPos.set(data.lastPos);
 			position.set(data.position);
 			lastRot1.set(data.lastRot1);
@@ -455,6 +481,8 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			graph = data.graph;
+			
+			physicsBody = data.physicsBody;
 						
 			if (shape.getClass().equals(data.shape.getClass()))
 			{
@@ -519,6 +547,20 @@ public class Entity {
 		
 		public void applyVelocity(float delta)
 		{
+			//physicsBody.setWalkDirection(rotation);
+			//physicsBody.setVelocityForTimeInterval(velocity, delta);
+			//physicsBody.preStep(GLOBALS.physicsWorld.world);
+			//physicsBody.playerStep(GLOBALS.physicsWorld.world, delta);
+			
+			//physicsBody.setActivationState(Collision.ACTIVE_TAG);
+			//physicsBody.setLinearVelocity(velocity);
+			//velocity.set(0, 0, 0);
+			
+			//GLOBALS.physicsWorld.world.
+			
+			//position.set(0, 0, 0).mul(physicsBody.getGhostObject().getWorldTransform()).sub(5);
+			locationCD -= delta;
+			
 			lastPos.set(position);
 			lastRot2.set(lastRot1);
 			lastRot1.set(rotation);
@@ -551,27 +593,36 @@ public class Entity {
 //			
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
-			
-			CollisionRay ray = Pools.obtain(CollisionRay.class);
-			ray.ray.origin.set(position).add(0, GLOBALS.STEP, 0);
-			ray.ray.direction.set(0, v.y, 0).nor();
-			ray.len = v.y*v.y + GLOBALS.STEP;
-			ray.reset();
-			ray.calculateBoundingBox();
 
-			EntityGraph base = GLOBALS.WORLD.collide(ray, graph);
+			ray.setCollisionObject(null);
+            ray.setClosestHitFraction(1f);
+
+			tmpVec.set(position).add(0, GLOBALS.STEP, 0);
+			tmpVec2.set(position).add(v);
 			
-			if (base != null)
+			ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+			ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+			
+			GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+			if (ray.hasHit())
 			{
+				EntityGraph base = (EntityGraph) ray.getCollisionObject().userData;
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
-				position.y = ray.intersection.y;
-				graph.popAndInsert(base);
+				if (ray.getHitPointWorld().y() != tmpVec.y) position.y = ray.getHitPointWorld().y();
+				//graph.popAndInsert(base);
+				location = LOCATION.GROUND;
+				locationCD = 0.5f;
 			}
 			else
 			{
-				graph.popAndInsert(GLOBALS.WORLD);
+				//graph.popAndInsert(GLOBALS.WORLD);
+				if (locationCD < 0)
+				{
+					location = LOCATION.AIR;
+					locationCD = 0.5f;
+				}
 			}
 			
 			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
@@ -582,67 +633,78 @@ public class Entity {
 				if (v.y < 0) v.y = 0;
 				position.y =  waveHeight;
 				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
-				graph.popAndInsert(GLOBALS.WORLD);
+				//graph.popAndInsert(GLOBALS.WORLD);
+				location = LOCATION.SEA;
 			}
 			
-			float angle = 0;
-			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
-			float waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
-			if (point.y < waveHeight2)
-			{
-				point.y = waveHeight2;
-				angle = (float) Math.atan((point.y-position.y)/10);
-			}
-			else
-			{
-				angle = (float) Math.atan((position.y-point.y)/10);
-			}
+//			float angle = 0;
+//			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
+//			float waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+//			if (point.y < waveHeight2)
+//			{
+//				point.y = waveHeight2;
+//				angle = (float) Math.atan((point.y-position.y)/10);
+//			}
+//			else
+//			{
+//				angle = (float) Math.atan((position.y-point.y)/10);
+//			}
+//			
+//			point = new Vector3(rotation).scl(-10).add(position).add(v);
+//			waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+//			if (point.y < waveHeight2)
+//			{
+//				point.y = waveHeight2;
+//				angle += (float) Math.atan((point.y-position.y)/-10);
+//			}
+//			else
+//			{
+//				angle += (float) Math.atan((position.y-point.y)/-10);
+//			}
+//			angle/=2.0f;
+//			if (angle > .1f) angle = .1f;
+//			if (angle < -.1f) angle = -.1f;
+//			Yrotate(angle);
+//			
+//			
+//			jumpToken = 2;
+//			
+//			Pools.free(ray);
 			
-			point = new Vector3(rotation).scl(-10).add(position).add(v);
-			waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
-			if (point.y < waveHeight2)
+			if (v.x != 0)
 			{
-				point.y = waveHeight2;
-				angle += (float) Math.atan((point.y-position.y)/-10);
-			}
-			else
-			{
-				angle += (float) Math.atan((position.y-point.y)/-10);
-			}
-			angle/=2.0f;
-			if (angle > .1f) angle = .1f;
-			if (angle < -.1f) angle = -.1f;
-			Yrotate(angle);
-			
-			
-			jumpToken = 2;
-			
-			Pools.free(ray);
-			
-			if (shape != null && (v.x != 0 || v.z != 0))
-			{
-				CollisionShape<?> s1 = shape.obtain();
-				s1.calculateBoundingBox();
+				ray.setCollisionObject(null);
+	            ray.setClosestHitFraction(1f);
+
+				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP, 0);
 				
-				s1.reset();
-				s1.setPosition(tmpVec.set(position).add(v.x, GLOBALS.STEP, 0));
-				s1.setRotation(tmpVec.set(v.x, 0, 0).nor());
-	
-				if (v.x != 0 && GLOBALS.WORLD.collide(s1, graph) != null)
+				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				
+				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+				if (ray.hasHit())
 				{
 					v.x = 0;
 				}
+			}
+			
+			if (v.z != 0)
+			{
+				ray.setCollisionObject(null);
+	            ray.setClosestHitFraction(1f);
+
+				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
+				tmpVec2.set(position).add(0, GLOBALS.STEP, v.z);
 				
-				s1.reset();
-				s1.setPosition(tmpVec.set(position).add(0, GLOBALS.STEP, v.z));
-				s1.setRotation(tmpVec.set(0, 0, v.z).nor());
-	
-				if (v.z != 0 && GLOBALS.WORLD.collide(s1, graph) != null)
+				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				
+				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+				if (ray.hasHit())
 				{
 					v.z = 0;
 				}
-				
-				s1.free();
 			}
 			
 			position.add(v.x, v.y, v.z);
@@ -651,6 +713,8 @@ public class Entity {
 			velocity.z = 0;
 			
 			calculateComposed();
+			
+			physicsBody.setWorldTransform(composed);
 		}
 
 		@Override
