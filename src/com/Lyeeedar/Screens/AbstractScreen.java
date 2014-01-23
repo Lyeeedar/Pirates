@@ -42,6 +42,9 @@ import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
+import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
@@ -66,7 +69,7 @@ public abstract class AbstractScreen implements Screen {
 	
 	protected final HashMap<Class, Batch> batches;
 	
-	protected final Camera cam;
+	protected final FollowCam cam;
 	protected final Controls controls;
 
 	private long startTime;
@@ -87,7 +90,10 @@ public abstract class AbstractScreen implements Screen {
 	{
 		this.game = game;
 		controls = new Controls(GLOBALS.ANDROID);
-		cam = new FollowCam(controls);
+		
+		
+		
+		cam = new FollowCam(controls, FollowCam.createSphere(GLOBALS.FOG_MAX));
 		
 		font = new BitmapFont();
 		

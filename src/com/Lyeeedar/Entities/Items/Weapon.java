@@ -110,17 +110,17 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		if (!inSwing)
 		{
-			mt.stopDraw();
+			if (mt != null) mt.stopDraw();
 			entity.readData(aData, AnimationData.class);
 			aData.animationLock = false;
 			entity.writeData(aData, AnimationData.class);
 		}
 		else
 		{
-			bot.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("bottom").globalTransform));
-			top.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform));
-			mt.draw(bot, top);
-			mt.update(bot, top);
+			if (model != null) bot.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("bottom").globalTransform));
+			if (model != null) top.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform));
+			if (mt != null) mt.draw(bot, top);
+			if (mt != null) mt.update(bot, top);
 		}
 		
 		if (!shouldSwing || inSwing) 

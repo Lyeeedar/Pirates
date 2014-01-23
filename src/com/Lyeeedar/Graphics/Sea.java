@@ -48,7 +48,7 @@ public class Sea {
 		
 		this.terrain = terrain;
 		
-		numWaves = 2;
+		numWaves = 0;
 				
 		amplitudes[0] = 1.02f;
 		wavelengths[0] = 100.1f;

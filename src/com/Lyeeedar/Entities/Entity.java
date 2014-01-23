@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.CollisionRay;
 import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.AI.AI_Package;
@@ -459,7 +461,7 @@ public class Entity {
 		
 		public float locationCD = 0;
 		
-		private final ClosestRayResultCallback ray = new ClosestRayResultCallback(new Vector3(), new Vector3());
+		public ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 		
 		@Override
 		public void write(PositionalData data)
@@ -481,6 +483,8 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			graph = data.graph;
+			
+			ray = data.ray;
 			
 			physicsBody = data.physicsBody;
 						
@@ -547,18 +551,6 @@ public class Entity {
 		
 		public void applyVelocity(float delta)
 		{
-			//physicsBody.setWalkDirection(rotation);
-			//physicsBody.setVelocityForTimeInterval(velocity, delta);
-			//physicsBody.preStep(GLOBALS.physicsWorld.world);
-			//physicsBody.playerStep(GLOBALS.physicsWorld.world, delta);
-			
-			//physicsBody.setActivationState(Collision.ACTIVE_TAG);
-			//physicsBody.setLinearVelocity(velocity);
-			//velocity.set(0, 0, 0);
-			
-			//GLOBALS.physicsWorld.world.
-			
-			//position.set(0, 0, 0).mul(physicsBody.getGhostObject().getWorldTransform()).sub(5);
 			locationCD -= delta;
 			
 			lastPos.set(position);
@@ -598,15 +590,17 @@ public class Entity {
             ray.setClosestHitFraction(1f);
 
 			tmpVec.set(position).add(0, GLOBALS.STEP, 0);
-			tmpVec2.set(position).add(v);
+			tmpVec2.set(position).add(0, v.y, 0);
 			
 			ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
 			ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+			ray.setCollisionFilterMask((short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
+			ray.setCollisionFilterGroup((short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
 			
 			GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
 			if (ray.hasHit())
 			{
-				EntityGraph base = (EntityGraph) ray.getCollisionObject().userData;
+				Entity base = (Entity) ray.getCollisionObject().userData;
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
@@ -625,9 +619,9 @@ public class Entity {
 				}
 			}
 			
-			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x+v.x, position.z+v.z)-1;
+			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x+v.x, position.z+v.z);
 			
-			if (v.y <= 0.0f && position.y-v.y-GLOBALS.STEP < waveHeight)
+			if (position.y < waveHeight)
 			{
 				if (velocity.y < 0) velocity.y = 0;
 				if (v.y < 0) v.y = 0;
@@ -676,8 +670,8 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
-				tmpVec2.set(position).add(v.x, GLOBALS.STEP, 0);
+				tmpVec.set(position).add(0, GLOBALS.STEP+v.y, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
 				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
@@ -686,6 +680,7 @@ public class Entity {
 				if (ray.hasHit())
 				{
 					v.x = 0;
+					//if (ray.getHitPointWorld().x() != tmpVec.x) position.x = ray.getHitPointWorld().x();
 				}
 			}
 			
@@ -694,8 +689,8 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
-				tmpVec2.set(position).add(0, GLOBALS.STEP, v.z);
+				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, v.z);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
 				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
@@ -704,6 +699,7 @@ public class Entity {
 				if (ray.hasHit())
 				{
 					v.z = 0;
+					//if (ray.getHitPointWorld().z() != tmpVec.z) position.z = ray.getHitPointWorld().z();
 				}
 			}
 			

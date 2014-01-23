@@ -51,13 +51,12 @@ public final class ImageUtils {
 		FloatBuffer fb = BufferUtils.newFloatBuffer(pm.getWidth()*pm.getHeight());
 		
 		Color color = new Color();
-		for (int x = 0; x < pm.getWidth(); x++)
+		for (int y = 0; y < pm.getHeight(); y++)
 		{
-			for (int y = 0; y < pm.getHeight(); y++)
+			for (int x = 0; x < pm.getWidth(); x++)
 			{
 				int cval = pm.getPixel(x, y);
 				Color.rgba8888ToColor(color, cval);
-				System.out.println(color.a);
 				fb.put(color.a);
 			}
 		}

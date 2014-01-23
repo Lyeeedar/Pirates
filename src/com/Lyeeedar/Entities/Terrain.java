@@ -243,6 +243,7 @@ public class Terrain extends Entity {
 		{
 			this.texture = texture;
 			this.position = position;
+			//this.position.sub((float)scale/2.0f, 0, (float)scale/2.0f);
 			this.range = range;
 			this.scale = scale;
 			

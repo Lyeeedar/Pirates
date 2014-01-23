@@ -6,7 +6,14 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
+import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
+import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
+import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
 
 public class FollowCam extends PerspectiveCamera {
 	
@@ -18,11 +25,15 @@ public class FollowCam extends PerspectiveCamera {
 	public float followDist = 10.0f;
 	public float followHeight = 7.0f;
 	
-	private final Vector3 lPos = new Vector3();
+	public btRigidBody physicsObject;
 	
-	public FollowCam(Controls controls)
+	private final Vector3 lPos = new Vector3();
+	private final Matrix4 tmpMat = new Matrix4();
+	
+	public FollowCam(Controls controls, btRigidBody physicsObject)
 	{
 		this.controls = controls;
+		this.physicsObject = physicsObject;
 	}
 	
 	private float Yangle = -15;
@@ -56,6 +67,8 @@ public class FollowCam extends PerspectiveCamera {
 		
 		position.set(ray.intersection);
 		update();
+		
+		physicsObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
 	}
 	
 	public void update(Entity entity)
@@ -119,6 +132,8 @@ public class FollowCam extends PerspectiveCamera {
 			position.y += seaY;
 			update();
 		}
+		
+		physicsObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
 	}
 
 	public void Yrotate (float angle) {	
@@ -129,6 +144,17 @@ public class FollowCam extends PerspectiveCamera {
 			localAxisX.crs(up).nor();
 			rotate(angle, localAxisX.x, localAxisX.y, localAxisX.z);
 		}
+	}
+	
+	public static btRigidBody createSphere(float radius)
+	{
+		btDefaultMotionState fallMotionState = new btDefaultMotionState(new Matrix4());
+        btRigidBody object = new btRigidBody(0, fallMotionState, null);
+
+		object.setCollisionShape(new btSphereShape(radius));
+		object.setCollisionFlags(btCollisionObject.CollisionFlags.CF_NO_CONTACT_RESPONSE);
+		
+		return object;
 	}
 
 }
