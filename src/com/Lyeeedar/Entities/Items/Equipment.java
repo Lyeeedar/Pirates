@@ -12,7 +12,6 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	
 	public SPRITESHEET spritesheet = null;
 	
-	public String animationName = null;
 	public static final int START_FRAME = 0;
 	public static final int END_FRAME = 3;
 	
@@ -23,14 +22,13 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 		super();
 	}
 	
-	public Equipment(String animationName, SPRITESHEET spritesheet, DESCRIPTION desc)
+	public Equipment(SPRITESHEET spritesheet, DESCRIPTION desc)
 	{
 		super(desc);
-		this.animationName = animationName;
 		this.spritesheet = spritesheet;
 	}
 	
-	public void playAnimation(AnimationData aData)
+	public void playAnimation(AnimationData aData, String animationName)
 	{
 		if (animationName == null) return;
 		
@@ -49,7 +47,6 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	{
 		super.set(other);
 		Equipment<E> cother = (Equipment<E>)other;
-		this.animationName = cother.animationName;
 		this.spritesheet = cother.spritesheet;
 		return this;
 	}

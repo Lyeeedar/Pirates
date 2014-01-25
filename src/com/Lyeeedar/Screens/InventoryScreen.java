@@ -117,11 +117,11 @@ public class InventoryScreen extends AbstractScreen {
 		{
 			for (ITEM_TYPE it : ITEM_TYPE.values())
 			{
-				Item item = new Armour(null, null, new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", it, "data/skins/HAND.png"));
+				Item item = new Armour(null, new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", it, "data/skins/HAND.png"));
 				eData.addItem(item);
 			}
 		}
-		eData.equip(Equipment_Slot.HEAD, new Armour(null, null, new DESCRIPTION("A HEAD", "THis is a head. It is a big head and it looks funny and that is like super cool and usj vjrrdu vskrd pir snd stifff lovely banans darn thay stifff well thatysd a gpppf point DOWEHY!", ITEM_TYPE.ARMOUR_HEAD, "data/skins/TORSO.png")));
+		eData.equip(Equipment_Slot.HEAD, new Armour(null, new DESCRIPTION("A HEAD", "THis is a head. It is a big head and it looks funny and that is like super cool and usj vjrrdu vskrd pir snd stifff lovely banans darn thay stifff well thatysd a gpppf point DOWEHY!", ITEM_TYPE.ARMOUR_HEAD, "data/skins/TORSO.png")));
 	}
 
 	@Override

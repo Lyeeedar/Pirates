@@ -23,6 +23,8 @@ import com.badlogic.gdx.utils.Pools;
 
 public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
+	private String[] animations;
+	
 	private float hitCD = 0;
 	private float hitSpeed = 1f;
 	private int damageMin = 1;
@@ -30,6 +32,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	
 	public boolean inSwing = false;
 	public boolean shouldSwing = false;
+	public int animationStage = 0;
+	public boolean needsUpdate = false;
 	
 	private PositionalData pData = new PositionalData();
 	private StatusData sData = new StatusData();
@@ -51,14 +55,15 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		super();
 	}
 	
-	public Weapon(String animationName, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, int damageMin, int damageVar, AnimatedModel model, MotionTrail mt)
+	public Weapon(String[] animations, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, int damageMin, int damageVar, AnimatedModel model, MotionTrail mt)
 	{
-		super(animationName, spritesheet, desc);
+		super(spritesheet, desc);
 		this.hitSpeed = speed;
 		this.damageMin = damageMin;
 		this.damageVar = damageVar;
 		this.model = model;
 		this.mt = mt;
+		this.animations = animations;
 	}
 
 	@Override
@@ -74,6 +79,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		damageVar = cother.damageVar;
 		model = cother.model;
 		mt = cother.mt;
+		animations = cother.animations;
 		
 		return this;
 	}
@@ -138,38 +144,32 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			}
 		}
 		
-		if (!shouldSwing || inSwing) 
+		if (!shouldSwing) 
 		{
 			return;
 		}
 		
-		if (hitCD < 0)
+		if (needsUpdate)
+		{
+			entity.readData(aData, AnimationData.class);
+			playAnimation(aData, animations[animationStage]);
+			aData.listener = this;
+			aData.animate_speed = hitSpeed;
+			entity.writeData(aData, AnimationData.class);
+			
+			needsUpdate = false;
+		}
+		else if (!inSwing && hitCD < 0)
 		{
 			this.inSwing = true;
 			
 			entity.readData(aData, AnimationData.class);
-			playAnimation(aData);
+			playAnimation(aData, animations[0]);
 			aData.listener = this;
 			aData.animate_speed = hitSpeed;
 			entity.writeData(aData, AnimationData.class);
 			
 			entity.readData(pData, PositionalData.class);
-					
-//			entities.clear();
-//			if (GLOBALS.WORLD.collide(box, pData.graph, entities))
-//			{
-//				for (EntityGraph graph : entities)
-//				{
-//					if (graph != null && graph.entity != null) 
-//					{
-//						graph.entity.readData(sData, StatusData.class);
-//						sData.damage = damageMin + ran.nextInt(damageVar);
-//						graph.entity.writeData(sData, StatusData.class);
-//					}
-//				}
-//			}
-			
-			hitCD = hitSpeed;
 			
 //			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1, new Sound3D(FileUtils.loadSound("data/sfx/fire_loop_01.mp3"), 0.1f, 1.0f, true));
 //			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6, new Sound3D(FileUtils.loadSound("data/sfx/explosion_distant_002.mp3"), 0.01f, 1.0f, false));
@@ -200,8 +200,19 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 	@Override
 	public void onEnd(AnimationDesc animation) {
-		inSwing = false;
 		ray.clearSkips();
+		
+		if (shouldSwing && animationStage < animations.length-1)
+		{
+			animationStage++;
+			needsUpdate = true;
+		}
+		else
+		{
+			inSwing = false;
+			hitCD = hitSpeed;
+			animationStage = 0;
+		}
 	}
 
 	@Override

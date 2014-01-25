@@ -13,9 +13,9 @@ public class Armour extends Equipment<Armour> {
 		super();
 	}
 	
-	public Armour(String animationName, SPRITESHEET spritesheet, DESCRIPTION desc)
+	public Armour(SPRITESHEET spritesheet, DESCRIPTION desc)
 	{
-		super(animationName, spritesheet, desc);
+		super(spritesheet, desc);
 	}
 	
 	@Override

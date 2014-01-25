@@ -200,10 +200,10 @@ public class GameScreen extends AbstractScreen {
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
-		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
-		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
-		eData.equip(Equipment_Slot.LEGS, new Armour(null, new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon("attack1_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1.5f, 50, 50, sword, swordTrail));
+		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
+		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
+		eData.equip(Equipment_Slot.RARM, new Weapon(new String[]{"attack1_1", "attack1_2"}, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1.5f, 50, 50, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
 		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
@@ -245,8 +245,8 @@ public class GameScreen extends AbstractScreen {
 		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
 		npc.readOnlyRead(StatusData.class).factions.add("Player");
 		npc.readData(eData, EquipmentData.class);
-		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
-		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
+		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
 		npc.writeData(eData, EquipmentData.class);
 		
 		// END NPC 1
@@ -254,18 +254,18 @@ public class GameScreen extends AbstractScreen {
 		// MAKE ENEMIES
 		
 		Random ran = new Random();
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 1000; i++)
 		{
 			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			AI_Follow ai = new AI_Follow();
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
 			PositionalData pData = ge.readOnlyRead(PositionalData.class);
-			pData.position.set(4450+ran.nextFloat()*240, 1000, 3300+ran.nextFloat()*240);
+			pData.position.set(ran.nextFloat()*10000, 1000, ran.nextFloat()*10000);
 			
 			ge.readData(eData, EquipmentData.class);
-			eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
-			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 0.8f, 3, 5, null, null));
+			eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
+			//eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 0.8f, 3, 5, null, null));
 			ge.writeData(eData, EquipmentData.class);
 						
 			s = new Sprite3D(3, 3, 4, 4);
@@ -292,6 +292,7 @@ public class GameScreen extends AbstractScreen {
 			v.update(0);			
 			bw.add(new btBoxShape(new Vector3(10, 50, 10)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		}
+		veggies.clear();
 		
 		// END TREES
 		
