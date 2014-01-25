@@ -1,13 +1,13 @@
 package com.Lyeeedar.Pirates.ProceduralGeneration;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import com.Lyeeedar.Collision.Box;
+import javax.swing.Box;
+
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.TexturedMesh;
@@ -15,7 +15,6 @@ import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Family;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Person;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Relationship;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Village;
-import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.MathUtils;
@@ -100,7 +99,6 @@ public class SocietyGenerator {
 					pData.calculateComposed();
 					Entity house = new Entity(pData);
 					house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), new Vector3());
-					house.setCollisionShape(new Box(pData.position, building.width, 20, building.height));
 					entities.add(house);
 				}
 			}	

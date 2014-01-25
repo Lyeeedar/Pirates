@@ -1,7 +1,7 @@
 package com.Lyeeedar.Entities.Spells;
 
-import com.Lyeeedar.Collision.Box;
-import com.Lyeeedar.Collision.CollisionRay;
+import javax.swing.Box;
+
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Sound.Sound3D;
@@ -13,8 +13,6 @@ public class SpellAI_Bolt extends SpellAI {
 
 	public Vector3 velocity = new Vector3();
 	private Vector3 tmpVec = new Vector3();
-	public Box shape = Pools.obtain(Box.class);
-	public CollisionRay ray = Pools.obtain(CollisionRay.class);
 	
 	private PositionalData pData = new PositionalData();
 	

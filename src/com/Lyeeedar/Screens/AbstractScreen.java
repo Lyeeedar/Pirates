@@ -93,7 +93,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		
 		
-		cam = new FollowCam(controls, FollowCam.createSphere(GLOBALS.FOG_MAX));
+		cam = new FollowCam(controls, FollowCam.createSphere(GLOBALS.FOG_MAX), FollowCam.createSphere(GLOBALS.FOG_MAX/2.0f));
 		
 		font = new BitmapFont();
 		
@@ -169,14 +169,6 @@ public abstract class AbstractScreen implements Screen {
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		
-		time = System.nanoTime();
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		((DecalBatcher) batches.get(DecalBatcher.class)).flush();
-		averageDecal += System.nanoTime()-time;
-		averageDecal /= 2;
-		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
@@ -187,6 +179,15 @@ public abstract class AbstractScreen implements Screen {
 		
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+		((DecalBatcher) batches.get(DecalBatcher.class)).flush();
+		averageDecal += System.nanoTime()-time;
+		averageDecal /= 2;
+		
+		time = System.nanoTime();
+		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_BLEND);
 		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
 		drawParticles(delta);
 		averageParticles += System.nanoTime()-time;

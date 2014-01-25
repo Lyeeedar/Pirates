@@ -1,23 +1,18 @@
 package com.Lyeeedar.Pirates;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.Lyeeedar.Collision.BulletWorld;
-import com.Lyeeedar.Collision.EntityGraphOcttree;
-import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Sound.Mixer;
 import com.Lyeeedar.Util.Dialogue;
-import com.Lyeeedar.Util.Octtree;
 import com.badlogic.gdx.math.Vector3;
 
 public final class GLOBALS {
@@ -37,7 +32,7 @@ public final class GLOBALS {
 		FORCE // Gravity, physical buffs
 	}
 
-	public static final float STEP = 1.0f;
+	public static final float STEP = 0.5f;
 
 	public static final int MAX_SPEED_X = 1;
 	public static final int MAX_SPEED_Y = 1;
@@ -59,9 +54,9 @@ public final class GLOBALS {
 	public static float PROGRAM_TIME = 0.0f;
 	
 	public static BulletWorld physicsWorld;
+	public static BulletWorld renderOnlyWorld;
 	
 	public static SkyBox SKYBOX;
-	public static EntityGraphOcttree WORLD = new EntityGraphOcttree(null, new Vector3(-100000, -1000, -100000), new Vector3(100000, 1000, 100000));
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();
 	public static LinkedList<Spell> pendingSPELLS = new LinkedList<Spell>();
 	public static LightManager LIGHTS = new LightManager();

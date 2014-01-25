@@ -1,6 +1,7 @@
 package com.Lyeeedar.Util;
 
-import com.Lyeeedar.Collision.CollisionRay;
+import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -10,6 +11,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
@@ -21,19 +23,24 @@ public class FollowCam extends PerspectiveCamera {
 	
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
-	private final CollisionRay ray = new CollisionRay();
 	public float followDist = 10.0f;
 	public float followHeight = 7.0f;
 	
-	public btRigidBody physicsObject;
+	public btGhostObject renderObject;
+	public btGhostObject aiObject;
 	
 	private final Vector3 lPos = new Vector3();
 	private final Matrix4 tmpMat = new Matrix4();
+	private final Vector3 tmpVec = new Vector3();
+	private final Vector3 tmpVec2 = new Vector3();
 	
-	public FollowCam(Controls controls, btRigidBody physicsObject)
+	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
+	
+	public FollowCam(Controls controls, btGhostObject renderObject, btGhostObject aiObject)
 	{
 		this.controls = controls;
-		this.physicsObject = physicsObject;
+		this.renderObject = renderObject;
+		this.aiObject = aiObject;
 	}
 	
 	private float Yangle = -15;
@@ -54,21 +61,24 @@ public class FollowCam extends PerspectiveCamera {
 		this.followDist = dist;
 	}
 	
+	@Override
+	public void update()
+	{
+		if (renderObject != null) renderObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
+		if (aiObject != null) aiObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
+		super.update();
+	}
+	
 	public void updateBasic(PositionalData pData)
 	{
 		up.set(pData.up);
 		direction.set(pData.rotation);
 		Yrotate(Yangle);
 		
-		ray.ray.origin.set(pData.position).add(0, followHeight, 0);
-		ray.ray.direction.set(direction).scl(-1.0f);
-		ray.len = followDist;
-		ray.reset();
+		tmp.set(direction).scl(-1*followDist).add(pData.position).add(0, followHeight, 0);
 		
-		position.set(ray.intersection);
+		position.set(tmp);
 		update();
-		
-		physicsObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
 	}
 	
 	public void update(Entity entity)
@@ -95,27 +105,28 @@ public class FollowCam extends PerspectiveCamera {
 		direction.set(pData.rotation.x, 0, pData.rotation.z).nor();
 		direction.rotate(Xangle, 0, 1, 0);
 		Yrotate(Yangle);
+
+		tmp.set(direction).scl(-1*followDist).add(pData.position).add(0, followHeight, 0);
+		position.set(tmp);
 		
-		ray.ray.origin.set(pData.position).add(0, followHeight, 0);
-		ray.ray.direction.set(direction).scl(-1.0f);
-		ray.len = followDist;
-		ray.reset();
+		ray.setCollisionObject(null);
+        ray.setClosestHitFraction(1f);
+
+		tmpVec.set(pData.position).add(0, followHeight, 0);
+		tmpVec2.set(position);
 		
-		GLOBALS.WORLD.collideWalkables(ray, pData.graph);
+		ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+		ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+		ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+		ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+		ray.setSkipObject(pData.physicsBody);
 		
-		position.set(ray.intersection);
-		update();
-		
-		for (int i = 0; i < 4; i++)
+		GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+		if (ray.hasHit())
 		{
-			ray.ray.direction.set(frustum.planePoints[i]).sub(pData.position).nor();
-			ray.reset();
-			
-			tmp.set(frustum.planePoints[i]).sub(position);
-			
-			if (GLOBALS.WORLD.collideWalkables(ray, pData.graph) != null)
-				position.add(tmp.add(ray.intersection).sub(ray.ray.direction)).scl(0.5f);
+			position.set(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
 		}
+		
 		update();
 		
 		float seaY = 0;
@@ -132,8 +143,6 @@ public class FollowCam extends PerspectiveCamera {
 			position.y += seaY;
 			update();
 		}
-		
-		physicsObject.setWorldTransform(tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, direction));
 	}
 
 	public void Yrotate (float angle) {	
@@ -146,15 +155,30 @@ public class FollowCam extends PerspectiveCamera {
 		}
 	}
 	
-	public static btRigidBody createSphere(float radius)
+	public static btGhostObject createSphere(float radius)
 	{
-		btDefaultMotionState fallMotionState = new btDefaultMotionState(new Matrix4());
-        btRigidBody object = new btRigidBody(0, fallMotionState, null);
+		final btPairCachingGhostObject result = new TestPairCachingGhostObject();
 
-		object.setCollisionShape(new btSphereShape(radius));
-		object.setCollisionFlags(btCollisionObject.CollisionFlags.CF_NO_CONTACT_RESPONSE);
+		result.setCollisionShape(new btSphereShape(radius));
+		result.setCollisionFlags(btCollisionObject.CollisionFlags.CF_NO_CONTACT_RESPONSE);
 		
-		return object;
+		return result;
 	}
+	
+	public static class TestPairCachingGhostObject extends btPairCachingGhostObject {
+        public btCollisionShape shape;
+        @Override
+        public void setCollisionShape (btCollisionShape collisionShape) {
+                shape = collisionShape;
+                super.setCollisionShape(collisionShape);
+        }
+        @Override
+        public void dispose () {
+                super.dispose();
+                if (shape != null)
+                        shape.dispose();
+                shape = null;
+        }
+}
 
 }

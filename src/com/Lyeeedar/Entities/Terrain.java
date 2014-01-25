@@ -1,14 +1,10 @@
 package com.Lyeeedar.Entities;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.Lyeeedar.Collision.Box;
-import com.Lyeeedar.Collision.CollisionShape;
-import com.Lyeeedar.Collision.Triangle;
-import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.TexturedMesh;
+import javax.swing.Box;
+
 import com.Lyeeedar.Graphics.Queueable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -21,12 +17,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pools;
 
@@ -78,7 +70,6 @@ public class Terrain extends Entity {
 			System.err.println(shader.getLog());
 		}
 		
-		this.setCollisionShapeInternal(new Box(new Vector3(), 100000, 1000, 100000));
 	}
 	
 	public int bindUniforms(ShaderProgram s, Vector3 position)
@@ -106,7 +97,6 @@ public class Terrain extends Entity {
 	{
 		for (int i = 0; i < heightmaps.length; i++) heightmaps[i].fillBuffers(i, texBuf, posBuf, heightBuf, scaleBuf, sizeBuf);
 		
-		this.getCollisionShapeInternal().setPosition(cam.position);
 		mat41.set(cam.combined);
 		
 		shader.begin();
@@ -201,30 +191,6 @@ public class Terrain extends Entity {
 		}
 		Pools.free(pData);
 	}
-	
-	public boolean collide(CollisionShape<?> collide)
-	{
-		boolean hit = false;
-		
-		for (HeightMap hm : heightmaps)
-		{
-			tmpVec.set(collide.getPosition().x, 0, collide.getPosition().z).sub(hm.position).scl(1.0f/hm.scale);
-			if (tmpVec.x > 0 && tmpVec.x < 1.0f &&
-					tmpVec.z > 0 && tmpVec.z < 1.0f)
-			{
-				hit = hm.collide(collide, (int)(tmpVec.x*(float)hm.size), (int)(tmpVec.z*(float)hm.size));
-				//hit = hm.collide(collide, collide.getPosition().x, collide.getPosition().z);
-				break;
-			}
-		}
-		
-		return hit;
-	}
-	
-	public Triangle[] getTris()
-	{
-		return heightmaps[0].getTris();
-	}
 
 	public static class HeightMap
 	{
@@ -235,9 +201,7 @@ public class Terrain extends Entity {
 		int size;
 		float[][] heights;
 		float[][] splats;
-		
-		Triangle[] triangles = {new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle(), new Triangle()};
-		
+				
 		@SuppressWarnings("unchecked")
 		public HeightMap(Texture texture, Vector3 position, float range, int scale, float seaFloor)
 		{
@@ -295,67 +259,6 @@ public class Terrain extends Entity {
 			
 			scaleBuf[index] = (float)scale;
 			sizeBuf[index] = (float)size;
-		}
-		
-		private static final int[][] locations = {
-			{0, 0},
-//			{0, 1},
-//			{1, 0},
-//			{1, 1},
-//			{0, -1},
-//			{-1, 0},
-//			{-1, -1},
-//			{-1, 1},
-//			{1, -1},
-		};
-		
-		public boolean collide(CollisionShape<?> shape, float x, float y)
-		{
-			boolean collide = false;
-
-			for (int[] loc : locations)
-			{
-				fillTriangles(x+loc[0], y+loc[1]);
-				for (Triangle t : triangles)
-				{
-					if (t.collide(shape)) collide = true;
-				}
-			}
-			
-			return collide;
-		}
-		
-		private static final int[][] offsets = {
-			{0, 0, 		1, 0, 		1, 1},
-			{0, 0, 		0, 1, 		1, 1},
-			{0, 0, 		-1, 0, 		-1, -1},
-			{0, 0, 		0, -1, 		-1, -1},
-			{0, 0, 		-1, 0, 		-1, 1},
-			{0, 0, 		0, -1, 		1, -1},
-			{0, 0, 		1, 0, 		1, -1},
-			{0, 0, 		0, 1, 		-1, 1},
-			};
-		
-		private void fillTriangles(float x, float y)
-		{
-			for (int i = 0; i < offsets.length; i++)
-			{
-				triangles[i].set(
-						((x+offsets[i][0])/(float)size)*(float)scale, getHeight(x+offsets[i][0], y+offsets[i][1]),
-						((y+offsets[i][1])/(float)size)*(float)scale,
-						
-						((x+offsets[i][2])/(float)size)*(float)scale, getHeight(x+offsets[i][2], y+offsets[i][3]),
-						((y+offsets[i][3])/(float)size)*(float)scale,
-						
-						((x+offsets[i][4])/(float)size)*(float)scale, getHeight(x+offsets[i][4], y+offsets[i][5]),
-						((y+offsets[i][5])/(float)size)*(float)scale
-						);
-			}
-		}
-		
-		public Triangle[] getTris()
-		{
-			return triangles;
 		}
 	}
 

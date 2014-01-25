@@ -1,21 +1,16 @@
 package com.Lyeeedar.Entities.AI;
 
-import java.util.ArrayList;
-
-import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Entities.Entity.EquipmentData;
-import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
-import com.Lyeeedar.Entities.EntityGraph;
+import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.math.Vector3;
 
 public class AI_Player_Control extends AI_Package {
 	
@@ -28,8 +23,7 @@ public class AI_Player_Control extends AI_Package {
 	private final StatusData entityStatus = new StatusData();
 	
 	private final PositionalData pData = new PositionalData();
-	private final ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
-	private Box box = new Box(new Vector3(), 0.5f, 0.5f, 0.5f);
+	//private final ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
 	
 	boolean activatecd = false;
 	
@@ -86,17 +80,17 @@ public class AI_Player_Control extends AI_Package {
 				stopUsing(Equipment_Slot.RARM, entityEquip);
 			}
 
-			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
-			{
-				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
-				Entity e = activate(box, entityPos.graph, list, entityPos.position, pData);
-				if (e != null) e.activate(entity);
-				activatecd = false;
-			}
-			else if (!Gdx.input.isKeyPressed(Keys.E))
-			{
-				activatecd = true;
-			}
+//			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
+//			{
+//				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
+//				Entity e = activate(box, entityPos.graph, list, entityPos.position, pData);
+//				if (e != null) e.activate(entity);
+//				activatecd = false;
+//			}
+//			else if (!Gdx.input.isKeyPressed(Keys.E))
+//			{
+//				activatecd = true;
+//			}
 			
 			// Update animations
 			

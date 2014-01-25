@@ -3,42 +3,27 @@ package com.Lyeeedar.Entities;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
-import com.Lyeeedar.Collision.CollisionRay;
-import com.Lyeeedar.Collision.CollisionShape;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Graphics.Batch;
-import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Queueable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Util.Informable;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.ClosestRayResultCallback;
-import com.badlogic.gdx.physics.bullet.collision.Collision;
-import com.badlogic.gdx.physics.bullet.collision.RayResultCallback;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.dynamics.btKinematicCharacterController;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
-import com.badlogic.gdx.utils.Array;
 
 public class Entity {
 	
@@ -65,7 +50,6 @@ public class Entity {
 	private AI_Package ai;
 	private final EntityRunnable runnable = new EntityRunnable();
 	private final EntityRenderables renderables = new EntityRenderables();
-	private CollisionShape<?> collisionShapeInternal;
 	private ActivationAction aa;
 	
 	public Entity(EntityData<?>... data)
@@ -94,54 +78,6 @@ public class Entity {
 		aa.set(this);
 	}
 	
-	public void setCollisionShapeInternal(CollisionShape<?> internal)
-	{
-		this.collisionShapeInternal = internal;
-	}
-	
-	public CollisionShape<?> getCollisionShapeInternal()
-	{
-		return this.collisionShapeInternal;
-	}
-	
-	public void setCollisionShapeExternal(CollisionShape<?> external)
-	{
-		PositionalData pd = readOnlyRead(PositionalData.class);
-		synchronized(pd)
-		{
-			pd.shape = external;
-		}
-	}
-	
-	public void setCollisionShape(CollisionShape<?> shape)
-	{
-		setCollisionShapeExternal(shape);
-		setCollisionShapeInternal(shape);
-	}
-	
-	public boolean collide(CollisionShape<?> collide)
-	{
-		if (collisionShapeInternal == null) return false;
-		
-		CollisionShape<?> shape = collisionShapeInternal;
-		
-		boolean hit = shape.collide(collide);
-				
-		return hit;
-	}
-	
-	public void setGraph(EntityGraph eg)
-	{
-		if (entityData.containsKey(PositionalData.class))
-		{
-			PositionalData pd = readOnlyRead(PositionalData.class);
-			synchronized(pd)
-			{
-				pd.graph = eg;
-			}
-		}
-	}
-	
 	public void addRenderable(Queueable r, Vector3 position)
 	{
 		renderables.add(new EntityRenderable(r, position));
@@ -167,51 +103,23 @@ public class Entity {
 	{	
 		if (ai != null) ai.update(delta, this);
 		if (entityData.containsKey(EquipmentData.class)) ((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
-		
-		if (collisionShapeInternal != null) 
-		{
-			if (entityData.containsKey(PositionalData.class))
-			{
-				PositionalData pd = readOnlyRead(PositionalData.class);
-				
-				CollisionShape<?> shape = collisionShapeInternal;
-				synchronized(pd)
-				{
-					shape.setPosition(pd.position);
-					shape.setRotation(pd.rotation);
-					shape.setScaling(pd.scale);
-				}
-				shape.reset();
-				shape.calculateBoundingBox();
-			}
-			else if (entityData.containsKey(MinimalPositionalData.class))
-			{
-				MinimalPositionalData mpData = readOnlyRead(MinimalPositionalData.class);
-				
-				CollisionShape<?> shape = collisionShapeInternal;
-				synchronized(mpData)
-				{
-					shape.setPosition(mpData.position);
-				}
-				shape.reset();
-				shape.calculateBoundingBox();
-			}
-		}
 	}
 	
-	public <E extends EntityData<E>> void writeData(E data, Class<E> type)
+	public <E extends EntityData<E>> boolean writeData(E data, Class<E> type)
 	{
-		if (!entityData.containsKey(type)) return;
+		if (!entityData.containsKey(type)) return false;
 		
 		E target = (E) entityData.get(type);
 		synchronized(target)
 		{
 			target.write(data);
 		}
+		
+		return true;
 	}	
-	public <E extends EntityData<E>> E readData(E target, Class<E> type)
+	public <E extends EntityData<E>> boolean readData(E target, Class<E> type)
 	{
-		if (!entityData.containsKey(type)) return null;
+		if (!entityData.containsKey(type)) return false;
 		
 		E data = (E) entityData.get(type);
 		synchronized(data)
@@ -219,7 +127,7 @@ public class Entity {
 			data.read(target);
 		}
 		
-		return target;
+		return true;
 	}
 
 	public <E extends EntityData<E>> E readOnlyRead(Class<E> type)
@@ -452,11 +360,7 @@ public class Entity {
 		private final btVector3 btvec = new btVector3();
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 v = new Vector3();
-		
-		public EntityGraph graph;
-		
-		public CollisionShape<?> shape = Pools.obtain(CollisionRay.class).set(new Ray(position, rotation), 0.5f);
-		
+
 		public btRigidBody physicsBody;
 		
 		public float locationCD = 0;
@@ -482,21 +386,9 @@ public class Entity {
 			
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
-			graph = data.graph;
 			
-			ray = data.ray;
-			
+			ray = data.ray;			
 			physicsBody = data.physicsBody;
-						
-			if (shape.getClass().equals(data.shape.getClass()))
-			{
-				shape.setGeneric(data.shape);
-			}
-			else
-			{
-				shape.free();
-				shape = data.shape.copy();
-			}
 		}
 		
 		@Override
@@ -558,15 +450,15 @@ public class Entity {
 			lastRot1.set(rotation);
 			lastInv.set(inverse);
 			
-			if (graph != null && graph.parent != null)
-			{
-				graph.parent.getDeltaPos(tmpMat, position);
-				position.set(0, 0, 0).mul(tmpMat);
-				
-				graph.parent.getDeltaRot(tmpMat);
-				rotation.mul(tmpMat);
-				up.mul(tmpMat);
-			}
+//			if (graph != null && graph.parent != null)
+//			{
+//				graph.parent.getDeltaPos(tmpMat, position);
+//				position.set(0, 0, 0).mul(tmpMat);
+//				
+//				graph.parent.getDeltaRot(tmpMat);
+//				rotation.mul(tmpMat);
+//				up.mul(tmpMat);
+//			}
 			
 			if (velocity.len2() == 0) 
 			{
@@ -594,8 +486,8 @@ public class Entity {
 			
 			ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
 			ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
-			ray.setCollisionFilterMask((short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
-			ray.setCollisionFilterGroup((short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
+			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
 			
 			GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
 			if (ray.hasHit())
@@ -604,7 +496,7 @@ public class Entity {
 				if (v.y < 0) jumpToken = 2;
 				velocity.y = 0;
 				v.y = 0;
-				if (ray.getHitPointWorld().y() != tmpVec.y) position.y = ray.getHitPointWorld().y();
+				position.y = ray.getHitPointWorld().y();
 				//graph.popAndInsert(base);
 				location = LOCATION.GROUND;
 				locationCD = 0.5f;
@@ -670,7 +562,7 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(0, GLOBALS.STEP+v.y, 0);
+				tmpVec.set(position).add(-GLOBALS.STEP, GLOBALS.STEP+v.y, 0);
 				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
@@ -680,7 +572,7 @@ public class Entity {
 				if (ray.hasHit())
 				{
 					v.x = 0;
-					//if (ray.getHitPointWorld().x() != tmpVec.x) position.x = ray.getHitPointWorld().x();
+					//position.x = ray.getHitPointWorld().x();
 				}
 			}
 			
@@ -689,7 +581,7 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
+				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, -GLOBALS.STEP);
 				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, v.z);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
@@ -699,7 +591,7 @@ public class Entity {
 				if (ray.hasHit())
 				{
 					v.z = 0;
-					//if (ray.getHitPointWorld().z() != tmpVec.z) position.z = ray.getHitPointWorld().z();
+					//position.z = ray.getHitPointWorld().z();
 				}
 			}
 			
@@ -715,7 +607,7 @@ public class Entity {
 
 		@Override
 		public void dispose() {
-			Pools.free(shape);
+			ray.dispose();
 		}
 	}
 	public static class EquipmentData implements EntityData<EquipmentData>

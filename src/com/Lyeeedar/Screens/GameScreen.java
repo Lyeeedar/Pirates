@@ -6,24 +6,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 
-import com.Lyeeedar.Collision.Box;
 import com.Lyeeedar.Collision.BulletWorld;
-import com.Lyeeedar.Collision.CollisionRay;
-import com.Lyeeedar.Collision.CollisionShape;
-import com.Lyeeedar.Collision.EntityGraphOcttree;
-import com.Lyeeedar.Collision.SymbolicMesh;
-import com.Lyeeedar.Collision.Triangle;
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.AnimationData;
+import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
-import com.Lyeeedar.Entities.EntityGraph;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.AI_Follow;
 import com.Lyeeedar.Entities.AI.AI_Player_Control;
@@ -32,7 +24,6 @@ import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.AI.Action_AISwapper;
 import com.Lyeeedar.Entities.AI.Action_Dialogue;
-import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
@@ -40,23 +31,20 @@ import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.AnimatedModel;
 import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
-import com.Lyeeedar.Graphics.MotionTrail;
-import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Graphics.MotionTrail;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
-import com.Lyeeedar.Graphics.Sprite2D;
 import com.Lyeeedar.Graphics.Sprite3D;
 import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
+import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.GLOBALS.GENDER;
+import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
 import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.Dialogue;
@@ -76,47 +64,31 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
-import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.physics.bullet.collision.PHY_ScalarType;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
-import com.badlogic.gdx.physics.bullet.collision.btCapsuleShape;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
 	
-	private EntityGraphOcttree world;
 	private SkyBox skybox;
 	private Entity player;
 	Terrain terrain;
-	private final PositionalData pData = new PositionalData();
-	private final StatusData sData = new StatusData();
 	
 	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
 	private final Bag<Entity> veggies = new Bag<Entity>();
-	EntityGraphOcttree ego;
 	
-	private Camera veggieCam;
+	private FollowCam veggieCam;
 	
 	private final SpriteBatch sB = new SpriteBatch();
 	private final BitmapFont fB = new BitmapFont(true);
-		
-	SymbolicMesh sm;
-	
-	Texture blank;
-	
-	AnimatedModel sword;
-	MotionTrail swordTrail;
 
 	public GameScreen(PirateGame game) {
 		super(game);
@@ -126,17 +98,19 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create() {
 		
-		short wfilter = (short)(BulletWorld.FILTER_RENDER);
-		
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
-		btCollisionShape plane = new btBoxShape(new Vector3(1000, 10, 1000));
-		//bw.addStatic(plane, new Matrix4());
 		GLOBALS.physicsWorld = bw;
 		
-		bw.add(cam.physicsObject, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_RENDER);
+		BulletWorld rw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
+		GLOBALS.renderOnlyWorld = rw;
 		
-		veggieCam = new FollowCam(controls, FollowCam.createSphere(200));
+		bw.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+		bw.add(cam.aiObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
+		
+		veggieCam = new FollowCam(controls, FollowCam.createSphere(1502), null);
+		rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 				
+		// HEIGHT MAP
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
 		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		sand.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
@@ -156,59 +130,42 @@ public class GameScreen extends AbstractScreen {
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
 		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 80085);
-		//Texture hm = new Texture(Gdx.files.internal("data/textures/test.png"));
-		//Pixmap hmpm = ImageUtils.TextureToPixmap(hm);
 		Pixmap hmpm = ImageUtils.arrayToPixmap(sg.generate(ae));
 		Texture hm = ImageUtils.PixmapToTexture(hmpm);
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		//hm.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
 		
-		terrain.readData(pData, PositionalData.class);
-		pData.calculateComposed();
-		terrain.writeData(pData, PositionalData.class);
+		terrain.readOnlyRead(PositionalData.class).calculateComposed();
 		
 		fb = ImageUtils.extractAlpha(hmpm);
 		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
 		hf.setLocalScaling(new Vector3(10f, 1000f, 10f));
 		
-		bw.add(hf, new Matrix4().setToTranslation(5000f, 400f, 5000f), terrain, BulletWorld.FILTER_LAND, BulletWorld.FILTER_LAND);
+		bw.add(hf, new Matrix4().setToTranslation(5000f, 400f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
-		world = new EntityGraphOcttree(null, new Vector3(-100000, -100, -100000), new Vector3(100000, 10000, 100000));
-		world.add(terrain, true);
-		
-		for (Entity e : ae)
-		{
-			world.add(e, false);
-		}
-		
-		blank = FileUtils.loadTexture("data/textures/blank.png", true);
+		// END HEIGHTMAP
 
-		//IslandGenerator ig = new IslandGenerator();
-		//Mesh model = ig.getIsland(75, 75, 53);
+//		for (Entity e : ae)
+//		{
+//			bw.add(e);
+//		}
+		
+		// MAKE SHIP
 		
 		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
         Mesh shipModel = FileUtils.loadMesh("data/models/boat.obj");
 		
 		Entity ship = new Entity(new PositionalData());
-		ship.readData(pData, PositionalData.class);
-		//pData.position.x = 100;
-		//pData.lastPos.set(pData.position);
-		//pData.scale.set(20f, 20f, 20f);
-		pData.calculateComposed();
-		ship.writeData(pData, PositionalData.class);
+		ship.readOnlyRead( PositionalData.class).calculateComposed();
 		ship.setAI(new AI_Simple());
 		ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
-		//ship.setAI(new AI_Player_Control(ship, controls));
-				
-		SymbolicMesh mesh = SymbolicMesh.getSymbolicMesh(shipModel);
-		mesh.setPosition(pData.position);
-		ship.setCollisionShapeInternal(mesh);
 		
 		ship.addRenderable(new TexturedMesh(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
 		
-		//world.add(ship, true);
-
+		// END SHIP
+		
+		//  MAKE SKYBOX
+		
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		//seatex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
@@ -216,56 +173,44 @@ public class GameScreen extends AbstractScreen {
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), terrain);
 		skybox = new SkyBox(sea, weather);
 		
+		// END SKYBOX
+		
+		// MAKE PLAYER
+		
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		player.setAI(new AI_Player_Control(controls));
-		//player.setAI(new AI_Simple(player));
 		Sprite3D s = new Sprite3D(8, 8, 4, 4);
 		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
-		//s.addLayer("Human", Color.WHITE, 0, SpriteLayer.BODY);
-		//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
-		//s.addLayer("sword", Color.WHITE, 0, SpriteLayer.OTHER);
-		//s.create();
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
 		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), FileUtils.loadTexture("data/textures/skin.png", true), new Vector3(0.7f, 0.7f, 0.7f), "walk");
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), FileUtils.loadTexture("data/textures/hair.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
-		sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
-		swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
+		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
+		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
 		player.addRenderable(am, new Vector3());
 		player.addRenderable(swordTrail, new Vector3());
 		
 		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
 		am.attachModel("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
-		//player.addRenderable(new WeaponTrail(Equipment_Slot.RARM, 20, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true), 0.01f));
-		player.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
-		//player.setCollisionShapeExternal(new Box(new Vector3(), 0.1f, 0.1f, 0.1f));
-
 		
-		player.readData(pData, PositionalData.class);
-		//pData.position.set(4, 12, 0);
-		//pData.position.set(2500, 200, 2500);
-		//pData.Xrotate(30);
-		pData.scale.set(2, 2, 2);
-		pData.ray.setSkipObject(cam.physicsObject);
-		player.writeData(pData, PositionalData.class);
+		player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
-		player.readData(sData, StatusData.class);
-		sData.factions.add("Player");
-		player.writeData(sData, StatusData.class);
+		player.readOnlyRead(StatusData.class).factions.add("Player");
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(null, new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon("attack1_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1, new Vector3(0.3f, 0.6f, 0.3f), 0.5f, 50, 50, sword, swordTrail));
+		eData.equip(Equipment_Slot.RARM, new Weapon("attack1_1", new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1.5f, 50, 50, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
-		//bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), player, BulletWorld.FILTER_RENDER, (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
-		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), player, BulletWorld.FILTER_RENDER, (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
-		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), player, BulletWorld.FILTER_RENDER, (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
-		world.add(player, false);
+		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		
+		// END PLAYER
+		
+		// MAKE NPC 1
 		
 		Entity npc = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		npc.setAI(new AI_Simple());
@@ -297,153 +242,89 @@ public class GameScreen extends AbstractScreen {
 		s.setGender(GENDER.FEMALE);
 		s.addAnimation("move", "move");
 		npc.addRenderable(s, new Vector3(0, -2, 0));
-		//npc.addRenderable(new Sprite2D(Decal.newDecal(new TextureRegion(ImageUtils.drawText(sB, fB, "I am an NPC with Boobies loool look at them theyre all big and stuff :p")))));
-		npc.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 2.0f, 0.5f));
-		npc.readData(pData, PositionalData.class);
-		pData.position.set(-4, 12, 0);
-		//pData.position.set(4500, 290, 3500);
-		npc.writeData(pData, PositionalData.class);
-		npc.readData(sData, StatusData.class);
-		sData.factions.add("Player");
-		npc.writeData(sData, StatusData.class);
+		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
+		npc.readOnlyRead(StatusData.class).factions.add("Player");
 		npc.readData(eData, EquipmentData.class);
 		eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(null, new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
 		npc.writeData(eData, EquipmentData.class);
-		//world.add(npc, false);
+		
+		// END NPC 1
+		
+		// MAKE ENEMIES
 		
 		Random ran = new Random();
-		for (int i = 0; i < 200; i++)
+		for (int i = 0; i < 20; i++)
 		{
 			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			AI_Follow ai = new AI_Follow();
 			ai.setFollowTarget(player);
 			ge.setAI(ai);
-			ge.readData(pData, PositionalData.class);
+			PositionalData pData = ge.readOnlyRead(PositionalData.class);
 			pData.position.set(4450+ran.nextFloat()*240, 1000, 3300+ran.nextFloat()*240);
-			pData.ray.setSkipObject(cam.physicsObject);
-			ge.writeData(pData, PositionalData.class);
-			ge.setCollisionShapeInternal(new Box(new Vector3(), 0.5f, 1f, 0.5f));
 			
 			ge.readData(eData, EquipmentData.class);
 			eData.equip(Equipment_Slot.BODY, new Armour(null, new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
-			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 1, new Vector3(0.3f, 0.6f, 0.3f), 0.8f, 3, 5, null, null));
+			eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 0.8f, 3, 5, null, null));
 			ge.writeData(eData, EquipmentData.class);
-			
-			world.add(ge, false);
-			
+						
 			s = new Sprite3D(3, 3, 4, 4);
 			s.setGender(GENDER.MALE);
 			s.addAnimation("move", "move");
 			s.addAnimation("attack_1", "attack");
-			//s.addLayer("devil", Color.WHITE, 0, SpriteLayer.BODY);
-			//s.addLayer("BasicClothes", Color.WHITE, 0, SpriteLayer.TOP);
-			//s.create();
 			
-			ge.readData(sData, StatusData.class);
-			sData.factions.add("Enemy");
-			ge.writeData(sData, StatusData.class);
-			
+			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
 			ge.addRenderable(s, new Vector3());
 			
-			ge.readData(pData, PositionalData.class);
-			ge.getCollisionShapeInternal().setPosition(pData.position);
-
-			bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), ge, BulletWorld.FILTER_RENDER, (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
+			bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		}
 		
-		Mesh cModel = FileUtils.loadMesh("data/models/Bastion.obj");
-
-		Entity c = new Entity(new PositionalData());
-		c.readData(pData, PositionalData.class);
-		pData.position.x = 4500;
-		pData.position.y = 280;
-		pData.position.z = 3500;
-		//pData.Xrotate(180);
-		//pData.lastPos.set(pData.position);
-		//pData.scale.set(20f, 20f, 20f);
-		//pData.applyVelocity(0);
-		//pData.applyVelocity(0);
-		c.writeData(pData, PositionalData.class);
-
-		SymbolicMesh cmesh = SymbolicMesh.getSymbolicMesh(cModel);
-		sm = cmesh;
-		cmesh.setPosition(pData.position);
-		c.setCollisionShapeInternal(cmesh);
-
-		c.addRenderable(new TexturedMesh(cModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
-
-		//world.add(c, true);
+		// END ENEMIES
 		
-		ego = new EntityGraphOcttree(null, new Vector3(0, -1000, 0), new Vector3(10000, 1000, 10000));
+		// MAKE TREES
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true);
 		pinetex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1), false), 1, 2500, 50);
-		//terrain.vegetate(veggies, new Model(grassMesh, GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/pinet.png", true), null, 1), 1, 5000, 50);
-		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{
-			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
-			v.update(0);
-			//world.add(v, false);
-			
-			bw.add(new btBoxShape(new Vector3(10, 10, 10)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_LAND | BulletWorld.FILTER_RENDER));
+			v.update(0);			
+			bw.add(new btBoxShape(new Vector3(10, 50, 10)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		}
+		
+		// END TREES
+		
+		// MAKE GRASS
 		
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
 		Texture shrtex = FileUtils.loadTexture("data/textures/shr2.png", true);
 		shrtex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1), true), 1, 50000, 50);
-		bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{
-			v.setCollisionShapeInternal(new Box(bb.min, bb.max));
 			v.update(0);
-			//ego.add(v, false);
+			rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
 		}
 		
-//		EntityGraph teg = new EntityGraph(null, world, false);
-//		for (int i = 0; i < 1000; i++)
-//		{
-//			if (i % 10 == 0)
-//			{
-//				teg = new EntityGraph(null, world, false);
-//			}
-//			Mesh treeMesh = FileUtils.loadMesh("data/models/crappygrass.obj");
-//			Entity tree = new Entity();
-//			
-//			tree.readData(pData, PositionalData.class);
-//			pData.position.x = ran.nextInt(1000);
-//			pData.position.y = 10;
-//			pData.position.z = ran.nextInt(1000);
-//			//pData.lastPos.set(pData.position);
-//			pData.scale.set(10f, 10f, 10f);
-//			pData.calculateComposed();
-//			tree.writeData(pData, PositionalData.class);
-//			
-//			tree.addRenderable(new Model(treeMesh, GL20.GL_TRIANGLES, sand, new Vector3(0.4f, 1, 0.5f), 1));
-//			
-//			teg.addEntity(tree, true);
-//		}
+		// END GRASS
 	}
 
 	@Override
 	public void drawOrthogonals(float delta, SpriteBatch batch) {
-		player.readData(sData, StatusData.class);
-		player.readData(pData, PositionalData.class);
-		batch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
-		font.draw(spriteBatch, ""+pData.position, 20, screen_height-80);
-		font.draw(spriteBatch, ""+pData.rotation, 20, screen_height-120);
-		
-		player.readData(pData, PositionalData.class);
-		box.center.set(pData.rotation).scl(2).add(pData.position);
-		Entity e = activate(box, pData.graph, elist, pData.position, pData);
-		if (e != null)
-		{
-			font.draw(spriteBatch, ""+e.getActivationAction().getDesc(), 220, 220);
-		}
+//		player.readData(sData, StatusData.class);
+//		player.readData(pData, PositionalData.class);
+//		batch.draw(blank, screen_width-80, screen_height-40, ((float)sData.currentHealth/(float)sData.MAX_HEALTH)*50, 10);
+//		font.draw(spriteBatch, ""+pData.position, 20, screen_height-80);
+//		font.draw(spriteBatch, ""+pData.rotation, 20, screen_height-120);
+//		
+//		player.readData(pData, PositionalData.class);
+//		box.center.set(pData.rotation).scl(2).add(pData.position);
+//		Entity e = activate(box, pData.graph, elist, pData.position, pData);
+//		if (e != null)
+//		{
+//			font.draw(spriteBatch, ""+e.getActivationAction().getDesc(), 220, 220);
+//		}
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
@@ -451,55 +332,36 @@ public class GameScreen extends AbstractScreen {
 		}
 	}
 	
-	private final ArrayList<EntityGraph> elist = new ArrayList<EntityGraph>();
-	private Box box = new Box(new Vector3(), 0.5f, 0.5f, 0.5f);
-	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)
-	{
-		boolean found = GLOBALS.WORLD.collide(shape, graph, list);
-		if (!found) return null;
-		
-		float min = Float.MAX_VALUE;
-		Entity chosen = null;
-		
-		for (EntityGraph eg : list)
-		{
-			if (eg.entity != null && eg.entity.hasActivationAction())
-			{
-				eg.entity.readData(pData, PositionalData.class);
-				float dist = pos.dst2(pData.position);
-				if (dist < min) 
-				{
-					min = dist;
-					chosen = eg.entity;
-				}
-			}
-		}
-		list.clear();
-		
-		return chosen;
-	}
+//	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)
+//	{
+//		boolean found = GLOBALS.WORLD.collide(shape, graph, list);
+//		if (!found) return null;
+//		
+//		float min = Float.MAX_VALUE;
+//		Entity chosen = null;
+//		
+//		for (EntityGraph eg : list)
+//		{
+//			if (eg.entity != null && eg.entity.hasActivationAction())
+//			{
+//				eg.entity.readData(pData, PositionalData.class);
+//				float dist = pos.dst2(pData.position);
+//				if (dist < min) 
+//				{
+//					min = dist;
+//					chosen = eg.entity;
+//				}
+//			}
+//		}
+//		list.clear();
+//		
+//		return chosen;
+//	}
 
 	ImmediateModeRenderer imr = new ImmediateModeRenderer20(false, false, 0);
 	@Override
 	public void drawSkybox(float delta)
 	{
-		
-//		player.readData(pData, PositionalData.class);
-//		Triangle[] tris = terrain.getTris();
-//		if (tris != null) {
-//			imr.begin(cam.combined, GL20.GL_TRIANGLES);
-//			for (int i = 0; i < tris.length; i++)
-//			{
-//				Triangle tri = tris[i];
-//				//imr.vertex(pData.position.x, pData.position.y, pData.position.z);
-//				imr.vertex(tri.v1.x, tri.v1.y, tri.v1.z);
-//				imr.vertex(tri.v2.x, tri.v2.y, tri.v2.z);
-//				imr.vertex(tri.v3.x, tri.v3.y, tri.v3.z);
-//			}
-//			
-//			imr.end();
-//		}
-//		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
@@ -527,16 +389,13 @@ public class GameScreen extends AbstractScreen {
 	Array<Entity> entities = new Array<Entity>();
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
-		
-		//GLOBALS.WORLD.queueRenderables(cam, GLOBALS.LIGHTS, delta, batches);
-				
-		GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.physicsObject, entities);
+						
+		GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		for (Entity e : entities)
 		{
 			e.queueRenderables(cam, GLOBALS.LIGHTS, delta, batches);
 		}
 		
-		GLOBALS.WORLD.getText(tParticles, sB, fB);
 		Iterator<TextParticle> itr = tParticles.iterator();
 		while (itr.hasNext())
 		{
@@ -553,7 +412,11 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
-		ego.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
+		GLOBALS.renderOnlyWorld.getEntitiesCollidingWithObject(veggieCam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+		for (Entity e : entities)
+		{
+			e.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
+		}
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
@@ -571,7 +434,6 @@ public class GameScreen extends AbstractScreen {
 	public void show() {
 		Gdx.input.setCursorCatched(true);
 		Gdx.input.setInputProcessor(controls.ip);
-		GLOBALS.WORLD = world;
 		GLOBALS.SKYBOX = skybox;
 		GLOBALS.player = player;
 	}
@@ -580,29 +442,47 @@ public class GameScreen extends AbstractScreen {
 	public void superDispose() {
 		sB.dispose();
 		fB.dispose();
-		pData.dispose();
-		sData.dispose();
-		
-		
 	}
 
 	LinkedList<Runnable> list = new LinkedList<Runnable>();
-	ArrayList<EntityGraph> deadList = new ArrayList<EntityGraph>();
 	boolean increase = true;
 	
 	float strike_time = 0.0f;
 	Random ran = new Random();
+	PositionalData pData = new PositionalData();
 	@Override
 	public void update(float delta) {
 		
 		GLOBALS.physicsWorld.update(delta);
+		//GLOBALS.renderOnlyWorld.update(delta);
+				
+		GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.aiObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
+		for (Entity e : entities)
+		{
+			StatusData sData = e.readOnlyRead(StatusData.class);
+			if (sData.DAMAGED > 0)
+			{
+				float mag = 1.0f - ((float)sData.DAMAGED) / ((float)sData.MAX_HEALTH/2);
+				if (mag > 1.0f) mag = 1.0f;
+				
+				e.readData(pData, Entity.PositionalData.class);
+				Decal decal = ImageUtils.getTextDecal(0.25f*GLOBALS.numDigits(sData.DAMAGED), 0.8f, sB, font, null, ""+sData.DAMAGED);
+				tParticles.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0), new Vector3(1.0f, mag, 0.0f)));
+				sData.DAMAGED = 0;
+			}
+			
+			if (!sData.ALIVE)
+			{
+				GLOBALS.physicsWorld.remove(e.readOnlyRead(PositionalData.class).physicsBody);
+				e.dispose();
+			}
+			else list.add(e.getRunnable(delta));
+		}
 		
-		GLOBALS.WORLD.getRunnable(list, delta);
 		GLOBALS.submitTasks(list);
 		list.clear();
 		GLOBALS.waitTillTasksComplete();
 		
-		//GLOBALS.WORLD.recalculateBounds();
 		
 		GLOBALS.SKYBOX.update(delta);
 						
@@ -610,10 +490,6 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.position.set(cam.position);
 		veggieCam.direction.set(cam.direction);
 		veggieCam.update();
-		
-		GLOBALS.WORLD.collectDead(deadList);
-		for (EntityGraph eg : deadList) eg.remove();
-		deadList.clear();
 		
 		Iterator<Spell> itr = GLOBALS.SPELLS.iterator();
 		while(itr.hasNext())
