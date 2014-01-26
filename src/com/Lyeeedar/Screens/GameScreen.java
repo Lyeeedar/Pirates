@@ -27,6 +27,7 @@ import com.Lyeeedar.Entities.AI.Action_Dialogue;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
+import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
 import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.AnimatedModel;
 import com.Lyeeedar.Graphics.Batch;
@@ -203,7 +204,17 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
-		eData.equip(Equipment_Slot.RARM, new Weapon(new String[]{"attack1_1", "attack1_2"}, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 1.5f, 50, 50, sword, swordTrail));
+		ATTACK_STAGE[] attacks = {
+				new ATTACK_STAGE("attack1_1", 2.0f, 20, 10, 1),
+				new ATTACK_STAGE("attack1_2", 1.0f, 30, 10, 2),
+				new ATTACK_STAGE("attack1_2", 1.2f, 40, 10, 3),
+				new ATTACK_STAGE("attack1_2", 1.4f, 50, 10, 4),
+				new ATTACK_STAGE("attack1_2", 1.6f, 60, 10, 5),
+				new ATTACK_STAGE("attack1_2", 1.8f, 70, 10, 6),
+				new ATTACK_STAGE("attack1_2", 2.0f, 80, 10, 7),
+				new ATTACK_STAGE("attack1_2", 2.2f, 90, 10, -1)
+		};
+		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
 		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
@@ -467,7 +478,7 @@ public class GameScreen extends AbstractScreen {
 				if (mag > 1.0f) mag = 1.0f;
 				
 				e.readData(pData, Entity.PositionalData.class);
-				Decal decal = ImageUtils.getTextDecal(0.25f*GLOBALS.numDigits(sData.DAMAGED), 0.8f, sB, font, null, ""+sData.DAMAGED);
+				Decal decal = ImageUtils.getTextDecal(1.0f*GLOBALS.numDigits(sData.DAMAGED), 3.2f, sB, fB, null, ""+sData.DAMAGED);
 				tParticles.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0), new Vector3(1.0f, mag, 0.0f)));
 				sData.DAMAGED = 0;
 			}

@@ -23,12 +23,10 @@ import com.badlogic.gdx.utils.Pools;
 
 public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
-	private String[] animations;
+	private ATTACK_STAGE[] attacks;
 	
 	private float hitCD = 0;
 	private float hitSpeed = 1f;
-	private int damageMin = 1;
-	private int damageVar = 1;
 	
 	public boolean inSwing = false;
 	public boolean shouldSwing = false;
@@ -55,15 +53,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		super();
 	}
 	
-	public Weapon(String[] animations, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, int damageMin, int damageVar, AnimatedModel model, MotionTrail mt)
+	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, AnimatedModel model, MotionTrail mt)
 	{
 		super(spritesheet, desc);
 		this.hitSpeed = speed;
-		this.damageMin = damageMin;
-		this.damageVar = damageVar;
 		this.model = model;
 		this.mt = mt;
-		this.animations = animations;
+		this.attacks = attacks;
 	}
 
 	@Override
@@ -75,11 +71,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		shouldSwing = cother.shouldSwing;
 		hitCD = cother.hitCD;
 		hitSpeed = cother.hitSpeed;
-		damageMin = cother.damageMin;
-		damageVar = cother.damageVar;
 		model = cother.model;
 		mt = cother.mt;
-		animations = cother.animations;
+		attacks = cother.attacks;
 		
 		return this;
 	}
@@ -129,7 +123,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 						Entity e = (Entity) arr.at(i).userData;
 						if (e.readData(sData, StatusData.class))
 						{
-							sData.damage = damageMin + ran.nextInt(damageVar);
+							sData.damage = attacks[animationStage].damage + ran.nextInt(attacks[animationStage].damVar);
 							e.writeData(sData, StatusData.class);
 							ray.setSkipObject(arr.at(i));
 						}
@@ -152,9 +146,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		if (needsUpdate)
 		{
 			entity.readData(aData, AnimationData.class);
-			playAnimation(aData, animations[animationStage]);
+			playAnimation(aData, attacks[animationStage].animationName);
 			aData.listener = this;
-			aData.animate_speed = hitSpeed;
+			aData.animate_speed = attacks[animationStage].speed;
 			entity.writeData(aData, AnimationData.class);
 			
 			needsUpdate = false;
@@ -164,9 +158,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			this.inSwing = true;
 			
 			entity.readData(aData, AnimationData.class);
-			playAnimation(aData, animations[0]);
+			playAnimation(aData, attacks[0].animationName);
 			aData.listener = this;
-			aData.animate_speed = hitSpeed;
+			aData.animate_speed = attacks[0].speed;
 			entity.writeData(aData, AnimationData.class);
 			
 			entity.readData(pData, PositionalData.class);
@@ -202,16 +196,18 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public void onEnd(AnimationDesc animation) {
 		ray.clearSkips();
 		
-		if (shouldSwing && animationStage < animations.length-1)
+		if (shouldSwing)
 		{
-			animationStage++;
+			animationStage = attacks[animationStage].nextAnim;
 			needsUpdate = true;
 		}
-		else
+		
+		if (!shouldSwing || animationStage == -1)
 		{
 			inSwing = false;
 			hitCD = hitSpeed;
 			animationStage = 0;
+			needsUpdate = false;
 		}
 	}
 
@@ -219,6 +215,24 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public void onLoop(AnimationDesc animation) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public static class ATTACK_STAGE
+	{
+		String animationName;
+		float speed;
+		int damage;
+		int damVar;
+		int nextAnim;
+		
+		public ATTACK_STAGE(String animationName, float speed, int damage, int damVar, int nextAnim)
+		{
+			this.animationName = animationName;
+			this.speed = speed;
+			this.damage = damage;
+			this.damVar = damVar;
+			this.nextAnim = nextAnim;
+		}
 	}
 	
 }
