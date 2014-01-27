@@ -29,20 +29,21 @@ import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
 import com.Lyeeedar.Entities.Spells.Spell;
-import com.Lyeeedar.Graphics.AnimatedModel;
-import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
-import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.MotionTrail;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
-import com.Lyeeedar.Graphics.Sprite3D;
-import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
-import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
-import com.Lyeeedar.Graphics.TexturedMesh;
 import com.Lyeeedar.Graphics.Weather;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
+import com.Lyeeedar.Graphics.Queueables.MotionTrail;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D;
+import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Pirates.PirateGame;
@@ -53,6 +54,7 @@ import com.Lyeeedar.Util.Dialogue.DialogueAction;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.Lyeeedar.Util.ImageUtils;
+import com.Lyeeedar.Util.Octtree;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Camera;
@@ -72,6 +74,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.utils.Array;
@@ -90,6 +93,8 @@ public class GameScreen extends AbstractScreen {
 	
 	private final SpriteBatch sB = new SpriteBatch();
 	private final BitmapFont fB = new BitmapFont(true);
+	
+	private Octtree<Entity> veggieTree;
 
 	public GameScreen(PirateGame game) {
 		super(game);
@@ -102,14 +107,16 @@ public class GameScreen extends AbstractScreen {
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
 		GLOBALS.physicsWorld = bw;
 		
+		veggieTree = new Octtree<Entity>(null, new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000), bw.world);
+		
 		BulletWorld rw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
 		GLOBALS.renderOnlyWorld = rw;
 		
 		bw.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		bw.add(cam.aiObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
 		
-		veggieCam = new FollowCam(controls, FollowCam.createSphere(1502), null);
-		rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+		veggieCam = new FollowCam(controls, null, null);
+		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 				
 		// HEIGHT MAP
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
@@ -189,11 +196,16 @@ public class GameScreen extends AbstractScreen {
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), FileUtils.loadTexture("data/textures/hair.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
 		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
 		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
+		ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
 		player.addRenderable(am, new Vector3());
-		player.addRenderable(swordTrail, new Vector3());
+		//player.addRenderable(effect, new Vector3());
 		
-		am.attachModel("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		am.attachModel("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
+		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
+		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
+		sword.attach("top", effect, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
+		am.attach(null, swordTrail, new Matrix4());
+		
+		//sword.attach("top", effect, new Matrix4());
 		
 		player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
@@ -265,7 +277,7 @@ public class GameScreen extends AbstractScreen {
 		// MAKE ENEMIES
 		
 		Random ran = new Random();
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 200; i++)
 		{
 			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			AI_Follow ai = new AI_Follow();
@@ -298,10 +310,11 @@ public class GameScreen extends AbstractScreen {
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true);
 		pinetex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1), false), 1, 2500, 50);
+		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
 		for (Entity v : veggies)
 		{
 			v.update(0);			
-			bw.add(new btBoxShape(new Vector3(10, 50, 10)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		}
 		veggies.clear();
 		
@@ -313,11 +326,17 @@ public class GameScreen extends AbstractScreen {
 		Texture shrtex = FileUtils.loadTexture("data/textures/shr2.png", true);
 		shrtex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1), true), 1, 50000, 50);
+		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
 		for (Entity v : veggies)
 		{
 			v.update(0);
-			rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
+			//rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
+			btCollisionObject o = new btCollisionObject();
+			o.setCollisionShape(box);
+			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
+			veggieTree.add(v, o);
 		}
+		veggies.clear();
 		
 		// END GRASS
 	}
@@ -398,12 +417,19 @@ public class GameScreen extends AbstractScreen {
 
 	}
 	
-	Array<Entity> entities = new Array<Entity>();
+	float updateCooldown = 0;
+	boolean update = false;
+	Array<Entity> renderEntities = new Array<Entity>();
+	Array<Entity> aiEntities = new Array<Entity>();
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
-						
-		GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
-		for (Entity e : entities)
+				
+		if (update) 
+		{
+			renderEntities.clear();
+			GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.renderObject, renderEntities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+		}
+		for (Entity e : renderEntities)
 		{
 			e.queueRenderables(cam, GLOBALS.LIGHTS, delta, batches);
 		}
@@ -424,17 +450,26 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
-		GLOBALS.renderOnlyWorld.getEntitiesCollidingWithObject(veggieCam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
-		for (Entity e : entities)
+		if (update) 
+		{
+			veggies.clear();
+			veggieTree.collectAll(veggies, veggieCam.renderObject);
+		}
+		for (Entity e : veggies)
 		{
 			e.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
 		}
 		
+//		GLOBALS.renderOnlyWorld.getEntitiesCollidingWithObject(veggieCam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+//		for (Entity e : entities)
+//		{
+//			e.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
+//		}
+		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
 			d.queue3D(decalBatch);
-		}
-		
+		}		
 	}
 
 	@Override
@@ -465,11 +500,24 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void update(float delta) {
 		
-		GLOBALS.physicsWorld.update(delta);
+		if (update) update = false;
+		updateCooldown -= delta;
+		if (updateCooldown < 0)
+		{
+			updateCooldown = 0.5f;
+			update = true;
+		}
+		
+		
 		//GLOBALS.renderOnlyWorld.update(delta);
 				
-		GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.aiObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
-		for (Entity e : entities)
+		if (update) 
+		{
+			GLOBALS.physicsWorld.update(delta);
+			aiEntities.clear();
+			GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.aiObject, aiEntities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
+		}
+		for (Entity e : aiEntities)
 		{
 			StatusData sData = e.readOnlyRead(StatusData.class);
 			if (sData.DAMAGED > 0)
@@ -479,7 +527,7 @@ public class GameScreen extends AbstractScreen {
 				
 				e.readData(pData, Entity.PositionalData.class);
 				Decal decal = ImageUtils.getTextDecal(1.0f*GLOBALS.numDigits(sData.DAMAGED), 3.2f, sB, fB, null, ""+sData.DAMAGED);
-				tParticles.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 0.6f, 0), new Vector3(1.0f, mag, 0.0f)));
+				tParticles.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 3.6f, 0), new Vector3(1.0f, mag, 0.0f)));
 				sData.DAMAGED = 0;
 			}
 			
@@ -526,30 +574,14 @@ public class GameScreen extends AbstractScreen {
 	}
 
 	@Override
-	public void drawParticles(float delta) {
-		particleNum = 0;
-		for (Spell s : GLOBALS.SPELLS)
-		{
-			s.effect.update(delta, cam);
-			s.effect.getVisibleEmitters(visibleEmitters, cam);
-		}
-		Collections.sort(visibleEmitters, ParticleEmitter.getComparator());
-		ParticleEmitter.begin(cam);
-		for (ParticleEmitter p : visibleEmitters)
-		{
-			particleNum += p.getActiveParticles();
-			p.render();
-		}
-		ParticleEmitter.end();
-		visibleEmitters.clear();
-	}
-
-	@Override
 	public void resized(int width, int height) {
 		veggieCam.viewportWidth = width;
 		veggieCam.viewportHeight = height;
 		veggieCam.near = 2f;
 		veggieCam.far = 1502f;
+		veggieCam.update();
+		
+		veggieCam.renderObject = FollowCam.createFrustumObject(veggieCam.frustum.planePoints);
 	}
 
 }

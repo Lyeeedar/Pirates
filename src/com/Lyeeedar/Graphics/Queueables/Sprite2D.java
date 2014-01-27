@@ -1,16 +1,20 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Queueables;
 
 import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
@@ -39,8 +43,15 @@ public class Sprite2D implements Queueable {
 
 	@Override
 	public void set(Entity source, Vector3 offset) {
-		source.readData(pData, PositionalData.class);
-		position.set(pData.position).add(offset);
+		if (source.readOnlyRead(PositionalData.class) != null)
+		{
+			position.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).add(offset);
+		}
+		else
+		{
+			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
+			position.set(data.position).add(offset);
+		}
 	}
 
 	@Override
@@ -60,6 +71,19 @@ public class Sprite2D implements Queueable {
 	@Override
 	public void dispose() {
 		pData.dispose();
+	}
+
+	@Override
+	public void set(Matrix4 transform)
+	{
+		position.set(0, 0, 0).mul(transform);
+		
+	}
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		position.mul(mat);
 	}
 
 }

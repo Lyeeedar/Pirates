@@ -1,6 +1,5 @@
-package com.Lyeeedar.Graphics.Renderers;
+package com.Lyeeedar.Graphics.Batchers;
 
-import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;

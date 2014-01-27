@@ -4,14 +4,13 @@ import java.util.Random;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.AllHitsRayResultSkippingCallback;
-import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
-import com.Lyeeedar.Graphics.AnimatedModel;
-import com.Lyeeedar.Graphics.MotionTrail;
-import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
+import com.Lyeeedar.Graphics.Queueables.MotionTrail;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
@@ -106,8 +105,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			
 			ray.getRayFromWorld().setValue(bot.x, bot.y, bot.z);
 			ray.getRayToWorld().setValue(top.x, top.y, top.z);
-			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
-			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			ray.setCollisionFilterMask(BulletWorld.FILTER_AI);
+			ray.setCollisionFilterGroup(BulletWorld.FILTER_AI);
 			ray.setSkipObject(pData.physicsBody);
 			//ray.setCollisionObjects(null);
 			ray.setCollisionObject(null);

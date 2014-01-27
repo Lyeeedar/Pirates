@@ -1,7 +1,7 @@
-package com.Lyeeedar.Graphics.Renderers;
+package com.Lyeeedar.Graphics.Batchers;
 
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch.DrawableManager.Drawable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch.DrawableManager.Drawable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;

@@ -1,12 +1,13 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Queueables;
 
 import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
@@ -67,5 +68,17 @@ public final class TexturedMesh implements Queueable {
 	@Override
 	public Queueable copy() {
 		return new TexturedMesh(mesh, primitive_type, texture, colour, type);
+	}
+
+	@Override
+	public void set(Matrix4 mat)
+	{
+		model_matrix.set(mat);
+	}
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		model_matrix.mul(mat);
 	}
 }

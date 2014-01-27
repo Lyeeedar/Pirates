@@ -1,8 +1,8 @@
 package com.Lyeeedar.Entities.Items;
 
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
-import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Color;
 

@@ -138,13 +138,6 @@ public class DelaunayTriangle extends ArraySet<DelaunayPoint> {
         };
     }
 
-    /* The following two methods ensure that all triangles are different. */
-
-    @Override
-    public int hashCode () {
-        return (int)(idNumber^(idNumber>>>32));
-    }
-
     @Override
     public boolean equals (Object o) {
         return (this == o);

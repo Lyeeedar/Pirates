@@ -12,16 +12,18 @@ package com.Lyeeedar.Screens;
 
 import java.util.HashMap;
 
-import com.Lyeeedar.Graphics.AnimatedModelBatch;
-import com.Lyeeedar.Graphics.Batch;
-import com.Lyeeedar.Graphics.DecalBatcher;
-import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.ModelBatcher.ModelBatchers;
-import com.Lyeeedar.Graphics.MotionTrailBatch;
+import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.CellShadingModelBatch;
+import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
+import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
-import com.Lyeeedar.Graphics.Renderers.CellShadingModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.Controls;
@@ -62,6 +64,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final MotionTrailBatch trailBatch;
 	protected final AbstractModelBatch renderer;
 	protected final AnimatedModelBatch modelBatch;
+	protected final ParticleEffectBatch particleBatch;
 	protected final BitmapFont font;
 	protected final Stage stage;
 	protected final PostProcessor postprocessor;
@@ -93,7 +96,8 @@ public abstract class AbstractScreen implements Screen {
 		
 		
 		
-		cam = new FollowCam(controls, FollowCam.createSphere(GLOBALS.FOG_MAX), FollowCam.createSphere(GLOBALS.FOG_MAX/2.0f));
+		cam = new FollowCam(controls, null, FollowCam.createSphere(GLOBALS.FOG_MAX/2.0f));
+		cam.renderObject = FollowCam.createFrustumObject(cam.frustum.planePoints);
 		
 		font = new BitmapFont();
 		
@@ -102,6 +106,7 @@ public abstract class AbstractScreen implements Screen {
 		trailBatch = new MotionTrailBatch();
 		renderer = new CellShadingModelBatch();
 		modelBatchers = new Array<ModelBatcher>();
+		particleBatch = new ParticleEffectBatch();
 		
 		modelBatch = new AnimatedModelBatch(12);
 		
@@ -111,6 +116,7 @@ public abstract class AbstractScreen implements Screen {
 		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
 		batches.put(ModelBatchers.class, new ModelBatchers());
 		batches.put(MotionTrailBatch.class, trailBatch);
+		batches.put(ParticleEffectBatch.class, particleBatch);
 		
 		stage = new Stage(0, 0, true, spriteBatch);
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
@@ -188,8 +194,11 @@ public abstract class AbstractScreen implements Screen {
 		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glEnable(GL20.GL_BLEND);
+		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glDepthFunc(GL20.GL_LESS);
+		Gdx.gl.glDepthMask(false);
 		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
-		drawParticles(delta);
+		((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).render(cam);
 		averageParticles += System.nanoTime()-time;
 		averageParticles /= 2;
 		
@@ -250,6 +259,11 @@ public abstract class AbstractScreen implements Screen {
         cam.viewportHeight = height;
         cam.near = 2f;
         cam.far = (GLOBALS.ANDROID) ? 202f : GLOBALS.FOG_MAX ;
+        cam.update();
+        
+        GLOBALS.physicsWorld.remove(cam.renderObject);
+        cam.renderObject = FollowCam.createFrustumObject(cam.frustum.planePoints);
+        GLOBALS.physicsWorld.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 
 		stage.setViewport(width, height, false);
 		
@@ -279,8 +293,6 @@ public abstract class AbstractScreen implements Screen {
 	
 	public abstract void queueRenderables(float delta, HashMap<Class, Batch> batches);
 	
-	public abstract void drawParticles(float delta);
-
 	public abstract void drawOrthogonals(float delta, SpriteBatch batch);
 
 	public abstract void update(float delta);

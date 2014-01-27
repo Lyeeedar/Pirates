@@ -1,28 +1,31 @@
 package com.Lyeeedar.Graphics.Particles;
 
-import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
+import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Util.Bag;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.ObjectMap.Entry;
-import com.badlogic.gdx.utils.OrderedMap;
+import com.badlogic.gdx.utils.Pools;
 
-public class ParticleEffect implements Serializable {
-
-	private static final long serialVersionUID = -5746609278217754852L;
+public class ParticleEffect implements Queueable {
 	
 	public final String UID;
 	
 	public final Bag<Emitter> emitters = new Bag<Emitter>();
 	
-	public float x, y, z;
+	public final Vector3 pos = new Vector3();
 	public float radius;
 	
 	public ParticleEffect() {
@@ -36,20 +39,16 @@ public class ParticleEffect implements Serializable {
 	}
 	
 	public void setPosition(Vector3 pos) {
-		this.x = pos.x;
-		this.y = pos.y;
-		this.z = pos.z;
+		this.pos.set(pos);
 
 		for (Emitter e : emitters)
 		{
-			e.emitter.setPosition(x+e.x, y+e.y, z+e.z);
+			e.emitter.setPosition(pos.x+e.x, pos.y+e.y, pos.z+e.z);
 		}
 	}
 	
 	public void setPosition(float x, float y, float z) {
-		this.x = x;
-		this.y = y;
-		this.z = z;
+		this.pos.set(x, y, z);
 
 		for (Emitter e : emitters)
 		{
@@ -130,20 +129,7 @@ public class ParticleEffect implements Serializable {
 		e.y = position.y;
 		e.z = position.z;
 		
-		setPosition(x, y, z);
-	}
-	
-	public void getVisibleEmitters(List<ParticleEmitter> visibleEmitters, Camera cam)
-	{
-		for (Emitter e : emitters)
-		{
-			if (!e.emitter.created) e.emitter.create();
-			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius()*2)) continue;
-	
-			e.emitter.distance = cam.position.dst2(e.emitter.getPosition());
-			
-			visibleEmitters.add(e.emitter);
-		}
+		setPosition(pos);
 	}
 	
 	public void modEmissionTime(float amount)
@@ -235,9 +221,8 @@ public class ParticleEffect implements Serializable {
 		return effect;
 	}
 
-	private static class Emitter implements Serializable, Json.Serializable {
+	private static class Emitter implements Json.Serializable {
 
-		private static final long serialVersionUID = 7076203259415104530L;
 		ParticleEmitter emitter;
 		float x;
 		float y;
@@ -283,4 +268,61 @@ public class ParticleEffect implements Serializable {
 		
 		return active;
 	}
+
+	@Override
+	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
+	{
+		for (Emitter e : emitters)
+		{
+			if (!e.emitter.created) e.emitter.create();
+			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius()*2)) continue;
+	
+			e.emitter.distance = cam.position.dst2(e.emitter.getPosition());
+			
+			((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).add(e.emitter);
+		}
+	}
+
+	@Override
+	public void set(Entity source, Vector3 offset)
+	{
+		Vector3 tmp = Pools.obtain(Vector3.class);
+		if (source.readOnlyRead(PositionalData.class) != null)
+		{
+			tmp.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).add(offset);
+		}
+		else
+		{
+			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
+			tmp.set(data.position).add(offset);
+		}
+		setPosition(tmp);
+		Pools.free(tmp);
+	}
+
+	@Override
+	public void update(float delta, Camera cam, LightManager lights)
+	{
+		update(delta, cam);
+	}
+
+	@Override
+	public void set(Matrix4 transform)
+	{
+		Vector3 tmp = Pools.obtain(Vector3.class);
+		tmp.set(0, 0, 0).mul(transform);
+		setPosition(tmp);
+		Pools.free(tmp);
+	}
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		Vector3 tmp = Pools.obtain(Vector3.class);
+		tmp.set(0, 0, 0).mul(mat);
+		pos.add(tmp);
+		setPosition(pos);
+		Pools.free(tmp);
+	}
+
 }

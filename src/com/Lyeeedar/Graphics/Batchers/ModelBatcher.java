@@ -1,6 +1,5 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Batchers;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
@@ -8,17 +7,16 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
@@ -273,6 +271,7 @@ public class ModelBatcher implements Queueable {
 		@Override
 		public boolean equals(Object obj)
 		{
+			if (obj == null) return false;
 			return eq(position, ((BatchedInstance)obj).position);
 		}
 
@@ -281,5 +280,20 @@ public class ModelBatcher implements Queueable {
 			if (equals(bi)) return 0;
 			return (int) ((bi.dist - dist)*100);
 		}	
+	}
+
+	@Override
+	public void set(Matrix4 transform)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 }

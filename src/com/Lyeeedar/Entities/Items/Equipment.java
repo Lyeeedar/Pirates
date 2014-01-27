@@ -3,9 +3,7 @@ package com.Lyeeedar.Entities.Items;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
-import com.Lyeeedar.Graphics.Sprite3D.SPRITESHEET;
-import com.Lyeeedar.Graphics.Sprite3D.SpriteLayer;
-import com.badlogic.gdx.graphics.Color;
+import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 
 
 public abstract class Equipment<E extends Equipment<E>> extends Item {
@@ -46,7 +44,7 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	public Item set(Item other)
 	{
 		super.set(other);
-		Equipment<E> cother = (Equipment<E>)other;
+		Equipment<E> cother = (Equipment<E>) other;
 		this.spritesheet = cother.spritesheet;
 		return this;
 	}

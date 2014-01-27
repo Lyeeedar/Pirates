@@ -1,4 +1,4 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Queueables;
 /*******************************************************************************
  * Copyright (c) 2013 Philip Collin.
  * All rights reserved. This program and the accompanying materials
@@ -13,6 +13,8 @@ package com.Lyeeedar.Graphics;
 import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Util.CircularArrayRing;
 import com.badlogic.gdx.graphics.Camera;
@@ -23,6 +25,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 public class MotionTrail implements Queueable {
@@ -159,5 +162,19 @@ public class MotionTrail implements Queueable {
 	@Override
 	public Queueable copy() {
 		return new MotionTrail(vertNum2, colour, texture);
+	}
+
+	@Override
+	public void set(Matrix4 transform)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 }

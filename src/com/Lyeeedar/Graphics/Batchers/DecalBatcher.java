@@ -1,4 +1,4 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Batchers;
 
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;

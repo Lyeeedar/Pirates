@@ -17,14 +17,11 @@ public class AI_Player_Control extends AI_Package {
 	private final Controls controls;
 	private boolean jump = false;
 	
-	private final PositionalData entityPos = new PositionalData();
-	private final AnimationData entityAnim = new AnimationData();
-	private final EquipmentData entityEquip = new EquipmentData();
-	private final StatusData entityStatus = new StatusData();
-	
 	private final PositionalData pData = new PositionalData();
-	//private final ArrayList<EntityGraph> list = new ArrayList<EntityGraph>();
-	
+	private final AnimationData aData = new AnimationData();
+	private final EquipmentData eData = new EquipmentData();
+	private final StatusData sData = new StatusData();
+		
 	boolean activatecd = false;
 	
 	public AI_Player_Control(Controls controls)
@@ -37,16 +34,16 @@ public class AI_Player_Control extends AI_Package {
 	@Override
 	public void update(float delta, Entity entity) {
 		
-		entity.readData(entityPos, PositionalData.class);
-		entity.readData(entityAnim, AnimationData.class);
-		entity.readData(entityEquip, EquipmentData.class);
-		entity.readData(entityStatus, StatusData.class);
+		entity.readData(pData, PositionalData.class);
+		entity.readData(aData, AnimationData.class);
+		entity.readData(eData, EquipmentData.class);
+		entity.readData(sData, StatusData.class);
 		
-		evaluateDamage(entityStatus, entityAnim, delta);
+		evaluateDamage(sData, aData, delta);
 		
-		if (entityStatus.currentHealth > 0)
+		if (sData.currentHealth > 0)
 		{
-			if (!entityAnim.animationLock)
+			if (!aData.animationLock)
 			{
 				// Evaluate controls
 				int speed = 50;
@@ -56,15 +53,15 @@ public class AI_Player_Control extends AI_Package {
 					speed = 1500;
 				}
 				
-				if (controls.up()) entityPos.forward_backward(speed);
-				else if (controls.down()) entityPos.forward_backward(-speed);
+				if (controls.up()) pData.forward_backward(speed);
+				else if (controls.down()) pData.forward_backward(-speed);
 				
-				if (controls.left()) entityPos.left_right(speed);
-				else if (controls.right()) entityPos.left_right(-speed);
+				if (controls.left()) pData.left_right(speed);
+				else if (controls.right()) pData.left_right(-speed);
 				
 				if (controls.jump() && !jump) {
-					entityPos.velocity.y = 70;
-					entityPos.jumpToken--;
+					pData.velocity.y = 70;
+					pData.jumpToken--;
 					jump = true;
 				}
 				else if (!controls.jump())
@@ -74,10 +71,10 @@ public class AI_Player_Control extends AI_Package {
 				
 			}
 
-			if (controls.rightClick()) use(Equipment_Slot.RARM, entityEquip);
+			if (controls.rightClick()) use(Equipment_Slot.RARM, eData);
 			else 
 			{
-				stopUsing(Equipment_Slot.RARM, entityEquip);
+				stopUsing(Equipment_Slot.RARM, eData);
 			}
 
 //			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
@@ -94,51 +91,51 @@ public class AI_Player_Control extends AI_Package {
 			
 			// Update animations
 			
-			if (entityAnim.animationLock)
+			if (aData.animationLock)
 			{
 				
 			}
-			else if (entityPos.location == LOCATION.AIR)
+			else if (pData.location == LOCATION.AIR)
 			{
-				if (!entityAnim.animate) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-				entityAnim.animate = false;
-				entityAnim.animate_speed = 1f;
-				entityAnim.anim = "fall";
+				if (!aData.animate) aData.updateAnimations = true;
+				else aData.updateAnimations = false;
+				aData.animate = false;
+				aData.animate_speed = 1f;
+				aData.anim = "fall";
 			}
-			else if (entityPos.location == LOCATION.SEA)
+			else if (pData.location == LOCATION.SEA)
 			{
-				if (entityAnim.animate) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-				entityAnim.animate = true;
-				entityAnim.animate_speed = 1f;
-				entityAnim.anim = "swim";
+				if (aData.animate) aData.updateAnimations = true;
+				else aData.updateAnimations = false;
+				aData.animate = true;
+				aData.animate_speed = 1f;
+				aData.anim = "swim";
 			}
 			else if (controls.up() || controls.down() || controls.left() || controls.right()) {
-				if (entityAnim.animate) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-				entityAnim.animate = true;
-				entityAnim.animate_speed = 1f;
-				if (!controls.sprint()) entityAnim.anim = "run";
-				else entityAnim.anim = "walk";
+				if (aData.animate) aData.updateAnimations = true;
+				else aData.updateAnimations = false;
+				aData.animate = true;
+				aData.animate_speed = 1f;
+				if (!controls.sprint()) aData.anim = "run";
+				else aData.anim = "walk";
 			}
 			else {
-				if (!entityAnim.animate) entityAnim.updateAnimations = true;
-				else entityAnim.updateAnimations = false;
-				entityAnim.animate = false;
-				entityAnim.anim = "idle";
-				entityAnim.animate_speed = 0.5f;
+				if (!aData.animate) aData.updateAnimations = true;
+				else aData.updateAnimations = false;
+				aData.animate = false;
+				aData.anim = "idle";
+				aData.animate_speed = 0.5f;
 			}
 
 		}
 		
-		entityPos.applyVelocity(delta);
-		entityPos.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+		pData.applyVelocity(delta);
+		pData.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
 				
-		entity.writeData(entityPos, PositionalData.class);
-		entity.writeData(entityAnim, AnimationData.class);
-		entity.writeData(entityEquip, EquipmentData.class);
-		entity.writeData(entityStatus, StatusData.class);
+		entity.writeData(pData, PositionalData.class);
+		entity.writeData(aData, AnimationData.class);
+		entity.writeData(eData, EquipmentData.class);
+		entity.writeData(sData, StatusData.class);
 	}
 
 	@Override

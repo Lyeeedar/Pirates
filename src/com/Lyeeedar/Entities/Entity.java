@@ -12,16 +12,15 @@ import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
-import com.Lyeeedar.Graphics.Batch;
-import com.Lyeeedar.Graphics.Queueable;
+import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 
@@ -48,7 +47,7 @@ public class Entity {
 	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
 	
 	private AI_Package ai;
-	private final EntityRunnable runnable = new EntityRunnable();
+	private final EntityRunnable runnable = new EntityRunnable(this);
 	private final EntityRenderables renderables = new EntityRenderables();
 	private ActivationAction aa;
 	
@@ -59,7 +58,7 @@ public class Entity {
 	
 	public void activate(Entity e)
 	{
-		aa.activate(e, this);
+		if (aa != null) aa.activate(e, this);
 	}
 	
 	public ActivationAction getActivationAction()
@@ -151,17 +150,22 @@ public class Entity {
 	
 	public Runnable getRunnable(float delta)
 	{
-		runnable.set(delta, this);
+		runnable.set(delta);
 		return runnable;
 	}
 	public static class EntityRunnable implements Runnable
 	{
-		float delta;
-		Entity entity;
+		public float delta;
+		public Entity entity;
 		
-		public void set(float delta, Entity entity)
+		public EntityRunnable(Entity e)
 		{
-			this.entity = entity;
+			this.entity = e;
+			this.delta = 0;
+		}
+		
+		public void set(float delta)
+		{
 			this.delta = delta;
 		}
 		
@@ -229,13 +233,13 @@ public class Entity {
 			entry.dispose();
 		}
 		renderables.dispose();
-		ai.dispose();
+		if (ai != null) ai.dispose();
 	}
 	
-	public class EntityRenderable
+	public static class EntityRenderable
 	{
-		Queueable renderable;
-		Vector3 position = new Vector3();
+		public Queueable renderable;
+		public final Vector3 position = new Vector3();
 		
 		public EntityRenderable(Queueable renderable, Vector3 position)
 		{

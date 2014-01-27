@@ -1,40 +1,30 @@
 package com.Lyeeedar.Collision;
 
-import java.util.HashMap;
 import java.util.HashSet;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.AllHitsRayResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.ClosestRayResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.ContactResultCallback;
-import com.badlogic.gdx.physics.bullet.collision.btAxisSweep3;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
-import com.badlogic.gdx.physics.bullet.collision.btBroadphasePairArray;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseProxy;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObjectArray;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObjectWrapper;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionWorld;
-import com.badlogic.gdx.physics.bullet.collision.btConvexShape;
-import com.badlogic.gdx.physics.bullet.collision.btDbvt;
 import com.badlogic.gdx.physics.bullet.collision.btDbvtBroadphase;
 import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration;
 import com.badlogic.gdx.physics.bullet.collision.btGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btGhostPairCallback;
 import com.badlogic.gdx.physics.bullet.collision.btManifoldPoint;
-import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
-import com.badlogic.gdx.physics.bullet.collision.btPersistentManifoldArray;
 import com.badlogic.gdx.physics.bullet.dynamics.btConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
-import com.badlogic.gdx.physics.bullet.dynamics.btKinematicCharacterController;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
 import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
@@ -58,7 +48,7 @@ public class BulletWorld {
 
 	public btDynamicsWorld world;
 
-	ContactSensorCallback sensor = new ContactSensorCallback();
+	private final ContactSensorCallback sensor = new ContactSensorCallback();
 
 	public static class ContactSensorCallback extends ContactResultCallback
 	{
@@ -133,6 +123,11 @@ public class BulletWorld {
 	{
 		world.removeRigidBody(body);
 	}
+	
+	public void remove(btCollisionObject body)
+	{
+		world.removeCollisionObject(body);
+	}
 
 	public void add(btCollisionShape shape, Matrix4 transform, Entity entity, short group, short mask)
 	{
@@ -170,7 +165,7 @@ public class BulletWorld {
 	{
 		debugDrawer.lineRenderer.setProjectionMatrix(cam.combined);
 
-		if (debugDrawer != null && debugDrawer.getDebugMode() > 0) {
+		if (debugDrawer.getDebugMode() > 0) {
 			//debugDrawer.begin();
 			//world.debugDrawWorld();
 			//debugDrawer.end();
@@ -242,6 +237,26 @@ public class BulletWorld {
 		{
 			if (skipObjects.contains(proxy.getClientObject())) return false;
 			return super.needsCollision(proxy);
+		}
+	}
+	
+	public static class SimpleContactCallback extends ContactResultCallback
+	{
+		public boolean hasCollided = false;
+
+		public SimpleContactCallback()
+		{
+			super();
+		}
+
+		public float addSingleResult(btManifoldPoint cp,
+				btCollisionObjectWrapper colObj0Wrap, int partId0, int index0,
+				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1)
+		{
+
+			hasCollided = true;
+
+			return 1.f;
 		}
 	}
 }

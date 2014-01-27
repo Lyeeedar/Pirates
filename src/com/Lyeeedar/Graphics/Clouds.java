@@ -69,18 +69,12 @@ public class Clouds {
 		return tex;
 	}
 	
-	public float CloudCover = 0.5f;
-	public float CloudSharpness = 0.9f;
+	public float cloudCover = 0.5f;
+	public float cloudSharpness = 0.9f;
 	
-	boolean up = false;
 	public void update(float delta)
 	{
 		time += delta;
-		//if (time >= 1.0f) time -= 1.0f;
-		
-		//CloudCover += (up)?delta:-delta;
-		//if (CloudCover > 1.0f || CloudCover < 0.0f) up = !up;
-		
 	}
 	
 	public void render(Camera cam, LightManager lights)
@@ -100,8 +94,8 @@ public class Clouds {
 		
 		shader.setUniformf("u_ambient", lights.ambientColour);
 		
-		shader.setUniformf("CloudCover", CloudCover);
-		shader.setUniformf("CloudSharpness", CloudSharpness);
+		shader.setUniformf("CloudCover", cloudCover);
+		shader.setUniformf("CloudSharpness", cloudSharpness);
 		
 		for (int i = 0; i < 4; i++)
 		{

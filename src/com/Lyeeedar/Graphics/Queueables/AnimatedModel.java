@@ -1,4 +1,4 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Queueables;
 
 import java.util.HashMap;
 
@@ -6,14 +6,13 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.AnimatedModelBatch.RenderablePool;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.model.Animation;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.model.NodeAnimation;
@@ -30,26 +29,27 @@ public class AnimatedModel implements Queueable {
 	public Vector3 colour = new Vector3();
 	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
 	public String defaultAnim;
-	public Matrix4 tmp = new Matrix4();
 	public String currentAnim = "";
+	
+	private final Matrix4 tmpMat = new Matrix4();
 	
 	public AnimatedModel(Model model, Texture texture, Vector3 colour, String defaultAnim)
 	{
-		for (Node n : model.nodes)
-		{
-			print_nodes(n);
-		}
-		
-		Animation a = model.getAnimation("idle");
-		if (a != null)
-		{
-			System.out.println("anim");
-			for (NodeAnimation an : a.nodeAnimations)
-			{
-				System.out.println(an.node.id);
-			}
-			System.out.println("anim");
-		}
+//		for (Node n : model.nodes)
+//		{
+//			print_nodes(n);
+//		}
+//		
+//		Animation a = model.getAnimation("idle");
+//		if (a != null)
+//		{
+//			System.out.println("anim");
+//			for (NodeAnimation an : a.nodeAnimations)
+//			{
+//				System.out.println(an.node.id);
+//			}
+//			System.out.println("anim");
+//		}
 		
 		this.model = new ModelInstance(model);
 		
@@ -72,9 +72,15 @@ public class AnimatedModel implements Queueable {
 		}
 	}
 	
-	public void attachModel(String node, AnimatedModel model, Matrix4 offset)
+	public void attach(String nodeName, Queueable model, Matrix4 offset)
 	{
-		attachedModels.add(new ATTACHED_MODEL(this.model.getNode(node, true), model, offset));
+		Node node = null;
+		if (nodeName != null)
+		{
+			 node = this.model.getNode(nodeName, true);
+			 if (node == null) System.err.println("Failed to find node "+nodeName);
+		}
+		attachedModels.add(new ATTACHED_MODEL(node, model, offset));
 	}
 	
 	@Override
@@ -114,14 +120,30 @@ public class AnimatedModel implements Queueable {
 		for (ATTACHED_MODEL am : attachedModels)
 		{
 			am.model.set(source, offset);
-			am.model.transform(am.node.globalTransform);
+			if(am.node != null) 
+			{
+				tmpMat.set(model.transform).mul(am.node.globalTransform);
+				am.model.set(tmpMat);
+			}
 			am.model.transform(am.offset);
 		}
 	}
 	
+	@Override
 	public void transform(Matrix4 mat)
 	{
 		model.transform.mul(mat);
+		
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.transform(mat);
+			if(am.node != null) 
+			{
+				tmpMat.set(model.transform).mul(am.node.globalTransform);
+				am.model.set(tmpMat);
+			}
+			am.model.transform(am.offset);
+		}
 	}
 
 	@Override
@@ -143,17 +165,35 @@ public class AnimatedModel implements Queueable {
 	public void dispose() {
 	}
 
-	private class ATTACHED_MODEL
+	private static class ATTACHED_MODEL
 	{
 		public Node node;
-		public AnimatedModel model;
+		public Queueable model;
 		public Matrix4 offset = new Matrix4();
 		
-		public ATTACHED_MODEL(Node node, AnimatedModel model, Matrix4 offset)
+		public ATTACHED_MODEL(Node node, Queueable model, Matrix4 offset)
 		{
 			this.node = node;
 			this.model = model;
 			this.offset.set(offset);
 		}
+	}
+
+	@Override
+	public void set(Matrix4 transform)
+	{
+		model.transform.set(transform);
+		
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.set(transform);
+			if(am.node != null) 
+			{
+				tmpMat.set(model.transform).mul(am.node.globalTransform);
+				am.model.set(tmpMat);
+			}
+			am.model.transform(am.offset);
+		}
+		
 	}
 }

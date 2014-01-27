@@ -4,14 +4,14 @@ import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.Batch;
 import com.Lyeeedar.Graphics.Clouds;
-import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.PirateGame.Screen;
@@ -201,12 +201,6 @@ public class MainMenuScreen extends AbstractScreen {
 
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void drawParticles(float delta) {
 		// TODO Auto-generated method stub
 
 	}

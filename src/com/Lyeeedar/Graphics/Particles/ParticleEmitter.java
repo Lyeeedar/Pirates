@@ -39,11 +39,9 @@ import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Pools;
 
-public class ParticleEmitter implements Serializable {
+public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 	private transient static final int VERTEX_SIZE = 9;
-
-	private static final long serialVersionUID = 6308492057144008114L;
 
 	public enum ParticleAttribute {
 		SPRITE,
@@ -90,6 +88,7 @@ public class ParticleEmitter implements Serializable {
 	private transient static int currentBlendSRC, currentBlendDST;
 	public transient TextureAtlas atlas;
 	public transient Texture atlasTexture;
+	public transient int texHash;
 	private transient float[][] topLeftTexCoords;
 	private transient float[][] topRightTexCoords;
 	private transient float[][] botLeftTexCoords;
@@ -431,7 +430,8 @@ public class ParticleEmitter implements Serializable {
 		Iterator<Texture> itr = atlasTextures.iterator();
 
 		atlasTexture = itr.next();
-
+		texHash = atlasTexture.hashCode();
+		
 		int maxIndex = 0;
 		for (TimelineValue spriteTL : sprite)
 		{
@@ -705,6 +705,11 @@ public class ParticleEmitter implements Serializable {
 		{
 			tv = searchTimeline(time, velocity);
 		}
+		else
+		{
+			throw new RuntimeException("Timeline value type invalid!");
+		}
+
 
 		return tv.getValuesInterpolated(time);
 	}
@@ -1066,17 +1071,13 @@ public class ParticleEmitter implements Serializable {
 			"gl_FragColor = texture2D(u_texture, v_texCoords) * v_colour;" + "\n" +
 			"}";
 
-	private static final ParticleEmitterComparator comparator = new ParticleEmitterComparator();
-	public static Comparator<ParticleEmitter> getComparator()
+	@Override
+	public int compareTo(ParticleEmitter pe)
 	{
-		return comparator;
-	}
-
-	static class ParticleEmitterComparator implements Comparator<ParticleEmitter>
-	{
-		public int compare(ParticleEmitter p1, ParticleEmitter p2) {
-			if (p1.distance == p2.distance) return 0;
-			return (p1.distance < p2.distance) ? 1 : -1;
+		if (distance == pe.distance) 
+		{
+			return texHash - pe.texHash;
 		}
+		return (int) (distance - pe.distance) * 100;
 	}
 }

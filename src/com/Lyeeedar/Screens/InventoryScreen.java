@@ -10,10 +10,10 @@ import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
-import com.Lyeeedar.Graphics.Batch;
-import com.Lyeeedar.Graphics.ModelBatcher;
-import com.Lyeeedar.Graphics.MotionTrailBatch;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.FileUtils;
@@ -536,12 +536,6 @@ public class InventoryScreen extends AbstractScreen {
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {		
 		//GLOBALS.player.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
-	}
-
-	@Override
-	public void drawParticles(float delta) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

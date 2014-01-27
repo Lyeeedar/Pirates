@@ -1,4 +1,4 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Queueables;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,23 +13,22 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Renderers.AbstractModelBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.ImageUtils;
-import com.Lyeeedar.Util.Informable;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
-import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
 
 public class Sprite3D implements Queueable {
 
@@ -137,7 +136,7 @@ public class Sprite3D implements Queueable {
 		while (itr.hasNext())
 		{
 			Equipment<?> equip = itr.next();
-			if (equip == null || equip.spritesheet == null || equip.spritesheet.equals("")) continue;
+			if (equip == null || equip.spritesheet == null) continue;
 			SortedSet<SPRITESHEET> layer = layers.get(equip.spritesheet.layer);
 			boolean found = false;
 			for (SPRITESHEET s : layer)
@@ -495,5 +494,19 @@ public class Sprite3D implements Queueable {
 	@Override
 	public Queueable copy() {
 		return new Sprite3D(width, height, NUM_ANIMS, NUM_FRAMES);
+	}
+
+	@Override
+	public void set(Matrix4 mat)
+	{
+		position.set(0, 0, 0).mul(mat);
+		rotation.set(GLOBALS.DEFAULT_ROTATION).rot(mat);
+	}
+
+	@Override
+	public void transform(Matrix4 mat)
+	{
+		position.mul(mat);
+		rotation.rot(mat);
 	}
 }

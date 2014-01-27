@@ -1,4 +1,4 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Batchers;
 
 import java.util.PriorityQueue;
 
@@ -147,19 +147,19 @@ public class AnimatedModelBatch implements Batch {
 	
 	public ShaderProgram createShader(int bone_num)
 	{
-		String prefix = "";
+		StringBuilder prefix = new StringBuilder();
 		
 		for (int i = 0; i < bone_num; i++)
 		{
-			prefix += "#define boneWeight"+i+"Flag\n";
+			prefix.append("#define boneWeight").append(i).append("Flag\n");
 		}
 		if (bone_num > 0)
 		{
-			prefix += "#define skinning\n";
-			prefix += "#define numBones "+(bones.length/16)+"\n"; 
+			prefix.append("#define skinning\n");
+			prefix.append("#define numBones ").append(bones.length/16).append("\n"); 
 		}
 		
-		String vert = prefix + Gdx.files.internal("data/shaders/skinned_model.vertex.glsl").readString();
+		String vert = prefix.toString() + Gdx.files.internal("data/shaders/skinned_model.vertex.glsl").readString();
 		String frag = Gdx.files.internal("data/shaders/cellshading_body.fragment.glsl").readString();
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
@@ -182,8 +182,9 @@ public class AnimatedModelBatch implements Batch {
 		renderables.clear();
 	}
 
-	private class BatchedInstance implements Comparable<BatchedInstance>
+	private static class BatchedInstance implements Comparable<BatchedInstance>
 	{
+		private static final float tolerance = 0.01f;
 		public Renderable instance;
 		private float dist;
 		public int bone_num;
@@ -205,13 +206,13 @@ public class AnimatedModelBatch implements Batch {
 			this.tex = tex;
 			this.texHash = tex.hashCode();
 			this.colour.set(colour);
+			this.dist = dist;
 			return this;
 		}
 
 		@Override
 		public int compareTo(BatchedInstance bi) {
-			if (equals(bi)) return 0;
-			if (bi.dist == dist) 
+			if (bi.dist-dist < tolerance) 
 			{
 				if (bone_num == bi.bone_num) return bi.texHash - texHash;
 				return bi.bone_num - bone_num;

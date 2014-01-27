@@ -1,7 +1,8 @@
-package com.Lyeeedar.Graphics;
+package com.Lyeeedar.Graphics.Batchers;
 
 import java.util.LinkedList;
 
+import com.Lyeeedar.Graphics.Queueables.MotionTrail;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;

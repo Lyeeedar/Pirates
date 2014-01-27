@@ -10,7 +10,7 @@ import javax.swing.Box;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.TexturedMesh;
+import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Family;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Person;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Relationship;

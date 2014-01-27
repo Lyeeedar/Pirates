@@ -20,8 +20,6 @@ public class AI_Follow extends AI_Package {
 	
 	Vector3 tmp = new Vector3();
 	
-	float deathCD = 1f;
-
 	public AI_Follow() {
 		super();
 	}
@@ -35,7 +33,7 @@ public class AI_Follow extends AI_Package {
 	public void update(float delta, Entity entity) {
 		
 		entity.readData(entityPos, PositionalData.class);	
-		follow.readData(followPos, PositionalData.class);
+		if (follow != null) follow.readData(followPos, PositionalData.class);
 		
 		entity.readData(entityAnim, AnimationData.class);
 		entity.readData(entityStatus, StatusData.class);

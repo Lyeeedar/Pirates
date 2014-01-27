@@ -3,10 +3,8 @@ package com.Lyeeedar.Entities;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.Box;
-
-import com.Lyeeedar.Graphics.Queueable;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Shapes;
@@ -202,7 +200,6 @@ public class Terrain extends Entity {
 		float[][] heights;
 		float[][] splats;
 				
-		@SuppressWarnings("unchecked")
 		public HeightMap(Texture texture, Vector3 position, float range, int scale, float seaFloor)
 		{
 			this.texture = texture;
