@@ -47,7 +47,7 @@ public abstract class AbstractModelBatch implements Batch {
 	 * @author Philip
 	 *
 	 */
-	class DrawableManager {
+	public static class DrawableManager {
 		Pool<Drawable> drawablePool = new Pool<Drawable>() {
 			@Override
 			protected Drawable newObject () {

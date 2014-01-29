@@ -21,7 +21,7 @@ import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
 
 public class FollowCam extends PerspectiveCamera {
 	
-	private final float limit = 60;
+	private static final float limit = 60;
 	
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
@@ -132,6 +132,29 @@ public class FollowCam extends PerspectiveCamera {
 		}
 		
 		update();
+		
+		for (int i = 0; i < 4; i++)
+		{
+			ray.setCollisionObject(null);
+	        ray.setClosestHitFraction(1f);
+			
+			tmpVec.set(pData.position).add(0, followHeight, 0);
+			tmpVec2.set(frustum.planePoints[i]);
+			
+			ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+			ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			ray.setSkipObject(pData.physicsBody);
+			
+			GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+			if (ray.hasHit())
+			{
+				tmpVec2.sub(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
+				position.sub(tmpVec2);
+				update();
+			}
+		}
 		
 		float seaY = 0;
 		

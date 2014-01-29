@@ -92,29 +92,29 @@ public class BulletWorld {
 
 	public Array<Entity> getEntitiesCollidingWithObject(final btGhostObject shape, final Array<Entity> out, short group, short mask) 
 	{
-//		sensor.setCollisionFilterGroup(group);
-//		sensor.setCollisionFilterMask(mask);
-//		sensor.object = shape;
-//		sensor.array.clear();
-//		
-//		world.contactTest(shape, sensor);
-//
-//		out.clear();
-//		for (btCollisionObject o : sensor.array)
-//		{
-//			if (o.userData != null) out.add((Entity) o.userData);
-//			else System.out.println("null");
-//		}
+		sensor.setCollisionFilterGroup(group);
+		sensor.setCollisionFilterMask(mask);
+		sensor.object = shape;
+		sensor.array.clear();
 		
-		btCollisionObjectArray arr = shape.getOverlappingPairs();
-		
+		world.contactTest(shape, sensor);
+
 		out.clear();
-		for (int i = 0; i < arr.size(); i++)
+		for (btCollisionObject o : sensor.array)
 		{
-			btCollisionObject o = arr.at(i);
 			if (o.userData != null) out.add((Entity) o.userData);
 			else System.out.println("null");
 		}
+		
+//		btCollisionObjectArray arr = shape.getOverlappingPairs();
+//		
+//		out.clear();
+//		for (int i = 0; i < arr.size(); i++)
+//		{
+//			btCollisionObject o = arr.at(i);
+//			if (o.userData != null) out.add((Entity) o.userData);
+//			else System.out.println("null");
+//		}
 
 		return out;
 	}

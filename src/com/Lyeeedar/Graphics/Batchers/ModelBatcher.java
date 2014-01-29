@@ -250,7 +250,7 @@ public class ModelBatcher implements Queueable {
 		}
 	}
 	
-	private class BatchedInstance implements Comparable<BatchedInstance>
+	private static class BatchedInstance implements Comparable<BatchedInstance>
 	{
 		private float dist;
 		public final Vector3 position = new Vector3();

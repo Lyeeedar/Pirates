@@ -195,32 +195,36 @@ public class Entity {
 		
 		public void set(Entity source)
 		{
-			for (EntityRenderable r : renderables)
+			for (int i = 0; i < renderables.size(); i++)
 			{
+				EntityRenderable r = renderables.get(i);
 				r.renderable.set(source, r.position);
 			}
 		}
 		
 		public void update(float delta, Camera cam, LightManager lights)
 		{
-			for (EntityRenderable r : renderables)
+			for (int i = 0; i < renderables.size(); i++)
 			{
+				EntityRenderable r = renderables.get(i);
 				r.renderable.update(delta, cam, lights);
 			}
 		}
 		
 		public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 		{
-			for (EntityRenderable r : renderables)
+			for (int i = 0; i < renderables.size(); i++)
 			{
+				EntityRenderable r = renderables.get(i);
 				r.renderable.queue(delta, cam, batches);
 			}
 		}
 		
 		public void dispose()
 		{
-			for (EntityRenderable r : renderables)
+			for (int i = 0; i < renderables.size(); i++)
 			{
+				EntityRenderable r = renderables.get(i);
 				r.renderable.dispose();
 			}
 		}
@@ -616,7 +620,7 @@ public class Entity {
 	}
 	public static class EquipmentData implements EntityData<EquipmentData>
 	{
-		private final HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
+		private HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
 		private final HashMap<ITEM_TYPE, HashMap<String, Item>> items = new HashMap<ITEM_TYPE, HashMap<String, Item>>();
 		
 		public EquipmentData()
@@ -682,62 +686,63 @@ public class Entity {
 		
 		@Override
 		public void write(EquipmentData data) {
-			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
-			{
-				@SuppressWarnings("rawtypes")
-				Equipment current = equipment.get(entry.getKey());
-				
-				if (entry.getValue() == null) {
-					if (current != null)
-					{
-						Pools.free(current);
-					}
-					equipment.put(entry.getKey(), null);
-					continue;
-				}
-				
-				if (current == null) 
-				{
-					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
-				}
-				else if (current.getClass().equals(entry.getValue().getClass()))
-				{
-					current.set(entry.getValue());
-				}
-				else
-				{
-					Pools.free(current);
-					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
-				}
-			}
-			
-			
-			for (ITEM_TYPE it : ITEM_TYPE.values())
-			{
-				HashMap<String, Item> iitems = items.get(it);
-				HashMap<String, Item> ditems = data.items.get(it);
-				
-				for (Item i : iitems.values())
-				{
-					if (!ditems.containsKey(i.description.name))
-					{
-						Item rm = iitems.remove(i.description.name);
-						Pools.free(rm);
-					}
-				}
-				
-				for (Item i : ditems.values())
-				{
-					if (!iitems.containsKey(i.description.name))
-					{
-						iitems.put(i.description.name, i.copy());
-					}
-					else
-					{
-						iitems.get(i.description.name).set(i);
-					}
-				}
-			}
+//			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
+//			{
+//				@SuppressWarnings("rawtypes")
+//				Equipment current = equipment.get(entry.getKey());
+//				
+//				if (entry.getValue() == null) {
+//					if (current != null)
+//					{
+//						Pools.free(current);
+//					}
+//					equipment.put(entry.getKey(), null);
+//					continue;
+//				}
+//				
+//				if (current == null) 
+//				{
+//					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
+//				}
+//				else if (current.getClass().equals(entry.getValue().getClass()))
+//				{
+//					current.set(entry.getValue());
+//				}
+//				else
+//				{
+//					Pools.free(current);
+//					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
+//				}
+//			}
+//			
+//			
+//			for (ITEM_TYPE it : ITEM_TYPE.values())
+//			{
+//				HashMap<String, Item> iitems = items.get(it);
+//				HashMap<String, Item> ditems = data.items.get(it);
+//				
+//				for (Item i : iitems.values())
+//				{
+//					if (!ditems.containsKey(i.description.name))
+//					{
+//						Item rm = iitems.remove(i.description.name);
+//						Pools.free(rm);
+//					}
+//				}
+//				
+//				for (Item i : ditems.values())
+//				{
+//					if (!iitems.containsKey(i.description.name))
+//					{
+//						iitems.put(i.description.name, i.copy());
+//					}
+//					else
+//					{
+//						iitems.get(i.description.name).set(i);
+//					}
+//				}
+//			}
+			equipment = data.equipment;
 		}
 
 		@Override

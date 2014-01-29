@@ -759,7 +759,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	 * @author Philip
 	 *
 	 */
-	class Particle {
+	public static class Particle {
 		float lifetime;
 		float x, y, z;
 
@@ -784,10 +784,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		}
 	}
 
-	public static class TimelineValue implements Serializable, Json.Serializable
+	public static class TimelineValue implements Json.Serializable
 	{
-		private static final long serialVersionUID = -4434625075360858305L;
-
 		public float[] values;
 		public float time;
 

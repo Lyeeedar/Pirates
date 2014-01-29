@@ -93,7 +93,7 @@ public class Controls {
 				if (Math.abs(max) < Math.abs(Gdx.input.getX(i)-GLOBALS.SCREEN_SIZE[0]/2)) max = Gdx.input.getX(i)-GLOBALS.SCREEN_SIZE[0]/2;
 			}
 			
-			if (Math.abs(max) < GLOBALS.SCREEN_SIZE[0]/6) max = 0;
+			if (Math.abs(max) < GLOBALS.SCREEN_SIZE[0]/6.0f) max = 0;
 			
 			int sign = (max < 0) ? -1 : 1;
 			return (float) (Math.pow(max, 2.0) * Gdx.graphics.getDeltaTime() * 0.0005f * sign);
@@ -197,7 +197,7 @@ public class Controls {
 				if (Math.abs(max) < Math.abs(Gdx.input.getY(i)-GLOBALS.SCREEN_SIZE[1]/2)) max = Gdx.input.getY(i)-GLOBALS.SCREEN_SIZE[1]/2;
 			}
 			
-			return (max < -GLOBALS.SCREEN_SIZE[1]/6);
+			return (max < -GLOBALS.SCREEN_SIZE[1]/6.0f);
 		}
 		else
 		{
@@ -219,7 +219,7 @@ public class Controls {
 				if (Math.abs(max) < Math.abs(Gdx.input.getY(i)-GLOBALS.SCREEN_SIZE[1]/2)) max = Gdx.input.getY(i)-GLOBALS.SCREEN_SIZE[1]/2;
 			}
 			
-			return (max > GLOBALS.SCREEN_SIZE[1]/6);
+			return (max > GLOBALS.SCREEN_SIZE[1]/6.0f);
 		}
 		else
 		{
