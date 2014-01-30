@@ -18,6 +18,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pools;
 
 public class Terrain extends Entity {
@@ -149,7 +150,7 @@ public class Terrain extends Entity {
 		return height;
 	}
 	
-	public void vegetate(List<Entity> entities, Queueable renderable, int splat, int num, int maxTries)
+	public void vegetate(Array<Entity> veggies, Queueable renderable, int splat, int num, int maxTries)
 	{
 		HeightMap hm = heightmaps[0];
 		
@@ -185,7 +186,7 @@ public class Terrain extends Entity {
 			
 			v.addRenderable(renderable.copy(), new Vector3());
 			
-			entities.add(v);
+			veggies.add(v);
 		}
 		Pools.free(pData);
 	}

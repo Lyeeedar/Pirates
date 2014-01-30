@@ -11,10 +11,10 @@ import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
-import com.Lyeeedar.Util.Bag;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Pools;
@@ -23,7 +23,7 @@ public class ParticleEffect implements Queueable {
 	
 	public final String UID;
 	
-	public final Bag<Emitter> emitters = new Bag<Emitter>();
+	public final Array<Emitter> emitters = new Array<Emitter>();
 	
 	public final Vector3 pos = new Vector3();
 	public float radius;
@@ -58,7 +58,7 @@ public class ParticleEffect implements Queueable {
 	
 	public void deleteEmitter(int index)
 	{
-		Emitter emitter = emitters.remove(index);
+		Emitter emitter = emitters.removeIndex(index);
 		emitter.emitter.dispose();
 	}
 	

@@ -175,8 +175,6 @@ public class Sprite3D implements Queueable {
 	public void set(Entity source, Vector3 offset) {
 		source.readData(pData, PositionalData.class);
 		source.readData(aData, AnimationData.class);
-
-		updateSpritesheets(source);
 		
 		setPosition(pData.position.add(offset));
 		setRotation(pData.rotation);

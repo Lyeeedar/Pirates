@@ -13,6 +13,7 @@ package com.Lyeeedar.Screens;
 import java.util.HashMap;
 
 import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
@@ -44,6 +45,7 @@ import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
@@ -93,11 +95,8 @@ public abstract class AbstractScreen implements Screen {
 	{
 		this.game = game;
 		controls = new Controls(GLOBALS.ANDROID);
-		
-		
-		
-		cam = new FollowCam(controls, null, FollowCam.createSphere(GLOBALS.FOG_MAX/2.0f));
-		cam.renderObject = FollowCam.createFrustumObject(cam.frustum.planePoints);
+			
+		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null));
 		
 		font = new BitmapFont();
 		
@@ -261,10 +260,6 @@ public abstract class AbstractScreen implements Screen {
         cam.far = (GLOBALS.ANDROID) ? 202f : GLOBALS.FOG_MAX ;
         cam.update();
         
-        GLOBALS.physicsWorld.remove(cam.renderObject);
-        cam.renderObject = FollowCam.createFrustumObject(cam.frustum.planePoints);
-        GLOBALS.physicsWorld.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
-
 		stage.setViewport(width, height, false);
 		
 		postprocessor.updateBufferSettings(Format.RGBA8888, width, height);

@@ -10,8 +10,6 @@
  ******************************************************************************/
 package com.Lyeeedar.Graphics.Particles;
 
-import java.io.Serializable;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -19,7 +17,6 @@ import java.util.Set;
 
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
@@ -35,6 +32,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Pools;
@@ -93,8 +91,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient float[][] topRightTexCoords;
 	private transient float[][] botLeftTexCoords;
 	private transient float[][] botRightTexCoords;
-	private transient Bag<Particle> active;
-	private transient Bag<Particle> inactive;
+	private transient Array<Particle> active;
+	private transient Array<Particle> inactive;
 	private transient Vector3 quad;
 	private transient float[] vertices;
 	private transient Mesh mesh;
@@ -402,8 +400,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 	public void reloadParticles()
 	{
-		active = new Bag<Particle>(maxParticles);
-		inactive = new Bag<Particle>(maxParticles);
+		active = new Array<Particle>(false, maxParticles);
+		inactive = new Array<Particle>(false, maxParticles);
 
 		for (int i = 0; i < maxParticles; i++)
 		{
@@ -663,7 +661,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 		if (emissionCD < 0)
 		{
-			Particle p = inactive.remove(0);
+			Particle p = inactive.removeIndex(0);
 
 			if (emissionType == 0)
 			{

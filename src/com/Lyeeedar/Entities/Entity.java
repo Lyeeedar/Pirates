@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.Items.Equipment;
@@ -370,6 +371,7 @@ public class Entity {
 		private final Vector3 v = new Vector3();
 
 		public btRigidBody physicsBody;
+		public OcttreeEntry<Entity> octtreeEntry;
 		
 		public float locationCD = 0;
 		
@@ -397,6 +399,7 @@ public class Entity {
 			
 			ray = data.ray;			
 			physicsBody = data.physicsBody;
+			octtreeEntry = data.octtreeEntry;
 		}
 		
 		@Override
@@ -611,6 +614,8 @@ public class Entity {
 			calculateComposed();
 			
 			physicsBody.setWorldTransform(composed);
+			octtreeEntry.box.pos.set(position);
+			octtreeEntry.updatePosition();
 		}
 
 		@Override

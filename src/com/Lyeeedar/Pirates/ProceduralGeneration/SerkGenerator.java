@@ -25,10 +25,10 @@ import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayP
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayTriangle;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.Triangulation;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.SimplexOctaveGenerator;
-import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Dungeon generation inspired by: http://forums.tigsource.com/index.php?topic=5174.msg799973#msg799973
@@ -43,7 +43,7 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	protected static final int LANDMARK_PLACE_ATTEMPTS = 150;
 
-	final Bag<Landmark> landmarks = new Bag<Landmark>();
+	final Array<Landmark> landmarks = new Array<Landmark>();
 	final Building[] buildings = {new Building(15, 15), new Building(5, 5), new Building(10, 10), new Building(10, 5)};
 	AbstractTile[][] tiles;
 	final Random ran;
@@ -144,7 +144,7 @@ public class SerkGenerator implements AbstractGenerator{
 		return array;
 	}
 	
-	public Bag<Landmark> getLandmarks()
+	public Array<Landmark> getLandmarks()
 	{
 		return landmarks;
 	}

@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.Octtree;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.SkyBox;
@@ -54,7 +55,7 @@ public final class GLOBALS {
 	public static float PROGRAM_TIME = 0.0f;
 	
 	public static BulletWorld physicsWorld;
-	public static BulletWorld renderOnlyWorld;
+	public static Octtree<Entity> renderTree;
 	
 	public static SkyBox SKYBOX;
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();

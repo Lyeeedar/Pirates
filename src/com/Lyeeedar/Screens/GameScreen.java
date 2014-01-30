@@ -2,13 +2,14 @@ package com.Lyeeedar.Screens;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
 import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.Octtree;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
@@ -41,23 +42,20 @@ import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D;
-import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
+import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
-import com.Lyeeedar.Util.Bag;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.Lyeeedar.Util.ImageUtils;
-import com.Lyeeedar.Util.Octtree;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
@@ -72,7 +70,6 @@ import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
@@ -87,7 +84,7 @@ public class GameScreen extends AbstractScreen {
 	
 	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
-	private final Bag<Entity> veggies = new Bag<Entity>();
+	private final Array<Entity> veggies = new Array<Entity>();
 	
 	private FollowCam veggieCam;
 	
@@ -107,15 +104,15 @@ public class GameScreen extends AbstractScreen {
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
 		GLOBALS.physicsWorld = bw;
 		
-		veggieTree = new Octtree<Entity>(null, new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000), bw.world);
+		veggieTree = new Octtree<Entity>(null, new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
 		
-		BulletWorld rw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
-		GLOBALS.renderOnlyWorld = rw;
+		Octtree<Entity> rw = new Octtree<Entity>(null, new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
+		GLOBALS.renderTree = rw;
 		
 		//bw.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		//bw.add(cam.aiObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
 		
-		veggieCam = new FollowCam(controls, null, null);
+		veggieCam = new FollowCam(controls, null);
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 				
 		// HEIGHT MAP
@@ -229,6 +226,9 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
+		OcttreeEntry<Entity> entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10));
+		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
+		rw.add(entry);
 		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
 		// END PLAYER
@@ -295,10 +295,14 @@ public class GameScreen extends AbstractScreen {
 			s.setGender(GENDER.MALE);
 			s.addAnimation("move", "move");
 			s.addAnimation("attack_1", "attack");
+			s.updateSpritesheets(ge);
 			
 			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
 			ge.addRenderable(s, new Vector3());
 			
+			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10));
+			pData.octtreeEntry = entry;
+			rw.add(entry);
 			bw.add(new btSphereShape(10), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		}
 		
@@ -313,7 +317,9 @@ public class GameScreen extends AbstractScreen {
 		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
 		for (Entity v : veggies)
 		{
-			v.update(0);			
+			v.update(0);
+			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(10, 50, 10));
+			rw.add(entry);
 			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		}
 		veggies.clear();
@@ -334,7 +340,8 @@ public class GameScreen extends AbstractScreen {
 			btCollisionObject o = new btCollisionObject();
 			o.setCollisionShape(box);
 			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
-			veggieTree.add(v, o);
+			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1));
+			veggieTree.add(oe);
 		}
 		veggies.clear();
 		
@@ -427,7 +434,7 @@ public class GameScreen extends AbstractScreen {
 		if (update) 
 		{
 			renderEntities.clear();
-			GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.renderObject, renderEntities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+			GLOBALS.renderTree.collectAll(renderEntities, cam.frustum, true);
 		}
 		for (Entity e : renderEntities)
 		{
@@ -453,18 +460,12 @@ public class GameScreen extends AbstractScreen {
 		if (update) 
 		{
 			veggies.clear();
-			veggieTree.collectAll(veggies, veggieCam.renderObject);
+			veggieTree.collectAll(veggies, veggieCam.frustum, true);
 		}
 		for (Entity e : veggies)
 		{
 			e.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
 		}
-		
-//		GLOBALS.renderOnlyWorld.getEntitiesCollidingWithObject(veggieCam.renderObject, entities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
-//		for (Entity e : entities)
-//		{
-//			e.queueRenderables(veggieCam, GLOBALS.LIGHTS, delta, batches);
-//		}
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
@@ -504,21 +505,19 @@ public class GameScreen extends AbstractScreen {
 		updateCooldown -= delta;
 		if (updateCooldown < 0)
 		{
-			updateCooldown = 0.5f;
+			updateCooldown = 0.1f;
 			update = true;
 		}
-		
-		
-		//GLOBALS.renderOnlyWorld.update(delta);
-				
+					
 		if (update) 
 		{
 			GLOBALS.physicsWorld.update(delta);
 			aiEntities.clear();
-			GLOBALS.physicsWorld.getEntitiesCollidingWithObject(cam.aiObject, aiEntities, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
+			GLOBALS.renderTree.collectAll(aiEntities, cam.aiBox);
 		}
 		for (Entity e : aiEntities)
 		{
+			if (e.getAI() == null) continue;
 			StatusData sData = e.readOnlyRead(StatusData.class);
 			if (sData.DAMAGED > 0)
 			{
@@ -580,8 +579,6 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.near = 2f;
 		veggieCam.far = 1502f;
 		veggieCam.update();
-		
-		veggieCam.renderObject = FollowCam.createFrustumObject(veggieCam.frustum.planePoints);
 	}
 
 }

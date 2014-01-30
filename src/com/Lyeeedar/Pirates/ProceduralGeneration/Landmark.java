@@ -1,6 +1,7 @@
 package com.Lyeeedar.Pirates.ProceduralGeneration;
 
-import com.Lyeeedar.Util.Bag;
+import com.badlogic.gdx.utils.Array;
+
 
 public class Landmark {
 	int x;
@@ -10,7 +11,7 @@ public class Landmark {
 	int height;
 	float elevation;
 	
-	Bag<int[]> entrances = new Bag<int[]>();
+	Array<int[]> entrances = new Array<int[]>();
 	
 	public Landmark(int x, int y, int width, int height, float elevation)
 	{

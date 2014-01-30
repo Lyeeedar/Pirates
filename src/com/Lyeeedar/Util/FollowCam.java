@@ -2,6 +2,7 @@ package com.Lyeeedar.Util;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
+import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -28,8 +29,7 @@ public class FollowCam extends PerspectiveCamera {
 	public float followDist = 10.0f;
 	public float followHeight = 7.0f;
 	
-	public btGhostObject renderObject;
-	public btGhostObject aiObject;
+	public OcttreeBox aiBox;
 	
 	private final Vector3 lPos = new Vector3();
 	private final Matrix4 tmpMat = new Matrix4();
@@ -38,11 +38,10 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 	
-	public FollowCam(Controls controls, btGhostObject renderObject, btGhostObject aiObject)
+	public FollowCam(Controls controls, OcttreeBox aiBox)
 	{
 		this.controls = controls;
-		this.renderObject = renderObject;
-		this.aiObject = aiObject;
+		this.aiBox = aiBox;
 	}
 	
 	private float Yangle = -15;
@@ -68,8 +67,7 @@ public class FollowCam extends PerspectiveCamera {
 	{
 		tmpVec.set(direction).scl(-1.0f);
 		tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, tmpVec);
-		if (renderObject != null) renderObject.setWorldTransform(tmpMat);
-		if (aiObject != null) aiObject.setWorldTransform(tmpMat);
+		if (aiBox != null) aiBox.pos.set(position);
 		super.update();
 	}
 	
