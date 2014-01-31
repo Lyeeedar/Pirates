@@ -20,22 +20,12 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Pools;
 
 public class ParticleEffect implements Queueable {
-	
-	public final String UID;
-	
+		
 	public final Array<Emitter> emitters = new Array<Emitter>();
 	
 	public final Vector3 pos = new Vector3();
-	public float radius;
 	
 	public ParticleEffect() {
-		this.UID = this.toString()+this.hashCode()+System.currentTimeMillis()+System.nanoTime();
-	}
-
-	public ParticleEffect(float radius) {
-		
-		this.UID = this.toString()+this.hashCode()+System.currentTimeMillis()+System.nanoTime();
-		this.radius = radius;
 	}
 	
 	public void setPosition(Vector3 pos) {
@@ -211,7 +201,7 @@ public class ParticleEffect implements Queueable {
 	
 	public ParticleEffect copy()
 	{
-		ParticleEffect effect = new ParticleEffect(radius);
+		ParticleEffect effect = new ParticleEffect();
 		
 		for (Emitter e : emitters)
 		{
@@ -275,7 +265,7 @@ public class ParticleEffect implements Queueable {
 		for (Emitter e : emitters)
 		{
 			if (!e.emitter.created) e.emitter.create();
-			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius()*2)) continue;
+			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius())) continue;
 	
 			e.emitter.distance = cam.position.dst2(e.emitter.getPosition());
 			

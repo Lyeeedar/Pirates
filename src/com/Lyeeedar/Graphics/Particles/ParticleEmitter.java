@@ -522,6 +522,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 					(1-((1-((float)inactive.size / (float)active.size)))/2));
 		}
 
+		radius = 0;
+		
 		tmpRot.set(cam.view).inv();
 		tmpRot.getValues()[Matrix4.M03] = 0;
 		tmpRot.getValues()[Matrix4.M13] = 0;
@@ -544,6 +546,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				inactive.add(p);
 				continue;
 			}
+			
+			float dst = Vector3.dst(p.x, p.y, p.z, x, y, z);
+			if (dst > radius) radius = dst;
 
 			tmpMat.setToTranslation(p.x, p.y, p.z).mul(tmpRot);
 

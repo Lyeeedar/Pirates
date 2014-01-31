@@ -105,6 +105,8 @@ public class AnimatedModelBatch implements Batch {
 				shaders[current_shader].setUniformf("fog_min", GLOBALS.FOG_MIN);
 				shaders[current_shader].setUniformf("fog_max", GLOBALS.FOG_MAX);
 				shaders[current_shader].setUniformf("u_viewPos", cam.position);
+				shaders[current_shader].setUniformf("u_outline_unlit", 0.1f);
+				shaders[current_shader].setUniformf("u_outline_lit", 0.3f);
 				
 				lights.applyLights(shaders[current_shader]);
 			}
@@ -120,8 +122,8 @@ public class AnimatedModelBatch implements Batch {
 			}
 			
 			shaders[current_shader].setUniformMatrix("u_mm", bi.instance.worldTransform);
-			normal_matrix.set(bi.instance.worldTransform).inv().transpose();
-			shaders[current_shader].setUniformMatrix("u_nm", normal_matrix);
+//			normal_matrix.set(bi.instance.worldTransform);
+//			shaders[current_shader].setUniformMatrix("u_nm", normal_matrix);
 			
 			shaders[current_shader].setUniformf("u_colour", bi.colour);
 
