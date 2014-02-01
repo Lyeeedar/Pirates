@@ -573,7 +573,7 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(-GLOBALS.STEP, GLOBALS.STEP+v.y, 0);
+				tmpVec.set(position).add(0, GLOBALS.STEP+v.y, 0);
 				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
@@ -592,7 +592,7 @@ public class Entity {
 				ray.setCollisionObject(null);
 	            ray.setClosestHitFraction(1f);
 
-				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, -GLOBALS.STEP);
+				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
 				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, v.z);
 				
 				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);

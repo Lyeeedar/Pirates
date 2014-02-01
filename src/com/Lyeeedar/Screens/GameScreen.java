@@ -189,9 +189,9 @@ public class GameScreen extends AbstractScreen {
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), FileUtils.loadTexture("data/textures/skin.png", true), new Vector3(0.7f, 0.7f, 0.7f), "walk");
-		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), FileUtils.loadTexture("data/textures/hair.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), FileUtils.loadTexture("data/textures/sword.png", true), new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin.png", true)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true), FileUtils.loadTexture("data/textures/sword_s.png", true), FileUtils.loadTexture("data/textures/sword_e.png", true)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
 		ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
 		player.addRenderable(am, new Vector3());

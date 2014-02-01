@@ -25,7 +25,7 @@ public class AnimatedModel implements Queueable {
 	
 	public ModelInstance model;
 	public AnimationController anim;
-	public Texture texture;
+	public Texture[] textures;
 	public Vector3 colour = new Vector3();
 	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
 	public String defaultAnim;
@@ -33,7 +33,7 @@ public class AnimatedModel implements Queueable {
 	
 	private final Matrix4 tmpMat = new Matrix4();
 	
-	public AnimatedModel(Model model, Texture texture, Vector3 colour, String defaultAnim)
+	public AnimatedModel(Model model, Texture[] textures, Vector3 colour, String defaultAnim)
 	{
 //		for (Node n : model.nodes)
 //		{
@@ -58,7 +58,7 @@ public class AnimatedModel implements Queueable {
 		{
 			anim.setAnimation(defaultAnim, -1);
 		}
-		this.texture = texture;
+		this.textures = textures;
 		this.colour.set(colour);
 		this.defaultAnim = defaultAnim;
 	}
@@ -85,7 +85,7 @@ public class AnimatedModel implements Queueable {
 	
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, texture, colour);
+		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, textures, colour);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
@@ -158,7 +158,7 @@ public class AnimatedModel implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return new AnimatedModel(model.model, texture, colour, defaultAnim);
+		return new AnimatedModel(model.model, textures, colour, defaultAnim);
 	}
 
 	@Override

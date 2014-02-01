@@ -105,8 +105,6 @@ public class AnimatedModelBatch implements Batch {
 				shaders[current_shader].setUniformf("fog_min", GLOBALS.FOG_MIN);
 				shaders[current_shader].setUniformf("fog_max", GLOBALS.FOG_MAX);
 				shaders[current_shader].setUniformf("u_viewPos", cam.position);
-				shaders[current_shader].setUniformf("u_outline_unlit", 0.1f);
-				shaders[current_shader].setUniformf("u_outline_lit", 0.3f);
 				
 				lights.applyLights(shaders[current_shader]);
 			}
@@ -122,15 +120,16 @@ public class AnimatedModelBatch implements Batch {
 			}
 			
 			shaders[current_shader].setUniformMatrix("u_mm", bi.instance.worldTransform);
-//			normal_matrix.set(bi.instance.worldTransform);
-//			shaders[current_shader].setUniformMatrix("u_nm", normal_matrix);
-			
+			shaders[current_shader].setUniformi("u_texNum", bi.tex.length);
 			shaders[current_shader].setUniformf("u_colour", bi.colour);
 
 			if (textureHash != bi.texHash)
 			{
-				bi.tex.bind(0);
-				shaders[current_shader].setUniformi("u_texture", 0);
+				for (int i = 0; i < bi.tex.length; i++)
+				{
+					bi.tex[i].bind(i);
+					shaders[current_shader].setUniformi("u_texture"+i, i);
+				}
 				textureHash = bi.texHash;
 			}
 						
@@ -171,7 +170,7 @@ public class AnimatedModelBatch implements Batch {
 		return shader;
 	}
 	
-	public void add(ModelInstance model, Texture tex, Vector3 colour)
+	public void add(ModelInstance model, Texture[] tex, Vector3 colour)
 	{
 		if (cam == null) return;
 		
@@ -190,11 +189,11 @@ public class AnimatedModelBatch implements Batch {
 		public Renderable instance;
 		private float dist;
 		public int bone_num;
-		public Texture tex;
+		public Texture[] tex;
 		public Vector3 colour = new Vector3();
 		public int texHash;
 		
-		public BatchedInstance set(Renderable instance, Texture tex, Vector3 colour, float dist)
+		public BatchedInstance set(Renderable instance, Texture[] tex, Vector3 colour, float dist)
 		{
 			bone_num = 0;
 			final int n = instance.mesh.getVertexAttributes().size();
@@ -206,7 +205,7 @@ public class AnimatedModelBatch implements Batch {
 			
 			this.instance = instance;
 			this.tex = tex;
-			this.texHash = tex.hashCode();
+			this.texHash = tex[0].hashCode();
 			this.colour.set(colour);
 			this.dist = dist;
 			return this;

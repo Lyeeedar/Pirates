@@ -163,6 +163,8 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
 		
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+		
 		//Gdx.gl.glEnable(GL20.GL_BLEND);
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
