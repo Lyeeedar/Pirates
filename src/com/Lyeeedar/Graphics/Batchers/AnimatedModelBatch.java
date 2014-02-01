@@ -161,7 +161,7 @@ public class AnimatedModelBatch implements Batch {
 		}
 		
 		String vert = prefix.toString() + Gdx.files.internal("data/shaders/skinned_model.vertex.glsl").readString();
-		String frag = Gdx.files.internal("data/shaders/cellshading_body.fragment.glsl").readString();
+		String frag = Gdx.files.internal("data/shaders/skinned_model.fragment.glsl").readString();
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	

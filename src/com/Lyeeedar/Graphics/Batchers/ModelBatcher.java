@@ -27,7 +27,7 @@ public class ModelBatcher implements Queueable {
 		
 	private final Mesh mesh;
 	private final int primitive_type;
-	private final Texture texture;
+	private final Texture[] textures;
 	private final Vector3 colour = new Vector3();
 	private final boolean transparent;
 	
@@ -49,11 +49,11 @@ public class ModelBatcher implements Queueable {
 		}
 	};
 	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, boolean transparent)
+	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, boolean transparent)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
-		this.texture = texture;
+		this.textures = textures;
 		this.colour.set(colour);
 		this.transparent = transparent;
 	}
@@ -135,9 +135,14 @@ public class ModelBatcher implements Queueable {
 	
 	private void flush(PriorityQueue<BatchedInstance> instances, boolean t)
 	{
-		shader.setUniformi("u_texture", 0);
-		texture.bind(0);
-
+		shader.setUniformi("u_texNum", textures.length);
+		
+		for (int i = 0; i < textures.length; i++)
+		{
+			shader.setUniformi("u_texture"+i, i);
+			textures[i].bind(i);
+		}
+		
 		shader.setUniformf("u_colour", colour);
 		
 		float fade = -1;

@@ -117,7 +117,7 @@ public class Dialogue {
 	public void TEXT3D()
 	{
 		String text = (String) currentAction[1];
-		NinePatch np = new NinePatch(FileUtils.loadTexture("data/skins/texbox.png", true), 11, 49, 14, 48);
+		NinePatch np = new NinePatch(FileUtils.loadTexture("data/skins/texbox.png", true, null, null), 11, 49, 14, 48);
 		decal = ImageUtils.getTextDecal(0, 0, sB, font, np, text);
 		current = entities[(Integer) currentAction[2]];
 		currentAction = (Object[]) currentAction[3];

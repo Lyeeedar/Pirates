@@ -152,7 +152,7 @@ public class InventoryScreen extends AbstractScreen {
 		rattacks = new Table();
 
 		table.setFillParent(true);
-		table.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/inventory.png", true))));
+		table.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/inventory.png", true, null, null))));
 
 		table.add(left).expand().uniform().fill();
 		table.add(right).expand().uniform().fill();
@@ -388,7 +388,7 @@ public class InventoryScreen extends AbstractScreen {
 			
 			stack.add(b).expand().uniform().fill().width(GLOBALS.sclX(200));
 			stack.row();
-			stack.add(new Image(FileUtils.loadTexture("data/textures/swipe.png", true)));
+			stack.add(new Image(FileUtils.loadTexture("data/textures/swipe.png", true, null, null)));
 			stack.row();
 		}
 		Node n = new Node(stack);
@@ -418,7 +418,7 @@ public class InventoryScreen extends AbstractScreen {
 		}
 		b.add(new Label(i.description.name,ls));
 		if (i.num > 1) b.add(new Label("("+i.num+")", ls));
-		b.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/blank.png", true))));
+		b.setBackground(new SpriteDrawable(new Sprite(FileUtils.loadTexture("data/textures/blank.png", true, null, null))));
 		b.setColor(231.0f/255.0f, 185.0f/255.0f, 145.0f/255.0f, 1.0f);
 
 		b.addListener(new InputListener() {
@@ -458,11 +458,11 @@ public class InventoryScreen extends AbstractScreen {
 
 		if (e == null)
 		{
-			image = new Image(FileUtils.loadTexture(fallback, true));
+			image = new Image(FileUtils.loadTexture(fallback, true, null, null));
 		}
 		else
 		{
-			image = new Image(FileUtils.loadTexture(e.description.icon, true));
+			image = new Image(FileUtils.loadTexture(e.description.icon, true, null, null));
 			final Image i = image;
 			image.addListener(new InputListener() {
 				public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -508,7 +508,7 @@ public class InventoryScreen extends AbstractScreen {
 		table.row();
 		Table main = new Table();
 
-		main.add(new Image(FileUtils.loadTexture(desc.icon, true))).width(GLOBALS.sclX(100)).height(GLOBALS.sclY(150)).left().padRight(GLOBALS.sclX(10)).padLeft(GLOBALS.sclX(20));
+		main.add(new Image(FileUtils.loadTexture(desc.icon, true, null, null))).width(GLOBALS.sclX(100)).height(GLOBALS.sclY(150)).left().padRight(GLOBALS.sclX(10)).padLeft(GLOBALS.sclX(20));
 		Label l = new Label(desc.description, ls);
 		l.setWrap(true);
 		main.add(l).width(GLOBALS.sclX(180));

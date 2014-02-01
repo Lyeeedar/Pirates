@@ -98,7 +98,7 @@ public class SocietyGenerator {
 					pData.rotation.mul(building.rot);
 					pData.calculateComposed();
 					Entity house = new Entity(pData);
-					house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true), null, 1), new Vector3());
+					house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true, null, null), null, 1), new Vector3());
 					entities.add(house);
 				}
 			}	

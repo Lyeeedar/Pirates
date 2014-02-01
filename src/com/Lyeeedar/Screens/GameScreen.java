@@ -116,21 +116,10 @@ public class GameScreen extends AbstractScreen {
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 				
 		// HEIGHT MAP
-		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true);
-		sand.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		sand.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		
-		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true);
-		grass.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		grass.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		
-		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true);
-		dirt.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		dirt.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		
-		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true);
-		rock.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		rock.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
+		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
@@ -189,17 +178,17 @@ public class GameScreen extends AbstractScreen {
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin.png", true)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
-		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true), FileUtils.loadTexture("data/textures/sword_s.png", true), FileUtils.loadTexture("data/textures/sword_e.png", true)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true));
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
 		player.addRenderable(am, new Vector3());
 		//player.addRenderable(effect, new Vector3());
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
 		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
-		sword.attach("top", effect, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
+		//sword.attach("top", effect, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
 		am.attach(null, swordTrail, new Matrix4());
 		
 		//sword.attach("top", effect, new Matrix4());
@@ -311,9 +300,8 @@ public class GameScreen extends AbstractScreen {
 		// MAKE TREES
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true);
-		pinetex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, pinetex, new Vector3(1, 1, 1), false), 1, 2500, 50);
+		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, new Vector3(1, 1, 1), false), 1, 2500, 50);
 		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
 		for (Entity v : veggies)
 		{
@@ -329,9 +317,10 @@ public class GameScreen extends AbstractScreen {
 		// MAKE GRASS
 		
 		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
-		Texture shrtex = FileUtils.loadTexture("data/textures/shr2.png", true);
-		shrtex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, shrtex, new Vector3(1, 1, 1), true), 1, 50000, 50);
+		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
+		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
+		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, new Vector3(1, 1, 1), true), 1, 50000, 50);
 		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
 		for (Entity v : veggies)
 		{

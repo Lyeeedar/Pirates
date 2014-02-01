@@ -9,6 +9,8 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -103,7 +105,7 @@ public class FileUtils {
 	 * @param urgent
 	 * @return
 	 */
-	public static Texture loadTexture(String textureName, boolean urgent)
+	public static Texture loadTexture(String textureName, boolean urgent, TextureFilter filter, TextureWrap wrap)
 	{
 		String textureLocation = textureName;
 		
@@ -115,6 +117,8 @@ public class FileUtils {
 		}
 		
 		Texture texture = new Texture(Gdx.files.internal(textureLocation), true);
+		if (filter != null) texture.setFilter(filter, filter);
+		if (wrap != null) texture.setWrap(wrap, wrap);
 		
 		loadedTextures.put(textureLocation, texture);
 		
