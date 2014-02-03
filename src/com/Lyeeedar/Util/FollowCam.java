@@ -31,7 +31,6 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public OcttreeBox aiBox;
 	
-	private final Vector3 lPos = new Vector3();
 	private final Matrix4 tmpMat = new Matrix4();
 	private final Vector3 tmpVec = new Vector3();
 	private final Vector3 tmpVec2 = new Vector3();
@@ -96,15 +95,8 @@ public class FollowCam extends PerspectiveCamera {
 		
 		PositionalData pData = entity.readOnlyRead(PositionalData.class);
 		
-		if (lPos.dst2(pData.position) > 1)
-		{
-			pData.Xrotate(Xangle);
-			Xangle = 0;
-			lPos.set(pData.position);
-		}
-		
 		up.set(pData.up);
-		direction.set(pData.rotation.x, 0, pData.rotation.z).nor();
+		direction.set(GLOBALS.DEFAULT_ROTATION);
 		direction.rotate(Xangle, 0, 1, 0);
 		Yrotate(Yangle);
 

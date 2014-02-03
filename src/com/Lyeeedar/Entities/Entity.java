@@ -263,15 +263,14 @@ public class Entity {
 	{
 		public boolean updateAnimations = false;
 		public String anim = "";
+		public String base_anim = "";
 		public byte animation = 0;
 		public float animate_speed = 1f;
 		public boolean useDirection = true;
 		public boolean animate = true;
 		
 		public boolean animationLock = false;
-		public String playAnim = "";
 		public byte playAnimation = 0;
-		public String nextAnim = "";
 		public byte nextAnimation = 0;
 		public byte startFrame = 0;
 		public byte endFrame = 0;
@@ -285,15 +284,14 @@ public class Entity {
 		{
 			updateAnimations = data.updateAnimations;
 			anim = data.anim;
+			base_anim = data.base_anim;
 			animation = data.animation;
 			animate_speed = data.animate_speed;
 			useDirection = data.useDirection;
 			animate = data.animate;
 			
 			animationLock = data.animationLock;
-			playAnim = data.playAnim;
 			playAnimation = data.playAnimation;
-			nextAnim = data.nextAnim;
 			nextAnimation = data.nextAnimation;
 			startFrame = data.startFrame;
 			endFrame = data.endFrame;

@@ -184,7 +184,7 @@ public class Sprite3D implements Queueable {
 		}
 		if (aData.animationLock)
 		{
-			playAnimationSingle(aData.playAnim, aData.playAnimation, aData.nextAnim, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.listener);
+			playAnimationSingle(aData.anim, aData.playAnimation, this.currentAnimation, aData.nextAnimation, aData.startFrame, aData.endFrame, aData.useDirection, aData.listener);
 		}
 
 		colour.set(aData.colour);

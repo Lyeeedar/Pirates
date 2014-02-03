@@ -148,6 +148,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			playAnimation(aData, attacks[animationStage].animationName);
 			aData.listener = this;
 			aData.animate_speed = attacks[animationStage].speed;
+			aData.base_anim = "attack";
 			entity.writeData(aData, AnimationData.class);
 			
 			needsUpdate = false;
@@ -160,6 +161,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			playAnimation(aData, attacks[0].animationName);
 			aData.listener = this;
 			aData.animate_speed = attacks[0].speed;
+			aData.base_anim = "attack";
 			entity.writeData(aData, AnimationData.class);
 			
 			entity.readData(pData, PositionalData.class);

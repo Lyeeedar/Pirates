@@ -172,22 +172,23 @@ public class GameScreen extends AbstractScreen {
 		// MAKE PLAYER
 		
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-		player.setAI(new AI_Player_Control(controls));
+		player.setAI(new AI_Player_Control(controls, cam));
 		Sprite3D s = new Sprite3D(8, 8, 4, 4);
 		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");
 		s.addAnimation("attack_1", "attack", "_1");
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+		System.out.println(sword.model.model.meshes.get(0).getNumVertices());
 		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
 		player.addRenderable(am, new Vector3());
 		//player.addRenderable(effect, new Vector3());
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
+		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
 		//sword.attach("top", effect, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
 		am.attach(null, swordTrail, new Matrix4());
 		

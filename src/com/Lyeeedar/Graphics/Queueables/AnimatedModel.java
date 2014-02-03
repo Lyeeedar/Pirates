@@ -106,15 +106,23 @@ public class AnimatedModel implements Queueable {
 		}
 		
 		AnimationData aData = source.readOnlyRead(AnimationData.class);
-		if(aData.animationLock && model.getAnimation(aData.playAnim) != null)
+		if(aData.animationLock && model.getAnimation(aData.anim) != null)
 		{
-			anim.animate(aData.playAnim, 1, aData.animate_speed, aData.listener, 0.1f);
+			anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);
 			currentAnim = "";
 		}
-		else if (!currentAnim.equals(aData.anim) && model.getAnimation(aData.anim) != null)
+		else if (!currentAnim.equals(aData.anim))
 		{
-			anim.animate(aData.anim, -1, aData.animate_speed, aData.listener, 0.1f);
-			currentAnim = aData.anim;
+			if (model.getAnimation(aData.anim) != null)
+			{
+				anim.animate(aData.anim, -1, aData.animate_speed, aData.listener, 0.1f);
+				currentAnim = aData.anim;
+			}
+			else if (!currentAnim.equals(aData.base_anim) && model.getAnimation(aData.base_anim) != null)
+			{
+				anim.animate(aData.base_anim, -1, aData.animate_speed, aData.listener, 0.1f);
+				currentAnim = aData.base_anim;
+			}
 		}
 		
 		for (ATTACHED_MODEL am : attachedModels)

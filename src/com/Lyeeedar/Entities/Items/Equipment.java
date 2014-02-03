@@ -31,9 +31,8 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 		if (animationName == null) return;
 		
 		aData.animationLock = true;
-		aData.playAnim = animationName;
+		aData.anim = animationName;
 		aData.playAnimation = 0;
-		aData.nextAnim = aData.anim;
 		aData.nextAnimation = aData.animation;
 		aData.startFrame = START_FRAME;
 		aData.endFrame = END_FRAME;

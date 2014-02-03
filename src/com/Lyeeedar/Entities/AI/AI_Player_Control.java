@@ -9,12 +9,15 @@ import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
+import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.math.Vector3;
 
 public class AI_Player_Control extends AI_Package {
 	
 	private final Controls controls;
+	private final FollowCam cam;
 	private boolean jump = false;
 	
 	private final PositionalData pData = new PositionalData();
@@ -24,11 +27,15 @@ public class AI_Player_Control extends AI_Package {
 		
 	boolean activatecd = false;
 	
-	public AI_Player_Control(Controls controls)
+	private final Vector3 nextRot = new Vector3();
+	private final Vector3 tmpVec = new Vector3();
+	
+	public AI_Player_Control(Controls controls, FollowCam cam)
 	{
 		super();
 		
 		this.controls = controls;
+		this.cam = cam;
 	}
 
 	@Override
@@ -53,11 +60,42 @@ public class AI_Player_Control extends AI_Package {
 					speed = 1500;
 				}
 				
-				if (controls.up()) pData.forward_backward(speed);
-				else if (controls.down()) pData.forward_backward(-speed);
+				nextRot.set(0, 0, 0);
 				
-				if (controls.left()) pData.left_right(speed);
-				else if (controls.right()) pData.left_right(-speed);
+				if (controls.up()) 
+				{
+					tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+					if (nextRot.isZero()) nextRot.add(tmpVec);
+					else nextRot.add(tmpVec).scl(0.5f);
+				}
+				if (controls.down()) 
+				{
+					tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+					if (nextRot.isZero()) nextRot.add(tmpVec);
+					else nextRot.add(tmpVec).scl(0.5f);
+				}
+				
+				if (controls.left()) 
+				{
+					tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+					tmpVec.crs(GLOBALS.DEFAULT_UP);
+					if (nextRot.isZero()) nextRot.add(tmpVec);
+					else nextRot.add(tmpVec).scl(0.5f);
+				}
+				if (controls.right()) 
+				{
+					tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+					tmpVec.crs(GLOBALS.DEFAULT_UP);
+					if (nextRot.isZero()) nextRot.add(tmpVec);
+					else nextRot.add(tmpVec).scl(0.5f);
+				}
+				
+				if (!nextRot.isZero())
+				{
+					pData.rotation.set(nextRot.nor());
+					pData.up.set(GLOBALS.DEFAULT_UP);
+					pData.forward_backward(speed);
+				}
 				
 				if (controls.jump() && !jump) {
 					pData.velocity.y = 70;
@@ -102,6 +140,7 @@ public class AI_Player_Control extends AI_Package {
 				aData.animate = false;
 				aData.animate_speed = 1f;
 				aData.anim = "fall";
+				aData.base_anim = "idle";
 			}
 			else if (pData.location == LOCATION.SEA)
 			{
@@ -110,20 +149,23 @@ public class AI_Player_Control extends AI_Package {
 				aData.animate = true;
 				aData.animate_speed = 1f;
 				aData.anim = "swim";
+				aData.base_anim = "idle";
 			}
-			else if (controls.up() || controls.down() || controls.left() || controls.right()) {
+			else if (!nextRot.isZero()) {
 				if (aData.animate) aData.updateAnimations = true;
 				else aData.updateAnimations = false;
 				aData.animate = true;
 				aData.animate_speed = 1f;
 				if (!controls.sprint()) aData.anim = "run";
 				else aData.anim = "walk";
+				aData.base_anim = "idle";
 			}
 			else {
 				if (!aData.animate) aData.updateAnimations = true;
 				else aData.updateAnimations = false;
 				aData.animate = false;
 				aData.anim = "idle";
+				aData.base_anim = "idle";
 				aData.animate_speed = 0.5f;
 			}
 
