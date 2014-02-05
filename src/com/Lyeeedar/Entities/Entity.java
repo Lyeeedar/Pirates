@@ -25,6 +25,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
+import com.badlogic.gdx.utils.Array;
 
 public class Entity {
 	
@@ -791,7 +792,9 @@ public class Entity {
 		public int currentHealth = MAX_HEALTH;
 		public int damage = 0;
 		
-		public ArrayList<String> factions = new ArrayList<String>();
+		public int speed = 10;
+		
+		public Array<String> factions = new Array<String>(false, 16);
 		
 		@Override
 		public void write(StatusData data) {
@@ -803,6 +806,24 @@ public class Entity {
 			damage = data.damage;
 			factions.clear();
 			factions.addAll(data.factions);
+			
+			speed = data.speed;
+		}
+		
+		public boolean isAlly(StatusData other)
+		{
+			boolean ally = false;
+			
+			for (String faction : other.factions)
+			{
+				if (factions.contains(faction, false))
+				{
+					ally = true;
+					break;
+				}
+			}
+			
+			return ally;
 		}
 		
 		public void applyDamage()

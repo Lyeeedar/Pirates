@@ -2,7 +2,8 @@ package com.Lyeeedar.Util;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
-import com.Lyeeedar.Collision.Octtree.OcttreeBox;
+import com.Lyeeedar.Collision.Octtree.OcttreeFrustum;
+import com.Lyeeedar.Collision.Octtree.OcttreeShape;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -17,8 +18,6 @@ import com.badlogic.gdx.physics.bullet.collision.btConvexHullShape;
 import com.badlogic.gdx.physics.bullet.collision.btGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
-import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
-import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
 
 public class FollowCam extends PerspectiveCamera {
 	
@@ -29,7 +28,8 @@ public class FollowCam extends PerspectiveCamera {
 	public float followDist = 10.0f;
 	public float followHeight = 7.0f;
 	
-	public OcttreeBox aiBox;
+	public OcttreeShape aiShape;
+	public OcttreeFrustum renderFrustum;
 	
 	private final Matrix4 tmpMat = new Matrix4();
 	private final Vector3 tmpVec = new Vector3();
@@ -37,10 +37,11 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 	
-	public FollowCam(Controls controls, OcttreeBox aiBox)
+	public FollowCam(Controls controls, OcttreeShape aiShape)
 	{
 		this.controls = controls;
-		this.aiBox = aiBox;
+		this.aiShape = aiShape;
+		this.renderFrustum = new OcttreeFrustum(this);
 	}
 	
 	private float Yangle = -15;
@@ -66,7 +67,11 @@ public class FollowCam extends PerspectiveCamera {
 	{
 		tmpVec.set(direction).scl(-1.0f);
 		tmpMat.setToTranslation(position).rotate(GLOBALS.DEFAULT_ROTATION, tmpVec);
-		if (aiBox != null) aiBox.pos.set(position);
+		if (aiShape != null) 
+		{
+			aiShape.setPosition(position);
+			aiShape.setRotation(direction);
+		}
 		super.update();
 	}
 	

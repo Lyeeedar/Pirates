@@ -12,7 +12,6 @@ package com.Lyeeedar.Screens;
 
 import java.util.HashMap;
 
-import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
@@ -20,8 +19,8 @@ import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.CellShadingModelBatch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
-import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
+import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
@@ -32,25 +31,14 @@ import com.Lyeeedar.Util.DiscardCameraGroupStrategy;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
-import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
  
 
@@ -95,7 +83,7 @@ public abstract class AbstractScreen implements Screen {
 	{
 		this.game = game;
 		controls = new Controls(GLOBALS.ANDROID);
-			
+		
 		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null));
 		
 		font = new BitmapFont();

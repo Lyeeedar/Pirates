@@ -106,6 +106,7 @@ public class AnimatedModel implements Queueable {
 		}
 		
 		AnimationData aData = source.readOnlyRead(AnimationData.class);
+		colour.set(aData.colour);
 		if(aData.animationLock && model.getAnimation(aData.anim) != null)
 		{
 			anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);

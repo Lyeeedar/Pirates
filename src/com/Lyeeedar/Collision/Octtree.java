@@ -2,12 +2,16 @@ package com.Lyeeedar.Collision;
 
 import com.Lyeeedar.Collision.Octtree.OcttreeBox.CollisionType;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
 public class Octtree <E> {
+	
+	public static final int MASK_RENDER = 1 << 1;
+	public static final int MASK_AI = 1 << 2;
 	
 	private static final int CASCADE_THRESHOLD = 10;
 	
@@ -101,7 +105,7 @@ public class Octtree <E> {
 		{
 			Octtree<E> o = children[i];
 			
-			if (o.box.isIntersecting(e.box)) 
+			if (o.box.isIntersecting(e.box) != CollisionType.OUTSIDE) 
 			{
 				collisions++;
 				chosen = o;
@@ -124,32 +128,15 @@ public class Octtree <E> {
 		}
 	}
 	
-	public void collectAll(Array<E> output, OcttreeBox box)
+	public void collectAll(Array<E> output, OcttreeShape shape, boolean check, int bitmask)
 	{		
 		for (int i = 0; i < elements.size; i++)
 		{
 			OcttreeEntry<E> oe = elements.get(i);
+			
+			if (!oe.compareBitmask(bitmask)) continue;
 
-			if (oe.box.isIntersecting(box)) 
-			{
-				output.add(oe.e);
-			}
-		}
-		
-		if (children != null) for (Octtree<E> o : children)
-		{
-			if (o.box.isIntersecting(box))
-				o.collectAll(output, box);
-		}
-	}
-	
-	public void collectAll(Array<E> output, Frustum frustum, boolean check)
-	{		
-		for (int i = 0; i < elements.size; i++)
-		{
-			OcttreeEntry<E> oe = elements.get(i);
-
-			CollisionType collision = check ? oe.box.isIntersecting(frustum) : CollisionType.INSIDE;
+			CollisionType collision = check ? shape.isIntersecting(oe.box) : CollisionType.INSIDE;
 			if (collision != CollisionType.OUTSIDE) 
 			{
 				output.add(oe.e);
@@ -158,11 +145,11 @@ public class Octtree <E> {
 		
 		if (children != null) for (Octtree<E> o : children)
 		{
-			CollisionType collision = check ? o.box.isIntersecting(frustum) : CollisionType.INSIDE;
+			CollisionType collision = check ? shape.isIntersecting(o.box) : CollisionType.INSIDE;
 			if (collision == CollisionType.INSIDE)
-				o.collectAll(output, frustum, false);
+				o.collectAll(output, shape, false, bitmask);
 			else if (collision == CollisionType.INTERSECT)
-				o.collectAll(output, frustum, true);
+				o.collectAll(output, shape, true, bitmask);
 		}
 	}
 	
@@ -185,21 +172,23 @@ public class Octtree <E> {
 		return new Octtree<E>(parent, min, max);
 	}
 	
-	public OcttreeEntry<E> createEntry(E e, Vector3 pos, Vector3 extents)
+	public OcttreeEntry<E> createEntry(E e, Vector3 pos, Vector3 extents, int bitmask)
 	{
 		OcttreeBox box = new OcttreeBox(pos, extents, null);
-		return new OcttreeEntry<E>(e, box);
+		return new OcttreeEntry<E>(e, box, bitmask);
 	}
 	
 	public static class OcttreeEntry<E>
 	{
 		public E e;
 		public OcttreeBox box;
+		public int bitmask;
 		
-		public OcttreeEntry(E e, OcttreeBox box)
+		public OcttreeEntry(E e, OcttreeBox box, int bitmask)
 		{
 			this.e = e;
 			this.box = box;
+			this.bitmask = bitmask;
 		}
 		
 		public void updatePosition()
@@ -211,9 +200,20 @@ public class Octtree <E> {
 			root.add(this);
 		}
 		
+		public boolean compareBitmask(int mask)
+		{
+			return (bitmask & mask) > 0;
+		}
 	}
 	
-	public static class OcttreeBox
+	public static interface OcttreeShape
+	{
+		public CollisionType isIntersecting(OcttreeBox box);
+		public void setPosition(Vector3 pos);
+		public void setRotation(Vector3 rot);
+	}
+	
+	public static class OcttreeBox implements OcttreeShape
 	{
 		public enum CollisionType
 		{
@@ -227,6 +227,8 @@ public class Octtree <E> {
 		
 		public Octtree parent;
 		
+		public int lastFail = 0;
+		
 		public OcttreeBox(Vector3 pos, Vector3 extents, Octtree<?> parent)
 		{
 			this.pos.set(pos);
@@ -234,7 +236,7 @@ public class Octtree <E> {
 			this.parent = parent;
 		}
 		
-		public boolean isIntersecting(OcttreeBox box)
+		public CollisionType isIntersecting(OcttreeBox box)
 		{
 			float lx = Math.abs(this.pos.x - box.pos.x);
 			float sumx = (this.extents.x) + (box.extents.x); 
@@ -245,27 +247,48 @@ public class Octtree <E> {
 			float lz = Math.abs(this.pos.z - box.pos.z);
 			float sumz = (this.extents.z) + (box.extents.z); 
 			
-			return (lx <= sumx && ly <= sumy && lz <= sumz);  
+			return (lx <= sumx && ly <= sumy && lz <= sumz) ? CollisionType.INTERSECT : CollisionType.OUTSIDE;  
+		}
+
+		@Override
+		public void setPosition(Vector3 pos)
+		{
+			this.pos.set(pos);
+		}
+
+		@Override
+		public void setRotation(Vector3 rot)
+		{
+
+		}
+	}
+	
+	public static class OcttreeFrustum implements OcttreeShape
+	{
+		PerspectiveCamera frustum;
+		
+		public OcttreeFrustum(PerspectiveCamera frustum)
+		{
+			this.frustum = frustum;
 		}
 		
-		private int lastFail = 0;
-		
-		public CollisionType isIntersecting(Frustum frustum)
+		@Override
+		public CollisionType isIntersecting(OcttreeBox box)
 		{
 			float m, n; 
-			int i = lastFail;
+			int i = box.lastFail;
 			CollisionType result = CollisionType.INSIDE;
 
 			while (true)
 			{
-				Plane p = frustum.planes[i];
+				Plane p = frustum.frustum.planes[i];
 				
-				m = (pos.x * p.normal.x) + (pos.y * p.normal.y) + (pos.z * p.normal.z) + p.d;
-				n = (extents.x *Math.abs(p.normal.x)) + (extents.y * Math.abs(p.normal.y)) + (extents.z * Math.abs(p.normal.z));
+				m = (box.pos.x * p.normal.x) + (box.pos.y * p.normal.y) + (box.pos.z * p.normal.z) + p.d;
+				n = (box.extents.x *Math.abs(p.normal.x)) + (box.extents.y * Math.abs(p.normal.y)) + (box.extents.z * Math.abs(p.normal.z));
 
 				if (m + n < 0) 
 				{
-					lastFail = i;
+					box.lastFail = i;
 					return CollisionType.OUTSIDE;
 				}
 				if (m - n < 0)
@@ -275,9 +298,24 @@ public class Octtree <E> {
 
 				i++;
 				if (i == 6) i = 0;
-				if (i == lastFail) break;
+				if (i == box.lastFail) break;
 			} 
 			return result;
 		}
+
+		@Override
+		public void setPosition(Vector3 pos)
+		{
+			frustum.position.set(pos);
+			frustum.update();
+		}
+
+		@Override
+		public void setRotation(Vector3 rot)
+		{
+			frustum.direction.set(rot);
+			frustum.update();
+		}
 	}
+	
 }

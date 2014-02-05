@@ -22,6 +22,18 @@ public abstract class Selector extends BehaviourTreeNode
 		nodes.sort();
 	}
 	
+	public void setDataTree(String key, Object value)
+	{
+		if (parent == null)
+		{
+			setData(key, value);
+		}
+		else
+		{
+			parent.setDataTree(key, value);
+		}
+	}
+	
 	@Override
 	public void setData(String key, Object value)
 	{

@@ -21,7 +21,7 @@ public class BehaviourTree implements AI
 	@Override
 	public void update(float delta)
 	{
-		root.setData("delta", delta);
+		setData("delta", delta);
 		root.evaluate();
 	}
 	
@@ -39,7 +39,7 @@ public class BehaviourTree implements AI
 	}
 	public static abstract class BehaviourTreeNode implements Comparable<BehaviourTreeNode>
 	{
-		public BehaviourTreeNode parent;
+		public Selector parent;
 		public int priority;
 		public BehaviourTreeState state;
 		
@@ -63,12 +63,18 @@ public class BehaviourTree implements AI
 		{
 			data.put(key, value);
 		}
+		
+		public Object getData(String key, Object fallback)
+		{
+			Object o = data.get(key);
+			return o != null ? o : fallback;
+		}
 	}
 	
-	public static abstract class Condition extends BehaviourTreeNode
+	public static abstract class Conditional extends BehaviourTreeNode
 	{
 
-		public Condition()
+		public Conditional()
 		{
 			super();
 		}
