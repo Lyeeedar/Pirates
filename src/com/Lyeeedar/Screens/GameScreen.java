@@ -23,8 +23,13 @@ import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_RotOnly;
 import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
+import com.Lyeeedar.Entities.AI.ActionPlayerControl;
 import com.Lyeeedar.Entities.AI.Action_AISwapper;
 import com.Lyeeedar.Entities.AI.Action_Dialogue;
+import com.Lyeeedar.Entities.AI.BehaviourTree;
+import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
+import com.Lyeeedar.Entities.AI.Selector.PrioritySelector;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
@@ -172,7 +177,30 @@ public class GameScreen extends AbstractScreen {
 		// MAKE PLAYER
 		
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-		player.setAI(new AI_Player_Control(controls, cam));
+		
+		PrioritySelector pselect = new PrioritySelector();
+		BehaviourTree btree = new BehaviourTree(pselect);
+		pselect.addNode(new ActionPlayerControl(controls, cam), 0);
+		pselect.addNode(new Action(){
+			@Override
+			public BehaviourTreeState evaluate()
+			{
+				if (GLOBALS.LIGHTS.directionalLight.direction.y > 0)
+				{
+					return BehaviourTreeState.FAILED;
+				}
+				return BehaviourTreeState.FINISHED;
+			}
+
+			@Override
+			public void cancel()
+			{
+				
+			}
+			}, 1);
+		
+		//player.setAI(new AI_Player_Control(controls, cam));
+		player.setAI(btree);
 		Sprite3D s = new Sprite3D(8, 8, 4, 4);
 		s.setGender(GENDER.MALE);
 		s.addAnimation("move", "move");

@@ -1,0 +1,86 @@
+package com.Lyeeedar.Entities.AI;
+
+import java.util.HashMap;
+
+import com.Lyeeedar.Entities.Entity.AI;
+
+public class BehaviourTree implements AI
+{
+	private final Selector root;
+	
+	public BehaviourTree(Selector root)
+	{
+		this.root = root;
+	}
+	
+	public void setData(String key, Object value)
+	{
+		root.setData(key, value);
+	}
+	
+	@Override
+	public void update(float delta)
+	{
+		root.setData("delta", delta);
+		root.evaluate();
+	}
+	
+	@Override
+	public void dispose()
+	{
+		
+	}
+	
+	public enum BehaviourTreeState
+	{
+		FAILED,
+		FINISHED,
+		RUNNING
+	}
+	public static abstract class BehaviourTreeNode implements Comparable<BehaviourTreeNode>
+	{
+		public BehaviourTreeNode parent;
+		public int priority;
+		public BehaviourTreeState state;
+		
+		protected final HashMap<String, Object> data = new HashMap<String, Object>();
+		
+		public abstract BehaviourTreeState evaluate();
+		public abstract void cancel();
+		
+		public BehaviourTreeNode()
+		{
+
+		}
+		
+		@Override
+		public int compareTo(BehaviourTreeNode o)
+		{
+			return o.priority-priority;
+		}
+		
+		public void setData(String key, Object value)
+		{
+			data.put(key, value);
+		}
+	}
+	
+	public static abstract class Condition extends BehaviourTreeNode
+	{
+
+		public Condition()
+		{
+			super();
+		}
+		
+	}
+	public static abstract class Action extends BehaviourTreeNode
+	{
+
+		public Action()
+		{
+			super();
+		}
+		
+	}
+}

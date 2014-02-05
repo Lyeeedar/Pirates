@@ -28,11 +28,11 @@ public class Action_AISwapper extends ActivationAction {
 			activator = this.activator;
 		}
 		
-		AI_Package tmp = activator.getAI();
+		AI_Package tmp = (AI_Package) activator.getAI();
 		activator.setAI(swapr);
 		swapr = tmp;
 		
-		tmp = activatee.getAI();
+		tmp = (AI_Package) activatee.getAI();
 		activatee.setAI(swape);
 		swape = tmp;
 	}

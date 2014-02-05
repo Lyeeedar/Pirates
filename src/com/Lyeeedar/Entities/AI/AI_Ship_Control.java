@@ -30,7 +30,7 @@ public class AI_Ship_Control extends AI_Package {
 	}
 
 	@Override
-	public void update(float delta, Entity entity) {
+	public void update(float delta) {
 		
 		entity.readData(entityPos, PositionalData.class);
 		entity.readData(entityAnim, AnimationData.class);

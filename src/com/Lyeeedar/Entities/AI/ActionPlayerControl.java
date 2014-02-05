@@ -1,12 +1,16 @@
 package com.Lyeeedar.Entities.AI;
 
+import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
+import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.FollowCam;
@@ -14,10 +18,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.math.Vector3;
 
-public class AI_Player_Control extends AI_Package {
-	
+public class ActionPlayerControl extends Action
+{
 	private final Controls controls;
 	private final FollowCam cam;
+	
 	private boolean jump = false;
 	
 	private final PositionalData pData = new PositionalData();
@@ -30,16 +35,67 @@ public class AI_Player_Control extends AI_Package {
 	private final Vector3 nextRot = new Vector3();
 	private final Vector3 tmpVec = new Vector3();
 	
-	public AI_Player_Control(Controls controls, FollowCam cam)
+	public ActionPlayerControl(Controls controls, FollowCam cam)
 	{
 		super();
 		
 		this.controls = controls;
 		this.cam = cam;
 	}
+	
+	protected float damageTime = 0.3f;
+	protected float damageCD = 0f;
+	
+	protected float deathTime = 1.5f;
+	protected float deathCD = deathTime;
+	
+	protected void evaluateDamage(StatusData sData, AnimationData aData, float delta)
+	{
+		if (sData.damage != 0)
+		{
+			sData.applyDamage();
+			damageCD = damageTime;
+		}
+		
+		damageCD -= delta;
+		if (damageCD > 0.0f)
+		{
+			aData.colour.set(1.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			aData.colour.set(1.0f, 1.0f, 1.0f);
+		}
+		
+		if (sData.currentHealth <= 0) 
+		{
+			aData.updateAnimations = true;
+			aData.animate = false;
+			if (deathCD > 0) deathCD -= delta;
+
+			aData.alpha = deathCD/deathTime;
+			
+			if (deathCD < 0) sData.ALIVE = false;
+		}
+	}
+	
+	protected void use(Equipment_Slot slot, EquipmentData eData)
+	{
+		Equipment<?> e = eData.getEquipment(slot);
+		if (e != null) e.use();
+	}
+	
+	protected void stopUsing(Equipment_Slot slot, EquipmentData eData)
+	{
+		Equipment<?> e = eData.getEquipment(slot);
+		if (e != null) e.stopUsing();
+	}
 
 	@Override
-	public void update(float delta) {
+	public BehaviourTreeState evaluate()
+	{
+		Entity entity = (Entity) data.get("entity");
+		float delta = (Float) data.get("delta");
 		
 		entity.readData(pData, PositionalData.class);
 		entity.readData(aData, AnimationData.class);
@@ -114,18 +170,6 @@ public class AI_Player_Control extends AI_Package {
 			{
 				stopUsing(Equipment_Slot.RARM, eData);
 			}
-
-//			if (activatecd && Gdx.input.isKeyPressed(Keys.E))
-//			{
-//				box.center.set(entityPos.rotation).scl(2).add(entityPos.position);
-//				Entity e = activate(box, entityPos.graph, list, entityPos.position, pData);
-//				if (e != null) e.activate(entity);
-//				activatecd = false;
-//			}
-//			else if (!Gdx.input.isKeyPressed(Keys.E))
-//			{
-//				activatecd = true;
-//			}
 			
 			// Update animations
 			
@@ -178,11 +222,14 @@ public class AI_Player_Control extends AI_Package {
 		entity.writeData(aData, AnimationData.class);
 		entity.writeData(eData, EquipmentData.class);
 		entity.writeData(sData, StatusData.class);
+		return BehaviourTreeState.FINISHED;
 	}
 
 	@Override
-	public void dispose() {
+	public void cancel()
+	{
 		// TODO Auto-generated method stub
 		
 	}
+
 }

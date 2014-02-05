@@ -30,7 +30,7 @@ public class AI_Follow extends AI_Package {
 	}
 
 	@Override
-	public void update(float delta, Entity entity) {
+	public void update(float delta) {
 		
 		entity.readData(entityPos, PositionalData.class);	
 		if (follow != null) follow.readData(followPos, PositionalData.class);

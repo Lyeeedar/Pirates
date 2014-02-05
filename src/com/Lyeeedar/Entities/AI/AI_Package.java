@@ -1,17 +1,20 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.AI;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Items.Equipment;
 
-public abstract class AI_Package {
+public abstract class AI_Package implements AI {
 	
 	public AI_Package()
 	{
 	}
+	
+	public Entity entity;
 	
 	protected float damageTime = 0.3f;
 	protected float damageCD = 0f;
@@ -87,6 +90,6 @@ public abstract class AI_Package {
 		if (e != null) e.stopUsing();
 	}
 	
-	public abstract void update(float delta, Entity entity);
+	public abstract void update(float delta);
 	public abstract void dispose();
 }

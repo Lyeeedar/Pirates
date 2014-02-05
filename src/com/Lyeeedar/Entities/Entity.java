@@ -10,6 +10,7 @@ import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.AI.AI_Package;
 import com.Lyeeedar.Entities.AI.ActivationAction;
+import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
@@ -47,7 +48,13 @@ public class Entity {
 	
 	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
 	
-	private AI_Package ai;
+	private AI ai;
+	public static interface AI
+	{
+		public void update(float delta);
+		public void dispose();
+	}
+	
 	private final EntityRunnable runnable = new EntityRunnable(this);
 	private final EntityRenderables renderables = new EntityRenderables();
 	private ActivationAction aa;
@@ -90,18 +97,27 @@ public class Entity {
 		renderables.queue(delta, cam, batches);
 	}
 	
-	public void setAI(AI_Package ai)
+	public void setAI(AI ai)
 	{
 		this.ai = ai;
+		
+		if (ai instanceof AI_Package)
+		{
+			((AI_Package) ai).entity = this;
+		}
+		else if (ai instanceof BehaviourTree)
+		{
+			((BehaviourTree) ai).setData("entity", this);
+		}
 	}
 	
-	public AI_Package getAI() {
+	public AI getAI() {
 		return ai;
 	}
 	
 	public void update(float delta)
 	{	
-		if (ai != null) ai.update(delta, this);
+		if (ai != null) ai.update(delta);
 		if (entityData.containsKey(EquipmentData.class)) ((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 	}
 	

@@ -14,7 +14,7 @@ public class AI_Simple extends AI_Package {
 	private final PositionalData entityPos = new PositionalData();
 
 	@Override
-	public void update(float delta, Entity entity) {
+	public void update(float delta) {
 		entity.readData(entityPos, PositionalData.class);
 		
 		entityPos.applyVelocity(delta);
