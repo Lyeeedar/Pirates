@@ -24,20 +24,26 @@ import com.Lyeeedar.Entities.AI.AI_Player_Control;
 import com.Lyeeedar.Entities.AI.AI_RotOnly;
 import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
+import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
 import com.Lyeeedar.Entities.AI.ActionFindClosestVisible;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
 import com.Lyeeedar.Entities.AI.ActionMoveToClosest;
 import com.Lyeeedar.Entities.AI.ActionPlayerControl;
+import com.Lyeeedar.Entities.AI.ActionRandomWalk;
 import com.Lyeeedar.Entities.AI.ActionUpdateAnimations;
+import com.Lyeeedar.Entities.AI.ActionWait;
 import com.Lyeeedar.Entities.AI.Action_AISwapper;
 import com.Lyeeedar.Entities.AI.Action_Dialogue;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Conditional;
+import com.Lyeeedar.Entities.AI.ConditionalAnimationLock;
 import com.Lyeeedar.Entities.AI.Selector;
+import com.Lyeeedar.Entities.AI.Selector.ConcurrentSelector;
 import com.Lyeeedar.Entities.AI.Selector.PrioritySelector;
+import com.Lyeeedar.Entities.AI.Selector.RandomSelector;
 import com.Lyeeedar.Entities.AI.Selector.SequenceSelector;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
@@ -187,8 +193,8 @@ public class GameScreen extends AbstractScreen {
 		// MAKE PLAYER
 		
 		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-		
-		Selector sselect = new SequenceSelector();
+
+		Selector sselect = new ConcurrentSelector();
 		BehaviourTree btree = new BehaviourTree(sselect);
 		sselect.addNode(new ActionUpdateAnimations(), 0);
 		sselect.addNode(new ActionEvaluateDamage(), 1);
@@ -196,14 +202,9 @@ public class GameScreen extends AbstractScreen {
 		
 		Selector pselect = new PrioritySelector();
 		pselect.addNode(new ActionPlayerControl(controls, cam), 0);
+		pselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 1);
 		
-		Selector sselect2 = new SequenceSelector();
-		sselect2.addNode(new ActionMoveToClosest(false), 0);
-		sselect2.addNode(new ActionFindClosestVisible(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null), true), 1);
-		
-		pselect.addNode(sselect2, 1);
-		
-		sselect.addNode(pselect, 3);
+		sselect.addNode(pselect, 2);
 		
 		//player.setAI(new AI_Player_Control(controls, cam));
 		player.setAI(btree);
@@ -247,7 +248,7 @@ public class GameScreen extends AbstractScreen {
 				new ATTACK_STAGE("attack1_2", 2.0f, 80, 10, 7),
 				new ATTACK_STAGE("attack1_2", 2.2f, 90, 10, -1)
 		};
-		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, sword, swordTrail));
+		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
 		OcttreeEntry<Entity> entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
@@ -304,16 +305,41 @@ public class GameScreen extends AbstractScreen {
 		for (int i = 0; i < 200; i++)
 		{
 			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-			AI_Follow ai = new AI_Follow();
-			ai.setFollowTarget(player);
-			ge.setAI(ai);
+			
+			Selector gsselect = new ConcurrentSelector();
+			BehaviourTree gbtree = new BehaviourTree(gsselect);
+			gsselect.addNode(new ActionUpdateAnimations(), 0);
+			gsselect.addNode(new ActionEvaluateDamage(), 1);
+			gsselect.addNode(new ActionGravityAndMovement(), 2);
+			
+			Selector gpselect = new PrioritySelector();
+			Selector grselect = new RandomSelector(new Random());
+			grselect.addNode(new ActionWait(1), 0);
+			grselect.addNode(new ActionRandomWalk(new Random(), 1), 1);
+			gpselect.addNode(grselect, 0);
+			
+			Selector gsselect2 = new SequenceSelector();
+			
+			Selector gpselect2 = new PrioritySelector();
+			
+			gpselect2.addNode(new ActionMoveToClosest(true), 0);
+			gpselect2.addNode(new ActionAttack(15, false, true), 1);
+			gpselect2.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 2);
+			
+			gsselect2.addNode(gpselect2, 0);
+			
+			gsselect2.addNode(new ActionFindClosestVisible(new OcttreeBox(new Vector3(), new Vector3(50, 50, 50), null), true), 1);
+			
+			gpselect.addNode(gsselect2, 1);
+			
+			gsselect.addNode(gpselect, 3);
+			
+			//AI_Follow ai = new AI_Follow();
+			//ai.setFollowTarget(player);
+			ge.setAI(gbtree);
 			PositionalData pData = ge.readOnlyRead(PositionalData.class);
 			pData.position.set(ran.nextFloat()*10000, 1000, ran.nextFloat()*10000);
-			
-			ge.readData(eData, EquipmentData.class);
-			eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
-			//eData.equip(Equipment_Slot.RARM, new Weapon("attack_1", null, null, 0.8f, 3, 5, null, null));
-			ge.writeData(eData, EquipmentData.class);
+			pData.scale.set(2, 2, 2);
 						
 			s = new Sprite3D(3, 3, 4, 4);
 			s.setGender(GENDER.MALE);
@@ -322,7 +348,21 @@ public class GameScreen extends AbstractScreen {
 			s.updateSpritesheets(ge);
 			
 			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
-			ge.addRenderable(s, new Vector3());
+			
+			AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+			AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+			AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+			MotionTrail gswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+			ge.addRenderable(gam, new Vector3());
+			
+			gam.attach("DEF-head", ghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
+			gam.attach("DEF-palm_01_R", gsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
+			gam.attach(null, gswordTrail, new Matrix4());
+			
+			ge.readData(eData, EquipmentData.class);
+			eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("devil", Color.WHITE, 0, SpriteLayer.BODY), null));
+			eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, gsword, gswordTrail));
+			ge.writeData(eData, EquipmentData.class);
 			
 			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
 			pData.octtreeEntry = entry;
@@ -366,7 +406,6 @@ public class GameScreen extends AbstractScreen {
 			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
 			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER);
 			veggieTree.add(oe);
-			GLOBALS.LIGHTS.add(new Light(v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1.0f, 1.0f, 0.8f), 0.2f));
 		}
 		veggies.clear();
 		

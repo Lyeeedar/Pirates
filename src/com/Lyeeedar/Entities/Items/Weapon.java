@@ -24,8 +24,11 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 	private ATTACK_STAGE[] attacks;
 	
+	private float linkTime;
+	private float linkCD = -1;
+	
 	private float hitCD = 0;
-	private float hitSpeed = 1f;
+	private float hitSpeed;
 	
 	public boolean inSwing = false;
 	public boolean shouldSwing = false;
@@ -52,10 +55,11 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		super();
 	}
 	
-	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, AnimatedModel model, MotionTrail mt)
+	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, float linkTime, AnimatedModel model, MotionTrail mt)
 	{
 		super(spritesheet, desc);
 		this.hitSpeed = speed;
+		this.linkTime = linkTime;
 		this.model = model;
 		this.mt = mt;
 		this.attacks = attacks;
@@ -68,6 +72,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		Weapon cother = (Weapon) other;
 		
 		shouldSwing = cother.shouldSwing;
+		linkCD = cother.linkCD;
+		linkTime = cother.linkTime;
 		hitCD = cother.hitCD;
 		hitSpeed = cother.hitSpeed;
 		model = cother.model;
@@ -84,6 +90,32 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 	@Override
 	public void update(float delta, Entity entity) {
+		
+		if (linkCD > 0)
+		{
+			linkCD -= delta;
+			
+			if (shouldSwing)
+			{
+				animationStage = attacks[animationStage].nextAnim;
+				needsUpdate = true;
+				inSwing = true;
+			}
+			
+			if (linkCD <= 0 || animationStage == -1)
+			{
+				hitCD = hitSpeed;
+				animationStage = 0;
+				needsUpdate = false;
+				linkCD = -1;
+				inSwing = false;
+			}
+			
+			if (shouldSwing)
+			{
+				linkCD = -1;
+			}
+		}
 		
 		hitCD -= delta;
 		
@@ -153,9 +185,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			
 			needsUpdate = false;
 		}
-		else if (!inSwing && hitCD < 0)
+		else if (!inSwing && hitCD < 0 && linkCD < 0)
 		{
-			this.inSwing = true;
+			inSwing = true;
 			
 			entity.readData(aData, AnimationData.class);
 			playAnimation(aData, attacks[0].animationName);
@@ -197,19 +229,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public void onEnd(AnimationDesc animation) {
 		ray.clearSkips();
 		
-		if (shouldSwing)
-		{
-			animationStage = attacks[animationStage].nextAnim;
-			needsUpdate = true;
-		}
-		
-		if (!shouldSwing || animationStage == -1)
-		{
-			inSwing = false;
-			hitCD = hitSpeed;
-			animationStage = 0;
-			needsUpdate = false;
-		}
+		linkCD = linkTime;
+		inSwing = false;
 	}
 
 	@Override

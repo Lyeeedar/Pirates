@@ -26,7 +26,6 @@ public class ActionPlayerControl extends Action
 	private boolean jump = false;
 	
 	private final PositionalData pData = new PositionalData();
-	private final AnimationData aData = new AnimationData();
 	private final EquipmentData eData = new EquipmentData();
 	private final StatusData sData = new StatusData();
 		
@@ -61,69 +60,65 @@ public class ActionPlayerControl extends Action
 		Entity entity = (Entity) getData("entity", null);
 		
 		entity.readData(pData, PositionalData.class);
-		entity.readData(aData, AnimationData.class);
 		entity.readData(eData, EquipmentData.class);
 		entity.readData(sData, StatusData.class);
-				
-		if (!aData.animationLock)
+
+		// Evaluate controls
+		int speed = sData.speed;
+		if (controls.sprint()) speed = 10;
+		if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
 		{
-			// Evaluate controls
-			int speed = sData.speed;
-			if (controls.sprint()) speed = 10;
-			if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
-			{
-				speed = 1500;
-			}
-			
-			nextRot.set(0, 0, 0);
-			
-			if (controls.up()) 
-			{
-				tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
-				if (nextRot.isZero()) nextRot.add(tmpVec);
-				else nextRot.add(tmpVec).scl(0.5f);
-			}
-			if (controls.down()) 
-			{
-				tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
-				if (nextRot.isZero()) nextRot.add(tmpVec);
-				else nextRot.add(tmpVec).scl(0.5f);
-			}
-			
-			if (controls.left()) 
-			{
-				tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
-				tmpVec.crs(GLOBALS.DEFAULT_UP);
-				if (nextRot.isZero()) nextRot.add(tmpVec);
-				else nextRot.add(tmpVec).scl(0.5f);
-			}
-			if (controls.right()) 
-			{
-				tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
-				tmpVec.crs(GLOBALS.DEFAULT_UP);
-				if (nextRot.isZero()) nextRot.add(tmpVec);
-				else nextRot.add(tmpVec).scl(0.5f);
-			}
-			
-			parent.setDataTree("moved", !nextRot.isZero());
-			if (!nextRot.isZero())
-			{
-				pData.rotation.set(nextRot.nor());
-				pData.up.set(GLOBALS.DEFAULT_UP);
-				pData.forward_backward(speed);
-			}
-			
-			if (controls.jump() && !jump) {
-				pData.velocity.y = 70;
-				pData.jumpToken--;
-				jump = true;
-			}
-			else if (!controls.jump())
-			{
-				jump = false;
-			}
-			
+			speed = 1500;
 		}
+
+		nextRot.set(0, 0, 0);
+
+		if (controls.up()) 
+		{
+			tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+			if (nextRot.isZero()) nextRot.add(tmpVec);
+			else nextRot.add(tmpVec).scl(0.5f);
+		}
+		if (controls.down()) 
+		{
+			tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+			if (nextRot.isZero()) nextRot.add(tmpVec);
+			else nextRot.add(tmpVec).scl(0.5f);
+		}
+
+		if (controls.left()) 
+		{
+			tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+			tmpVec.crs(GLOBALS.DEFAULT_UP);
+			if (nextRot.isZero()) nextRot.add(tmpVec);
+			else nextRot.add(tmpVec).scl(0.5f);
+		}
+		if (controls.right()) 
+		{
+			tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+			tmpVec.crs(GLOBALS.DEFAULT_UP);
+			if (nextRot.isZero()) nextRot.add(tmpVec);
+			else nextRot.add(tmpVec).scl(0.5f);
+		}
+
+		parent.setDataTree("moved", !nextRot.isZero());
+		if (!nextRot.isZero())
+		{
+			pData.rotation.set(nextRot.nor());
+			pData.up.set(GLOBALS.DEFAULT_UP);
+			pData.forward_backward(speed);
+		}
+
+		if (controls.jump() && !jump) {
+			pData.velocity.y = 70;
+			pData.jumpToken--;
+			jump = true;
+		}
+		else if (!controls.jump())
+		{
+			jump = false;
+		}
+
 
 		if (controls.rightClick()) use(Equipment_Slot.RARM, eData);
 		else 
@@ -141,8 +136,10 @@ public class ActionPlayerControl extends Action
 	@Override
 	public void cancel()
 	{
-		// TODO Auto-generated method stub
-		
+		Entity entity = (Entity) getData("entity", null);
+		entity.readData(eData, EquipmentData.class);
+		stopUsing(Equipment_Slot.RARM, eData);
+		entity.writeData(eData, EquipmentData.class);
 	}
 
 }

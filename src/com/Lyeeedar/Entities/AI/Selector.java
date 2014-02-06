@@ -44,15 +44,6 @@ public abstract class Selector extends BehaviourTreeNode
 		}
 	}
 	
-	@Override
-	public void cancel()
-	{
-		for (int i = 0; i < nodes.size; i++)
-		{
-			nodes.get(i).cancel();
-		}
-	}
-	
 	public static class PrioritySelector extends Selector
 	{
 		public PrioritySelector()
@@ -84,6 +75,62 @@ public abstract class Selector extends BehaviourTreeNode
 			this.state = state;
 			return state;
 		}
+		
+		@Override
+		public void cancel()
+		{
+			for (int i = 0; i < nodes.size; i++)
+			{
+				nodes.get(i).cancel();
+			}
+		}
+	}
+	
+	public static class ConcurrentSelector extends Selector
+	{
+
+		@Override
+		public BehaviourTreeState evaluate()
+		{
+			int finished = 0;
+			int failed = 0;
+			int running = 0;
+			
+			for (int i = 0; i < nodes.size; i++)
+			{
+				BehaviourTreeState rstate = nodes.get(i).evaluate();
+				if (rstate == BehaviourTreeState.FINISHED) finished++;
+				else if (rstate == BehaviourTreeState.FAILED) failed++;
+				else if (rstate == BehaviourTreeState.RUNNING) running++;
+			}
+			
+			int max = finished;
+			state = BehaviourTreeState.FINISHED;
+			
+			if (failed > max)
+			{
+				state = BehaviourTreeState.FAILED;
+				max = failed;
+			}
+			
+			if (running > max)
+			{
+				state = BehaviourTreeState.RUNNING;
+				max = running;
+			}
+			
+			return state;
+		}
+
+		@Override
+		public void cancel()
+		{
+			for (int i = 0; i < nodes.size; i++)
+			{
+				nodes.get(i).cancel();
+			}
+		}
+		
 	}
 	
 	public static class SequenceSelector extends Selector
@@ -125,6 +172,15 @@ public abstract class Selector extends BehaviourTreeNode
 			return state;
 		}
 		
+		@Override
+		public void cancel()
+		{
+			i = 0;
+			for (int i = 0; i < nodes.size; i++)
+			{
+				nodes.get(i).cancel();
+			}
+		}
 	}
 	
 	public static class RandomSelector extends Selector
@@ -153,5 +209,15 @@ public abstract class Selector extends BehaviourTreeNode
 			return state;
 		}
 		
+		@Override
+		public void cancel()
+		{
+			i = -1;
+			
+			for (int i = 0; i < nodes.size; i++)
+			{
+				nodes.get(i).cancel();
+			}
+		}
 	}
 }

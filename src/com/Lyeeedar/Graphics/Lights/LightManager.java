@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Lights;
 
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
@@ -20,6 +21,8 @@ public class LightManager {
 	private final float[] positions = new float[3*MAX_LIGHTS];
 	private final float[] colours = new float[3*MAX_LIGHTS];
 	private final float[] attenuations = new float[MAX_LIGHTS];
+	
+	private final Vector3 tmpVec = new Vector3();
 	
 	public LightManager()
 	{
@@ -42,7 +45,7 @@ public class LightManager {
 	
 	public void sort(Vector3 position)
 	{
-		if (needsSort || !position.equals(lastSortPosition))
+		if (needsSort || !position.epsilonEquals(lastSortPosition, 1))
 		{
 			for (Light l : lights)
 			{
@@ -51,11 +54,23 @@ public class LightManager {
 			}
 			lights.sort();
 			
-			int i = 0;
-			int num_lights = (MAX_LIGHTS > lights.size) ? lights.size : MAX_LIGHTS;
+			tmpVec.set(directionalLight.direction).scl(GLOBALS.FOG_MAX).add(position);
+			
+			positions[0] = tmpVec.x;
+			positions[1] = tmpVec.y;
+			positions[2] = tmpVec.z;
+			
+			colours[0] = directionalLight.colour.x;
+			colours[1] = directionalLight.colour.y;
+			colours[2] = directionalLight.colour.z;
+			
+			attenuations[0] = 0;
+			
+			int i = 1;
+			int num_lights = (MAX_LIGHTS > lights.size+1) ? lights.size+1 : MAX_LIGHTS;
 			for (; i < num_lights; i++)
 			{
-				Light light = lights.get(i);
+				Light light = lights.get(i-1);
 				positions[(i*3)+0] = light.position.x;
 				positions[(i*3)+1] = light.position.y;
 				positions[(i*3)+2] = light.position.z;
@@ -87,9 +102,6 @@ public class LightManager {
 	public void applyLights(ShaderProgram shader)
 	{
 		shader.setUniformf("u_al_col", ambientColour);
-		
-		shader.setUniformf("u_dl_dir", directionalLight.direction);
-		shader.setUniformf("u_dl_col", directionalLight.colour);
 		
 		shader.setUniform3fv("u_pl_pos", positions, 0, 3*MAX_LIGHTS);
 		shader.setUniform3fv("u_pl_col", colours, 0, 3*MAX_LIGHTS);

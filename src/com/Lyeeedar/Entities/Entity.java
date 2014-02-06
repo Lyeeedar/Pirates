@@ -377,6 +377,10 @@ public class Entity {
 		public final Matrix4 inverse = new Matrix4();
 		public final Matrix4 lastInv = new Matrix4();
 		
+		public boolean Xcollide = false;
+		public boolean Ycollide = false;
+		public boolean Zcollide = false;
+		
 		public int jumpToken = 0;
 				
 		private final Vector3 tmpVec = new Vector3();
@@ -408,6 +412,10 @@ public class Entity {
 			rotationTra.set(data.rotationTra);
 			inverse.set(data.inverse);
 			lastInv.set(data.lastInv);
+			
+			Xcollide = data.Xcollide;
+			Ycollide = data.Ycollide;
+			Zcollide = data.Zcollide;
 			
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
@@ -476,6 +484,10 @@ public class Entity {
 			lastRot1.set(rotation);
 			lastInv.set(inverse);
 			
+			Xcollide = false;
+			Ycollide = false;
+			Zcollide = false;
+			
 //			if (graph != null && graph.parent != null)
 //			{
 //				graph.parent.getDeltaPos(tmpMat, position);
@@ -526,6 +538,7 @@ public class Entity {
 				//graph.popAndInsert(base);
 				location = LOCATION.GROUND;
 				locationCD = 0.5f;
+				Ycollide = true;
 			}
 			else
 			{
@@ -547,6 +560,7 @@ public class Entity {
 				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 				//graph.popAndInsert(GLOBALS.WORLD);
 				location = LOCATION.SEA;
+				Ycollide = true;
 			}
 			
 //			float angle = 0;
@@ -599,6 +613,7 @@ public class Entity {
 				{
 					v.x = 0;
 					//position.x = ray.getHitPointWorld().x();
+					Xcollide = true;
 				}
 			}
 			
@@ -618,6 +633,7 @@ public class Entity {
 				{
 					v.z = 0;
 					//position.z = ray.getHitPointWorld().z();
+					Zcollide = true;
 				}
 			}
 			
@@ -792,7 +808,7 @@ public class Entity {
 		public int currentHealth = MAX_HEALTH;
 		public int damage = 0;
 		
-		public int speed = 10;
+		public int speed = 50;
 		
 		public Array<String> factions = new Array<String>(false, 16);
 		

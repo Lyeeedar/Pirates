@@ -78,6 +78,15 @@ public class ActionFindClosestVisible extends Action
 		
 		parent.setDataTree("closest", closest);
 		
+		if (enemy)
+		{
+			parent.setDataTree("enemy", closest);
+		}
+		else
+		{
+			parent.setDataTree("ally", closest);
+		}
+		
 		state = BehaviourTreeState.FINISHED;
 		return BehaviourTreeState.FINISHED;
 	}
