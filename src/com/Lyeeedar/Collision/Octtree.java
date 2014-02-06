@@ -266,19 +266,34 @@ public class Octtree <E> {
 	public static class OcttreeFrustum implements OcttreeShape
 	{
 		PerspectiveCamera frustum;
+		float sizeLim;
 		
-		public OcttreeFrustum(PerspectiveCamera frustum)
+		public OcttreeFrustum(PerspectiveCamera frustum, float sizeLim)
 		{
 			this.frustum = frustum;
+			this.sizeLim = sizeLim;
 		}
 		
 		@Override
 		public CollisionType isIntersecting(OcttreeBox box)
 		{
-			float m, n; 
+			float m, n;
 			int i = box.lastFail;
 			CollisionType result = CollisionType.INSIDE;
 
+			if (sizeLim > 0)
+			{
+				float size = box.extents.x*box.extents.y*box.extents.z;
+				float dst = frustum.position.dst2(box.pos);
+				float far = frustum.far*frustum.far;
+				
+				float factor = size/sizeLim;
+				
+				float mdst = far * factor;
+				
+				if (dst > mdst) return CollisionType.OUTSIDE;
+			}
+			
 			while (true)
 			{
 				Plane p = frustum.frustum.planes[i];

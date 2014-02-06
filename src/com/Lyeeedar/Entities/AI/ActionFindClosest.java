@@ -10,11 +10,11 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.utils.Array;
 
-public class ActionFindClosestVisible extends Action
+public class ActionFindClosest extends Action
 {
-
-	protected OcttreeShape shape;
-	protected boolean enemy;
+	protected final OcttreeShape shape;
+	protected final boolean enemy;
+	protected final String[] factions;
 	
 	private final PositionalData pData = new PositionalData();
 	private final PositionalData pData2 = new PositionalData();
@@ -23,10 +23,11 @@ public class ActionFindClosestVisible extends Action
 	
 	private final Array<Entity> entities = new Array<Entity>(false, 16);
 	
-	public ActionFindClosestVisible(OcttreeShape shape, boolean enemy)
+	public ActionFindClosest(OcttreeShape shape, boolean enemy, String[] factions)
 	{
 		this.shape = shape;
 		this.enemy = enemy;
+		this.factions = factions;
 	}
 
 	@Override
@@ -64,6 +65,20 @@ public class ActionFindClosestVisible extends Action
 			else
 			{
 				if (!sData.isAlly(sData2)) continue;
+			}
+			
+			if (factions != null)
+			{
+				boolean fail = false;
+				for (String faction : factions)
+				{
+					if (!sData2.factions.contains(faction, false))
+					{
+						fail = true;
+						break;
+					}
+				}
+				if (fail) continue;
 			}
 			
 			tmp.readData(pData2, PositionalData.class);

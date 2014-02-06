@@ -26,7 +26,7 @@ import com.Lyeeedar.Entities.AI.AI_Ship_Control;
 import com.Lyeeedar.Entities.AI.AI_Simple;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
-import com.Lyeeedar.Entities.AI.ActionFindClosestVisible;
+import com.Lyeeedar.Entities.AI.ActionFindClosest;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
 import com.Lyeeedar.Entities.AI.ActionMoveToClosest;
 import com.Lyeeedar.Entities.AI.ActionPlayerControl;
@@ -91,6 +91,7 @@ import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
@@ -133,7 +134,7 @@ public class GameScreen extends AbstractScreen {
 		//bw.add(cam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		//bw.add(cam.aiObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_AI);
 		
-		veggieCam = new FollowCam(controls, null);
+		veggieCam = new FollowCam(controls, null, 0);
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 				
 		// HEIGHT MAP
@@ -322,13 +323,13 @@ public class GameScreen extends AbstractScreen {
 			
 			Selector gpselect2 = new PrioritySelector();
 			
-			gpselect2.addNode(new ActionMoveToClosest(true), 0);
+			gpselect2.addNode(new ActionMoveToClosest(true, 15), 0);
 			gpselect2.addNode(new ActionAttack(15, false, true), 1);
 			gpselect2.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 2);
 			
 			gsselect2.addNode(gpselect2, 0);
 			
-			gsselect2.addNode(new ActionFindClosestVisible(new OcttreeBox(new Vector3(), new Vector3(50, 50, 50), null), true), 1);
+			gsselect2.addNode(new ActionFindClosest(new OcttreeBox(new Vector3(), new Vector3(50, 50, 50), null), true, null), 1);
 			
 			gpselect.addNode(gsselect2, 1);
 			
@@ -348,6 +349,7 @@ public class GameScreen extends AbstractScreen {
 			s.updateSpritesheets(ge);
 			
 			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
+			ge.readOnlyRead(StatusData.class).speed = 25;
 			
 			AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
 			AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
@@ -378,10 +380,11 @@ public class GameScreen extends AbstractScreen {
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
 		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, new Vector3(1, 1, 1), false), 1, 2500, 50);
 		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
+		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
 		{
 			v.update(0);
-			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(10, 50, 10), Octtree.MASK_RENDER);
+			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER);
 			rw.add(entry);
 			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		}

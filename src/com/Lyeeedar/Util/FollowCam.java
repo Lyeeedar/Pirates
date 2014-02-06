@@ -37,11 +37,11 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 	
-	public FollowCam(Controls controls, OcttreeShape aiShape)
+	public FollowCam(Controls controls, OcttreeShape aiShape, float sizeLim)
 	{
 		this.controls = controls;
 		this.aiShape = aiShape;
-		this.renderFrustum = new OcttreeFrustum(this);
+		this.renderFrustum = new OcttreeFrustum(this, sizeLim);
 	}
 	
 	private float Yangle = -15;

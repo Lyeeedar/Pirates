@@ -10,6 +10,8 @@ import com.badlogic.gdx.math.Vector3;
 
 public class ActionMoveToClosest extends Action
 {
+	public final float dst;
+	
 	public boolean towards;
 	
 	private final PositionalData pData = new PositionalData();
@@ -18,9 +20,10 @@ public class ActionMoveToClosest extends Action
 	
 	private final Vector3 tmpVec = new Vector3();
 	
-	public ActionMoveToClosest(boolean towards)
+	public ActionMoveToClosest(boolean towards, float dst)
 	{
 		this.towards = towards;
+		this.dst = dst == Float.MAX_VALUE ? dst : dst*dst;
 	}
 	
 	@Override
@@ -38,6 +41,24 @@ public class ActionMoveToClosest extends Action
 		
 		entity.readData(pData, PositionalData.class);
 		closest.readData(pData2, PositionalData.class);
+		
+		if (towards)
+		{
+			if (pData.position.dst2(pData2.position) < dst)
+			{
+				state = BehaviourTreeState.FAILED;
+				return BehaviourTreeState.FAILED;
+			}
+		}
+		else
+		{
+			if (pData.position.dst2(pData2.position) > dst)
+			{
+				state = BehaviourTreeState.FAILED;
+				return BehaviourTreeState.FAILED;
+			}
+		}
+		
 		entity.readData(sData, StatusData.class);
 		
 		tmpVec.set(pData2.position).sub(pData.position);
