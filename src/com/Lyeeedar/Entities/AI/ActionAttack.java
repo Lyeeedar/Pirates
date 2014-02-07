@@ -13,16 +13,18 @@ public class ActionAttack extends Action
 	public final float range;
 	public final boolean useLeft;
 	public final boolean useRight;
+	public final String key;
 	
 	private final PositionalData pData = new PositionalData();
 	private final PositionalData pData2 = new PositionalData();
 	private final EquipmentData eData = new EquipmentData();
 	
-	public ActionAttack(float range, boolean useLeft, boolean useRight)
+	public ActionAttack(float range, boolean useLeft, boolean useRight, String key)
 	{
 		this.range = range*range;
 		this.useLeft = useLeft;
 		this.useRight = useRight;
+		this.key = key;
 	}
 	
 	protected void use(Equipment_Slot slot, EquipmentData eData)
@@ -41,10 +43,17 @@ public class ActionAttack extends Action
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		Entity enemy = (Entity) getData("enemy", null);
+		Entity enemy = (Entity) getData(key, null);
 		
-		if (entity == null || enemy == null)
+		if (enemy == null)
 		{
+			entity.readData(eData, EquipmentData.class);
+			
+			if (useLeft) stopUsing(Equipment_Slot.LARM, eData);
+			if (useRight) stopUsing(Equipment_Slot.RARM, eData);
+			
+			entity.writeData(eData, EquipmentData.class);
+			
 			state = BehaviourTreeState.FAILED;
 			return BehaviourTreeState.FAILED;
 		}
@@ -54,6 +63,13 @@ public class ActionAttack extends Action
 		
 		if (pData.position.dst2(pData2.position) > range)
 		{
+			entity.readData(eData, EquipmentData.class);
+			
+			if (useLeft) stopUsing(Equipment_Slot.LARM, eData);
+			if (useRight) stopUsing(Equipment_Slot.RARM, eData);
+			
+			entity.writeData(eData, EquipmentData.class);
+			
 			state = BehaviourTreeState.FAILED;
 			return BehaviourTreeState.FAILED;
 		}

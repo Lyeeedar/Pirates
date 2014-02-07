@@ -26,6 +26,8 @@ public abstract class Selector extends BehaviourTreeNode
 	{
 		if (parent == null)
 		{
+			Object d = data.get(key);
+			if (d != null && d.equals(value)) return;
 			setData(key, value);
 		}
 		else

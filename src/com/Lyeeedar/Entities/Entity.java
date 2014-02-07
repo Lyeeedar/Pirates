@@ -8,8 +8,6 @@ import java.util.Map;
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
-import com.Lyeeedar.Entities.AI.AI_Package;
-import com.Lyeeedar.Entities.AI.ActivationAction;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
@@ -18,7 +16,6 @@ import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
@@ -58,32 +55,10 @@ public class Entity {
 	
 	private final EntityRunnable runnable = new EntityRunnable(this);
 	private final EntityRenderables renderables = new EntityRenderables();
-	private ActivationAction aa;
 	
 	public Entity(EntityData<?>... data)
 	{
 		for (EntityData<?> d : data) entityData.put((Class<? extends EntityData<?>>) d.getClass(),  d);
-	}
-	
-	public void activate(Entity e)
-	{
-		if (aa != null) aa.activate(e, this);
-	}
-	
-	public ActivationAction getActivationAction()
-	{
-		return aa;
-	}
-	
-	public boolean hasActivationAction()
-	{
-		return aa != null;
-	}
-	
-	public void setActivationAction(ActivationAction aa)
-	{
-		this.aa = aa;
-		aa.set(this);
 	}
 	
 	public void addRenderable(Queueable r, Vector3 position)
@@ -102,11 +77,7 @@ public class Entity {
 	{
 		this.ai = ai;
 		
-		if (ai instanceof AI_Package)
-		{
-			((AI_Package) ai).entity = this;
-		}
-		else if (ai instanceof BehaviourTree)
+		if (ai instanceof BehaviourTree)
 		{
 			((BehaviourTree) ai).setData("entity", this);
 		}
@@ -515,6 +486,51 @@ public class Entity {
 //			
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
 			v.scl(delta);
+			
+			if (v.x != 0)
+			{
+				ray.setCollisionObject(null);
+	            ray.setClosestHitFraction(1f);
+
+				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP, 0);
+				
+				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				
+				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+				if (ray.hasHit())
+				{
+					v.x = 0;
+					//position.x = ray.getHitPointWorld().x();
+					Xcollide = true;
+				}
+			}
+			
+			if (v.z != 0)
+			{
+				ray.setCollisionObject(null);
+	            ray.setClosestHitFraction(1f);
+
+				tmpVec.set(position).add(v.x, GLOBALS.STEP, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP, v.z);
+				
+				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				
+				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
+				if (ray.hasHit())
+				{
+					v.z = 0;
+					//position.z = ray.getHitPointWorld().z();
+					Zcollide = true;
+				}
+			}
+			
+			position.add(v.x, 0, v.z);
+			
+			velocity.x = 0;
+			velocity.z = 0;
 
 			ray.setCollisionObject(null);
             ray.setClosestHitFraction(1f);
@@ -531,13 +547,16 @@ public class Entity {
 			if (ray.hasHit())
 			{
 				Entity base = (Entity) ray.getCollisionObject().userData;
-				if (v.y < 0) jumpToken = 2;
-				velocity.y = 0;
-				v.y = 0;
-				position.y = ray.getHitPointWorld().y();
-				//graph.popAndInsert(base);
-				location = LOCATION.GROUND;
-				locationCD = 0.5f;
+				if (ray.getHitPointWorld().y() != tmpVec.y)
+				{
+					if (v.y < 0) jumpToken = 2;
+					velocity.y = 0;
+					v.y = 0;
+					position.y = ray.getHitPointWorld().y();
+					//graph.popAndInsert(base);
+					location = LOCATION.GROUND;
+					locationCD = 0.5f;
+				}
 				Ycollide = true;
 			}
 			else
@@ -562,6 +581,8 @@ public class Entity {
 				location = LOCATION.SEA;
 				Ycollide = true;
 			}
+			
+			position.add(0, v.y, 0);
 			
 //			float angle = 0;
 //			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
@@ -596,51 +617,6 @@ public class Entity {
 //			jumpToken = 2;
 //			
 //			Pools.free(ray);
-			
-			if (v.x != 0)
-			{
-				ray.setCollisionObject(null);
-	            ray.setClosestHitFraction(1f);
-
-				tmpVec.set(position).add(0, GLOBALS.STEP+v.y, 0);
-				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
-				
-				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
-				
-				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
-				if (ray.hasHit())
-				{
-					v.x = 0;
-					//position.x = ray.getHitPointWorld().x();
-					Xcollide = true;
-				}
-			}
-			
-			if (v.z != 0)
-			{
-				ray.setCollisionObject(null);
-	            ray.setClosestHitFraction(1f);
-
-				tmpVec.set(position).add(v.x, GLOBALS.STEP+v.y, 0);
-				tmpVec2.set(position).add(v.x, GLOBALS.STEP+v.y, v.z);
-				
-				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
-				
-				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
-				if (ray.hasHit())
-				{
-					v.z = 0;
-					//position.z = ray.getHitPointWorld().z();
-					Zcollide = true;
-				}
-			}
-			
-			position.add(v.x, v.y, v.z);
-			
-			velocity.x = 0;
-			velocity.z = 0;
 			
 			calculateComposed();
 			

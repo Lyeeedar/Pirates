@@ -84,7 +84,7 @@ public abstract class AbstractScreen implements Screen {
 		this.game = game;
 		controls = new Controls(GLOBALS.ANDROID);
 		
-		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null), 20000);
+		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null), 50000);
 		
 		font = new BitmapFont();
 		

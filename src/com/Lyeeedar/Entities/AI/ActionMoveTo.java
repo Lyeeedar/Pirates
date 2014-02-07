@@ -8,11 +8,11 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.math.Vector3;
 
-public class ActionMoveToClosest extends Action
+public class ActionMoveTo extends Action
 {
 	public final float dst;
-	
-	public boolean towards;
+	public final boolean towards;
+	public final String key;
 	
 	private final PositionalData pData = new PositionalData();
 	private final PositionalData pData2 = new PositionalData();
@@ -20,16 +20,17 @@ public class ActionMoveToClosest extends Action
 	
 	private final Vector3 tmpVec = new Vector3();
 	
-	public ActionMoveToClosest(boolean towards, float dst)
+	public ActionMoveTo(boolean towards, float dst, String key)
 	{
 		this.towards = towards;
 		this.dst = dst == Float.MAX_VALUE ? dst : dst*dst;
+		this.key = key;
 	}
 	
 	@Override
 	public BehaviourTreeState evaluate()
 	{
-		Entity closest = (Entity) getData("closest", null);
+		Entity closest = (Entity) getData(key, null);
 		
 		if (closest == null)
 		{
