@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
@@ -10,6 +11,7 @@ public class ActionGravityAndMovement extends Action
 {
 
 	private final PositionalData pData = new PositionalData();
+	private final StatusData sData = new StatusData();
 	
 	@Override
 	public BehaviourTreeState evaluate()
@@ -18,9 +20,10 @@ public class ActionGravityAndMovement extends Action
 		float delta = (Float) getData("delta", 0);
 		
 		entity.readData(pData, PositionalData.class);
+		entity.readData(sData, StatusData.class);
 		
-		pData.applyVelocity(delta);
-		pData.velocity.add(0, GLOBALS.GRAVITY*delta, 0);
+		pData.applyVelocity(delta, sData.mass);
+		pData.velocity.add(0, GLOBALS.GRAVITY*delta*sData.mass, 0);
 		
 		entity.writeData(pData, PositionalData.class);
 		

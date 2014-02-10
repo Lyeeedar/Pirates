@@ -38,9 +38,9 @@ public class MotionTrail implements Queueable {
 	public final Texture texture;
 	public final long texHash;
 	private final float[] vertices;
+	private final float step;
 	
 	private boolean up = false;
-	private short side = 0;
 	
 	private boolean shouldDraw = false;
 	private boolean drawing = false; 
@@ -55,6 +55,7 @@ public class MotionTrail implements Queueable {
 		this.texHash = texture.hashCode();
 		this.vertNum = vertsNum * 2;
 		this.vertNum2 = vertsNum;
+		this.step = 1.0f / (float) vertNum2;
 		this.trailRing = new CircularArrayRing<Vector3>(this.vertNum);
 		
 		for (int i = 0; i < this.vertNum; i++)
@@ -106,12 +107,10 @@ public class MotionTrail implements Queueable {
 			vertices[i*5] = vert.x;
 			vertices[(i*5)+1] = vert.y;
 			vertices[(i*5)+2] = vert.z;
-			vertices[(i*5)+3] = (side < 0) ? 1.0f : 0.0f;
+			vertices[(i*5)+3] = (float) (i / 2) * step;
 			vertices[(i*5)+4] = (up) ? 1.0f : 0.0f;
 			
 			up = (!up);
-			side++;
-			if (side == 2) side = -2;
 		}
 		
 		mesh.setVertices(vertices);

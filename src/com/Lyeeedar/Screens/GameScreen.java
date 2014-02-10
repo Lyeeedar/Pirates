@@ -19,7 +19,7 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
-import com.Lyeeedar.Entities.AI.ActionApplyMovement;
+import com.Lyeeedar.Entities.AI.ActionMove;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
@@ -73,6 +73,7 @@ import com.Lyeeedar.Util.Dialogue.DialogueAction;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.Lyeeedar.Util.ImageUtils;
+import com.Lyeeedar.Util.Picker;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
@@ -124,6 +125,8 @@ public class GameScreen extends AbstractScreen {
 	FloatBuffer fb;
 	@Override
 	public void create() {
+		
+		GLOBALS.picker = new Picker();
 		
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
 		GLOBALS.physicsWorld = bw;
@@ -179,7 +182,7 @@ public class GameScreen extends AbstractScreen {
 		Selector ssselect = new ConcurrentSelector();
 		BehaviourTree sbtree = new BehaviourTree(ssselect);
 		ssselect.addNode(new ActionGravityAndMovement());
-		ssselect.addNode(new ActionApplyMovement());
+		ssselect.addNode(new ActionMove(new Vector3(1, 0.4f, 1)));
 		
 		ship.setAI(sbtree);
 		
@@ -227,12 +230,8 @@ public class GameScreen extends AbstractScreen {
 		
 		sselect.addNode(pselect, 2);
 		
-		//player.setAI(new AI_Player_Control(controls, cam));
 		player.setAI(btree);
-		Sprite3D s = new Sprite3D(8, 8, 4, 4);
-		s.setGender(GENDER.MALE);
-		s.addAnimation("move", "move");
-		s.addAnimation("attack_1", "attack", "_1");
+
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
 		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
@@ -253,6 +252,7 @@ public class GameScreen extends AbstractScreen {
 		//player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
+		player.readOnlyRead(StatusData.class).mass = 2f;
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData, EquipmentData.class);
@@ -306,11 +306,7 @@ public class GameScreen extends AbstractScreen {
 			}
 			}
 		};
-		//npc.setActivationAction(new Action_Dialogue("BOOOBIES", new Dialogue(new Entity[]{player, npc}, actionTree)));
-		s = new Sprite3D(2, 2, 4, 4);
-		s.setGender(GENDER.FEMALE);
-		s.addAnimation("move", "move");
-		npc.addRenderable(s, new Vector3(0, -2, 0));
+
 		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
 		npc.readOnlyRead(StatusData.class).factions.add("Player");
 		npc.readData(eData, EquipmentData.class);
@@ -730,6 +726,12 @@ public class GameScreen extends AbstractScreen {
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
 			d.update(delta, cam);
+		}
+		
+		if (GLOBALS.picker.RUNNING)
+		{
+			GLOBALS.picker.update(delta);
+			GLOBALS.picker.tint();
 		}
 		
 	}

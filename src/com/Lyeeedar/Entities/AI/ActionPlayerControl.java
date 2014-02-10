@@ -17,6 +17,7 @@ import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 public class ActionPlayerControl extends Action
 {
@@ -124,6 +125,12 @@ public class ActionPlayerControl extends Action
 		else 
 		{
 			stopUsing(Equipment_Slot.RARM, eData);
+		}
+		
+		if (Gdx.input.isKeyPressed(Keys.NUM_1))
+		{
+			GLOBALS.picker.set(entity, new Array<Entity>(), cam, 100, 3, false, 0.2f, new Vector3(0, 1, 0));
+			GLOBALS.picker.begin();
 		}
 		
 		entity.writeData(pData, PositionalData.class);

@@ -14,6 +14,7 @@ import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Sound.Mixer;
 import com.Lyeeedar.Util.Dialogue;
+import com.Lyeeedar.Util.Picker;
 import com.badlogic.gdx.math.Vector3;
 
 public final class GLOBALS {
@@ -56,6 +57,8 @@ public final class GLOBALS {
 	
 	public static BulletWorld physicsWorld;
 	public static Octtree<Entity> renderTree;
+	
+	public static Picker picker;
 	
 	public static SkyBox SKYBOX;
 	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();

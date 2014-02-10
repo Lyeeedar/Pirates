@@ -116,14 +116,14 @@ public class Octtree <E> {
 				Pools.free(o);
 			}
 			this.children = null;
-			parent.free();
+			if (parent != null) parent.free();
 		}
 	}
 	
 	public void remove(OcttreeEntry<?> octtreeEntry)
 	{
 		elements.removeValue((OcttreeEntry<E>) octtreeEntry, true);
-		//parent.free();
+		if (parent != null) parent.free();
 	}
 	
 	public void add(OcttreeEntry<E> e) {

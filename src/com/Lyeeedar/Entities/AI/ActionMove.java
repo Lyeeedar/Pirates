@@ -4,10 +4,20 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Pirates.GLOBALS;
+import com.badlogic.gdx.math.Vector3;
 
-public class ActionApplyMovement extends Action
+public class ActionMove extends Action
 {
 	private final PositionalData pData = new PositionalData();
+	public final Vector3 velocity = new Vector3();
+	
+	private final Vector3 tmpVec = new Vector3();
+	
+	public ActionMove(Vector3 velocity)
+	{
+		this.velocity.set(velocity);
+	}
 
 	@Override
 	public BehaviourTreeState evaluate()
@@ -17,7 +27,12 @@ public class ActionApplyMovement extends Action
 		
 		entity.readData(pData, PositionalData.class);
 		
-		pData.forward_backward(10);
+		pData.velocity.add(velocity);
+		pData.rotation.set(pData.velocity).nor();
+		
+		tmpVec.set(pData.rotation).crs(GLOBALS.DEFAULT_UP);
+		
+		pData.up.set(pData.rotation).crs(tmpVec);
 		
 		entity.writeData(pData, PositionalData.class);
 		

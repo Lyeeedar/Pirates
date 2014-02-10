@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
+import com.Lyeeedar.Collision.BulletWorld.CollisionCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
@@ -329,6 +330,13 @@ public class Entity {
 	
 	public static class PositionalData implements EntityData<PositionalData>
 	{
+		public enum COLLISION_TYPE
+		{
+			RAY,
+			SHAPE
+		}
+		public COLLISION_TYPE collisionType = COLLISION_TYPE.RAY;
+		
 		public enum LOCATION 
 		{
 			GROUND,
@@ -367,13 +375,16 @@ public class Entity {
 		
 		public float locationCD = 0;
 		
-		public ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
+		public ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback();
+		public CollisionCallback collisionCallback;
 		
 		public Entity base;
 		
 		@Override
 		public void write(PositionalData data)
 		{
+			collisionType = data.collisionType;
+			
 			location = data.location;
 			
 			lastPos.set(data.lastPos);
@@ -395,6 +406,7 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			
+			collisionCallback = data.collisionCallback;
 			ray = data.ray;			
 			physicsBody = data.physicsBody;
 			octtreeEntry = data.octtreeEntry;
@@ -452,10 +464,8 @@ public class Entity {
 		}
 		// ------------------------- MOVE ------------------------- //
 		
-		public void applyVelocity(float delta)
+		public void applyVelocity(float delta, float mass)
 		{
-			locationCD -= delta;
-			
 			lastPos.set(position);
 			lastRot2.set(lastRot1);
 			lastRot1.set(rotation);
@@ -464,6 +474,51 @@ public class Entity {
 			Xcollide = false;
 			Ycollide = false;
 			Zcollide = false;
+			
+			if (collisionType == COLLISION_TYPE.RAY)
+			{
+				collisionRay(delta, mass);
+			}
+			else if (collisionType == COLLISION_TYPE.SHAPE)
+			{
+				collisionShape(delta, mass);
+			}
+			
+			calculateComposed();
+			
+			physicsBody.setWorldTransform(composed);
+			octtreeEntry.box.pos.set(position);
+			octtreeEntry.updatePosition();
+			
+			if (collisionCallback != null && (Xcollide || Ycollide || Zcollide)) collisionCallback.collided(); 
+		}
+		
+		private void collisionShape(float delta, float mass)
+		{
+			if (velocity.len2() == 0) 
+			{
+				return;
+			}
+			
+			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta*mass), velocity.z);
+			v.scl(delta);
+			
+			position.add(v);
+			velocity.x = 0;
+			velocity.y = 0;
+			velocity.z = 0;
+			
+			if (GLOBALS.physicsWorld.collide(physicsBody, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION))
+			{
+				Xcollide = true;
+				Ycollide = true;
+				Zcollide = true;
+			}
+		}
+		
+		private void collisionRay(float delta, float mass)
+		{
+			locationCD -= delta;
 			
 			if (base != null)
 			{
@@ -483,20 +538,10 @@ public class Entity {
 			
 			if (velocity.len2() == 0) 
 			{
-				calculateComposed();
 				return;
 			}
 			
-//			if (velocity.x < -GLOBALS.MAX_SPEED_X) velocity.x = -GLOBALS.MAX_SPEED_X;
-//			else if (velocity.x > GLOBALS.MAX_SPEED_X) velocity.x = GLOBALS.MAX_SPEED_X;
-//			
-//			if (velocity.y < -GLOBALS.MAX_SPEED_Y) velocity.y = -GLOBALS.MAX_SPEED_Y;
-//			else if (velocity.y > GLOBALS.MAX_SPEED_Y) velocity.y = GLOBALS.MAX_SPEED_Y;
-//			
-//			if (velocity.z < -GLOBALS.MAX_SPEED_Z) velocity.z = -GLOBALS.MAX_SPEED_Z;
-//			else if (velocity.z > GLOBALS.MAX_SPEED_Z) velocity.z = GLOBALS.MAX_SPEED_Z;
-//			
-			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta), velocity.z);
+			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta*mass), velocity.z);
 			v.scl(delta);
 			
 			if (v.x != 0)
@@ -627,12 +672,6 @@ public class Entity {
 			if (angle > .1f) angle = .1f;
 			if (angle < -.1f) angle = -.1f;
 			Yrotate(angle);			
-			
-			calculateComposed();
-			
-			physicsBody.setWorldTransform(composed);
-			octtreeEntry.box.pos.set(position);
-			octtreeEntry.updatePosition();
 		}
 
 		@Override
@@ -798,6 +837,8 @@ public class Entity {
 		
 		public int speed = 50;
 		
+		public float mass = 1.0f;
+		
 		public Array<String> factions = new Array<String>(false, 16);
 		
 		@Override
@@ -812,6 +853,8 @@ public class Entity {
 			factions.addAll(data.factions);
 			
 			speed = data.speed;
+			
+			mass = data.mass;
 		}
 		
 		public boolean isAlly(StatusData other)
