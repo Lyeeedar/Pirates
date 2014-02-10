@@ -4,6 +4,7 @@ import com.Lyeeedar.Collision.Octtree.OcttreeBox.CollisionType;
 import com.Lyeeedar.Util.Pools;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Frustum;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -15,18 +16,28 @@ public class Octtree <E> {
 	
 	private static final int CASCADE_THRESHOLD = 10;
 	
-	public final Octtree<E> parent;
+	public Octtree<E> parent;
 	
 	public final Vector3 min = new Vector3();
 	public final Vector3 mid = new Vector3();
 	public final Vector3 max = new Vector3();
-	public final OcttreeBox box;
+	public final OcttreeBox box = new OcttreeBox(new Vector3(), new Vector3(), this);
 	
 	public final Array<OcttreeEntry<E>> elements = new Array<OcttreeEntry<E>>(false, CASCADE_THRESHOLD);
 	
 	public Octtree<E>[] children = null;
 	
+	public Octtree()
+	{
+		
+	}
+	
 	public Octtree(Octtree<E> parent, Vector3 min, Vector3 max)
+	{
+		set(parent, min, max);
+	}
+	
+	public Octtree<E> set(Octtree<E> parent, Vector3 min, Vector3 max)
 	{
 		this.parent = parent;
 		this.min.set(min);
@@ -36,7 +47,9 @@ public class Octtree <E> {
 		Vector3 extents = new Vector3(mid);
 		mid.add(min);
 		
-		this.box = new OcttreeBox(mid, extents, this);	
+		this.box.set(mid, extents, this);
+		
+		return this;
 	}
 	
 	public void divide(int num)
@@ -81,11 +94,38 @@ public class Octtree <E> {
 		}
 	}
 	
+	public void free()
+	{
+		if (children == null) return;
+		
+		boolean empty = true;
+		
+		for (Octtree<E> o : children)
+		{
+			if (o.children != null || o.elements.size != 0)
+			{
+				empty = false;
+				break;
+			}
+		}
+		
+		if (empty)
+		{
+			for (Octtree<E> o : children)
+			{
+				Pools.free(o);
+			}
+			this.children = null;
+			parent.free();
+		}
+	}
+	
 	public void remove(OcttreeEntry<?> octtreeEntry)
 	{
 		elements.removeValue((OcttreeEntry<E>) octtreeEntry, true);
+		//parent.free();
 	}
-
+	
 	public void add(OcttreeEntry<E> e) {
 		if (children == null && elements.size > CASCADE_THRESHOLD)
 		{
@@ -128,7 +168,12 @@ public class Octtree <E> {
 		}
 	}
 	
-	public void collectAll(Array<E> output, OcttreeShape shape, boolean check, int bitmask)
+	public void collectAll(Array<E> output, OcttreeShape shape, int bitmask)
+	{
+		internalCollectAll(output, shape, true, bitmask);
+	}
+	
+	private void internalCollectAll(Array<E> output, OcttreeShape shape, boolean check, int bitmask)
 	{		
 		for (int i = 0; i < elements.size; i++)
 		{
@@ -136,7 +181,7 @@ public class Octtree <E> {
 			
 			if (!oe.compareBitmask(bitmask)) continue;
 
-			CollisionType collision = check ? shape.isIntersecting(oe.box) : CollisionType.INSIDE;
+			CollisionType collision = shape.isIntersecting(oe.box);
 			if (collision != CollisionType.OUTSIDE) 
 			{
 				output.add(oe.e);
@@ -147,9 +192,9 @@ public class Octtree <E> {
 		{
 			CollisionType collision = check ? shape.isIntersecting(o.box) : CollisionType.INSIDE;
 			if (collision == CollisionType.INSIDE)
-				o.collectAll(output, shape, false, bitmask);
+				o.internalCollectAll(output, shape, false, bitmask);
 			else if (collision == CollisionType.INTERSECT)
-				o.collectAll(output, shape, true, bitmask);
+				o.internalCollectAll(output, shape, true, bitmask);
 		}
 	}
 	
@@ -169,7 +214,7 @@ public class Octtree <E> {
 	
 	public Octtree<E> getOcttree(Octtree<E> parent, Vector3 min, Vector3 max)
 	{
-		return new Octtree<E>(parent, min, max);
+		return Pools.obtain(Octtree.class).set(parent, min, max);
 	}
 	
 	public OcttreeEntry<E> createEntry(E e, Vector3 pos, Vector3 extents, int bitmask)
@@ -189,6 +234,11 @@ public class Octtree <E> {
 			this.e = e;
 			this.box = box;
 			this.bitmask = bitmask;
+		}
+		
+		public void remove()
+		{
+			box.parent.remove(this);
 		}
 		
 		public void updatePosition()
@@ -221,7 +271,7 @@ public class Octtree <E> {
 			INTERSECT,
 			INSIDE
 		}
-		
+				
 		public final Vector3 pos = new Vector3();
 		public final Vector3 extents = new Vector3();
 		
@@ -230,6 +280,13 @@ public class Octtree <E> {
 		public int lastFail = 0;
 		
 		public OcttreeBox(Vector3 pos, Vector3 extents, Octtree<?> parent)
+		{
+			this.pos.set(pos);
+			this.extents.set(extents);
+			this.parent = parent;
+		}
+		
+		public void set(Vector3 pos, Vector3 extents, Octtree<?> parent)
 		{
 			this.pos.set(pos);
 			this.extents.set(extents);
@@ -276,23 +333,23 @@ public class Octtree <E> {
 		
 		@Override
 		public CollisionType isIntersecting(OcttreeBox box)
-		{
-			float m, n;
-			int i = box.lastFail;
-			CollisionType result = CollisionType.INSIDE;
-
+		{	
 			if (sizeLim > 0)
 			{
-				float size = box.extents.x*box.extents.y*box.extents.z;
+				float size = box.extents.x * box.extents.y * box.extents.z;
 				float dst = frustum.position.dst2(box.pos);
-				float far = frustum.far*frustum.far;
+				float far = frustum.far * frustum.far;
 				
-				float factor = size/sizeLim;
+				float factor = size / sizeLim;
 				
 				float mdst = far * factor;
 				
 				if (dst > mdst) return CollisionType.OUTSIDE;
 			}
+			
+			float m, n;
+			int i = box.lastFail;
+			CollisionType result = CollisionType.INSIDE;
 			
 			while (true)
 			{

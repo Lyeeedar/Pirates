@@ -42,8 +42,12 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 
 			if (textureHash != drawable.textureHash)
 			{
-				drawable.texture.bind(0);
-				shaderBody.setUniformi("u_texture", 0);
+				for (int it = 0; it < drawable.textures.length; it++)
+				{
+					drawable.textures[it].bind(it);
+					shaderBody.setUniformi("u_texture"+it, it);
+				}
+
 				textureHash = drawable.textureHash;
 			}
 			

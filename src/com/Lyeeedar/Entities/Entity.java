@@ -46,6 +46,8 @@ public class Entity {
 	
 	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
 	
+	public final boolean walkable;
+	
 	private AI ai;
 	public static interface AI
 	{
@@ -56,8 +58,9 @@ public class Entity {
 	private final EntityRunnable runnable = new EntityRunnable(this);
 	private final EntityRenderables renderables = new EntityRenderables();
 	
-	public Entity(EntityData<?>... data)
+	public Entity(boolean walkable, EntityData<?>... data)
 	{
+		this.walkable = walkable;
 		for (EntityData<?> d : data) entityData.put((Class<? extends EntityData<?>>) d.getClass(),  d);
 	}
 	
@@ -356,7 +359,6 @@ public class Entity {
 				
 		private final Vector3 tmpVec = new Vector3();
 		private final Vector3 tmpVec2 = new Vector3();
-		private final btVector3 btvec = new btVector3();
 		private final Matrix4 tmpMat = new Matrix4();
 		private final Vector3 v = new Vector3();
 
@@ -366,6 +368,8 @@ public class Entity {
 		public float locationCD = 0;
 		
 		public ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
+		
+		public Entity base;
 		
 		@Override
 		public void write(PositionalData data)
@@ -394,6 +398,8 @@ public class Entity {
 			ray = data.ray;			
 			physicsBody = data.physicsBody;
 			octtreeEntry = data.octtreeEntry;
+			
+			base = data.base;
 		}
 		
 		@Override
@@ -459,15 +465,21 @@ public class Entity {
 			Ycollide = false;
 			Zcollide = false;
 			
-//			if (graph != null && graph.parent != null)
-//			{
-//				graph.parent.getDeltaPos(tmpMat, position);
-//				position.set(0, 0, 0).mul(tmpMat);
-//				
-//				graph.parent.getDeltaRot(tmpMat);
-//				rotation.mul(tmpMat);
-//				up.mul(tmpMat);
-//			}
+			if (base != null)
+			{
+				PositionalData pData = base.readOnlyRead(PositionalData.class);
+				tmpMat.set(pData.composed).translate(tmpVec.set(position).mul(pData.lastInv));
+				position.set(0, 0, 0).mul(tmpMat);
+				
+				tmpVec.set(pData.lastRot2);
+				tmpVec.y = 0; tmpVec.nor();
+				tmpVec2.set(pData.rotation);
+				tmpVec2.y = 0; tmpVec2.nor();
+				tmpMat.setToRotation(tmpVec, tmpVec2);
+				
+				rotation.mul(tmpMat);
+				up.mul(tmpMat);
+			}
 			
 			if (velocity.len2() == 0) 
 			{
@@ -556,6 +568,7 @@ public class Entity {
 					//graph.popAndInsert(base);
 					location = LOCATION.GROUND;
 					locationCD = 0.5f;
+					this.base = base.walkable ? base : null ;
 				}
 				Ycollide = true;
 			}
@@ -566,6 +579,7 @@ public class Entity {
 				{
 					location = LOCATION.AIR;
 					locationCD = 0.5f;
+					this.base = null;
 				}
 			}
 			
@@ -580,43 +594,39 @@ public class Entity {
 				//graph.popAndInsert(GLOBALS.WORLD);
 				location = LOCATION.SEA;
 				Ycollide = true;
+				this.base = null;
 			}
 			
 			position.add(0, v.y, 0);
 			
-//			float angle = 0;
-//			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
-//			float waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
-//			if (point.y < waveHeight2)
-//			{
-//				point.y = waveHeight2;
-//				angle = (float) Math.atan((point.y-position.y)/10);
-//			}
-//			else
-//			{
-//				angle = (float) Math.atan((position.y-point.y)/10);
-//			}
-//			
-//			point = new Vector3(rotation).scl(-10).add(position).add(v);
-//			waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
-//			if (point.y < waveHeight2)
-//			{
-//				point.y = waveHeight2;
-//				angle += (float) Math.atan((point.y-position.y)/-10);
-//			}
-//			else
-//			{
-//				angle += (float) Math.atan((position.y-point.y)/-10);
-//			}
-//			angle/=2.0f;
-//			if (angle > .1f) angle = .1f;
-//			if (angle < -.1f) angle = -.1f;
-//			Yrotate(angle);
-//			
-//			
-//			jumpToken = 2;
-//			
-//			Pools.free(ray);
+			float angle = 0;
+			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);
+			float waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+			if (point.y < waveHeight2)
+			{
+				point.y = waveHeight2;
+				angle = (float) Math.atan((point.y-position.y)/10);
+			}
+			else
+			{
+				angle = (float) Math.atan((position.y-point.y)/10);
+			}
+			
+			point = new Vector3(rotation).scl(-10).add(position).add(v);
+			waveHeight2 = GLOBALS.SKYBOX.sea.waveHeight(point.x, point.z)-1;
+			if (point.y < waveHeight2)
+			{
+				point.y = waveHeight2;
+				angle += (float) Math.atan((point.y-position.y)/-10);
+			}
+			else
+			{
+				angle += (float) Math.atan((position.y-point.y)/-10);
+			}
+			angle/=2.0f;
+			if (angle > .1f) angle = .1f;
+			if (angle < -.1f) angle = -.1f;
+			Yrotate(angle);			
 			
 			calculateComposed();
 			
@@ -628,6 +638,8 @@ public class Entity {
 		@Override
 		public void dispose() {
 			ray.dispose();
+			if (physicsBody != null) GLOBALS.physicsWorld.remove(physicsBody);
+			if (octtreeEntry != null) octtreeEntry.remove();
 		}
 	}
 	public static class EquipmentData implements EntityData<EquipmentData>

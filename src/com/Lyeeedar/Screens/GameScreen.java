@@ -19,6 +19,7 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
+import com.Lyeeedar.Entities.AI.ActionApplyMovement;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
@@ -84,15 +85,19 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
+import com.badlogic.gdx.physics.bullet.collision.btBvhTriangleMeshShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
+import com.badlogic.gdx.physics.bullet.collision.btStridingMeshInterface;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -166,14 +171,32 @@ public class GameScreen extends AbstractScreen {
 		// MAKE SHIP
 		
 		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
-        Mesh shipModel = FileUtils.loadMesh("data/models/boat.obj");
+        Mesh shipModel = FileUtils.loadMesh("data/models/shipMesh.obj");
 		
-		Entity ship = new Entity(new PositionalData());
-		ship.readOnlyRead( PositionalData.class).calculateComposed();
-		//ship.setAI(new AI_Simple());
+		Entity ship = new Entity(true, new PositionalData(), new StatusData());
+		ship.readOnlyRead(PositionalData.class).calculateComposed();
+		
+		Selector ssselect = new ConcurrentSelector();
+		BehaviourTree sbtree = new BehaviourTree(ssselect);
+		ssselect.addNode(new ActionGravityAndMovement());
+		ssselect.addNode(new ActionApplyMovement());
+		
+		ship.setAI(sbtree);
+		
 		//ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
 		
-		ship.addRenderable(new TexturedMesh(shipModel, GL20.GL_TRIANGLES, shipTex, new Vector3(1, 1, 1), 1), new Vector3());
+		ship.addRenderable(new TexturedMesh(shipModel, GL20.GL_TRIANGLES, new Texture[]{shipTex}, new Vector3(1, 1, 1), 1), new Vector3());
+		Array<MeshPart> parts = new Array<MeshPart>();
+		parts.add(new MeshPart("", shipModel, 0, shipModel.getNumIndices(), GL20.GL_TRIANGLES));
+		btCollisionShape shipShape = new btBvhTriangleMeshShape(parts);
+		
+		BoundingBox sbb = shipModel.calculateBoundingBox();
+		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
+		//ship.readOnlyRead(PositionalData.class).scale.set(3, 3, 3);
+		rw.add(entry);
+		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		
 		
 		// END SHIP
 		
@@ -190,7 +213,7 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE PLAYER
 		
-		player = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+		player = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 
 		Selector sselect = new ConcurrentSelector();
 		BehaviourTree btree = new BehaviourTree(sselect);
@@ -227,7 +250,7 @@ public class GameScreen extends AbstractScreen {
 		
 		//sword.attach("top", effect, new Matrix4());
 		
-		player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
+		//player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
 		
@@ -249,7 +272,7 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, sword, swordTrail));
 		player.writeData(eData, EquipmentData.class);
 		
-		OcttreeEntry<Entity> entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 		rw.add(entry);
 		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
@@ -258,7 +281,7 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE NPC 1
 		
-		Entity npc = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+		Entity npc = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 		//npc.setAI(new AI_Simple());
 		Object[] actionTree = {
 			DialogueAction.TEXT3D, "Test dialogue 123 This is Action 0. Text 3D. Advancing.", 1 ,
@@ -313,7 +336,7 @@ public class GameScreen extends AbstractScreen {
 					new ATTACK_STAGE("attack1_2", 2.2f, 10, 10, -1)
 			};
 			
-			Entity ge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+			Entity ge = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			
 			Selector gsselect = new ConcurrentSelector();
 			BehaviourTree gbtree = new BehaviourTree(gsselect);
@@ -374,43 +397,43 @@ public class GameScreen extends AbstractScreen {
 	
 			for (int ii = 0; ii < 5; ii++)
 			{
-				Entity gge = new Entity(new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+				Entity gge = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 				
 				
 				Selector ggrselect = new RandomSelector(new Random());
-				ggrselect.addNode(new ActionWait(1), 0);
-				ggrselect.addNode(new ActionRandomWalk(new Random(), 1), 1);
+				ggrselect.addNode(new ActionWait(1));
+				ggrselect.addNode(new ActionRandomWalk(new Random(), 1));
 				
 				Selector ggsselect3 = new SequenceSelector();
-				ggsselect3.addNode(new ActionMoveTo(true, 50, "leader"), 0);
-				ggsselect3.addNode(new ActionSetValue("leader", ge), 1);
+				ggsselect3.addNode(new ActionMoveTo(true, 50, "leader"));
+				ggsselect3.addNode(new ActionSetValue("leader", ge));
 				
 				Selector ggpselect2 = new PrioritySelector();
-				ggpselect2.addNode(new ActionMoveTo(true, 15, "enemy"), 0);
-				ggpselect2.addNode(new ActionAttack(15, false, true, "enemy"), 1);
+				ggpselect2.addNode(new ActionMoveTo(true, 15, "enemy"));
+				ggpselect2.addNode(new ActionAttack(15, false, true, "enemy"));
 				
 				Selector ggsselect2 = new SequenceSelector();
-				ggsselect2.addNode(ggpselect2, 0);
-				ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")), 1);
+				ggsselect2.addNode(ggpselect2);
+				ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
 				
 				Selector ggsselect4 = new SequenceSelector();
-				ggsselect4.addNode(new ActionMoveTo(false, 500, "enemy"), 0);
-				ggsselect4.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")), 1);
-				ggsselect4.addNode(new ActionBuilder(new GetSelf(), new CheckHPThreshold(false, 50), new DoNothing()), 2);
+				ggsselect4.addNode(new ActionMoveTo(false, 500, "enemy"));
+				ggsselect4.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
+				ggsselect4.addNode(new ActionBuilder(new GetSelf(), new CheckHPThreshold(false, 50), new DoNothing()));
 				
 				Selector ggpselect = new PrioritySelector();
-				ggpselect.addNode(ggrselect, 0);
-				ggpselect.addNode(ggsselect3, 1);
-				ggpselect.addNode(ggsselect2, 2);
-				ggpselect.addNode(ggsselect4, 3);
-				ggpselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 4);
+				ggpselect.addNode(ggrselect);
+				ggpselect.addNode(ggsselect3);
+				ggpselect.addNode(ggsselect2);
+				ggpselect.addNode(ggsselect4);
+				ggpselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 				
 				Selector ggsselect = new ConcurrentSelector();
 				BehaviourTree ggbtree = new BehaviourTree(ggsselect);
-				ggsselect.addNode(new ActionUpdateAnimations(), 0);
-				ggsselect.addNode(new ActionEvaluateDamage(), 1);
-				ggsselect.addNode(new ActionGravityAndMovement(), 2);
-				ggsselect.addNode(ggpselect, 3);
+				ggsselect.addNode(new ActionUpdateAnimations());
+				ggsselect.addNode(new ActionEvaluateDamage());
+				ggsselect.addNode(new ActionGravityAndMovement());
+				ggsselect.addNode(ggpselect);
 				
 				gge.setAI(ggbtree);
 				PositionalData pData2 = gge.readOnlyRead(PositionalData.class);
@@ -573,7 +596,7 @@ public class GameScreen extends AbstractScreen {
 		if (update) 
 		{
 			renderEntities.clear();
-			GLOBALS.renderTree.collectAll(renderEntities, cam.renderFrustum, true, Octtree.MASK_RENDER);
+			GLOBALS.renderTree.collectAll(renderEntities, cam.renderFrustum, Octtree.MASK_RENDER);
 		}
 		for (Entity e : renderEntities)
 		{
@@ -599,7 +622,7 @@ public class GameScreen extends AbstractScreen {
 		if (update) 
 		{
 			veggies.clear();
-			veggieTree.collectAll(veggies, veggieCam.renderFrustum, true, Octtree.MASK_RENDER);
+			veggieTree.collectAll(veggies, veggieCam.renderFrustum, Octtree.MASK_RENDER);
 		}
 		for (Entity e : veggies)
 		{
@@ -652,7 +675,7 @@ public class GameScreen extends AbstractScreen {
 		{
 			GLOBALS.physicsWorld.update(delta);
 			aiEntities.clear();
-			GLOBALS.renderTree.collectAll(aiEntities, cam.aiShape, true, Octtree.MASK_AI);
+			GLOBALS.renderTree.collectAll(aiEntities, cam.aiShape, Octtree.MASK_AI);
 		}
 		for (Entity e : aiEntities)
 		{

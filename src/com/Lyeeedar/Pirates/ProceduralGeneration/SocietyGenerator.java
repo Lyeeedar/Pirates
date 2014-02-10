@@ -17,6 +17,7 @@ import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Relationship;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Society.Village;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
@@ -97,8 +98,8 @@ public class SocietyGenerator {
 					pData.position.set(px+landmark.x, landmark.elevation, py+landmark.y);
 					pData.rotation.mul(building.rot);
 					pData.calculateComposed();
-					Entity house = new Entity(pData);
-					house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, FileUtils.loadTexture("data/textures/house.png", true, null, null), null, 1), new Vector3());
+					Entity house = new Entity(false, pData);
+					//house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/house.png"}, true, null, null), null, 1), new Vector3());
 					entities.add(house);
 				}
 			}	

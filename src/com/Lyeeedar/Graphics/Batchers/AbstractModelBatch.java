@@ -19,8 +19,8 @@ public abstract class AbstractModelBatch implements Batch {
 	{
 	}
 
-	public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
-		drawableManager.add(mesh, primitiveType, texture, colour, model_matrix, type, cam);
+	public void add (Mesh mesh, int primitiveType, Texture[] textures, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
+		drawableManager.add(mesh, primitiveType, textures, colour, model_matrix, type, cam);
 	}
 	
 	public void flushNoClear(LightManager lights, Camera cam) {
@@ -65,9 +65,9 @@ public abstract class AbstractModelBatch implements Batch {
 		 * @param colour
 		 * @param model_matrix
 		 */
-		public void add (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
+		public void add (Mesh mesh, int primitiveType, Texture[] textures, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
 			Drawable drawable = drawablePool.obtain();
-			drawable.setCommon(mesh, primitiveType, texture, colour, model_matrix, type, cam);
+			drawable.setCommon(mesh, primitiveType, textures, colour, model_matrix, type, cam);
 			drawables.add(drawable);
 		}
 
@@ -97,20 +97,20 @@ public abstract class AbstractModelBatch implements Batch {
 			int primitiveType;
 			
 			final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
-			Texture texture;
+			Texture[] textures;
 			int textureHash;
 						
 			final Vector3 tmp = new Vector3();
 
-			public void setCommon (Mesh mesh, int primitiveType, Texture texture, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
+			public void setCommon (Mesh mesh, int primitiveType, Texture[] textures, Vector3 colour, Matrix4 model_matrix, int type, Camera cam) {
 				
 				this.type = type;
 				this.mesh = mesh;
 				this.primitiveType = primitiveType;
 				if (colour != null) this.colour.set(colour);
 				else this.colour.set(1.0f, 1.0f, 1.0f);
-				this.texture = texture;
-				textureHash = texture.hashCode();
+				this.textures = textures;
+				textureHash = textures[0].hashCode();
 				this.model_matrix.set(model_matrix);
 				
 				tmp.set(0, 0, 0).mul(model_matrix);

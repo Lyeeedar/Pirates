@@ -35,6 +35,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.ObjectSet;
 import com.badlogic.gdx.utils.Pools;
 
 public class ParticleEmitter implements Comparable<ParticleEmitter> {
@@ -424,7 +425,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public void reloadTextures()
 	{
 		atlas = FileUtils.loadAtlas(atlasName);
-		Set<Texture> atlasTextures = atlas.getTextures();
+		ObjectSet<Texture> atlasTextures = atlas.getTextures();
 		Iterator<Texture> itr = atlasTextures.iterator();
 
 		atlasTexture = itr.next();

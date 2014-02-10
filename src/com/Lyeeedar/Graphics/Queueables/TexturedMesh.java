@@ -22,23 +22,23 @@ public final class TexturedMesh implements Queueable {
 
 	public final Mesh mesh;
 	public final int primitive_type;
-	public final Texture texture;
+	public final Texture[] textures;
 	public final Vector3 colour;
 	public final int type;
 	public final Matrix4 model_matrix = new Matrix4();
 	
-	public TexturedMesh(Mesh mesh, int primitive_type, Texture texture, Vector3 colour, int type)
+	public TexturedMesh(Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, int type)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
-		this.texture = texture;
+		this.textures = textures;
 		this.colour = colour;
 		this.type = type;
 	}
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, texture, colour, model_matrix, primitive_type, cam);
+		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, primitive_type, cam);
 	}
 
 	@Override
@@ -67,7 +67,7 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return new TexturedMesh(mesh, primitive_type, texture, colour, type);
+		return new TexturedMesh(mesh, primitive_type, textures, colour, type);
 	}
 
 	@Override

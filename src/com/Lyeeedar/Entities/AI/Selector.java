@@ -21,6 +21,10 @@ public abstract class Selector extends BehaviourTreeNode
 		nodes.add(node);
 		nodes.sort();
 	}
+	public void addNode(BehaviourTreeNode node)
+	{
+		addNode(node, nodes.size);
+	}
 	
 	public void setDataTree(String key, Object value)
 	{

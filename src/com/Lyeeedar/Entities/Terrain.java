@@ -46,7 +46,7 @@ public class Terrain extends Entity {
 
 	public Terrain(Texture[] textures, float seaFloor, HeightMap[] heightmaps)
 	{
-		super(new PositionalData());
+		super(true, new PositionalData());
 		
 		this.textures = textures;
 		this.heightmaps = heightmaps;
@@ -158,7 +158,7 @@ public class Terrain extends Entity {
 		Random ran = new Random();
 		for (int i = 0; i < num; i++)
 		{
-			Entity v = new Entity(new MinimalPositionalData());
+			Entity v = new Entity(false, new MinimalPositionalData());
 			
 			v.readData(pData, MinimalPositionalData.class);
 			
