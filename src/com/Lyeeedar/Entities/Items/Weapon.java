@@ -35,10 +35,10 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public int animationStage = 0;
 	public boolean needsUpdate = false;
 	
-	private PositionalData pData = new PositionalData();
-	private StatusData sData = new StatusData();
-	private AnimationData aData = new AnimationData();
-	private Random ran = new Random();
+	private final PositionalData pData = new PositionalData();
+	private final StatusData sData = new StatusData();
+	private final AnimationData aData = new AnimationData();
+	private final Random ran = new Random();
 		
 	private AnimatedModel model;
 	private MotionTrail mt;
@@ -123,7 +123,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			if (mt != null) mt.stopDraw();
 			entity.readData(aData);
-			aData.animationLock = false;
+			if (aData.animationLocker == this) aData.animationLock = false;
 			entity.writeData(aData);
 		}
 		else if (model != null && mt != null)
@@ -181,6 +181,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			aData.listener = this;
 			aData.animate_speed = attacks[animationStage].speed;
 			aData.base_anim = "attack";
+			aData.animationLocker = this;
 			entity.writeData(aData);
 			
 			needsUpdate = false;
@@ -194,6 +195,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			aData.listener = this;
 			aData.animate_speed = attacks[0].speed;
 			aData.base_anim = "attack";
+			aData.animationLocker = this;
 			entity.writeData(aData);
 			
 			entity.readData(pData);
@@ -215,6 +217,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		pData.dispose();
 		sData.dispose();
 		aData.dispose();
+		ray.dispose();
 	}
 
 	@Override

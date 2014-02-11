@@ -1,6 +1,5 @@
 package com.Lyeeedar.Entities;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -9,7 +8,7 @@ import java.util.Map;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
-import com.Lyeeedar.Collision.BulletWorld.CollisionCallback;
+import com.Lyeeedar.Collision.BulletWorld.ContactSensorSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity.EntityData.EntityDataType;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
@@ -25,7 +24,6 @@ import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
-import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import com.badlogic.gdx.utils.Array;
 
 public class Entity {
@@ -45,8 +43,14 @@ public class Entity {
 		LIGHT,
 		LIFE,
 		GAIA,
-		FORCE
+		FORCE,
+		
+		SLOT1,
+		SLOT2,
+		SLOT3
 	}
+	
+	public boolean DISPOSED = false;
 	
 	private final EnumMap<EntityDataType, EntityData<? extends EntityData<?>>> entityData = new EnumMap<EntityDataType, EntityData<? extends EntityData<?>>>(EntityDataType.class);
 	
@@ -76,6 +80,7 @@ public class Entity {
 	
 	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
 	{
+		if (DISPOSED) return;
 		renderables.set(this);
 		renderables.update(delta, cam, lights);
 		renderables.queue(delta, cam, batches);
@@ -98,7 +103,7 @@ public class Entity {
 	public void update(float delta)
 	{	
 		if (ai != null) ai.update(delta);
-		if (entityData.containsKey(EquipmentData.class)) ((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
+		if (entityData.containsKey(EntityDataType.EQUIPMENT)) ((EquipmentData) entityData.get(EntityDataType.EQUIPMENT)).update(delta, this);
 	}
 	
 	public <E extends EntityData<E>> boolean writeData(E data)
@@ -241,12 +246,15 @@ public class Entity {
 		}
 		renderables.dispose();
 		if (ai != null) ai.dispose();
+		
+		DISPOSED = true;
 	}
 
 	public Entity copy()
 	{
-		Collection values = entityData.values();
-		EntityData[] nd = (EntityData[]) values.toArray();
+		Collection<EntityData<? extends EntityData<?>>> values = entityData.values();
+		EntityData[] nd = new EntityData[values.size()];
+		values.toArray(nd);
 		for (int i = 0; i < values.size(); i++)
 		{
 			nd[i] = nd[i].copy();
@@ -325,6 +333,7 @@ public class Entity {
 		public boolean useDirection = true;
 		public boolean animate = true;
 		
+		public Object animationLocker;
 		public boolean animationLock = false;
 		public byte playAnimation = 0;
 		public byte nextAnimation = 0;
@@ -346,6 +355,7 @@ public class Entity {
 			useDirection = data.useDirection;
 			animate = data.animate;
 			
+			animationLocker = data.animationLocker;
 			animationLock = data.animationLock;
 			playAnimation = data.playAnimation;
 			nextAnimation = data.nextAnimation;
@@ -381,7 +391,6 @@ public class Entity {
 			return EntityDataType.ANIMATION;
 		}
 	}
-	
 	public static class MinimalPositionalData extends EntityData<MinimalPositionalData>
 	{
 		public final Vector3 position = new Vector3();
@@ -415,7 +424,6 @@ public class Entity {
 			return EntityDataType.MINIMALPOSITIONAL;
 		}
 	}
-	
 	public static class PositionalData extends EntityData<PositionalData>
 	{
 		public enum COLLISION_TYPE
@@ -463,8 +471,8 @@ public class Entity {
 		
 		public float locationCD = 0;
 		
-		public ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback();
-		public CollisionCallback collisionCallback;
+		public ClosestRayResultSkippingCallback ray;
+		public ContactSensorSkippingCallback sensor;
 		
 		public Entity base;
 		
@@ -474,6 +482,7 @@ public class Entity {
 			collisionType = data.collisionType;
 			
 			location = data.location;
+			locationCD = data.locationCD;
 			
 			lastPos.set(data.lastPos);
 			position.set(data.position);
@@ -494,8 +503,8 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			scale.set(data.scale);
 			
-			collisionCallback = data.collisionCallback;
-			ray = data.ray;			
+			ray = data.ray;
+			sensor = data.sensor;
 			physicsBody = data.physicsBody;
 			octtreeEntry = data.octtreeEntry;
 			
@@ -512,6 +521,23 @@ public class Entity {
 		{
 			PositionalData ed = new PositionalData();
 			ed.write(this);
+			if (ed.ray != null)
+			{
+				ed.ray = new ClosestRayResultSkippingCallback();
+				for (long l : ray.skipObjects)
+				{
+					ed.ray.skipObjects.add(l);
+				}
+			}
+			if (ed.sensor != null)
+			{
+				ed.sensor = new ContactSensorSkippingCallback();
+				ed.sensor.object = physicsBody;
+				for (long l : sensor.skipObjects)
+				{
+					ed.sensor.skipObjects.add(l);
+				}
+			}
 			return ed;
 		}
 		
@@ -583,13 +609,23 @@ public class Entity {
 			
 			physicsBody.setWorldTransform(composed);
 			octtreeEntry.box.pos.set(position);
-			octtreeEntry.updatePosition();
-			
-			if (collisionCallback != null && (Xcollide || Ycollide || Zcollide)) collisionCallback.collided(); 
+			octtreeEntry.updatePosition();			
 		}
+		
+		 public void createSensor()
+		 {
+			 sensor = new ContactSensorSkippingCallback();
+			sensor.object = physicsBody;
+		 }
 		
 		private void collisionShape(float delta, float mass)
 		{
+			if (sensor == null)
+			{
+				sensor = new ContactSensorSkippingCallback();
+				sensor.object = physicsBody;
+			}
+			
 			if (velocity.len2() == 0) 
 			{
 				return;
@@ -602,7 +638,20 @@ public class Entity {
 			velocity.x = 0;
 			velocity.z = 0;
 			
-			if (GLOBALS.physicsWorld.collide(physicsBody, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION))
+			physicsBody.setWorldTransform(composed);
+			sensor.array.clear();
+			sensor.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			sensor.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			if (GLOBALS.physicsWorld.collide(sensor))
+			{
+				Xcollide = true;
+				Ycollide = true;
+				Zcollide = true;
+			}
+			
+			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
+			
+			if (position.y < waveHeight)
 			{
 				Xcollide = true;
 				Ycollide = true;
@@ -612,6 +661,12 @@ public class Entity {
 		
 		private void collisionRay(float delta, float mass)
 		{
+			if (ray == null)
+			{
+				ray = new ClosestRayResultSkippingCallback();
+				ray.setSkipObject(physicsBody);
+			}
+			
 			locationCD -= delta;
 			
 			if (base != null)
@@ -722,7 +777,7 @@ public class Entity {
 				}
 			}
 			
-			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x+v.x, position.z+v.z);
+			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
 			
 			if (position.y < waveHeight)
 			{
@@ -770,9 +825,7 @@ public class Entity {
 
 		@Override
 		public void dispose() {
-			ray.dispose();
-			if (physicsBody != null) GLOBALS.physicsWorld.remove(physicsBody);
-			if (octtreeEntry != null) octtreeEntry.remove();
+			//if (ray != null) ray.dispose();
 		}
 	
 		@Override

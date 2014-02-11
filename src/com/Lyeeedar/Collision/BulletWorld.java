@@ -3,6 +3,7 @@ package com.Lyeeedar.Collision;
 import java.util.HashSet;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.AI;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
@@ -48,8 +49,6 @@ public class BulletWorld {
 
 	public btDynamicsWorld world;
 
-	private final ContactSensorCallback sensor = new ContactSensorCallback();
-
 	public BulletWorld(Vector3 worldMin, Vector3 worldMax)
 	{
 		//broadphase = new btAxisSweep3(worldMin,worldMax);
@@ -68,36 +67,11 @@ public class BulletWorld {
 		
 		world.getPairCache().setInternalGhostPairCallback(new btGhostPairCallback());
 	}
-	
-	public boolean collide(final btCollisionObject shape, short group, short mask)
-	{
-		sensor.setCollisionFilterGroup(group);
-		sensor.setCollisionFilterMask(mask);
-		sensor.object = shape;
-		sensor.array.clear();
-		
-		world.contactTest(shape, sensor);
-		
+
+	public boolean collide(final ContactSensorSkippingCallback sensor) 
+	{		
+		world.contactTest(sensor.object, sensor);
 		return sensor.array.size != 0;
-	}
-
-	public Array<Entity> getEntitiesCollidingWithObject(final btCollisionObject shape, final Array<Entity> out, short group, short mask) 
-	{
-		sensor.setCollisionFilterGroup(group);
-		sensor.setCollisionFilterMask(mask);
-		sensor.object = shape;
-		sensor.array.clear();
-		
-		world.contactTest(shape, sensor);
-
-		out.clear();
-		for (btCollisionObject o : sensor.array)
-		{
-			if (o.userData != null) out.add((Entity) o.userData);
-			else System.out.println("null");
-		}
-
-		return out;
 	}
 	
 	public void remove(btRigidBody body)
@@ -112,6 +86,13 @@ public class BulletWorld {
 
 	public void add(btCollisionShape shape, Matrix4 transform, Entity entity, short group, short mask)
 	{
+		btRigidBody rigidBody = getRigidBody(shape, transform, entity);
+
+		world.addRigidBody(rigidBody, group, mask);
+	}
+	
+	public btRigidBody getRigidBody(btCollisionShape shape, Matrix4 transform, Entity entity)
+	{
 		btDefaultMotionState fallMotionState = new btDefaultMotionState(transform);
 		btRigidBody rigidBody = new btRigidBody(0, fallMotionState, shape);
 
@@ -119,11 +100,10 @@ public class BulletWorld {
 		PositionalData pData = entity.readOnlyRead(PositionalData.class);
 		if (pData != null) 
 		{
-			pData.ray.setSkipObject(rigidBody);
 			pData.physicsBody = rigidBody;
 		}
-
-		world.addRigidBody(rigidBody, group, mask);
+		
+		return rigidBody;
 	}
 
 	public void add(btRigidBody object, short group, short mask)
@@ -155,7 +135,7 @@ public class BulletWorld {
 
 	public static class ClosestRayResultSkippingCallback extends ClosestRayResultCallback
 	{
-		HashSet<Long> skipObjects = new HashSet<Long>();
+		public HashSet<Long> skipObjects = new HashSet<Long>();
 		
 		public ClosestRayResultSkippingCallback()
 		{
@@ -194,7 +174,7 @@ public class BulletWorld {
 	
 	public static class AllHitsRayResultSkippingCallback extends AllHitsRayResultCallback
 	{
-		HashSet<Long> skipObjects = new HashSet<Long>();
+		public HashSet<Long> skipObjects = new HashSet<Long>();
 
 		public AllHitsRayResultSkippingCallback(Vector3 rayFromWorld, Vector3 rayToWorld) {
 			super(rayFromWorld, rayToWorld);
@@ -226,31 +206,44 @@ public class BulletWorld {
 		}
 	}
 	
-	public static class SimpleContactCallback extends ContactResultCallback
+	public static class SimpleContactTestCallback extends ContactResultCallback
 	{
-		public boolean hasCollided = false;
+		public boolean collided = false;
+		
+		public float addSingleResult (btManifoldPoint cp, btCollisionObjectWrapper colObj0Wrap, int partId0, int index0,
+				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1) 
 
-		public SimpleContactCallback()
 		{
-			super();
-		}
-
-		public float addSingleResult(btManifoldPoint cp,
-				btCollisionObjectWrapper colObj0Wrap, int partId0, int index0,
-				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1)
-		{
-
-			hasCollided = true;
-
-			return 1.f;
+			collided = true;
+			return 0f;
 		}
 	}
 	
-	public static class ContactSensorCallback extends ContactResultCallback
+	public static class ContactSensorSkippingCallback extends ContactResultCallback
 	{
+		public HashSet<Long> skipObjects = new HashSet<Long>();
+		
 		public btCollisionObject object;
 		public final Array<btCollisionObject> array = new Array<btCollisionObject>();
 
+		public void clearSkips()
+		{
+			skipObjects.clear();
+		}
+		
+		public boolean hasSkip(long skip)
+		{
+			return skipObjects.contains(skip);
+		}
+		
+		public void setSkipObject(btCollisionObject object)
+		{
+			if (!skipObjects.contains(object.getCPointer()))
+			{
+				skipObjects.add(object.getCPointer());
+			}
+		}
+		
 		@Override
 		public float addSingleResult (btManifoldPoint cp, btCollisionObjectWrapper colObj0Wrap, int partId0, int index0,
 				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1) 
@@ -258,6 +251,11 @@ public class BulletWorld {
 		{
 			btCollisionObject other = colObj0Wrap.getCollisionObject() == object ? colObj1Wrap.getCollisionObject() : colObj0Wrap.getCollisionObject();
 
+			if (skipObjects.contains(other.getCPointer()))
+			{
+				return 0f;
+			}
+			
 			if (other != null) {
 				array.add(other);
 			}
@@ -265,10 +263,5 @@ public class BulletWorld {
 			return 0f;
 		}
 
-	}
-	
-	public static interface CollisionCallback
-	{
-		public void collided();
 	}
 }

@@ -11,36 +11,29 @@ import com.badlogic.gdx.math.Vector3;
 public class ActionMove extends Action
 {
 	private final PositionalData pData = new PositionalData();
-	public final Vector3 velocity = new Vector3();
+	public final float velocity;
 	
-	private final Vector3 tmpVec = new Vector3();
 	
-	public ActionMove(Vector3 velocity)
+	public ActionMove(float velocity)
 	{
-		this.velocity.set(velocity);
+		this.velocity = velocity;
 	}
 
 	@Override
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		float delta = (Float) getData("delta", 0);
 		
 		entity.readData(pData);
 		
-		pData.velocity.add(velocity);
-		pData.rotation.set(pData.velocity).nor();
-		
-		tmpVec.set(pData.rotation).crs(GLOBALS.DEFAULT_UP);
-		
-		pData.up.set(pData.rotation).crs(tmpVec);
+		pData.forward_backward(velocity);
 		
 		entity.writeData(pData);
 		
 		parent.setDataTree("moved", true);
 		
 		state = BehaviourTreeState.FINISHED;
-		return BehaviourTreeState.FINISHED;
+		return state;
 	}
 
 	@Override

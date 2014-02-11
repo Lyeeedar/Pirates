@@ -6,22 +6,22 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.badlogic.gdx.utils.Array;
 
-public abstract class Selector extends BehaviourTreeNode<Selector>
+public abstract class Selector extends BehaviourTreeNode
 {
 	public Selector()
 	{
 		super();
 	}
 
-	protected final Array<BehaviourTreeNode<?>> nodes = new Array<BehaviourTreeNode<?>>();
-	public void addNode(BehaviourTreeNode<?> node, int priority)
+	protected final Array<BehaviourTreeNode> nodes = new Array<BehaviourTreeNode>();
+	public void addNode(BehaviourTreeNode node, int priority)
 	{
 		node.priority = priority;
 		node.parent = this;
 		nodes.add(node);
 		nodes.sort();
 	}
-	public void addNode(BehaviourTreeNode<?> node)
+	public void addNode(BehaviourTreeNode node)
 	{
 		addNode(node, nodes.size);
 	}
@@ -50,10 +50,18 @@ public abstract class Selector extends BehaviourTreeNode<Selector>
 		}
 	}
 	
+	public void copy(Selector other)
+	{
+		for (BehaviourTreeNode node : nodes)
+		{
+			other.addNode(node.copy(), node.priority);
+		}
+	}
+	
 	@Override
 	public void dispose()
 	{
-		for (BehaviourTreeNode<?> node : nodes)
+		for (BehaviourTreeNode node : nodes)
 		{
 			node.dispose();
 		}
@@ -105,7 +113,9 @@ public abstract class Selector extends BehaviourTreeNode<Selector>
 		@Override
 		public Selector copy()
 		{
-			return new PrioritySelector();
+			Selector ns = new PrioritySelector();
+			this.copy(ns);
+			return ns;
 		}
 	}
 	
@@ -159,7 +169,9 @@ public abstract class Selector extends BehaviourTreeNode<Selector>
 		@Override
 		public Selector copy()
 		{
-			return new ConcurrentSelector();
+			Selector ns = new ConcurrentSelector();
+			this.copy(ns);
+			return ns;
 		}
 		
 	}
@@ -213,12 +225,12 @@ public abstract class Selector extends BehaviourTreeNode<Selector>
 			}
 		}
 
-
-
 		@Override
 		public Selector copy()
 		{
-			return new SequenceSelector();
+			Selector ns = new SequenceSelector();
+			this.copy(ns);
+			return ns;
 		}
 	}
 	
@@ -264,7 +276,9 @@ public abstract class Selector extends BehaviourTreeNode<Selector>
 		@Override
 		public Selector copy()
 		{
-			return new RandomSelector(ran);
+			Selector ns = new RandomSelector(ran);
+			this.copy(ns);
+			return ns;
 		}
 	}
 }

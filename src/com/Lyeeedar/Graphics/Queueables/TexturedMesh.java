@@ -62,7 +62,6 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public void dispose() {
-		mesh.dispose();
 	}
 
 	@Override

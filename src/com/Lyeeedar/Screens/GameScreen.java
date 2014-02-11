@@ -17,12 +17,15 @@ import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
+import com.Lyeeedar.Entities.AI.ActionDamage;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
+import com.Lyeeedar.Entities.AI.ActionKill;
 import com.Lyeeedar.Entities.AI.ActionMove;
 import com.Lyeeedar.Entities.AI.ActionMoveTo;
 import com.Lyeeedar.Entities.AI.ActionPlayerControl;
@@ -35,6 +38,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.AI.CheckBest.CheckClosest;
 import com.Lyeeedar.Entities.AI.CheckBest.CheckHPThreshold;
 import com.Lyeeedar.Entities.AI.ConditionalAnimationLock;
+import com.Lyeeedar.Entities.AI.ConditionalCollided;
 import com.Lyeeedar.Entities.AI.DoAction.DoNothing;
 import com.Lyeeedar.Entities.AI.DoAction.DoSetEntity;
 import com.Lyeeedar.Entities.AI.GetEntities.GetEnemies;
@@ -147,19 +151,19 @@ public class GameScreen extends AbstractScreen {
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 1000, -100, 800855);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 500, -50, 1337135);
 		Pixmap hmpm = ImageUtils.arrayToPixmap(sg.generate(ae));
 		Texture hm = ImageUtils.PixmapToTexture(hmpm);
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -100.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -100.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -50.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -50.0f)});
 		
 		terrain.readOnlyRead(PositionalData.class).calculateComposed();
 		
 		fb = ImageUtils.extractAlpha(hmpm);
 		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
-		hf.setLocalScaling(new Vector3(10f, 1000f, 10f));
+		hf.setLocalScaling(new Vector3(10f, 500f, 10f));
 		
-		bw.add(hf, new Matrix4().setToTranslation(5000f, 400f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
+		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
 		// END HEIGHTMAP
 
@@ -179,7 +183,7 @@ public class GameScreen extends AbstractScreen {
 		Selector ssselect = new ConcurrentSelector();
 		BehaviourTree sbtree = new BehaviourTree(ssselect);
 		ssselect.addNode(new ActionGravityAndMovement());
-		ssselect.addNode(new ActionMove(new Vector3(1, 0.4f, 1)));
+		ssselect.addNode(new ActionMove(10));
 		
 		ship.setAI(sbtree);
 		
@@ -217,15 +221,15 @@ public class GameScreen extends AbstractScreen {
 
 		Selector sselect = new ConcurrentSelector();
 		BehaviourTree btree = new BehaviourTree(sselect);
-		sselect.addNode(new ActionUpdateAnimations(), 0);
-		//sselect.addNode(new ActionEvaluateDamage(), 1);
-		sselect.addNode(new ActionGravityAndMovement(), 2);
+		sselect.addNode(new ActionUpdateAnimations());
+		//sselect.addNode(new ActionEvaluateDamage());
+		sselect.addNode(new ActionGravityAndMovement());
 		
 		Selector pselect = new PrioritySelector();
-		pselect.addNode(new ActionPlayerControl(controls, cam), 0);
-		pselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 1);
+		pselect.addNode(new ActionPlayerControl(controls, cam));
+		pselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 		
-		sselect.addNode(pselect, 2);
+		sselect.addNode(pselect);
 		
 		player.setAI(btree);
 
@@ -267,6 +271,32 @@ public class GameScreen extends AbstractScreen {
 				new ATTACK_STAGE("attack1_2", 2.2f, 90, 10, -1)
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, sword, swordTrail));
+		
+		Entity spell = new Entity(false, new PositionalData(), new StatusData());
+		spell.addRenderable(effect, new Vector3());
+		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
+		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
+		spell.readOnlyRead(StatusData.class).mass = 0.01f;
+		
+		Selector ssssselect = new SequenceSelector();
+		ssssselect.addNode(new ActionKill());
+		ssssselect.addNode(new ActionDamage(50, new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+		ssssselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		
+		Selector ssspselect = new PrioritySelector();
+		ssspselect.addNode(new ActionMove(20));
+		ssspselect.addNode(ssssselect);
+		
+		Selector sssselect = new ConcurrentSelector();
+		BehaviourTree ssbtree = new BehaviourTree(sssselect);
+		sssselect.addNode(new ActionGravityAndMovement());
+		sssselect.addNode(ssspselect);
+		
+		spell.setAI(ssbtree);
+		
+		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f));
+		
 		player.writeData(eData);
 		
 		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
@@ -670,8 +700,9 @@ public class GameScreen extends AbstractScreen {
 			aiEntities.clear();
 			GLOBALS.renderTree.collectAll(aiEntities, cam.aiShape, Octtree.MASK_AI);
 		}
-		for (Entity e : aiEntities)
+		for (int i = 0; i < aiEntities.size; i++)
 		{
+			Entity e = aiEntities.get(i);
 			if (e.getAI() == null) continue;
 			StatusData sData = e.readOnlyRead(StatusData.class);
 			if (sData.DAMAGED > 0)
@@ -688,7 +719,10 @@ public class GameScreen extends AbstractScreen {
 			if (!sData.ALIVE)
 			{
 				GLOBALS.physicsWorld.remove(e.readOnlyRead(PositionalData.class).physicsBody);
+				e.readOnlyRead(PositionalData.class).octtreeEntry.remove();
 				e.dispose();
+				aiEntities.removeIndex(i);
+				i--;
 			}
 			else list.add(e.getRunnable(delta));
 		}
@@ -716,6 +750,7 @@ public class GameScreen extends AbstractScreen {
 			GLOBALS.picker.tint();
 		}
 		
+		GLOBALS.proccessPendingEntities();
 	}
 
 	@Override

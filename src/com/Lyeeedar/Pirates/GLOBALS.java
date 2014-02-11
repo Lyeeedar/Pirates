@@ -8,14 +8,20 @@ import java.util.concurrent.Future;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.Octtree;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
 import com.Lyeeedar.Entities.Items.Spell;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Sound.Mixer;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Picker;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
+import com.badlogic.gdx.utils.Array;
 
 public final class GLOBALS {
 	
@@ -55,6 +61,8 @@ public final class GLOBALS {
 	
 	public static float PROGRAM_TIME = 0.0f;
 	
+	public static Array<Entity> pendingEntities = new Array<Entity>(false, 16);
+	
 	public static BulletWorld physicsWorld;
 	public static Octtree<Entity> renderTree;
 	
@@ -89,6 +97,20 @@ public final class GLOBALS {
 			}
 		}
 		futureList.clear();
+	}
+	
+	public static void proccessPendingEntities()
+	{
+		for (Entity e : pendingEntities)
+		{
+			Entity ne = e.copy();
+			OcttreeEntry<Entity> entry = renderTree.createEntry(ne, ne.readOnlyRead(PositionalData.class).position, ne.readOnlyRead(PositionalData.class).octtreeEntry.box.extents, Octtree.MASK_AI | Octtree.MASK_RENDER);
+			ne.readOnlyRead(PositionalData.class).octtreeEntry = entry;
+			renderTree.add(entry);
+			if (ne.readOnlyRead(PositionalData.class).collisionType == COLLISION_TYPE.RAY) physicsWorld.add(ne.readOnlyRead(PositionalData.class).physicsBody.getCollisionShape(), new Matrix4().setToTranslation(ne.readOnlyRead(PositionalData.class).position), ne, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+			ne.readOnlyRead(PositionalData.class).calculateComposed();
+		}
+		pendingEntities.clear();
 	}
 
 	public static double angle(Vector3 v1, Vector3 v2, Vector3 tmp)

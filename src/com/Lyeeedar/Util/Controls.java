@@ -123,6 +123,18 @@ public class Controls {
 		return retval;
 	}
 	
+	public boolean slot1()
+	{
+		if (isAndroid)
+		{
+			return false;
+		}
+		else
+		{
+			return Gdx.input.isKeyPressed(Keys.NUM_1);
+		}
+	}
+	
 	public boolean leftClick()
 	{
 		if (isAndroid)

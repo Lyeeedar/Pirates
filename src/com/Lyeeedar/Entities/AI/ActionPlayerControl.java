@@ -127,6 +127,12 @@ public class ActionPlayerControl extends Action
 			stopUsing(Equipment_Slot.RARM, eData);
 		}
 		
+		if (controls.slot1()) use(Equipment_Slot.SLOT1, eData);
+		else 
+		{
+			stopUsing(Equipment_Slot.SLOT1, eData);
+		}
+		
 		if (Gdx.input.isKeyPressed(Keys.NUM_1))
 		{
 			GLOBALS.picker.set(entity, new Array<Entity>(), cam, 100, 3, false, 0.2f, new Vector3(0, 1, 0));

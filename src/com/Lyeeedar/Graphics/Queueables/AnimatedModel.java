@@ -152,6 +152,10 @@ public class AnimatedModel implements Queueable {
 
 	@Override
 	public void dispose() {
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			am.model.dispose();
+		}
 	}
 
 	private static class ATTACHED_MODEL
