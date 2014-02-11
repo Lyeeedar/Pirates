@@ -64,7 +64,7 @@ public class Picker
 		this.tintColour = tintColour;
 		
 		ray.clearSkips();
-		source.readData(pData, PositionalData.class);
+		source.readData(pData);
 		ray.setSkipObject(pData.physicsBody);
 	}
 	
@@ -75,7 +75,7 @@ public class Picker
 		pickCD -= delta;
 		if (pickCD > 0) return;
 		
-		source.readData(sData, StatusData.class);
+		source.readData(sData);
 
 		ray.setCollisionObject(null);
         ray.setClosestHitFraction(1f);
@@ -91,7 +91,7 @@ public class Picker
 		if (ray.hasHit())
 		{
 			Entity hit = (Entity) ray.getCollisionObject().userData;
-			hit.readData(sData2, StatusData.class);
+			hit.readData(sData2);
 			
 			boolean valid = allies ? sData2.isAlly(sData) : !sData2.isAlly(sData);
 			
@@ -101,7 +101,7 @@ public class Picker
 				pickCD = pickSpeed;
 			}
 			
-			hit.readData(pData, PositionalData.class);
+			hit.readData(pData);
 			
 			ray.setSkipObject(pData.physicsBody);
 		}
@@ -111,9 +111,9 @@ public class Picker
 	{
 		for (Entity e : output)
 		{
-			e.readData(aData, AnimationData.class);
+			e.readData(aData);
 			aData.colour.set(tintColour);
-			e.writeData(aData, AnimationData.class);
+			e.writeData(aData);
 		}
 	}
 }

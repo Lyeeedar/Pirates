@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -25,7 +26,7 @@ public class ActionMove extends Action
 		Entity entity = (Entity) getData("entity", null);
 		float delta = (Float) getData("delta", 0);
 		
-		entity.readData(pData, PositionalData.class);
+		entity.readData(pData);
 		
 		pData.velocity.add(velocity);
 		pData.rotation.set(pData.velocity).nor();
@@ -34,7 +35,7 @@ public class ActionMove extends Action
 		
 		pData.up.set(pData.rotation).crs(tmpVec);
 		
-		entity.writeData(pData, PositionalData.class);
+		entity.writeData(pData);
 		
 		parent.setDataTree("moved", true);
 		
@@ -47,6 +48,18 @@ public class ActionMove extends Action
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionMove(velocity);
+	}
+
+	@Override
+	public void dispose()
+	{
+		pData.dispose();
 	}
 
 }

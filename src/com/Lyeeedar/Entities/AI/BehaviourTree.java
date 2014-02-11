@@ -26,9 +26,16 @@ public class BehaviourTree implements AI
 	}
 	
 	@Override
+	public AI copy()
+	{
+		BehaviourTree nbt = new BehaviourTree(root.copy());
+		return nbt;
+	}
+	
+	@Override
 	public void dispose()
 	{
-		
+		root.dispose();
 	}
 	
 	public enum BehaviourTreeState
@@ -37,7 +44,7 @@ public class BehaviourTree implements AI
 		FINISHED,
 		RUNNING
 	}
-	public static abstract class BehaviourTreeNode implements Comparable<BehaviourTreeNode>
+	public static abstract class BehaviourTreeNode<E extends BehaviourTreeNode<E>> implements Comparable<BehaviourTreeNode<E>>
 	{
 		public Selector parent;
 		public int priority;
@@ -69,9 +76,12 @@ public class BehaviourTree implements AI
 			Object o = data.get(key);
 			return o != null ? o : fallback;
 		}
+		
+		public abstract E copy();
+		public abstract void dispose();
 	}
 	
-	public static abstract class Conditional extends BehaviourTreeNode
+	public static abstract class Conditional extends BehaviourTreeNode<Conditional>
 	{
 
 		public Conditional()
@@ -80,7 +90,7 @@ public class BehaviourTree implements AI
 		}
 		
 	}
-	public static abstract class Action extends BehaviourTreeNode
+	public static abstract class Action extends BehaviourTreeNode<Action>
 	{
 
 		public Action()
@@ -89,4 +99,5 @@ public class BehaviourTree implements AI
 		}
 		
 	}
+
 }

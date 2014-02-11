@@ -19,11 +19,11 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
-import com.Lyeeedar.Entities.AI.ActionMove;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
+import com.Lyeeedar.Entities.AI.ActionMove;
 import com.Lyeeedar.Entities.AI.ActionMoveTo;
 import com.Lyeeedar.Entities.AI.ActionPlayerControl;
 import com.Lyeeedar.Entities.AI.ActionRandomWalk;
@@ -46,9 +46,9 @@ import com.Lyeeedar.Entities.AI.Selector.RandomSelector;
 import com.Lyeeedar.Entities.AI.Selector.SequenceSelector;
 import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
+import com.Lyeeedar.Entities.Items.Spell;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
-import com.Lyeeedar.Entities.Spells.Spell;
 import com.Lyeeedar.Graphics.Clouds;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
@@ -60,12 +60,10 @@ import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
-import com.Lyeeedar.Graphics.Queueables.Sprite3D;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Pirates.GLOBALS.GENDER;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
 import com.Lyeeedar.Util.Dialogue;
@@ -98,7 +96,6 @@ import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
 import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
-import com.badlogic.gdx.physics.bullet.collision.btStridingMeshInterface;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -255,7 +252,7 @@ public class GameScreen extends AbstractScreen {
 		player.readOnlyRead(StatusData.class).mass = 2f;
 		
 		EquipmentData eData = new EquipmentData();
-		player.readData(eData, EquipmentData.class);
+		player.readData(eData);
 		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
@@ -270,7 +267,7 @@ public class GameScreen extends AbstractScreen {
 				new ATTACK_STAGE("attack1_2", 2.2f, 90, 10, -1)
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, sword, swordTrail));
-		player.writeData(eData, EquipmentData.class);
+		player.writeData(eData);
 		
 		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
@@ -309,10 +306,10 @@ public class GameScreen extends AbstractScreen {
 
 		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
 		npc.readOnlyRead(StatusData.class).factions.add("Player");
-		npc.readData(eData, EquipmentData.class);
+		npc.readData(eData);
 		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
 		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
-		npc.writeData(eData, EquipmentData.class);
+		npc.writeData(eData);
 		
 		// END NPC 1
 		
@@ -382,9 +379,9 @@ public class GameScreen extends AbstractScreen {
 			gam.attach("DEF-palm_01_R", gsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
 			gam.attach(null, gswordTrail, new Matrix4());
 			
-			ge.readData(eData, EquipmentData.class);
+			ge.readData(eData);
 			eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, gsword, gswordTrail));
-			ge.writeData(eData, EquipmentData.class);
+			ge.writeData(eData);
 			
 			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
 			pData.octtreeEntry = entry;
@@ -450,9 +447,9 @@ public class GameScreen extends AbstractScreen {
 				ggam.attach("DEF-palm_01_R", ggsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
 				ggam.attach(null, ggswordTrail, new Matrix4());
 				
-				gge.readData(eData, EquipmentData.class);
+				gge.readData(eData);
 				eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, ggsword, ggswordTrail));
-				gge.writeData(eData, EquipmentData.class);
+				gge.writeData(eData);
 				
 				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
 				pData2.octtreeEntry = entry;
@@ -682,7 +679,7 @@ public class GameScreen extends AbstractScreen {
 				float mag = 1.0f - ((float)sData.DAMAGED) / ((float)sData.MAX_HEALTH/2);
 				if (mag > 1.0f) mag = 1.0f;
 				
-				e.readData(pData, Entity.PositionalData.class);
+				e.readData(pData);
 				Decal decal = ImageUtils.getTextDecal(1.0f*GLOBALS.numDigits(sData.DAMAGED), 3.2f, sB, fB, null, ""+sData.DAMAGED);
 				tParticles.add(new TextParticle(decal, 3.0f, pData.position.add(0, 2, 0), new Vector3(0, 3.6f, 0), new Vector3(1.0f, mag, 0.0f)));
 				sData.DAMAGED = 0;
@@ -707,21 +704,6 @@ public class GameScreen extends AbstractScreen {
 		veggieCam.position.set(cam.position);
 		veggieCam.direction.set(cam.direction);
 		veggieCam.update();
-		
-		Iterator<Spell> itr = GLOBALS.SPELLS.iterator();
-		while(itr.hasNext())
-		{
-			Spell s = itr.next();
-			boolean alive = s.update(delta, cam);
-			if (!alive || s.position.dst2(cam.position) > GLOBALS.FOG_MAX*GLOBALS.FOG_MAX)
-			{
-				itr.remove();
-				s.dispose();
-			}
-		}
-		
-		GLOBALS.SPELLS.addAll(GLOBALS.pendingSPELLS);
-		GLOBALS.pendingSPELLS.clear();
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{

@@ -122,9 +122,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		if (!inSwing)
 		{
 			if (mt != null) mt.stopDraw();
-			entity.readData(aData, AnimationData.class);
+			entity.readData(aData);
 			aData.animationLock = false;
-			entity.writeData(aData, AnimationData.class);
+			entity.writeData(aData);
 		}
 		else if (model != null && mt != null)
 		{
@@ -133,7 +133,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			mt.draw(bot, top);
 			mt.update(bot, top);
 			
-			entity.readData(pData, PositionalData.class);
+			entity.readData(pData);
 			
 			ray.getRayFromWorld().setValue(bot.x, bot.y, bot.z);
 			ray.getRayToWorld().setValue(top.x, top.y, top.z);
@@ -152,10 +152,10 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 					if (!ray.hasSkip(arr.at(i).getCPointer()))
 					{
 						Entity e = (Entity) arr.at(i).userData;
-						if (e.readData(sData, StatusData.class))
+						if (e.readData(sData))
 						{
 							sData.damage = attacks[animationStage].damage + ran.nextInt(attacks[animationStage].damVar);
-							e.writeData(sData, StatusData.class);
+							e.writeData(sData);
 							ray.setSkipObject(arr.at(i));
 						}
 	//					else
@@ -176,12 +176,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		if (needsUpdate)
 		{
-			entity.readData(aData, AnimationData.class);
+			entity.readData(aData);
 			playAnimation(aData, attacks[animationStage].animationName);
 			aData.listener = this;
 			aData.animate_speed = attacks[animationStage].speed;
 			aData.base_anim = "attack";
-			entity.writeData(aData, AnimationData.class);
+			entity.writeData(aData);
 			
 			needsUpdate = false;
 		}
@@ -189,22 +189,14 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			inSwing = true;
 			
-			entity.readData(aData, AnimationData.class);
+			entity.readData(aData);
 			playAnimation(aData, attacks[0].animationName);
 			aData.listener = this;
 			aData.animate_speed = attacks[0].speed;
 			aData.base_anim = "attack";
-			entity.writeData(aData, AnimationData.class);
+			entity.writeData(aData);
 			
-			entity.readData(pData, PositionalData.class);
-			
-//			SpellAI aimove = new SpellAI_Bolt(pData.rotation.scl(20), 1, new Sound3D(FileUtils.loadSound("data/sfx/fire_loop_01.mp3"), 0.1f, 1.0f, true));
-//			SpellAI aidam = new SpellAI_Explosion(5, 0.5f, 2, 0.3f, 6, new Sound3D(FileUtils.loadSound("data/sfx/explosion_distant_002.mp3"), 0.01f, 1.0f, false));
-//			ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
-//			Spell s = new Spell(pData.position.add(0, 2, 0), effect, entity, aimove, aidam, new SpellAI_FadeOut());
-//			s.effect.getEmitter(0).addLight(false, 1.0f, 1.0f, Color.YELLOW, false, 0, 0, 0);
-//			GLOBALS.SPELLS.add(s);
-//			s.effect.getEmitter(0).getLight(GLOBALS.LIGHTS);
+			entity.readData(pData);
 		}
 	}
 

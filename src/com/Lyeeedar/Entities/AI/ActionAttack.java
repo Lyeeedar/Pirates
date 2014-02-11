@@ -5,6 +5,7 @@ import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Items.Equipment;
 
@@ -47,39 +48,39 @@ public class ActionAttack extends Action
 		
 		if (enemy == null)
 		{
-			entity.readData(eData, EquipmentData.class);
+			entity.readData(eData);
 			
 			if (useLeft) stopUsing(Equipment_Slot.LARM, eData);
 			if (useRight) stopUsing(Equipment_Slot.RARM, eData);
 			
-			entity.writeData(eData, EquipmentData.class);
+			entity.writeData(eData);
 			
 			state = BehaviourTreeState.FAILED;
 			return BehaviourTreeState.FAILED;
 		}
 		
-		entity.readData(pData, PositionalData.class);
-		enemy.readData(pData2, PositionalData.class);
+		entity.readData(pData);
+		enemy.readData(pData2);
 		
 		if (pData.position.dst2(pData2.position) > range)
 		{
-			entity.readData(eData, EquipmentData.class);
+			entity.readData(eData);
 			
 			if (useLeft) stopUsing(Equipment_Slot.LARM, eData);
 			if (useRight) stopUsing(Equipment_Slot.RARM, eData);
 			
-			entity.writeData(eData, EquipmentData.class);
+			entity.writeData(eData);
 			
 			state = BehaviourTreeState.FAILED;
 			return BehaviourTreeState.FAILED;
 		}
 		
-		entity.readData(eData, EquipmentData.class);
+		entity.readData(eData);
 		
 		if (useLeft) use(Equipment_Slot.LARM, eData);
 		if (useRight) use(Equipment_Slot.RARM, eData);
 		
-		entity.writeData(eData, EquipmentData.class);
+		entity.writeData(eData);
 		
 		state = BehaviourTreeState.RUNNING;
 		return BehaviourTreeState.RUNNING;
@@ -90,12 +91,26 @@ public class ActionAttack extends Action
 	{
 		Entity entity = (Entity) getData("entity", null);
 		
-		entity.readData(eData, EquipmentData.class);
+		entity.readData(eData);
 		
 		if (useLeft) stopUsing(Equipment_Slot.LARM, eData);
 		if (useRight) stopUsing(Equipment_Slot.RARM, eData);
 		
-		entity.writeData(eData, EquipmentData.class);
+		entity.writeData(eData);
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionAttack(range, useLeft, useLeft, key);
+	}
+
+	@Override
+	public void dispose()
+	{
+		pData.dispose();
+		pData2.dispose();
+		eData.dispose();
 	}
 
 }

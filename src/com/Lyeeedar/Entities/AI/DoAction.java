@@ -7,6 +7,8 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 public interface DoAction
 {
 	public BehaviourTreeState doAction(Entity entity, Action parent);
+	public DoAction copy();
+	public void dispose();
 	
 	public static class DoSetEntity implements DoAction
 	{
@@ -24,6 +26,18 @@ public interface DoAction
 			
 			return BehaviourTreeState.FINISHED;
 		}
+
+		@Override
+		public DoAction copy()
+		{
+			return new DoSetEntity(key);
+		}
+
+		@Override
+		public void dispose()
+		{
+			
+		}
 	}
 	
 	public static class DoNothing implements DoAction
@@ -33,6 +47,18 @@ public interface DoAction
 		public BehaviourTreeState doAction(Entity entity, Action parent)
 		{
 			return BehaviourTreeState.FINISHED;
+		}
+
+		@Override
+		public DoAction copy()
+		{
+			return new DoNothing();
+		}
+
+		@Override
+		public void dispose()
+		{
+			
 		}
 		
 	}

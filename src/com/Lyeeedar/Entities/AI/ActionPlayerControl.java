@@ -60,9 +60,9 @@ public class ActionPlayerControl extends Action
 	{
 		Entity entity = (Entity) getData("entity", null);
 		
-		entity.readData(pData, PositionalData.class);
-		entity.readData(eData, EquipmentData.class);
-		entity.readData(sData, StatusData.class);
+		entity.readData(pData);
+		entity.readData(eData);
+		entity.readData(sData);
 
 		// Evaluate controls
 		int speed = sData.speed;
@@ -133,8 +133,8 @@ public class ActionPlayerControl extends Action
 			GLOBALS.picker.begin();
 		}
 		
-		entity.writeData(pData, PositionalData.class);
-		entity.writeData(eData, EquipmentData.class);
+		entity.writeData(pData);
+		entity.writeData(eData);
 		
 		state = BehaviourTreeState.FINISHED;
 		return BehaviourTreeState.FINISHED;
@@ -144,9 +144,23 @@ public class ActionPlayerControl extends Action
 	public void cancel()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		entity.readData(eData, EquipmentData.class);
+		entity.readData(eData);
 		stopUsing(Equipment_Slot.RARM, eData);
-		entity.writeData(eData, EquipmentData.class);
+		entity.writeData(eData);
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionPlayerControl(controls, cam);
+	}
+
+	@Override
+	public void dispose()
+	{
+		pData.dispose();
+		eData.dispose();
+		sData.dispose();		
 	}
 
 }

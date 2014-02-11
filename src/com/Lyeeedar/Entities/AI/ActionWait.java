@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 
 public class ActionWait extends Action
@@ -35,6 +36,18 @@ public class ActionWait extends Action
 	public void cancel()
 	{
 		cd = -1;
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionWait(time);
+	}
+
+	@Override
+	public void dispose()
+	{
+		
 	}
 
 }

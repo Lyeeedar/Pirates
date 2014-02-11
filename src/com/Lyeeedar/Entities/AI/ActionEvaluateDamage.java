@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.StatusData;
@@ -53,13 +54,13 @@ public class ActionEvaluateDamage extends Action
 		Entity entity = (Entity) data.get("entity");
 		float delta = (Float) getData("delta", 0);
 		
-		entity.readData(sData, StatusData.class);
-		entity.readData(aData, AnimationData.class);
+		entity.readData(sData);
+		entity.readData(aData);
 		
 		evaluateDamage(sData, aData, delta);
 		
-		entity.writeData(aData, AnimationData.class);
-		entity.writeData(sData, StatusData.class);
+		entity.writeData(aData);
+		entity.writeData(sData);
 		
 		state = BehaviourTreeState.FINISHED;
 		return BehaviourTreeState.FINISHED;
@@ -70,6 +71,19 @@ public class ActionEvaluateDamage extends Action
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionEvaluateDamage();
+	}
+
+	@Override
+	public void dispose()
+	{
+		sData.dispose();
+		aData.dispose();
 	}
 
 }

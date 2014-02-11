@@ -4,6 +4,7 @@ import java.util.Random;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
@@ -31,7 +32,7 @@ public class ActionRandomWalk extends Action
 		Entity entity = (Entity) data.get("entity");
 		float delta = (Float) getData("delta", 0);
 		
-		entity.readData(pData, PositionalData.class);
+		entity.readData(pData);
 		
 		if (pData.Xcollide || pData.Zcollide)
 		{
@@ -40,7 +41,7 @@ public class ActionRandomWalk extends Action
 			return state;
 		}
 		
-		entity.readData(sData, StatusData.class);
+		entity.readData(sData);
 		
 		if (cd < 0)
 		{
@@ -51,7 +52,7 @@ public class ActionRandomWalk extends Action
 		
 		pData.forward_backward(sData.speed);
 		
-		entity.writeData(pData, PositionalData.class);
+		entity.writeData(pData);
 		
 		cd -= delta;
 		
@@ -65,6 +66,19 @@ public class ActionRandomWalk extends Action
 	public void cancel()
 	{
 		cd = -1;
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionRandomWalk(ran, time);
+	}
+
+	@Override
+	public void dispose()
+	{
+		pData.dispose();
+		sData.dispose();
 	}
 
 }

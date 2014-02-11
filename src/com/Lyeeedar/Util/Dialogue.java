@@ -103,7 +103,7 @@ public class Dialogue {
 		
 		if (decal != null)
 		{
-			current.readData(pData, PositionalData.class);
+			current.readData(pData);
 			decal.setPosition(pData.position.x, pData.position.y+2, pData.position.z);
 			decal.setRotation(cam.direction, GLOBALS.DEFAULT_UP);
 		}

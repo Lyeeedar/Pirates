@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Conditional;
 import com.Lyeeedar.Entities.Entity.AnimationData;
@@ -21,7 +22,7 @@ public class ConditionalAnimationLock extends Conditional
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		entity.readData(aData, AnimationData.class);
+		entity.readData(aData);
 		
 		state = aData.animationLock ? succeed : fail;
 		return state;
@@ -32,6 +33,18 @@ public class ConditionalAnimationLock extends Conditional
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Conditional copy()
+	{
+		return new ConditionalAnimationLock(succeed, fail);
+	}
+
+	@Override
+	public void dispose()
+	{
+		aData.dispose();
 	}
 
 }

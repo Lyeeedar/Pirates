@@ -10,6 +10,9 @@ public interface CheckBest
 {
 	public Entity checkBest(Array<Entity> entities, Action parent);
 	
+	public CheckBest copy();
+	public void dispose();
+	
 	public static class CheckClosest implements CheckBest
 	{
 		private final PositionalData pData = new PositionalData();
@@ -20,7 +23,7 @@ public interface CheckBest
 		{
 			Entity entity = (Entity) parent.getData("entity", null);
 			
-			entity.readData(pData, PositionalData.class);
+			entity.readData(pData);
 			
 			Entity closest = null;
 			float dst = Float.MAX_VALUE;
@@ -29,7 +32,7 @@ public interface CheckBest
 			{
 				Entity tmp = entities.get(i);
 
-				tmp.readData(pData2, PositionalData.class);
+				tmp.readData(pData2);
 				float tdst = pData.position.dst2(pData2.position);
 				
 				if (tdst < dst)
@@ -40,6 +43,19 @@ public interface CheckBest
 			}
 			
 			return closest;
+		}
+
+		@Override
+		public CheckBest copy()
+		{
+			return new CheckClosest();
+		}
+
+		@Override
+		public void dispose()
+		{
+			pData.dispose();
+			pData2.dispose();
 		}
 		
 	}
@@ -68,7 +84,7 @@ public interface CheckBest
 			{
 				Entity tmp = entities.get(i);
 				
-				tmp.readData(sData, StatusData.class);
+				tmp.readData(sData);
 				
 				float thp = ((float) sData.currentHealth / (float) sData.MAX_HEALTH) * 100;
 				
@@ -89,6 +105,18 @@ public interface CheckBest
 			}
 			
 			return best;
+		}
+
+		@Override
+		public CheckBest copy()
+		{
+			return new CheckHPThreshold(greaterThan, value);
+		}
+
+		@Override
+		public void dispose()
+		{
+			sData.dispose();
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.badlogic.gdx.utils.Array;
 
@@ -44,5 +45,20 @@ public class ActionBuilder extends Action
 	public void cancel()
 	{
 		
+	}
+
+	@Override
+	public Action copy()
+	{
+		ActionBuilder nab = new ActionBuilder(getEntities.copy(), checkBest.copy(), doAction.copy());
+		return nab;
+	}
+
+	@Override
+	public void dispose()
+	{
+		getEntities.dispose();
+		checkBest.dispose();
+		doAction.dispose();
 	}
 }

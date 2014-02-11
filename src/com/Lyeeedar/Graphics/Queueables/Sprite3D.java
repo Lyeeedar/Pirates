@@ -122,7 +122,7 @@ public class Sprite3D implements Queueable {
 
 	public void updateSpritesheets(Entity source)
 	{
-		source.readData(eData, EquipmentData.class);
+		source.readData(eData);
 
 		for (SpriteLayer layer : SpriteLayer.values())
 		{
@@ -173,8 +173,8 @@ public class Sprite3D implements Queueable {
 	
 	@Override
 	public void set(Entity source, Vector3 offset) {
-		source.readData(pData, PositionalData.class);
-		source.readData(aData, AnimationData.class);
+		source.readData(pData);
+		source.readData(aData);
 		
 		setPosition(pData.position.add(offset));
 		setRotation(pData.rotation);

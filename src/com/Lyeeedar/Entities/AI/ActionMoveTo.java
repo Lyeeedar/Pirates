@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
@@ -40,8 +41,8 @@ public class ActionMoveTo extends Action
 		
 		Entity entity = (Entity) getData("entity", null);
 		
-		entity.readData(pData, PositionalData.class);
-		closest.readData(pData2, PositionalData.class);
+		entity.readData(pData);
+		closest.readData(pData2);
 		
 		if (towards)
 		{
@@ -60,7 +61,7 @@ public class ActionMoveTo extends Action
 			}
 		}
 		
-		entity.readData(sData, StatusData.class);
+		entity.readData(sData);
 		
 		tmpVec.set(pData2.position).sub(pData.position);
 		tmpVec.y = 0;
@@ -76,7 +77,7 @@ public class ActionMoveTo extends Action
 		
 		parent.setDataTree("moved", true);
 		
-		entity.writeData(pData, PositionalData.class);
+		entity.writeData(pData);
 		
 		state = BehaviourTreeState.FINISHED;
 		return BehaviourTreeState.FINISHED;
@@ -87,6 +88,20 @@ public class ActionMoveTo extends Action
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionMoveTo(towards, dst, key);
+	}
+
+	@Override
+	public void dispose()
+	{
+		pData.dispose();
+		pData2.dispose();
+		sData.dispose();
 	}
 
 }

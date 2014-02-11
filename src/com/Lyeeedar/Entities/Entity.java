@@ -1,6 +1,8 @@
 package com.Lyeeedar.Entities;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -9,6 +11,7 @@ import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.CollisionCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
+import com.Lyeeedar.Entities.Entity.EntityData.EntityDataType;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
@@ -45,7 +48,7 @@ public class Entity {
 		FORCE
 	}
 	
-	private final HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>> entityData = new HashMap<Class<? extends EntityData<?>>, EntityData<? extends EntityData<?>>>();
+	private final EnumMap<EntityDataType, EntityData<? extends EntityData<?>>> entityData = new EnumMap<EntityDataType, EntityData<? extends EntityData<?>>>(EntityDataType.class);
 	
 	public final boolean walkable;
 	
@@ -53,6 +56,7 @@ public class Entity {
 	public static interface AI
 	{
 		public void update(float delta);
+		public AI copy();
 		public void dispose();
 	}
 	
@@ -62,7 +66,7 @@ public class Entity {
 	public Entity(boolean walkable, EntityData<?>... data)
 	{
 		this.walkable = walkable;
-		for (EntityData<?> d : data) entityData.put((Class<? extends EntityData<?>>) d.getClass(),  d);
+		for (EntityData<?> d : data) entityData.put(d.getType(), d);
 	}
 	
 	public void addRenderable(Queueable r, Vector3 position)
@@ -97,11 +101,11 @@ public class Entity {
 		if (entityData.containsKey(EquipmentData.class)) ((EquipmentData) entityData.get(EquipmentData.class)).update(delta, this);
 	}
 	
-	public <E extends EntityData<E>> boolean writeData(E data, Class<E> type)
+	public <E extends EntityData<E>> boolean writeData(E data)
 	{
-		if (!entityData.containsKey(type)) return false;
+		if (!entityData.containsKey(data.getType())) return false;
 		
-		E target = (E) entityData.get(type);
+		E target = (E) entityData.get(data.getType());
 		synchronized(target)
 		{
 			target.write(data);
@@ -109,11 +113,11 @@ public class Entity {
 		
 		return true;
 	}	
-	public <E extends EntityData<E>> boolean readData(E target, Class<E> type)
+	public <E extends EntityData<E>> boolean readData(E target)
 	{
-		if (!entityData.containsKey(type)) return false;
+		if (!entityData.containsKey(target.getType())) return false;
 		
-		E data = (E) entityData.get(type);
+		E data = (E) entityData.get(target.getType());
 		synchronized(data)
 		{
 			data.read(target);
@@ -122,8 +126,10 @@ public class Entity {
 		return true;
 	}
 
-	public <E extends EntityData<E>> E readOnlyRead(Class<E> type)
+	public <E extends EntityData<E>> E readOnlyRead(Class<E> ctype)
 	{
+		EntityDataType type = EntityData.getTypeFromClass(ctype);
+		
 		if (!entityData.containsKey(type)) return null;
 		
 		return (E) entityData.get(type);
@@ -170,7 +176,7 @@ public class Entity {
 	
 	public static class EntityRenderables 
 	{
-		private final ArrayList<EntityRenderable> renderables = new ArrayList<EntityRenderable>();
+		private final Array<EntityRenderable> renderables = new Array<EntityRenderable>();
 		
 		public EntityRenderables()
 		{
@@ -180,15 +186,10 @@ public class Entity {
 		{
 			renderables.add(r);
 		}
-		
-		public void remove(EntityRenderable r)
-		{
-			renderables.remove(r);
-		}
-		
+				
 		public void set(Entity source)
 		{
-			for (int i = 0; i < renderables.size(); i++)
+			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
 				r.renderable.set(source, r.position);
@@ -197,7 +198,7 @@ public class Entity {
 		
 		public void update(float delta, Camera cam, LightManager lights)
 		{
-			for (int i = 0; i < renderables.size(); i++)
+			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
 				r.renderable.update(delta, cam, lights);
@@ -206,16 +207,25 @@ public class Entity {
 		
 		public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 		{
-			for (int i = 0; i < renderables.size(); i++)
+			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
 				r.renderable.queue(delta, cam, batches);
 			}
 		}
 		
+		public void copy(EntityRenderables other)
+		{
+			for (int i = 0; i < renderables.size; i++)
+			{
+				EntityRenderable r = renderables.get(i);
+				other.add(new EntityRenderable(r.renderable.copy(), r.position));
+			}
+		}
+		
 		public void dispose()
 		{
-			for (int i = 0; i < renderables.size(); i++)
+			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
 				r.renderable.dispose();
@@ -232,6 +242,24 @@ public class Entity {
 		renderables.dispose();
 		if (ai != null) ai.dispose();
 	}
+
+	public Entity copy()
+	{
+		Collection values = entityData.values();
+		EntityData[] nd = (EntityData[]) values.toArray();
+		for (int i = 0; i < values.size(); i++)
+		{
+			nd[i] = nd[i].copy();
+		}
+		
+		Entity ne = new Entity(walkable, nd);
+		
+		if (ai != null) ne.setAI(ai.copy());
+		
+		renderables.copy(ne.renderables);
+		
+		return ne;
+	}
 	
 	public static class EntityRenderable
 	{
@@ -245,13 +273,49 @@ public class Entity {
 		}
 	}
 	
-	public interface EntityData<E extends EntityData<E>>
+	public static abstract class EntityData<E extends EntityData<E>>
 	{
-		public void write(E data);
-		public void read(E target);
-		public void dispose();
+		public enum EntityDataType
+		{
+			ANIMATION,
+			MINIMALPOSITIONAL,
+			POSITIONAL,
+			EQUIPMENT,
+			STATUS
+		}
+		
+		public static EntityDataType getTypeFromClass(Class type)
+		{
+			if (type == AnimationData.class)
+			{
+				return EntityDataType.ANIMATION;
+			}
+			else if (type == MinimalPositionalData.class)
+			{
+				return EntityDataType.MINIMALPOSITIONAL;
+			}
+			else if (type == PositionalData.class)
+			{
+				return EntityDataType.POSITIONAL;
+			}
+			else if (type == EquipmentData.class)
+			{
+				return EntityDataType.EQUIPMENT;
+			}
+			else if (type == StatusData.class)
+			{
+				return EntityDataType.STATUS;
+			}
+			else return null;
+		}
+		
+		public abstract void write(E data);
+		public abstract void read(E target);
+		public abstract E copy();
+		public abstract void dispose();
+		public abstract EntityDataType getType();
 	}
-	public static class AnimationData implements EntityData<AnimationData>
+	public static class AnimationData extends EntityData<AnimationData>
 	{
 		public boolean updateAnimations = false;
 		public String anim = "";
@@ -299,14 +363,26 @@ public class Entity {
 			target.write(this);
 		}
 
+		public AnimationData copy()
+		{
+			AnimationData ed = new AnimationData();
+			ed.write(this);
+			return ed;
+		}
 		
 		@Override
 		public void dispose() {
 			
 		}
+
+		@Override
+		public EntityDataType getType()
+		{
+			return EntityDataType.ANIMATION;
+		}
 	}
 	
-	public static class MinimalPositionalData implements EntityData<MinimalPositionalData>
+	public static class MinimalPositionalData extends EntityData<MinimalPositionalData>
 	{
 		public final Vector3 position = new Vector3();
 		
@@ -320,15 +396,27 @@ public class Entity {
 			target.write(this);
 		}
 
+		public MinimalPositionalData copy()
+		{
+			MinimalPositionalData ed = new MinimalPositionalData();
+			ed.write(this);
+			return ed;
+		}
+		
 		@Override
 		public void dispose() {
 			// TODO Auto-generated method stub
 			
 		}
 		
+		@Override
+		public EntityDataType getType()
+		{
+			return EntityDataType.MINIMALPOSITIONAL;
+		}
 	}
 	
-	public static class PositionalData implements EntityData<PositionalData>
+	public static class PositionalData extends EntityData<PositionalData>
 	{
 		public enum COLLISION_TYPE
 		{
@@ -420,6 +508,13 @@ public class Entity {
 			target.write(this);
 		}
 		
+		public PositionalData copy()
+		{
+			PositionalData ed = new PositionalData();
+			ed.write(this);
+			return ed;
+		}
+		
 		public void calculateComposed()
 		{
 			tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
@@ -505,7 +600,6 @@ public class Entity {
 			
 			position.add(v);
 			velocity.x = 0;
-			velocity.y = 0;
 			velocity.z = 0;
 			
 			if (GLOBALS.physicsWorld.collide(physicsBody, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION))
@@ -680,11 +774,17 @@ public class Entity {
 			if (physicsBody != null) GLOBALS.physicsWorld.remove(physicsBody);
 			if (octtreeEntry != null) octtreeEntry.remove();
 		}
+	
+		@Override
+		public EntityDataType getType()
+		{
+			return EntityDataType.POSITIONAL;
+		}
 	}
-	public static class EquipmentData implements EntityData<EquipmentData>
+	public static class EquipmentData extends EntityData<EquipmentData>
 	{
-		private HashMap<Equipment_Slot, Equipment<?>> equipment = new HashMap<Equipment_Slot, Equipment<?>>();
-		private final HashMap<ITEM_TYPE, HashMap<String, Item>> items = new HashMap<ITEM_TYPE, HashMap<String, Item>>();
+		private EnumMap<Equipment_Slot, Equipment<?>> equipment = new EnumMap<Equipment_Slot, Equipment<?>>(Equipment_Slot.class);
+		private final EnumMap<ITEM_TYPE, HashMap<String, Item>> items = new EnumMap<ITEM_TYPE, HashMap<String, Item>>(ITEM_TYPE.class);
 		
 		public EquipmentData()
 		{
@@ -813,6 +913,13 @@ public class Entity {
 			target.write(this);
 		}
 
+		public EquipmentData copy()
+		{
+			EquipmentData ed = new EquipmentData();
+			ed.write(this);
+			return ed;
+		}
+		
 		public Iterator<Equipment<?>> iterator()
 		{
 			return equipment.values().iterator();
@@ -825,8 +932,14 @@ public class Entity {
 				if (entry.getValue() != null) entry.getValue().dispose();
 			}
 		}
+	
+		@Override
+		public EntityDataType getType()
+		{
+			return EntityDataType.EQUIPMENT;
+		}
 	}
-	public static class StatusData implements EntityData<StatusData>
+	public static class StatusData extends EntityData<StatusData>
 	{
 		public boolean ALIVE = true;
 		public int DAMAGED = 0;
@@ -885,6 +998,12 @@ public class Entity {
 			target.write(this);
 		}
 
+		public StatusData copy()
+		{
+			StatusData ed = new StatusData();
+			ed.write(this);
+			return ed;
+		}
 		
 		@Override
 		public void dispose() {
@@ -892,6 +1011,11 @@ public class Entity {
 			
 		}
 		
+		@Override
+		public EntityDataType getType()
+		{
+			return EntityDataType.STATUS;
+		}
 	}
 
 }

@@ -34,23 +34,7 @@ public class AnimatedModel implements Queueable {
 	private final Matrix4 tmpMat = new Matrix4();
 	
 	public AnimatedModel(Model model, Texture[] textures, Vector3 colour, String defaultAnim)
-	{
-//		for (Node n : model.nodes)
-//		{
-//			print_nodes(n);
-//		}
-//		
-//		Animation a = model.getAnimation("idle");
-//		if (a != null)
-//		{
-//			System.out.println("anim");
-//			for (NodeAnimation an : a.nodeAnimations)
-//			{
-//				System.out.println(an.node.id);
-//			}
-//			System.out.println("anim");
-//		}
-		
+	{		
 		this.model = new ModelInstance(model);
 		
 		anim = new AnimationController(this.model);
@@ -61,15 +45,6 @@ public class AnimatedModel implements Queueable {
 		this.textures = textures;
 		this.colour.set(colour);
 		this.defaultAnim = defaultAnim;
-	}
-
-	public void print_nodes(Node n)
-	{
-		System.out.println(n.id + " " + n.parts.size);
-		for (Node nn : n.children)
-		{
-			print_nodes(nn);
-		}
 	}
 	
 	public void attach(String nodeName, Queueable model, Matrix4 offset)
@@ -167,7 +142,12 @@ public class AnimatedModel implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return new AnimatedModel(model.model, textures, colour, defaultAnim);
+		AnimatedModel nm = new AnimatedModel(model.model, textures, colour, defaultAnim);
+		for (ATTACHED_MODEL am : attachedModels)
+		{
+			nm.attach(am.node.id, am.model.copy(), am.offset);
+		}
+		return nm;
 	}
 
 	@Override

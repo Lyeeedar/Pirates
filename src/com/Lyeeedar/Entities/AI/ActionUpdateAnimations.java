@@ -2,6 +2,7 @@ package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
@@ -16,8 +17,8 @@ public class ActionUpdateAnimations extends Action
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) data.get("entity");
-		entity.readData(aData, AnimationData.class);
-		entity.readData(pData, PositionalData.class);
+		entity.readData(aData);
+		entity.readData(pData);
 		boolean moved = (Boolean) getData("moved", false);
 		
 		if (aData.animationLock)
@@ -59,7 +60,7 @@ public class ActionUpdateAnimations extends Action
 			aData.animate_speed = 0.5f;
 		}
 		
-		entity.writeData(aData, AnimationData.class);
+		entity.writeData(aData);
 		
 		state = BehaviourTreeState.FINISHED;
 		return BehaviourTreeState.FINISHED;
@@ -70,6 +71,19 @@ public class ActionUpdateAnimations extends Action
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionUpdateAnimations();
+	}
+
+	@Override
+	public void dispose()
+	{
+		aData.dispose();
+		pData.dispose();
 	}
 
 }

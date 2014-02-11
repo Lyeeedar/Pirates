@@ -160,7 +160,7 @@ public class Terrain extends Entity {
 		{
 			Entity v = new Entity(false, new MinimalPositionalData());
 			
-			v.readData(pData, MinimalPositionalData.class);
+			v.readData(pData);
 			
 			boolean placed = false;
 			for (int rep = 0; rep < maxTries; rep++)
@@ -182,7 +182,7 @@ public class Terrain extends Entity {
 			
 			if (!placed) continue;
 			
-			v.writeData(pData, MinimalPositionalData.class);
+			v.writeData(pData);
 			
 			v.addRenderable(renderable.copy(), new Vector3());
 			

@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 
 public class ActionSetValue extends Action
@@ -27,6 +28,18 @@ public class ActionSetValue extends Action
 	public void cancel()
 	{
 
+	}
+
+	@Override
+	public Action copy()
+	{
+		return new ActionSetValue(key, value);
+	}
+
+	@Override
+	public void dispose()
+	{
+		
 	}
 
 }

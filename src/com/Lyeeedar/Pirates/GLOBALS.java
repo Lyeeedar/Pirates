@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.Octtree;
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Entities.Spells.Spell;
+import com.Lyeeedar.Entities.Items.Spell;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Sound.Mixer;
@@ -61,8 +61,6 @@ public final class GLOBALS {
 	public static Picker picker;
 	
 	public static SkyBox SKYBOX;
-	public static LinkedList<Spell> SPELLS = new LinkedList<Spell>();
-	public static LinkedList<Spell> pendingSPELLS = new LinkedList<Spell>();
 	public static LightManager LIGHTS = new LightManager();
 	public static Entity player;
 	public static LinkedList<Dialogue> DIALOGUES = new LinkedList<Dialogue>();

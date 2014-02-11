@@ -13,6 +13,9 @@ public interface GetEntities
 {
 	public Array<Entity> getEntities(Action parent);
 	
+	public GetEntities copy();
+	public void dispose();
+	
 	public static class GetAllies implements GetEntities
 	{
 		protected final OcttreeShape shape;
@@ -33,8 +36,8 @@ public interface GetEntities
 		{
 			Entity entity = (Entity) parent.getData("entity", null);
 			
-			entity.readData(pData, PositionalData.class);
-			entity.readData(sData, StatusData.class);
+			entity.readData(pData);
+			entity.readData(sData);
 			
 			shape.setPosition(pData.position);
 			shape.setRotation(pData.rotation);
@@ -56,7 +59,7 @@ public interface GetEntities
 					continue;
 				}
 				
-				tmp.readData(sData2, StatusData.class);
+				tmp.readData(sData2);
 				
 				if (!sData2.ALIVE)
 				{
@@ -74,6 +77,20 @@ public interface GetEntities
 			}
 
 			return entities;
+		}
+
+		@Override
+		public GetEntities copy()
+		{
+			return new GetAllies(shape);
+		}
+
+		@Override
+		public void dispose()
+		{
+			pData.dispose();
+			sData.dispose();
+			sData2.dispose();
 		}
 		
 	}
@@ -98,8 +115,8 @@ public interface GetEntities
 		{
 			Entity entity = (Entity) parent.getData("entity", null);
 			
-			entity.readData(pData, PositionalData.class);
-			entity.readData(sData, StatusData.class);
+			entity.readData(pData);
+			entity.readData(sData);
 			
 			shape.setPosition(pData.position);
 			shape.setRotation(pData.rotation);
@@ -121,7 +138,7 @@ public interface GetEntities
 					continue;
 				}
 				
-				tmp.readData(sData2, StatusData.class);
+				tmp.readData(sData2);
 				
 				if (!sData2.ALIVE)
 				{
@@ -141,6 +158,20 @@ public interface GetEntities
 			return entities;
 		}
 		
+		@Override
+		public GetEntities copy()
+		{
+			return new GetEnemies(shape);
+		}
+
+		@Override
+		public void dispose()
+		{
+			pData.dispose();
+			sData.dispose();
+			sData2.dispose();
+		}
+		
 	}
 	
 	public static class GetSelf implements GetEntities
@@ -156,6 +187,18 @@ public interface GetEntities
 			entities.add(entity);
 			
 			return entities;
+		}
+
+		@Override
+		public GetEntities copy()
+		{
+			return new GetSelf();
+		}
+
+		@Override
+		public void dispose()
+		{
+			
 		}
 		
 	}
