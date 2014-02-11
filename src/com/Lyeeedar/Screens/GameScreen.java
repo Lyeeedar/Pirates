@@ -195,7 +195,7 @@ public class GameScreen extends AbstractScreen {
 		btCollisionShape shipShape = new btBvhTriangleMeshShape(parts);
 		
 		BoundingBox sbb = shipModel.calculateBoundingBox();
-		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 		//ship.readOnlyRead(PositionalData.class).scale.set(3, 3, 3);
 		rw.add(entry);
@@ -274,10 +274,10 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity spell = new Entity(false, new PositionalData(), new StatusData());
 		spell.addRenderable(effect, new Vector3());
-		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
 		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
-		spell.readOnlyRead(StatusData.class).mass = 0.01f;
+		spell.readOnlyRead(StatusData.class).mass = 0.0f;
 		
 		Selector ssssselect = new SequenceSelector();
 		ssssselect.addNode(new ActionKill());
@@ -285,7 +285,7 @@ public class GameScreen extends AbstractScreen {
 		ssssselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 		
 		Selector ssspselect = new PrioritySelector();
-		ssspselect.addNode(new ActionMove(20));
+		ssspselect.addNode(new ActionMoveTo(true, 0, "Enemy"));
 		ssspselect.addNode(ssssselect);
 		
 		Selector sssselect = new ConcurrentSelector();
@@ -295,11 +295,11 @@ public class GameScreen extends AbstractScreen {
 		
 		spell.setAI(ssbtree);
 		
-		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f));
+		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f, cam, 250, 3, false, 0.1f, new Vector3(0.2f, 1.0f, 0.15f)));
 		
 		player.writeData(eData);
 		
-		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 		rw.add(entry);
 		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
@@ -413,7 +413,7 @@ public class GameScreen extends AbstractScreen {
 			eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, gsword, gswordTrail));
 			ge.writeData(eData);
 			
-			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 			pData.octtreeEntry = entry;
 			rw.add(entry);
 			bw.add(new btBoxShape(new Vector3(10, 10, 10)), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
@@ -481,7 +481,7 @@ public class GameScreen extends AbstractScreen {
 				eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, ggsword, ggswordTrail));
 				gge.writeData(eData);
 				
-				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER);
+				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 				pData2.octtreeEntry = entry;
 				rw.add(entry);
 				bw.add(new btBoxShape(new Vector3(10, 10, 10)), new Matrix4().setToTranslation(pData2.position), gge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));

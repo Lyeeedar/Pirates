@@ -104,7 +104,7 @@ public final class GLOBALS {
 		for (Entity e : pendingEntities)
 		{
 			Entity ne = e.copy();
-			OcttreeEntry<Entity> entry = renderTree.createEntry(ne, ne.readOnlyRead(PositionalData.class).position, ne.readOnlyRead(PositionalData.class).octtreeEntry.box.extents, Octtree.MASK_AI | Octtree.MASK_RENDER);
+			OcttreeEntry<Entity> entry = renderTree.createEntry(ne, ne.readOnlyRead(PositionalData.class).position, ne.readOnlyRead(PositionalData.class).octtreeEntry.box.extents, ne.readOnlyRead(PositionalData.class).octtreeEntry.bitmask);
 			ne.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 			renderTree.add(entry);
 			if (ne.readOnlyRead(PositionalData.class).collisionType == COLLISION_TYPE.RAY) physicsWorld.add(ne.readOnlyRead(PositionalData.class).physicsBody.getCollisionShape(), new Matrix4().setToTranslation(ne.readOnlyRead(PositionalData.class).position), ne, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));

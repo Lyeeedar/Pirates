@@ -574,14 +574,14 @@ public class Entity {
 		// ------------------------- MOVE ------------------------- //
 		public void left_right(float mag)
 		{
-			velocity.x += (float)Math.sin(rotation.z) * mag;
-			velocity.z += -(float)Math.sin(rotation.x) * mag;
+			velocity.x += rotation.z * mag;
+			velocity.z += -rotation.x * mag;
 		}
 
 		public void forward_backward(float mag)
 		{
-			velocity.x += (float)Math.sin(rotation.x) * mag;
-			velocity.z += (float)Math.sin(rotation.z) * mag;
+			velocity.x += rotation.x * mag;
+			velocity.z += rotation.z * mag;
 		}
 		// ------------------------- MOVE ------------------------- //
 		

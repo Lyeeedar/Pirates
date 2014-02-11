@@ -7,6 +7,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
 public class ActionMoveTo extends Action
@@ -64,16 +65,20 @@ public class ActionMoveTo extends Action
 		entity.readData(sData);
 		
 		tmpVec.set(pData2.position).sub(pData.position);
-		tmpVec.y = 0;
+		if (sData.mass > 0.01f) tmpVec.y = 0;
 		if (!towards)
 		{
 			tmpVec.x *= -1;
+			tmpVec.y *= -1;
 			tmpVec.z *= -1;
 		}
 		tmpVec.nor();
 		pData.rotation.set(tmpVec);
-		pData.up.set(GLOBALS.DEFAULT_UP);
-		pData.forward_backward(sData.speed);
+		tmpVec.crs(GLOBALS.DEFAULT_UP);
+		tmpVec.crs(pData.rotation);
+		pData.up.set(tmpVec);
+		
+		pData.velocity.set(pData.rotation).scl(sData.speed);
 		
 		parent.setDataTree("moved", true);
 		

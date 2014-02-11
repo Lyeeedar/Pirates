@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.Lyeeedar.Entities.Entity.AI;
 
@@ -29,6 +30,12 @@ public class BehaviourTree implements AI
 	public AI copy()
 	{
 		BehaviourTree nbt = new BehaviourTree((Selector)root.copy());
+		
+		for (Map.Entry<String, Object> entry : root.data.entrySet())
+		{
+			nbt.root.setData(entry.getKey(), entry.getValue());
+		}
+		
 		return nbt;
 	}
 	

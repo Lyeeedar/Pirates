@@ -43,7 +43,7 @@ public interface GetEntities
 			shape.setRotation(pData.rotation);
 			
 			entities.clear();
-			GLOBALS.renderTree.collectAll(entities, shape, Octtree.MASK_AI);
+			GLOBALS.renderTree.collectAll(entities, shape, Octtree.MASK_ENTITY);
 			if (entities.size == 0)
 			{
 				return entities;
@@ -122,7 +122,7 @@ public interface GetEntities
 			shape.setRotation(pData.rotation);
 			
 			entities.clear();
-			GLOBALS.renderTree.collectAll(entities, shape, Octtree.MASK_AI);
+			GLOBALS.renderTree.collectAll(entities, shape, Octtree.MASK_ENTITY);
 			if (entities.size == 0)
 			{
 				return entities;

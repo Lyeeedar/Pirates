@@ -13,6 +13,8 @@ public class Octtree <E> {
 	
 	public static final int MASK_RENDER = 1 << 1;
 	public static final int MASK_AI = 1 << 2;
+	public static final int MASK_ENTITY = 1 << 3;
+	public static final int MASK_SPELL = 1 << 4;
 	
 	private static final int CASCADE_THRESHOLD = 10;
 	

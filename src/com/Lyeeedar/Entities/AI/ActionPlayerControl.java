@@ -133,12 +133,6 @@ public class ActionPlayerControl extends Action
 			stopUsing(Equipment_Slot.SLOT1, eData);
 		}
 		
-		if (Gdx.input.isKeyPressed(Keys.NUM_1))
-		{
-			GLOBALS.picker.set(entity, new Array<Entity>(), cam, 100, 3, false, 0.2f, new Vector3(0, 1, 0));
-			GLOBALS.picker.begin();
-		}
-		
 		entity.writeData(pData);
 		entity.writeData(eData);
 		
