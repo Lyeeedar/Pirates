@@ -295,10 +295,55 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	{
 		final float stepSize = 0.0001f;
 		
+		float emissionVal = 0;
+		float endTime = 0;
+		float temp;
+		TimelineValue[] timeline;
+		
+		// Calculate Duration
+		
+		timeline = timelines.get(ParticleAttribute.EMISSIONRATE);
+		temp = timeline[timeline.length-1].time+particleLifetime;
+		if (temp > endTime) endTime = temp;
+		
+		timeline = timelines.get(ParticleAttribute.EMISSIONAREA);
+		temp = timeline[timeline.length-1].time+particleLifetime;
+		if (temp > endTime) endTime = temp;
+		
+		timeline = timelines.get(ParticleAttribute.EMISSIONTYPE);
+		temp = timeline[timeline.length-1].time+particleLifetime;
+		if (temp > endTime) endTime = temp;
+		
+		timeline = timelines.get(ParticleAttribute.MASS);
+		temp = timeline[timeline.length-1].time+particleLifetime;
+		if (temp > endTime) endTime = temp;
+		
+		float lastFound = 0;
+		
+		for (float dtime = 0; dtime < endTime; dtime += stepSize)
+		{
+			float erate = getAttributeValue(dtime, ParticleAttribute.EMISSIONRATE)[0];
+			emissionVal += erate * stepSize;
+			while (emissionVal > 1.0f)
+			{
+				emissionVal -= 1.0f;
+				
+				float remainder = emissionVal/erate;
+				if (Math.abs(particleLifetime-remainder) < 0.5f || remainder > particleLifetime) continue;
+				
+				float t = dtime + particleLifetime - remainder;
+				if (t > lastFound) lastFound = t;
+			}
+		}
+		
+		duration = lastFound;
+		
+		// Calculate Max Particles
+		
+		float time = 0;
+		emissionVal = 0;
 		Array<Particle> active = new Array<Particle>(false, 16);
 		Array<Particle> inactive = new Array<Particle>(false, 16);
-		float emissionVal = 0;
-		float time = 0;
 		
 		for (float dtime = 0; dtime < duration*10; dtime += stepSize)
 		{
@@ -342,10 +387,10 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			}
 		}
 		
+		maxParticles = active.size + inactive.size;
+		
 		Pools.freeAll(active);
 		Pools.freeAll(inactive);
-		
-		maxParticles = active.size + inactive.size;
 	}
 
 	public void calculateRadius()

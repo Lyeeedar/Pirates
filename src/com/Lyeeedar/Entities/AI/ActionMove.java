@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.math.Vector3;
 public class ActionMove extends Action
 {
 	private final PositionalData pData = new PositionalData();
+	private final StatusData sData = new StatusData();
 	public final float velocity;
 	
 	
@@ -23,11 +25,11 @@ public class ActionMove extends Action
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		float delta = (Float) getData("delta", 0);
 		
 		entity.readData(pData);
+		entity.readData(sData);
 		
-		pData.forward_backward(velocity);
+		pData.forward_backward(velocity*sData.speed);
 		
 		entity.writeData(pData);
 		

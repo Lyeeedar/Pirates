@@ -135,6 +135,7 @@ public class ParticleEffect implements Queueable {
 		{
 			if (e.emitter.duration > duration) duration = e.emitter.duration;
 			e.emitter.time = time;
+			if (e.emitter.duration < time) continue;
 			e.emitter.update(delta, cam);
 		}
 	}
@@ -202,6 +203,7 @@ public class ParticleEffect implements Queueable {
 	public ParticleEffect copy()
 	{
 		ParticleEffect effect = new ParticleEffect();
+		if (playing) effect.play(repeat);
 		
 		for (Emitter e : emitters)
 		{
@@ -265,6 +267,7 @@ public class ParticleEffect implements Queueable {
 		if (!playing) return;
 		for (Emitter e : emitters)
 		{
+			if (e.emitter.duration < time) continue;
 			if (!e.emitter.created) e.emitter.create();
 			if (!cam.frustum.sphereInFrustum(e.emitter.getPosition(), e.emitter.getRadius())) continue;
 	

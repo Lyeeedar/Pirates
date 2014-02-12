@@ -189,6 +189,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDepthMask(false);
 		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
 		((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).render(cam);
+		this.particleNum = ((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).particleNum;
 		averageParticles += System.nanoTime()-time;
 		averageParticles /= 2;
 		

@@ -190,7 +190,7 @@ public class GameScreen extends AbstractScreen {
 		Selector ssselect = new ConcurrentSelector();
 		BehaviourTree sbtree = new BehaviourTree(ssselect);
 		ssselect.addNode(new ActionGravityAndMovement());
-		ssselect.addNode(new ActionMove(10));
+		ssselect.addNode(new ActionMove(1));
 		
 		ship.setAI(sbtree);
 		
@@ -307,7 +307,41 @@ public class GameScreen extends AbstractScreen {
 		
 		spell.setAI(ssbtree);
 		
-		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f, sword, cam, 250, 3, false, 0.1f, new Vector3(0.2f, 1.0f, 0.15f)));
+		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f, sword, cam, 250, 5, false, 0.1f, new Vector3(0.4f, 1, 0.0f)));
+		
+		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
+		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
+		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/fire.effect");
+		fire.play(true);
+		spell2.addRenderable(fire, new Vector3());
+		spell2.addRenderable(orb2, new Vector3());
+		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
+		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
+		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell2);
+		spell2.readOnlyRead(StatusData.class).mass = 0.1f;
+		
+		Selector ssssspselect = new PrioritySelector();
+		ssssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		ssssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		
+		Selector sssssselect = new SequenceSelector();
+		sssssselect.addNode(new ActionKill());
+		sssssselect.addNode(new ActionSetParticleEffect(FileUtils.loadParticleEffect("data/effects/explosion.effect")));
+		sssssselect.addNode(new ActionApplySpellEffect(new InstantSpellEffect(new SpellPayloadHP(50)), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+		sssssselect.addNode(ssssspselect);
+		
+		Selector sssssspselect = new PrioritySelector();
+		sssssspselect.addNode(new ActionMove(5));
+		sssssspselect.addNode(sssssselect);
+		
+		Selector ssssssselect = new ConcurrentSelector();
+		BehaviourTree sssbtree = new BehaviourTree(ssssssselect);
+		ssssssselect.addNode(new ActionGravityAndMovement());
+		ssssssselect.addNode(sssssspselect);
+		
+		spell2.setAI(sssbtree);
+		
+		eData.equip(Equipment_Slot.SLOT2, new Spell(spell2, 0.1f, sword));
 		
 		player.writeData(eData);
 		

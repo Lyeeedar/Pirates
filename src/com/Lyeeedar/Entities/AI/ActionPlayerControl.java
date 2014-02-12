@@ -133,6 +133,12 @@ public class ActionPlayerControl extends Action
 			stopUsing(Equipment_Slot.SLOT1, eData);
 		}
 		
+		if (controls.slot2()) use(Equipment_Slot.SLOT2, eData);
+		else 
+		{
+			stopUsing(Equipment_Slot.SLOT2, eData);
+		}
+		
 		entity.writeData(pData);
 		entity.writeData(eData);
 		
@@ -146,6 +152,8 @@ public class ActionPlayerControl extends Action
 		Entity entity = (Entity) getData("entity", null);
 		entity.readData(eData);
 		stopUsing(Equipment_Slot.RARM, eData);
+		stopUsing(Equipment_Slot.SLOT1, eData);
+		stopUsing(Equipment_Slot.SLOT2, eData);
 		entity.writeData(eData);
 	}
 
