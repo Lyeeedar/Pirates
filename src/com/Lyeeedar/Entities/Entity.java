@@ -15,6 +15,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
@@ -104,6 +105,7 @@ public class Entity {
 	{	
 		if (ai != null) ai.update(delta);
 		if (entityData.containsKey(EntityDataType.EQUIPMENT)) ((EquipmentData) entityData.get(EntityDataType.EQUIPMENT)).update(delta, this);
+		if (entityData.containsKey(EntityDataType.STATUS)) ((StatusData) entityData.get(EntityDataType.STATUS)).update(delta, this);
 	}
 	
 	public <E extends EntityData<E>> boolean writeData(E data)
@@ -551,13 +553,9 @@ public class Entity {
 		
 		// ------------------------- ROTATE ------------------------- //
 		public void Yrotate (float angle) {	
-			Vector3 dir = tmpVec.set(rotation).nor();
-			if(dir.y>-0.7 && angle<0 || dir.y<+0.7 && angle>0)
-			{
-				Vector3 localAxisX = dir.set(rotation);
-				localAxisX.crs(up).nor();
-				rotate(localAxisX.x, localAxisX.y, localAxisX.z, angle);
-			}
+			Vector3 localAxis = tmpVec.set(rotation);
+			localAxis.crs(up);
+			rotate(localAxis.x, localAxis.y, localAxis.z, angle);
 		}
 		public void Xrotate (float angle) {
 			rotate(0, 1, 0, angle);
@@ -1007,6 +1005,27 @@ public class Entity {
 		
 		public Array<String> factions = new Array<String>(false, 16);
 		
+		private final Array<SpellEffect> spellEffects = new Array<SpellEffect>();
+		public void addSpellEffect(SpellEffect se)
+		{
+			spellEffects.add(se);
+		}
+		
+		public void update(float delta, Entity parent)
+		{
+			for (int i = 0; i < spellEffects.size; i++)
+			{
+				SpellEffect se = spellEffects.get(i);
+				boolean alive = se.update(delta, parent);
+				
+				if (!alive)
+				{
+					spellEffects.removeIndex(i);
+					i--;
+				}
+			}
+		}
+		
 		@Override
 		public void write(StatusData data) {
 			ALIVE = data.ALIVE;
@@ -1017,6 +1036,9 @@ public class Entity {
 			damage = data.damage;
 			factions.clear();
 			factions.addAll(data.factions);
+			
+			spellEffects.clear();
+			spellEffects.addAll(data.spellEffects);
 			
 			speed = data.speed;
 			

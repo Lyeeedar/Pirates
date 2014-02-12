@@ -23,10 +23,12 @@ public class ActionMove extends Action
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
+		float delta = (Float) getData("delta", 0);
 		
 		entity.readData(pData);
 		
 		pData.forward_backward(velocity);
+		pData.Xrotate(delta*5);
 		
 		entity.writeData(pData);
 		

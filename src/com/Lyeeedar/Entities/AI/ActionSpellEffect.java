@@ -9,12 +9,13 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.AI.GetEntities.GetEnemies;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.utils.Array;
 
-public class ActionDamage extends Action
+public class ActionSpellEffect extends Action
 {
-	public final int damage;
+	public final SpellEffect effect;
 	public final OcttreeBox box;
 	
 	private final PositionalData pData = new PositionalData();
@@ -24,9 +25,9 @@ public class ActionDamage extends Action
 	
 	private final GetEnemies getEnemies;
 	
-	public ActionDamage(int damage, OcttreeBox box)
+	public ActionSpellEffect(SpellEffect effect, OcttreeBox box)
 	{
-		this.damage = damage;
+		this.effect = effect;
 		this.box = box;
 		this.getEnemies = new GetEnemies(box);
 	}
@@ -44,7 +45,7 @@ public class ActionDamage extends Action
 			e.readData(pData2);
 			
 			e.readData(sData);
-			sData.damage = damage;
+			sData.addSpellEffect(effect.copy());
 			e.writeData(sData);
 			
 //			sensor.collided = false;
@@ -71,7 +72,7 @@ public class ActionDamage extends Action
 	@Override
 	public BehaviourTreeNode copy()
 	{
-		return new ActionDamage(damage, box);
+		return new ActionSpellEffect(effect, box);
 	}
 
 	@Override

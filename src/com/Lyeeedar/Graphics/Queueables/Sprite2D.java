@@ -22,6 +22,8 @@ public class Sprite2D implements Queueable {
 	
 	private final Decal decal;
 	private final Vector3 position = new Vector3();
+	private final float x;
+	private final float y;
 	
 	private final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 	private float alpha = 1.0f;
@@ -29,9 +31,13 @@ public class Sprite2D implements Queueable {
 	
 	PositionalData pData = new PositionalData();
 	
-	public Sprite2D(Decal decal)
+	public Sprite2D(Decal decal, float x, float y)
 	{
 		this.decal = decal;
+		this.x = x;
+		this.y = y;
+		
+		decal.setDimensions(x, y);
 	}
 
 	@Override
@@ -65,7 +71,7 @@ public class Sprite2D implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return new Sprite2D(decal);
+		return new Sprite2D(Decal.newDecal(decal.getTextureRegion()), x, y);
 	}
 
 	@Override

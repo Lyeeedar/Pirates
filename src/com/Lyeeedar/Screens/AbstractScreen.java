@@ -176,6 +176,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+		Gdx.gl.glDepthMask(false);
 		((DecalBatcher) batches.get(DecalBatcher.class)).flush();
 		averageDecal += System.nanoTime()-time;
 		averageDecal /= 2;

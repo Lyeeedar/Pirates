@@ -22,7 +22,7 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
-import com.Lyeeedar.Entities.AI.ActionDamage;
+import com.Lyeeedar.Entities.AI.ActionSpellEffect;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
 import com.Lyeeedar.Entities.AI.ActionKill;
@@ -53,6 +53,9 @@ import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Spell;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect.InstantSpellEffect;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect.RepeatingSpellEffect;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect.SpellPayloadHP;
 import com.Lyeeedar.Graphics.Clouds;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
@@ -64,6 +67,7 @@ import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
+import com.Lyeeedar.Graphics.Queueables.Sprite2D;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
@@ -87,6 +91,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
@@ -273,7 +278,12 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.RARM, new Weapon(attacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, sword, swordTrail));
 		
 		Entity spell = new Entity(false, new PositionalData(), new StatusData());
-		spell.addRenderable(effect, new Vector3());
+		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
+		MotionTrail trailX = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
+		MotionTrail trailY = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
+		spell.addRenderable(orb, new Vector3());
+		spell.addRenderable(trailX, new Vector3());
+		spell.addRenderable(trailY, new Vector3());
 		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
 		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
@@ -281,7 +291,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Selector ssssselect = new SequenceSelector();
 		ssssselect.addNode(new ActionKill());
-		ssssselect.addNode(new ActionDamage(50, new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+		ssssselect.addNode(new ActionSpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
 		ssssselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 		
 		Selector ssspselect = new PrioritySelector();

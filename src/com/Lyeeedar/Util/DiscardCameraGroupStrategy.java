@@ -214,7 +214,6 @@ public class DiscardCameraGroupStrategy implements GroupStrategy, Disposable {
 				+ "void main()\n"//
 				+ "{\n" //
 				+ "  vec4 colour = v_color * texture2D(u_texture, v_texCoords);\n"
-				+ "  if (colour.a == 0.0) discard;\n"
 				+ "  gl_FragColor = colour;\n" //
 				+ "}";
 

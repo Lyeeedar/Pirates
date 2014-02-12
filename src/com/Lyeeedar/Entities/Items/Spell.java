@@ -5,6 +5,7 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
@@ -42,7 +43,7 @@ public class Spell extends Equipment<Spell> implements AnimationListener
 		this.baseSpell = baseSpell;
 		this.castTime = castTime;
 		this.castCD = 0;
-		this.hasTargetter = cam != null;
+		this.hasTargetter = false;
 		
 		baseSpell.readOnlyRead(PositionalData.class).createSensor();
 	}
