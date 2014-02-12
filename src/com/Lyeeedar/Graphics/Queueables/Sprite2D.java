@@ -27,7 +27,6 @@ public class Sprite2D implements Queueable {
 	
 	private final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 	private float alpha = 1.0f;
-	private final Vector3 finalColour = new Vector3();
 	
 	PositionalData pData = new PositionalData();
 	
@@ -43,7 +42,7 @@ public class Sprite2D implements Queueable {
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) 
 	{
-		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
+		decal.setColor(colour.x, colour.y, colour.z, alpha);
 		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 	}
 
@@ -64,9 +63,6 @@ public class Sprite2D implements Queueable {
 	public void update(float delta, Camera cam, LightManager lights) {
 		decal.setRotation(cam.direction, GLOBALS.DEFAULT_UP);
 		decal.setPosition(position.x, position.y, position.z);
-		
-		lights.getLight(position, finalColour).scl(colour);
-
 	}
 
 	@Override

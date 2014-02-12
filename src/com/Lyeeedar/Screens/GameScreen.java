@@ -22,7 +22,7 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.ActionAttack;
 import com.Lyeeedar.Entities.AI.ActionBuilder;
-import com.Lyeeedar.Entities.AI.ActionSpellEffect;
+import com.Lyeeedar.Entities.AI.ActionApplySpellEffect;
 import com.Lyeeedar.Entities.AI.ActionEvaluateDamage;
 import com.Lyeeedar.Entities.AI.ActionGravityAndMovement;
 import com.Lyeeedar.Entities.AI.ActionKill;
@@ -30,6 +30,7 @@ import com.Lyeeedar.Entities.AI.ActionMove;
 import com.Lyeeedar.Entities.AI.ActionMoveTo;
 import com.Lyeeedar.Entities.AI.ActionPlayerControl;
 import com.Lyeeedar.Entities.AI.ActionRandomWalk;
+import com.Lyeeedar.Entities.AI.ActionSetParticleEffect;
 import com.Lyeeedar.Entities.AI.ActionSetValue;
 import com.Lyeeedar.Entities.AI.ActionUpdateAnimations;
 import com.Lyeeedar.Entities.AI.ActionWait;
@@ -39,6 +40,7 @@ import com.Lyeeedar.Entities.AI.CheckBest.CheckClosest;
 import com.Lyeeedar.Entities.AI.CheckBest.CheckHPThreshold;
 import com.Lyeeedar.Entities.AI.ConditionalAnimationLock;
 import com.Lyeeedar.Entities.AI.ConditionalCollided;
+import com.Lyeeedar.Entities.AI.ConditionalTimer;
 import com.Lyeeedar.Entities.AI.DoAction.DoNothing;
 import com.Lyeeedar.Entities.AI.DoAction.DoSetEntity;
 import com.Lyeeedar.Entities.AI.GetEntities.GetEnemies;
@@ -244,17 +246,12 @@ public class GameScreen extends AbstractScreen {
 		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		System.out.println(sword.model.model.meshes.get(0).getNumVertices());
 		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-		ParticleEffect effect = FileUtils.loadParticleEffect("data/effects/boom.effect");
 		player.addRenderable(am, new Vector3());
-		//player.addRenderable(effect, new Vector3());
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
 		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
-		//sword.attach("top", effect, new Matrix4().rotate(0, 1, 0, -90).rotate(1, 0, 0, 180).rotate(0, 0, 1, 20).scl(1, 3, 1));
 		am.attach(null, swordTrail, new Matrix4());
-		
-		//sword.attach("top", effect, new Matrix4());
-		
+				
 		//player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
@@ -279,8 +276,8 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity spell = new Entity(false, new PositionalData(), new StatusData());
 		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
-		MotionTrail trailX = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
-		MotionTrail trailY = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
+		MotionTrail trailX = new MotionTrail(60, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
+		MotionTrail trailY = new MotionTrail(60, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
 		spell.addRenderable(orb, new Vector3());
 		spell.addRenderable(trailX, new Vector3());
 		spell.addRenderable(trailY, new Vector3());
@@ -289,10 +286,15 @@ public class GameScreen extends AbstractScreen {
 		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
 		spell.readOnlyRead(StatusData.class).mass = 0.0f;
 		
+		Selector sssspselect = new PrioritySelector();
+		sssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		sssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		
 		Selector ssssselect = new SequenceSelector();
 		ssssselect.addNode(new ActionKill());
-		ssssselect.addNode(new ActionSpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
-		ssssselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		ssssselect.addNode(new ActionSetParticleEffect(FileUtils.loadParticleEffect("data/effects/explosion.effect")));
+		ssssselect.addNode(new ActionApplySpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+		ssssselect.addNode(sssspselect);
 		
 		Selector ssspselect = new PrioritySelector();
 		ssspselect.addNode(new ActionMoveTo(true, 0, "Enemy"));
@@ -305,7 +307,7 @@ public class GameScreen extends AbstractScreen {
 		
 		spell.setAI(ssbtree);
 		
-		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f, cam, 250, 3, false, 0.1f, new Vector3(0.2f, 1.0f, 0.15f)));
+		eData.equip(Equipment_Slot.SLOT1, new Spell(spell, 0.5f, sword, cam, 250, 3, false, 0.1f, new Vector3(0.2f, 1.0f, 0.15f)));
 		
 		player.writeData(eData);
 		
@@ -423,10 +425,10 @@ public class GameScreen extends AbstractScreen {
 			eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, gsword, gswordTrail));
 			ge.writeData(eData);
 			
-			entry = rw.createEntry(ge, pData.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+			entry = rw.createEntry(ge, pData.position, new Vector3(10, 5, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 			pData.octtreeEntry = entry;
 			rw.add(entry);
-			bw.add(new btBoxShape(new Vector3(10, 10, 10)), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+			bw.add(new btBoxShape(new Vector3(10, 5, 10)), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 	
 			for (int ii = 0; ii < 5; ii++)
 			{
@@ -491,10 +493,10 @@ public class GameScreen extends AbstractScreen {
 				eData.equip(Equipment_Slot.RARM, new Weapon(gattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, ggsword, ggswordTrail));
 				gge.writeData(eData);
 				
-				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 5, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 				pData2.octtreeEntry = entry;
 				rw.add(entry);
-				bw.add(new btBoxShape(new Vector3(10, 10, 10)), new Matrix4().setToTranslation(pData2.position), gge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+				bw.add(new btBoxShape(new Vector3(10, 5, 10)), new Matrix4().setToTranslation(pData2.position), gge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
 			}
 			
@@ -665,7 +667,20 @@ public class GameScreen extends AbstractScreen {
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
 			d.queue3D(decalBatch);
-		}		
+		}
+		
+		for (int i = 0; i < GLOBALS.unanchoredEffects.size; i++)
+		{
+			ParticleEffect pe = GLOBALS.unanchoredEffects.get(i);
+			pe.update(delta, cam, GLOBALS.LIGHTS);
+			pe.queue(delta, cam, batches);
+			if (!pe.isPlaying())
+			{
+				GLOBALS.unanchoredEffects.removeIndex(i);
+				i--;
+				pe.dispose();
+			}
+		}
 	}
 
 	@Override

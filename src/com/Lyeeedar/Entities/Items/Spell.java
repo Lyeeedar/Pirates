@@ -6,10 +6,12 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
@@ -25,6 +27,7 @@ public class Spell extends Equipment<Spell> implements AnimationListener
 	public final Entity baseSpell;
 	public final float castTime;
 	public float castCD;
+	public final AnimatedModel model;
 	
 	private final StatusData sData = new StatusData();
 	private final StatusData sData2 = new StatusData();
@@ -37,18 +40,21 @@ public class Spell extends Equipment<Spell> implements AnimationListener
 	private int targetting = 0;
 	private final Array<Entity> entities = new Array<Entity>(false, 16);
 	
-	public Spell(Entity baseSpell, float castTime)
+	private final Matrix4 tmp = new Matrix4();
+	
+	public Spell(Entity baseSpell, float castTime, AnimatedModel model)
 	{
 		super();
 		this.baseSpell = baseSpell;
 		this.castTime = castTime;
 		this.castCD = 0;
 		this.hasTargetter = false;
+		this.model = model;
 		
 		baseSpell.readOnlyRead(PositionalData.class).createSensor();
 	}
 	
-	public Spell(Entity baseSpell, float castTime, Camera cam, float range, int numHits, boolean allies, float pickSpeed, Vector3 tintColour)
+	public Spell(Entity baseSpell, float castTime, AnimatedModel model, Camera cam, float range, int numHits, boolean allies, float pickSpeed, Vector3 tintColour)
 	{
 		super();
 		this.baseSpell = baseSpell;
@@ -61,6 +67,7 @@ public class Spell extends Equipment<Spell> implements AnimationListener
 		this.allies = allies;
 		this.pickSpeed = pickSpeed;
 		this.tintColour.set(tintColour);
+		this.model = model;
 		
 		baseSpell.readOnlyRead(PositionalData.class).createSensor();
 	}
@@ -151,7 +158,7 @@ public class Spell extends Equipment<Spell> implements AnimationListener
 		
 		sData2.factions = sData.factions;
 		
-		pData2.position.set(pData.position);
+		pData2.position.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("bottom").globalTransform));
 		pData2.sensor.setSkipObject(pData.physicsBody);
 		pData2.rotation.set(pData.rotation);
 		

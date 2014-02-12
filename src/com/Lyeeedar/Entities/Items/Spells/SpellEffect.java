@@ -73,12 +73,14 @@ public abstract class SpellEffect
 		private static final float TICK = 1.0f;
 		
 		public float tickCD = 0;
-		public float duration;
+		public final float duration;
+		private float rDur;
 		
 		public RepeatingSpellEffect(SpellPayload payload, float duration)
 		{
 			super(payload);
 			this.duration = duration;
+			this.rDur = duration;
 		}
 
 		
@@ -86,7 +88,7 @@ public abstract class SpellEffect
 		public boolean update(float delta, Entity target)
 		{
 			tickCD -= delta;
-			duration -= delta;
+			rDur -= delta;
 			
 			if (tickCD < 0)
 			{
@@ -94,7 +96,7 @@ public abstract class SpellEffect
 				tickCD = TICK;
 			}
 			
-			return duration > 0;
+			return rDur > 0;
 		}
 
 
@@ -107,13 +109,16 @@ public abstract class SpellEffect
 	}	
 	public static class DurationSpellEffect extends SpellEffect
 	{
-		public float duration;
+		public final float duration;
 		public boolean applied = false;
+		
+		private float rDur;
 		
 		public DurationSpellEffect(SpellPayload payload, float duration)
 		{
 			super(payload);
 			this.duration = duration;
+			this.rDur = duration;
 		}
 
 		
@@ -125,14 +130,14 @@ public abstract class SpellEffect
 				payload.apply(target);
 			}
 			
-			duration -= delta;
+			rDur -= delta;
 			
-			if (duration <= 0)
+			if (rDur <= 0)
 			{
 				payload.remove(target);
 			}
 			
-			return duration > 0;
+			return rDur > 0;
 		}
 		
 		@Override

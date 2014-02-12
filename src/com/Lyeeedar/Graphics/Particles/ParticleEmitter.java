@@ -10,13 +10,14 @@
  ******************************************************************************/
 package com.Lyeeedar.Graphics.Particles;
 
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
@@ -46,26 +47,24 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		SPRITE,
 		SIZE,
 		COLOUR,
-		VELOCITY
+		VELOCITY,
+		EMISSIONRATE,
+		EMISSIONAREA,
+		EMISSIONTYPE,
+		MASS
 	}
 
 	public final String UID;
 	public String name;
 
 	// ----- Particle Parameters ----- //
-	private TimelineValue[] sprite;
-	private TimelineValue[] size;
-	private TimelineValue[] colour;
-	private TimelineValue[] velocity;
+	private EnumMap<ParticleAttribute, TimelineValue[]> timelines = new EnumMap<ParticleAttribute, TimelineValue[]>(ParticleAttribute.class);
 	// ----- End Particle Parameters ----- //
 
 	// ----- Emitter parameters ----- //
 	public int maxParticles;
+	public float duration;
 	public float particleLifetime;
-	public float particleLifetimeVar;
-	public float emissionTime;
-	public float ex, ey, ez;
-	public int emissionType;
 	public int blendFuncSRC;
 	public int blendFuncDST;
 	public String atlasName;
@@ -101,16 +100,17 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient Matrix4 tmpMat;
 	private transient Matrix4 tmpRot;
 	private transient Vector3 pos;
-	private transient int signx;
-	private transient int signy;
-	private transient int signz;
-	private transient float emissionCD;
+	private transient float signx;
+	private transient float signy;
+	private transient float signz;
+	private transient float emissionVal;
 	private transient Light light;
 	private transient int i;
 	private transient int i2;
 	private transient int arrayLen;
-	public boolean emit = true;
-	public boolean created = false;
+	public transient boolean created = false;
+	
+	public transient float time = 0;
 	// ----- End Transient Variables ----- //
 
 	// ----- Non-Essential Variables ----- //
@@ -118,9 +118,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private float radius;
 	// ----- End Non-Essential Variables ----- //
 
-	public ParticleEmitter(float particleLifetime, float particleLifetimeVar, float emissionTime, 
-			float ex, float ey, float ez,
-			int emissionType,
+	public ParticleEmitter(float particleLifetime, float duration,
 			int blendFuncSRC, int blendFuncDST,
 			String atlasName,
 			String name)
@@ -129,12 +127,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		this.name = name;
 
 		this.particleLifetime = particleLifetime;
-		this.particleLifetimeVar = particleLifetimeVar;
-		this.emissionTime = emissionTime;
-		this.ex = ex;
-		this.ey = ey;
-		this.ez = ez;
-		this.emissionType = emissionType;
+		this.duration = duration;
 		this.blendFuncSRC = blendFuncSRC;
 		this.blendFuncDST = blendFuncDST;
 		this.atlasName = atlasName;
@@ -163,139 +156,36 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		if (light != null) light.position.set(x+lightx, y+lighty, z+lightz);
 	}
 
-	public void setTimeline(TimelineValue[] sprite, TimelineValue[] size, TimelineValue[] colour, TimelineValue[] velocity)
+	public TimelineValue[] getTimeline(ParticleAttribute pa)
 	{
-		this.sprite = sprite;
-		this.size = size;
-		this.colour = colour;
-		this.velocity = velocity;
+		return timelines.get(pa);
 	}
-
-	public TimelineValue[] getSpriteTimeline()
+	
+	public void setTimeline(ParticleAttribute pa, boolean interpolated, float[]... values)
 	{
-		return sprite;
-	}
-	/**
-	 * Set the sprite number timeline. <p>
-	 *  Each point in the timeline is specified by a float array. <br> array[0] is the time in the timeline, array[1] is the sprite number (casted to an int)
-	 *  Optionally setting interpolated to true will linearly interpolate between each value in the timeline
-	 * @param values
-	 */
-	public void setSpriteTimeline(boolean interpolated, float[]... values)
-	{
-		this.sprite = new TimelineValue[values.length];
+		TimelineValue[] timeline = new TimelineValue[values.length];
 
 		for (int i = 0; i < values.length; i++)
 		{
-			this.sprite[i] = new TimelineValue(values[i][0], values[i][1]);
+			float[] nvals = new float[values[i].length-1];
+			System.arraycopy(values[i], 1, nvals, 0, nvals.length);
+			timeline[i] = new TimelineValue(values[i][0], nvals);
 		}
 
 		for (int i = 0; i < values.length-1; i++)
 		{
-			this.sprite[i].setInterpolated(true, this.sprite[i+1]);
+			timeline[i].setInterpolated(true, timeline[i+1]);
 		}
+		
+		timelines.put(pa, timeline);
 	}
 
-	public void setSpriteTimeline(List<TimelineValue> values)
+	public void setTimeline(ParticleAttribute pa, List<TimelineValue> values)
 	{
 		TimelineValue[] array = new TimelineValue[values.size()];
-		sprite = values.toArray(array);
-	}
-
-	public TimelineValue[] getSizeTimeline()
-	{
-		return size;
-	}
-	/**
-	 * Set the size timeline. <p>
-	 *  Each point in the timeline is specified by a float array. <br> array[0] is the time in the timeline, array[1] is the width, array[2] is the height
-	 *  Optionally setting interpolated to true will linearly interpolate between each value in the timeline
-	 * @param interpolated
-	 * @param values
-	 */
-	public void setSizeTimeline(boolean interpolated, float[]... values)
-	{
-		this.size = new TimelineValue[values.length];
-
-		for (int i = 0; i < values.length; i++)
-		{
-			this.size[i] = new TimelineValue(values[i][0], values[i][1], values[i][2]);
-		}
-
-		for (int i = 0; i < values.length-1; i++)
-		{
-			this.size[i].setInterpolated(true, this.size[i+1]);
-		}
-	}
-
-	public void setSizeTimeline(List<TimelineValue> values)
-	{
-		TimelineValue[] array = new TimelineValue[values.size()];
-		size = values.toArray(array);
-	}
-
-	public TimelineValue[] getColourTimeline()
-	{
-		return colour;
-	}
-	/**
-	 * Set the colour timeline. <p>
-	 *  Each point in the timeline is specified by a float array. <br> array[0] is the time in the timeline, array[1] is red, array[2] is green, array[3] is blue and array[4] is alpha
-	 *  Optionally setting interpolated to true will linearly interpolate between each value in the timeline
-	 * @param interpolated
-	 * @param values
-	 */
-	public void setColourTimeline(boolean interpolated, float[]... values)
-	{
-		this.colour = new TimelineValue[values.length];
-
-		for (int i = 0; i < values.length; i++)
-		{
-			this.colour[i] = new TimelineValue(values[i][0], values[i][1], values[i][2], values[i][3], values[i][4]);
-		}
-
-		for (int i = 0; i < values.length-1; i++)
-		{
-			this.colour[i].setInterpolated(true, this.colour[i+1]);
-		}
-	}
-
-	public void setColourTimeline(List<TimelineValue> values)
-	{
-		TimelineValue[] array = new TimelineValue[values.size()];
-		colour = values.toArray(array);
-	}
-
-	public TimelineValue[] getVelocityTimeline()
-	{
-		return velocity;
-	}
-	/**
-	 * Set the velocity timeline. <p>
-	 *  Each point in the timeline is specified by a float array. <br> array[0] is the time in the timeline, array[1] is the x velocity, array[2] is the y velocity and array[3] is the z velocity
-	 *  Optionally setting interpolated to true will linearly interpolate between each value in the timeline
-	 * @param interpolated
-	 * @param values
-	 */
-	public void setVelocityTimeline(boolean interpolated, float[]... values)
-	{
-		this.velocity = new TimelineValue[values.length];
-
-		for (int i = 0; i < values.length; i++)
-		{
-			this.velocity[i] = new TimelineValue(values[i][0], values[i][1], values[i][2], values[i][3]);
-		}
-
-		for (int i = 0; i < values.length-1; i++)
-		{
-			this.velocity[i].setInterpolated(true, this.velocity[i+1]);
-		}
-	}
-
-	public void setVelocityTimeline(List<TimelineValue> values)
-	{
-		TimelineValue[] array = new TimelineValue[values.size()];
-		velocity = values.toArray(array);
+		values.toArray(array);
+		
+		timelines.put(pa, array);
 	}
 
 	/**
@@ -312,16 +202,23 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	 * @param vy
 	 * @param vz
 	 */
-	public void createBasicEmitter(float width, float height, Color start, Color end, float vx, float vy, float vz)
+	public void createBasicEmitter(float width, float height, Color colour, float vx, float vy, float vz)
 	{
-		this.sprite = new TimelineValue[]{new TimelineValue(0, 0)};
+		timelines.put(ParticleAttribute.SPRITE, new TimelineValue[]{new TimelineValue(0, 0)});
 
-		this.size = new TimelineValue[]{new TimelineValue(0, width, height)};
+		timelines.put(ParticleAttribute.SIZE, new TimelineValue[]{new TimelineValue(0, width, height)});
 
-		this.colour = new TimelineValue[]{new TimelineValue(0, start.r, start.g, start.b, start.a), new TimelineValue(particleLifetime, end.r, end.g, end.b, end.a)};
-		this.colour[0].setInterpolated(true, this.colour[1]);
+		timelines.put(ParticleAttribute.COLOUR, new TimelineValue[]{new TimelineValue(0, colour.r, colour.g, colour.b, colour.a)});
 
-		this.velocity = new TimelineValue[]{new TimelineValue(0, vx, vy, vz)};
+		timelines.put(ParticleAttribute.VELOCITY, new TimelineValue[]{new TimelineValue(0, vx, vy, vz)});
+		
+		timelines.put(ParticleAttribute.EMISSIONRATE, new TimelineValue[]{new TimelineValue(0, 10)});
+		
+		timelines.put(ParticleAttribute.EMISSIONAREA, new TimelineValue[]{new TimelineValue(0, 1, 1, 1)});
+		
+		timelines.put(ParticleAttribute.EMISSIONTYPE, new TimelineValue[]{new TimelineValue(0, 0)});
+		
+		timelines.put(ParticleAttribute.MASS, new TimelineValue[]{new TimelineValue(0, 1)});
 	}
 
 	public void addLight(boolean isStatic, float attenuation, float power, Color colour, boolean flicker, float x, float y, float z)
@@ -356,7 +253,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 		created = true;
 	}
-
+	
 	public void dispose()
 	{
 		if (quad != null) Pools.free(quad);
@@ -371,6 +268,11 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		mesh = null;
 		if (light != null) light.delete();
 		light = null;
+		time = 0;
+		if (active != null) Pools.freeAll(active);
+		active = null;
+		if (inactive != null) Pools.freeAll(inactive);
+		inactive = null;
 		created = false;
 	}
 
@@ -384,29 +286,85 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			light = null;
 		}
 
-		light = new Light(new Vector3(x+lightx+(ex/2f), y+lighty+ey, z+lightz+(ez/2)), lightColour.cpy(), lightAttenuation);
+		light = new Light(new Vector3(x+lightx, y+lighty, z+lightz), lightColour.cpy(), lightAttenuation);
 
 		lightManager.add(light);
 	}
 
 	public void calculateParticles()
 	{
-		maxParticles = (int) ((float)particleLifetime / (float)emissionTime);
+		final float stepSize = 0.0001f;
+		
+		Array<Particle> active = new Array<Particle>(false, 16);
+		Array<Particle> inactive = new Array<Particle>(false, 16);
+		float emissionVal = 0;
+		float time = 0;
+		
+		for (float dtime = 0; dtime < duration*10; dtime += stepSize)
+		{
+			time += stepSize;
+			if (time > duration) time = 0;
+			
+			Iterator<Particle> pItr = active.iterator();
+			
+			while (pItr.hasNext())
+			{
+				Particle p = pItr.next();
+				p.update(stepSize, 0, 0, 0);
+				
+				if (p.lifetime > particleLifetime)
+				{
+					pItr.remove();
+					inactive.add(p);
+				}
+			}
+			
+			float erate = getAttributeValue(time, ParticleAttribute.EMISSIONRATE)[0];
+			emissionVal += erate * stepSize;
+			while (emissionVal > 1.0f)
+			{
+				emissionVal -= 1.0f;
+				
+				float remainder = emissionVal/erate;
+				if (Math.abs(particleLifetime-remainder) < 0.5f || remainder > particleLifetime) continue;
+				
+				Particle p = null;
+				if (inactive.size == 0)
+				{
+					p = Pools.obtain(Particle.class);
+				}
+				else
+				{
+					p = inactive.removeIndex(0);
+				}
+				p.set(remainder, 0, 0, 0, 0);
+				active.add(p);
+			}
+		}
+		
+		Pools.freeAll(active);
+		Pools.freeAll(inactive);
+		
+		maxParticles = active.size + inactive.size;
 	}
 
 	public void calculateRadius()
 	{
-		this.radius = ex+ey+ez;
+		this.radius = 1;
 	}
 
 	public void reloadParticles()
 	{
+		if (active != null) Pools.freeAll(active);
+		if (inactive != null) Pools.freeAll(inactive);
 		active = new Array<Particle>(false, maxParticles);
 		inactive = new Array<Particle>(false, maxParticles);
+		
+		time = 0;
 
 		for (int i = 0; i < maxParticles; i++)
 		{
-			Particle p = new Particle();
+			Particle p = Pools.obtain(Particle.class);
 			inactive.add(p);
 		}
 
@@ -417,9 +375,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 4, "a_colour"),
 				new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoords"));
-		mesh.setVertices(vertices);
-		
-		emissionCD = emissionTime;
+		mesh.setVertices(vertices);		
 	}
 
 	public void reloadTextures()
@@ -432,6 +388,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		texHash = atlasTexture.hashCode();
 		
 		int maxIndex = 0;
+		TimelineValue[] sprite = timelines.get(ParticleAttribute.SPRITE);
 		for (TimelineValue spriteTL : sprite)
 		{
 			int index = (int) spriteTL.getValues()[0];
@@ -515,10 +472,63 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public void update(float delta, Camera cam)
 	{
 		if (!created) create();
+		
+		float erate = getAttributeValue(time, ParticleAttribute.EMISSIONRATE)[0];
+		emissionVal += erate * delta;
+		
+		while (emissionVal > 1.0f)
+		{			
+			emissionVal -= 1.0f;
+			float remainder = emissionVal/erate;
+			
+			if (inactive.size == 0 || remainder > particleLifetime || Math.abs(particleLifetime-remainder) < 0.5f) continue;
+			
+			Particle p = inactive.removeIndex(0);
+
+			int etype = (int)getAttributeValue(time, ParticleAttribute.EMISSIONTYPE)[0];
+			
+			if (etype == 0)
+			{
+				signx = (ran.nextInt(2) == 0) ? 1 : -1;
+				signy = (ran.nextInt(2) == 0) ? 1 : -1;
+				signz = (ran.nextInt(2) == 0) ? 1 : -1;
+				float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
+				p.set(remainder,
+						x+(float)(exyz[0]*ran.nextGaussian()*signx), 
+						y+(float)(exyz[1]*ran.nextGaussian()*signy),
+						z+(float)(exyz[2]*ran.nextGaussian()*signz),
+						etype);
+
+			}
+			else if (etype == 1)
+			{
+				float[] velocity = getAttributeValue(0, ParticleAttribute.VELOCITY);
+				
+				signx = (ran.nextInt(2) == 0) ? 1 : -1;
+				signy = (ran.nextInt(2) == 0) ? 1 : -1;
+				signz = (ran.nextInt(2) == 0) ? 1 : -1;
+				float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
+				p.set(remainder,
+						x+(float)(exyz[0]*ran.nextGaussian()*signx), 
+						y+(float)(exyz[1]*ran.nextGaussian()*signy),
+						z+(float)(exyz[2]*ran.nextGaussian()*signz),
+						etype,
+						velocity[0]*(float)ran.nextFloat()*signx, 
+						velocity[1]*(float)ran.nextFloat(),
+						velocity[2]*(float)ran.nextFloat()*signz,
+						getAttributeValue(0, ParticleAttribute.MASS)[0]
+						);
+			}
+			else
+			{
+				System.err.println("Invalid emission type! "+etype);
+			}
+			active.add(p);
+		}
 
 		if (light != null)
 		{
-			light.position.set(x+lightx+(ex/2f), y+lighty+ey, z+lightz+(ez/2));
+			light.position.set(x+lightx, y+lighty, z+lightz);
 			if (lightFlicker) light.attenuation = (float) (lightAttenuation *
 					(1-((1-((float)inactive.size / (float)active.size)))/2));
 		}
@@ -539,7 +549,15 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 			float[] velocity = getAttributeValue(p.lifetime, ParticleAttribute.VELOCITY);
 
-			p.update(delta, velocity[0], velocity[1], velocity[2]);
+			if (p.emittedType == 0)
+			{
+				p.update(delta, velocity[0], velocity[1], velocity[2]);
+			}
+			else if (p.emittedType == 1)
+			{
+				p.vy += GLOBALS.GRAVITY*delta*p.mass;
+				p.update(delta, p.vx, p.vy, p.vz);
+			}
 
 			if (p.lifetime > particleLifetime)
 			{
@@ -658,62 +676,10 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			vertices[i++] = topRightTexCoords[sprite][1];
 		}
 		mesh.setVertices(vertices);
-
-		arrayLen = inactive.size;
-		
-		if (arrayLen == 0 || !emit) return;
-		
-		emissionCD -= delta;
-
-		if (emissionCD < 0)
-		{
-			Particle p = inactive.removeIndex(0);
-
-			if (emissionType == 0)
-			{
-				signx = (ran.nextInt(2) == 0) ? 1 : -1;
-				signy = (ran.nextInt(2) == 0) ? 1 : -1;
-				signz = (ran.nextInt(2) == 0) ? 1 : -1;
-				p.set(particleLifetimeVar*ran.nextFloat(),
-						x+(float)(ex*ran.nextGaussian()*signx), 
-						y+(float)(ey*ran.nextGaussian()*signy),
-						z+(float)(ez*ran.nextGaussian()*signz)
-						);
-
-			}
-			else
-			{
-				System.err.println("Invalid emission type! "+emissionType);
-			}
-			active.add(p);
-
-			emissionCD = emissionTime;
-		}
 	}
 
 	private float[] getAttributeValue(float time, ParticleAttribute pa) {
-		TimelineValue tv = null;
-		if (pa == ParticleAttribute.SPRITE)
-		{
-			tv = searchTimeline(time, sprite);
-		}
-		else if (pa == ParticleAttribute.SIZE)
-		{
-			tv = searchTimeline(time, size);
-		}
-		else if (pa == ParticleAttribute.COLOUR)
-		{
-			tv = searchTimeline(time, colour);
-		}
-		else if (pa == ParticleAttribute.VELOCITY)
-		{
-			tv = searchTimeline(time, velocity);
-		}
-		else
-		{
-			throw new RuntimeException("Timeline value type invalid!");
-		}
-
+		TimelineValue tv = searchTimeline(time, timelines.get(pa));
 
 		return tv.getValuesInterpolated(time);
 	}
@@ -733,24 +699,18 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 	public ParticleEmitter copy()
 	{
-		ParticleEmitter copy = new ParticleEmitter(particleLifetime, particleLifetimeVar, emissionTime, ex, ey, ez, emissionType, blendFuncSRC, blendFuncDST, atlasName, name);
+		ParticleEmitter copy = new ParticleEmitter(particleLifetime, duration, blendFuncSRC, blendFuncDST, atlasName, name);
 		copy.maxParticles = maxParticles;
-
-		TimelineValue[] cpySprite = new TimelineValue[sprite.length];
-		for (int i = 0; i < sprite.length; i++) cpySprite[i] = sprite[i].copy();
-		copy.sprite = cpySprite;
-
-		TimelineValue[] cpySize = new TimelineValue[size.length];
-		for (int i = 0; i < size.length; i++) cpySize[i] = size[i].copy();
-		copy.size = cpySize;
-
-		TimelineValue[] cpyColour = new TimelineValue[colour.length];
-		for (int i = 0; i < colour.length; i++) cpyColour[i] = colour[i].copy();
-		copy.colour = cpyColour;
-
-		TimelineValue[] cpyVelocity = new TimelineValue[velocity.length];
-		for (int i = 0; i < velocity.length; i++) cpyVelocity[i] = velocity[i].copy();
-		copy.velocity = cpyVelocity;
+		
+//		for (ParticleAttribute pa : ParticleAttribute.values())
+//		{
+//			TimelineValue[] tv = timelines.get(pa);
+//			TimelineValue[] cpytv = new TimelineValue[tv.length];
+//			for (int i = 0; i < tv.length; i++) cpytv[i] = tv[i].copy();
+//			copy.timelines.put(pa, cpytv);
+//		}
+		
+		copy.timelines = timelines;
 
 		if (light != null)
 			copy.addLight(isLightStatic, lightAttenuation, lightPower, lightColour, lightFlicker, lightx, lighty, lightz);
@@ -766,9 +726,16 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public static class Particle {
 		float lifetime;
 		float x, y, z;
+		float vx, vy, vz;
+		float mass;
+		int emittedType;
 
 		public Particle()
 		{
+			lifetime = 0;
+			x = 0;
+			y = 0;
+			z = 0;
 		}
 
 		public void update(float delta, float vx, float vy, float vz)
@@ -779,12 +746,26 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			z += vz*delta;
 		}
 
-		public void set(float lifetime, float x, float y, float z)
+		public void set(float lifetime, float x, float y, float z, int emittedType)
 		{
 			this.lifetime = lifetime;
 			this.x = x;
 			this.y = y;
 			this.z = z;
+			this.emittedType = emittedType;
+		}
+		
+		public void set(float lifetime, float x, float y, float z, int emittedType, float vx, float vy, float vz, float mass)
+		{
+			this.lifetime = lifetime;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.vx = vx;
+			this.vy = vy;
+			this.vz = vz;
+			this.mass = mass;
+			this.emittedType = emittedType;
 		}
 	}
 
@@ -902,19 +883,11 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private void write (Json json) {
 		json.writeObjectStart();
 		json.writeValue("name", name);
-		json.writeValue("sprite", sprite);
-		json.writeValue("size", size);
-		json.writeValue("colour", colour);
-		json.writeValue("velocity", velocity);
+		json.writeValue("timelines", timelines);
 
 		json.writeValue("max particles", maxParticles);
 		json.writeValue("particle lifetime", particleLifetime);
-		json.writeValue("particle lifetime variance", particleLifetimeVar);
-		json.writeValue("emission time", emissionTime);
-		json.writeValue("emission x", ex);
-		json.writeValue("emission y", ey);
-		json.writeValue("emission z", ez);
-		json.writeValue("emission type", emissionType);
+		json.writeValue("duration", duration);
 		json.writeValue("blend func SRC", blendFuncSRC);
 		json.writeValue("blend func DST", blendFuncDST);
 		json.writeValue("atlas name", atlasName);
@@ -949,20 +922,14 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			public ParticleEmitter read (Json json, JsonValue jsonData, Class type) {
 
 				// ----- Particle Parameters ----- //
-				TimelineValue[] sprite = null;
-				TimelineValue[] size = null;
-				TimelineValue[] colour = null;
-				TimelineValue[] velocity = null;
+				EnumMap<ParticleAttribute, TimelineValue[]> timelines = new EnumMap<ParticleAttribute, TimelineValue[]>(ParticleAttribute.class);
 				// ----- End Particle Parameters ----- //
 
 				// ----- Emitter parameters ----- //
 				String name = null;
 				int maxParticles = 0;
 				float particleLifetime = 0;
-				float particleLifetimeVar = 0;
-				float emissionTime = 0;
-				float ex = 0, ey = 0, ez = 0;
-				int emissionType = 0;
+				float duration = 0;
 				int blendFuncSRC = 0;
 				int blendFuncDST = 0;
 				String atlasName = null;
@@ -977,21 +944,17 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				float lightx = 0, lighty = 0, lightz = 0;
 				// ----- End Light ----- //
 
-				sprite = json.readValue(TimelineValue[].class, jsonData.get("sprite"));
-				size = json.readValue(TimelineValue[].class, jsonData.get("size"));
-				colour = json.readValue(TimelineValue[].class, jsonData.get("colour"));
-				velocity = json.readValue(TimelineValue[].class, jsonData.get("velocity"));
+				JsonValue tdata = jsonData.get("timelines");
+				for (ParticleAttribute pa : ParticleAttribute.values())
+				{
+					timelines.put(pa, json.readValue(TimelineValue[].class, tdata.get(pa.toString())));
+				}
 
 				name = jsonData.getString("name");
 				maxParticles = jsonData.getInt("max particles");
 				particleLifetime = jsonData.getFloat("particle lifetime");
-				particleLifetimeVar = jsonData.getFloat("particle lifetime variance");
-				emissionTime = jsonData.getFloat("emission time");
-				ex = jsonData.getFloat("emission x");
-				ey = jsonData.getFloat("emission y");
-				ez = jsonData.getFloat("emission z");
+				duration = jsonData.getFloat("duration");
 
-				emissionType = jsonData.getInt("emission type");
 				blendFuncSRC = jsonData.getInt("blend func SRC");
 				blendFuncDST = jsonData.getInt("blend func DST");
 
@@ -1010,14 +973,12 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 					lightz = jsonData.getFloat("light offset z");
 				}
 
-				ParticleEmitter emitter = new ParticleEmitter(particleLifetime, particleLifetimeVar, emissionTime, 
-						ex, ey, ez,
-						emissionType,
+				ParticleEmitter emitter = new ParticleEmitter(particleLifetime, duration,
 						blendFuncSRC, blendFuncDST,
 						atlasName, name);
 				emitter.maxParticles = maxParticles;
 
-				emitter.setTimeline(sprite, size, colour, velocity);
+				emitter.timelines = timelines;
 
 				if (lightColour != null) emitter.addLight(isLightStatic, lightAttenuation, lightPower, lightColour, lightFlicker, lightx, lighty, lightz);
 

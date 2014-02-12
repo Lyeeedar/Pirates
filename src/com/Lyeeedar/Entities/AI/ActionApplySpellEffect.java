@@ -13,7 +13,7 @@ import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.utils.Array;
 
-public class ActionSpellEffect extends Action
+public class ActionApplySpellEffect extends Action
 {
 	public final SpellEffect effect;
 	public final OcttreeBox box;
@@ -25,7 +25,7 @@ public class ActionSpellEffect extends Action
 	
 	private final GetEnemies getEnemies;
 	
-	public ActionSpellEffect(SpellEffect effect, OcttreeBox box)
+	public ActionApplySpellEffect(SpellEffect effect, OcttreeBox box)
 	{
 		this.effect = effect;
 		this.box = box;
@@ -72,7 +72,7 @@ public class ActionSpellEffect extends Action
 	@Override
 	public BehaviourTreeNode copy()
 	{
-		return new ActionSpellEffect(effect, box);
+		return new ActionApplySpellEffect(effect, box);
 	}
 
 	@Override

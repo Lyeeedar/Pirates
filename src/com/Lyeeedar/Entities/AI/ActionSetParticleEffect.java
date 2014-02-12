@@ -1,37 +1,35 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
-import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.badlogic.gdx.math.Vector3;
 
-public class ActionMove extends Action
+public class ActionSetParticleEffect extends Action
 {
+	public final ParticleEffect pe;
 	private final PositionalData pData = new PositionalData();
-	public final float velocity;
 	
-	
-	public ActionMove(float velocity)
+	public ActionSetParticleEffect(ParticleEffect pe)
 	{
-		this.velocity = velocity;
+		this.pe = pe;
+		pe.dispose();
 	}
-
+	
 	@Override
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
-		float delta = (Float) getData("delta", 0);
-		
 		entity.readData(pData);
 		
-		pData.forward_backward(velocity);
+		ParticleEffect npe = pe.copy();
+		npe.setPosition(pData.position);
+		npe.play(false);
 		
-		entity.writeData(pData);
-		
-		parent.setDataTree("moved", true);
+		GLOBALS.unanchoredEffects.add(npe);
 		
 		state = BehaviourTreeState.FINISHED;
 		return state;
@@ -40,14 +38,13 @@ public class ActionMove extends Action
 	@Override
 	public void cancel()
 	{
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public Action copy()
+	public BehaviourTreeNode copy()
 	{
-		return new ActionMove(velocity);
+		return new ActionSetParticleEffect(pe);
 	}
 
 	@Override

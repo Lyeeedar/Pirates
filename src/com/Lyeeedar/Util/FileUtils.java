@@ -22,7 +22,7 @@ import com.badlogic.gdx.utils.UBJsonReader;
 
 public class FileUtils {
 	
-	public static final HashMap<String, Sound> loadedSounds = new HashMap<String, Sound>();
+	private static final HashMap<String, Sound> loadedSounds = new HashMap<String, Sound>();
 	
 	public static Sound loadSound(String location)
 	{
@@ -38,7 +38,7 @@ public class FileUtils {
 		return s;
 	}
 	
-	public static final HashMap<String, HashMap<Integer, BitmapFont[]>> loadedFonts = new HashMap<String, HashMap<Integer, BitmapFont[]>>();
+	private static final HashMap<String, HashMap<Integer, BitmapFont[]>> loadedFonts = new HashMap<String, HashMap<Integer, BitmapFont[]>>();
 	
 	public static BitmapFont getFont(String location, int size, boolean flip)
 	{
@@ -92,13 +92,27 @@ public class FileUtils {
 		return font;
 	}
 	
+	private static HashMap<String, ParticleEffect> loadedEffects = new HashMap<String, ParticleEffect>();
 	public static ParticleEffect loadParticleEffect(String name)
 	{
+		if (loadedEffects.containsKey(name))
+		{
+			return loadedEffects.get(name).copy();
+		}
+		
+		if (!Gdx.files.internal(name).exists()) {
+			throw new RuntimeException("Effect "+name+" does not exist!");
+		}
+		
 		Json json = new Json();
-		return json.fromJson(ParticleEffect.class, Gdx.files.internal(name));
+		ParticleEffect effect = json.fromJson(ParticleEffect.class, Gdx.files.internal(name));
+		
+		loadedEffects.put(name, effect);
+		
+		return effect;
 	}
 
-	public static final HashMap<String, Texture> loadedTextures = new HashMap<String, Texture>();
+	private static final HashMap<String, Texture> loadedTextures = new HashMap<String, Texture>();
 	/**
 	 * Tries to load the given texture. If set to urgent, will throw a runtime exception if this texture does not exist.
 	 * @param textureName
@@ -134,7 +148,7 @@ public class FileUtils {
 		loadedTextures.clear();
 	}
 	
-	public static final HashMap<String, Pixmap> loadedPixmaps = new HashMap<String, Pixmap>();
+	private static final HashMap<String, Pixmap> loadedPixmaps = new HashMap<String, Pixmap>();
 	/**
 	 * Tries to load the given pixmap. If set to urgent, will throw a runtime exception if this pixmap does not exist.
 	 * @param name
@@ -168,7 +182,7 @@ public class FileUtils {
 		loadedPixmaps.clear();
 	}
 	
-	public static final HashMap<String, Mesh> loadedMeshes = new HashMap<String, Mesh>();
+	private static final HashMap<String, Mesh> loadedMeshes = new HashMap<String, Mesh>();
 	public static Mesh loadMesh(String meshName)
 	{
 		String meshLocation = meshName;
@@ -196,7 +210,7 @@ public class FileUtils {
 		loadedMeshes.clear();
 	}
 	
-	public static final HashMap<String, Model> loadedModels = new HashMap<String, Model>();
+	private static final HashMap<String, Model> loadedModels = new HashMap<String, Model>();
 	public static Model loadModel(String modelName)
 	{
 		String location = modelName;
@@ -223,7 +237,7 @@ public class FileUtils {
 		loadedModels.clear();
 	}
 	
-	public static final HashMap<String, TextureAtlas> loadedAtlases = new HashMap<String, TextureAtlas>();
+	private static final HashMap<String, TextureAtlas> loadedAtlases = new HashMap<String, TextureAtlas>();
 	public static TextureAtlas loadAtlas(String atlasName)
 	{
 		String atlasLocation = atlasName;

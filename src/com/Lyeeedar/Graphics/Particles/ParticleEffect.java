@@ -25,16 +25,33 @@ public class ParticleEffect implements Queueable {
 	
 	public final Vector3 pos = new Vector3();
 	
+	private boolean playing = false;
+	private boolean repeat = false;
+	
+	public float duration;
+	private float time;
+	
 	public ParticleEffect() {
 	}
 	
-	public void setPosition(Vector3 pos) {
-		this.pos.set(pos);
-
+	public void play(boolean repeat)
+	{
+		this.playing = true;
+		this.repeat = repeat;
+		duration = 0;
 		for (Emitter e : emitters)
 		{
-			e.emitter.setPosition(pos.x+e.x, pos.y+e.y, pos.z+e.z);
+			if (e.emitter.duration > duration) duration = e.emitter.duration;
 		}
+	}
+	
+	public boolean isPlaying()
+	{
+		return playing;
+	}
+	
+	public void setPosition(Vector3 pos) {
+		setPosition(pos.x, pos.y, pos.z);
 	}
 	
 	public void setPosition(float x, float y, float z) {
@@ -100,8 +117,24 @@ public class ParticleEffect implements Queueable {
 	
 	public void update(float delta, Camera cam)
 	{
+		if (!playing) return;
+		time += delta;
+		if (time > duration)
+		{
+			if (repeat)
+			{
+				time = 0;
+			}
+			else
+			{
+				playing = false;
+			}
+		}
+		duration = 0;
 		for (Emitter e : emitters)
 		{
+			if (e.emitter.duration > duration) duration = e.emitter.duration;
+			e.emitter.time = time;
 			e.emitter.update(delta, cam);
 		}
 	}
@@ -120,39 +153,6 @@ public class ParticleEffect implements Queueable {
 		e.z = position.z;
 		
 		setPosition(pos);
-	}
-	
-	public void modEmissionTime(float amount)
-	{
-		for (Emitter e : emitters)
-		{
-			e.emitter.emissionTime += amount;
-		}
-	}
-	public void modEmissionArea(float x, float y, float z)
-	{
-		for (Emitter e : emitters)
-		{
-			e.emitter.ex += x;
-			e.emitter.ey += y;
-			e.emitter.ez += z;
-		}
-	}
-	public void setEmit(boolean emit)
-	{
-		for (Emitter e : emitters)
-		{
-			e.emitter.emit = emit;
-		}
-	}
-	public float getMaxLife()
-	{
-		float max = 0;
-		for (Emitter e : emitters)
-		{
-			if (e.emitter.particleLifetime > max) max = e.emitter.particleLifetime;
-		}
-		return max;
 	}
 	
 	public void render()
@@ -262,6 +262,7 @@ public class ParticleEffect implements Queueable {
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 	{
+		if (!playing) return;
 		for (Emitter e : emitters)
 		{
 			if (!e.emitter.created) e.emitter.create();

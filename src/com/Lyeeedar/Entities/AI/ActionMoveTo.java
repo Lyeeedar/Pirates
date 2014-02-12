@@ -64,7 +64,7 @@ public class ActionMoveTo extends Action
 		
 		entity.readData(sData);
 		
-		tmpVec.set(pData2.position).sub(pData.position);
+		tmpVec.set(pData2.position).add(0, pData2.octtreeEntry.box.extents.y/2.0f, 0).sub(pData.position);
 		if (sData.mass > 0.01f) tmpVec.y = 0;
 		if (!towards)
 		{
