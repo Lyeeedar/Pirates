@@ -51,7 +51,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		EMISSIONRATE,
 		EMISSIONAREA,
 		EMISSIONTYPE,
-		MASS
+		MASS,
+		ROTATIONTYPE
 	}
 
 	public final String UID;
@@ -99,11 +100,13 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient Random ran;
 	private transient Matrix4 tmpMat;
 	private transient Matrix4 tmpRot;
+	private transient Vector3 tmpVec;
+	private transient Vector3 tmpVec2;
 	private transient Vector3 pos;
 	private transient float signx;
 	private transient float signy;
 	private transient float signz;
-	private transient float emissionVal;
+	public transient float emissionVal;
 	private transient Light light;
 	private transient int i;
 	private transient int i2;
@@ -219,6 +222,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		timelines.put(ParticleAttribute.EMISSIONTYPE, new TimelineValue[]{new TimelineValue(0, 0)});
 		
 		timelines.put(ParticleAttribute.MASS, new TimelineValue[]{new TimelineValue(0, 1)});
+		
+		timelines.put(ParticleAttribute.ROTATIONTYPE, new TimelineValue[]{new TimelineValue(0, 0)});
 	}
 
 	public void addLight(boolean isStatic, float attenuation, float power, Color colour, boolean flicker, float x, float y, float z)
@@ -246,6 +251,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		tmpMat = Pools.obtain(Matrix4.class).idt();
 		tmpRot = Pools.obtain(Matrix4.class).idt();
 		pos = Pools.obtain(Vector3.class).set(0, 0, 0);
+		tmpVec = Pools.obtain(Vector3.class);
+		tmpVec2 = Pools.obtain(Vector3.class);
 
 		calculateRadius();
 		reloadParticles();
@@ -264,6 +271,10 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		tmpRot = null;
 		if (pos != null) Pools.free(pos);
 		pos = null;
+		if (tmpVec != null) Pools.free(tmpVec);
+		tmpVec = null;
+		if (tmpVec2 != null) Pools.free(tmpVec2);
+		tmpVec2 = null;
 		if (mesh != null) mesh.dispose();
 		mesh = null;
 		if (light != null) light.delete();
@@ -318,20 +329,31 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		temp = timeline[timeline.length-1].time+particleLifetime;
 		if (temp > endTime) endTime = temp;
 		
+		timeline = timelines.get(ParticleAttribute.ROTATIONTYPE);
+		temp = timeline[timeline.length-1].time+particleLifetime;
+		if (temp > endTime) endTime = temp;
+		
 		float lastFound = 0;
 		
-		for (float dtime = 0; dtime < endTime; dtime += stepSize)
+		for (float time = 0; time < endTime; time += stepSize)
 		{
-			float erate = getAttributeValue(dtime, ParticleAttribute.EMISSIONRATE)[0];
-			emissionVal += erate * stepSize;
-			while (emissionVal > 1.0f)
+			float erate = getAttributeValue(time, ParticleAttribute.EMISSIONRATE)[0];
+			if (erate > 0)
+			{
+				emissionVal += erate * stepSize;
+			}
+			else if (erate < 0)
+			{
+				erate *= -1;
+				int num = (int) erate;
+				if (active.size > num) emissionVal = 0;
+				else emissionVal = num - active.size;
+			}
+			while (emissionVal >= 1.0f)
 			{
 				emissionVal -= 1.0f;
-				
-				float remainder = emissionVal/erate;
-				if (Math.abs(particleLifetime-remainder) < 0.5f || remainder > particleLifetime) continue;
-				
-				float t = dtime + particleLifetime - remainder;
+								
+				float t = time + particleLifetime;
 				if (t > lastFound) lastFound = t;
 			}
 		}
@@ -340,16 +362,12 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		
 		// Calculate Max Particles
 		
-		float time = 0;
 		emissionVal = 0;
 		Array<Particle> active = new Array<Particle>(false, 16);
 		Array<Particle> inactive = new Array<Particle>(false, 16);
 		
-		for (float dtime = 0; dtime < duration*10; dtime += stepSize)
+		for (float time = 0; time < duration; time += stepSize)
 		{
-			time += stepSize;
-			if (time > duration) time = 0;
-			
 			Iterator<Particle> pItr = active.iterator();
 			
 			while (pItr.hasNext())
@@ -365,14 +383,21 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			}
 			
 			float erate = getAttributeValue(time, ParticleAttribute.EMISSIONRATE)[0];
-			emissionVal += erate * stepSize;
-			while (emissionVal > 1.0f)
+			if (erate > 0)
+			{
+				emissionVal += erate * stepSize;
+			}
+			else if (erate < 0)
+			{
+				erate *= -1;
+				int num = (int) erate;
+				if (active.size > num) emissionVal = 0;
+				else emissionVal = num - active.size;
+			}
+			while (emissionVal >= 1.0f)
 			{
 				emissionVal -= 1.0f;
-				
-				float remainder = emissionVal/erate;
-				if (Math.abs(particleLifetime-remainder) < 0.5f || remainder > particleLifetime) continue;
-				
+								
 				Particle p = null;
 				if (inactive.size == 0)
 				{
@@ -382,12 +407,14 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				{
 					p = inactive.removeIndex(0);
 				}
-				p.set(remainder, 0, 0, 0, 0);
+				p.set(0, 0, 0, 0, 0, 0);
 				active.add(p);
 			}
 		}
 		
 		maxParticles = active.size + inactive.size;
+		
+		System.out.println("duration:"+duration+" mp:"+maxParticles);
 		
 		Pools.freeAll(active);
 		Pools.freeAll(inactive);
@@ -513,36 +540,49 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		currentAtlas = null;
 		currentBlendSRC = currentBlendDST = 0;
 	}
-
+	
 	public void update(float delta, Camera cam)
 	{
 		if (!created) create();
 		
 		float erate = getAttributeValue(time, ParticleAttribute.EMISSIONRATE)[0];
-		emissionVal += erate * delta;
+				
+		if (erate > 0)
+		{
+			emissionVal += erate * delta;
+		}
+		else if (erate < 0)
+		{
+			erate *= -1;
+			int num = (int) erate;
+			if (active.size > num) emissionVal = 0;
+			else emissionVal = num - active.size;
+		}
 		
-		while (emissionVal > 1.0f)
+		while (emissionVal >= 1.0f)
 		{			
-			emissionVal -= 1.0f;
-			float remainder = emissionVal/erate;
+			emissionVal -= 1.0f;			
 			
-			if (inactive.size == 0 || remainder > particleLifetime || Math.abs(particleLifetime-remainder) < 0.5f) continue;
+			if (inactive.size == 0) continue;
 			
 			Particle p = inactive.removeIndex(0);
 
-			int etype = (int)getAttributeValue(time, ParticleAttribute.EMISSIONTYPE)[0];
+			int etype = (int) getAttributeValue(time, ParticleAttribute.EMISSIONTYPE)[0];
+			int rotType = (int) getAttributeValue(time, ParticleAttribute.ROTATIONTYPE)[0];
+			float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
 			
 			if (etype == 0)
 			{
 				signx = (ran.nextInt(2) == 0) ? 1 : -1;
 				signy = (ran.nextInt(2) == 0) ? 1 : -1;
 				signz = (ran.nextInt(2) == 0) ? 1 : -1;
-				float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
-				p.set(remainder,
+				
+				p.set(0,
 						x+(float)(exyz[0]*ran.nextGaussian()*signx), 
 						y+(float)(exyz[1]*ran.nextGaussian()*signy),
 						z+(float)(exyz[2]*ran.nextGaussian()*signz),
-						etype);
+						etype, rotType
+						);
 
 			}
 			else if (etype == 1)
@@ -552,12 +592,12 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				signx = (ran.nextInt(2) == 0) ? 1 : -1;
 				signy = (ran.nextInt(2) == 0) ? 1 : -1;
 				signz = (ran.nextInt(2) == 0) ? 1 : -1;
-				float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
-				p.set(remainder,
+				
+				p.set(0,
 						x+(float)(exyz[0]*ran.nextGaussian()*signx), 
 						y+(float)(exyz[1]*ran.nextGaussian()*signy),
 						z+(float)(exyz[2]*ran.nextGaussian()*signz),
-						etype,
+						etype, rotType,
 						velocity[0]*(float)ran.nextFloat()*signx, 
 						velocity[1]*(float)ran.nextFloat(),
 						velocity[2]*(float)ran.nextFloat()*signz,
@@ -570,7 +610,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			}
 			active.add(p);
 		}
-
+				
 		if (light != null)
 		{
 			light.position.set(x+lightx, y+lighty, z+lightz);
@@ -580,10 +620,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 		radius = 0;
 		
-		tmpRot.set(cam.view).inv();
-		tmpRot.getValues()[Matrix4.M03] = 0;
-		tmpRot.getValues()[Matrix4.M13] = 0;
-		tmpRot.getValues()[Matrix4.M23] = 0;
+		tmpRot.setToRotation(GLOBALS.DEFAULT_ROTATION, cam.direction);
 
 		Iterator<Particle> pItr = active.iterator();
 
@@ -614,7 +651,25 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			float dst = Vector3.dst(p.x, p.y, p.z, x, y, z);
 			if (dst > radius) radius = dst;
 
-			tmpMat.setToTranslation(p.x, p.y, p.z).mul(tmpRot);
+			int rotType = p.rotType;
+			
+			if (rotType == 0)
+			{
+				tmpMat.setToTranslation(p.x, p.y, p.z).mul(tmpRot);
+			}
+			else if (rotType == 1)
+			{
+				if (p.emittedType == 0)
+				{
+					tmpVec.set(velocity[0], velocity[1], velocity[2]).nor();
+				}
+				else if (p.emittedType == 1)
+				{
+					tmpVec.set(p.vx, p.vy, p.vz).nor();
+				}
+				
+				tmpMat.setToTranslation(p.x, p.y, p.z).rotate(GLOBALS.DEFAULT_ROTATION, tmpVec2.set(tmpVec).crs(GLOBALS.DEFAULT_UP).crs(tmpVec));
+			}
 
 			int sprite = (int) getAttributeValue(p.lifetime, ParticleAttribute.SPRITE)[0];
 			float[] size = getAttributeValue(p.lifetime, ParticleAttribute.SIZE);
@@ -720,7 +775,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			vertices[i++] = topRightTexCoords[sprite][0];
 			vertices[i++] = topRightTexCoords[sprite][1];
 		}
-		mesh.setVertices(vertices);
+		mesh.updateVertices(0, vertices, 0, active.size*6*VERTEX_SIZE);
 	}
 
 	private float[] getAttributeValue(float time, ParticleAttribute pa) {
@@ -774,6 +829,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		float vx, vy, vz;
 		float mass;
 		int emittedType;
+		int rotType;
 
 		public Particle()
 		{
@@ -791,16 +847,17 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			z += vz*delta;
 		}
 
-		public void set(float lifetime, float x, float y, float z, int emittedType)
+		public void set(float lifetime, float x, float y, float z, int emittedType, int rotType)
 		{
 			this.lifetime = lifetime;
 			this.x = x;
 			this.y = y;
 			this.z = z;
 			this.emittedType = emittedType;
+			this.rotType = rotType;
 		}
 		
-		public void set(float lifetime, float x, float y, float z, int emittedType, float vx, float vy, float vz, float mass)
+		public void set(float lifetime, float x, float y, float z, int emittedType, int rotType, float vx, float vy, float vz, float mass)
 		{
 			this.lifetime = lifetime;
 			this.x = x;
@@ -811,6 +868,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			this.vz = vz;
 			this.mass = mass;
 			this.emittedType = emittedType;
+			this.rotType = rotType;
 		}
 	}
 
@@ -992,7 +1050,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				JsonValue tdata = jsonData.get("timelines");
 				for (ParticleAttribute pa : ParticleAttribute.values())
 				{
-					timelines.put(pa, json.readValue(TimelineValue[].class, tdata.get(pa.toString())));
+					TimelineValue[] timeline = json.readValue(TimelineValue[].class, tdata.get(pa.toString()));
+					if (timeline == null) timeline = new TimelineValue[]{new TimelineValue(0, 0)};
+					timelines.put(pa, timeline);
 				}
 
 				name = jsonData.getString("name");

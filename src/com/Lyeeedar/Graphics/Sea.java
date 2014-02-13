@@ -50,12 +50,12 @@ public class Sea {
 		
 		numWaves = 3;
 				
-		amplitudes[0] = 1.02f;
+		amplitudes[0] = 11.02f;
 		wavelengths[0] = 100.1f;
 		speeds[0] = 5.0f;
 		directions[0] = 0.0f; directions[1] = 1.0f;
 		
-		amplitudes[1] = 5.3f;
+		amplitudes[1] = 15.3f;
 		wavelengths[1] = 173.0f;
 		speeds[1] = 15.0f;
 		directions[2] = -1.0f; directions[3] = -1.0f;

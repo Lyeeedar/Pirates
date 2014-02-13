@@ -124,6 +124,11 @@ public class ParticleEffect implements Queueable {
 			if (repeat)
 			{
 				time = 0;
+				for (Emitter e : emitters)
+				{
+					e.emitter.time = 0;
+					e.emitter.emissionVal = 0;
+				}
 			}
 			else
 			{

@@ -313,7 +313,7 @@ public class GameScreen extends AbstractScreen {
 		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
 		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/fire.effect");
 		fire.play(true);
-		spell2.addRenderable(fire, new Vector3());
+		//spell2.addRenderable(fire, new Vector3());
 		spell2.addRenderable(orb2, new Vector3());
 		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
