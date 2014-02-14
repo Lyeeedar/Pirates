@@ -26,7 +26,7 @@ public class FollowCam extends PerspectiveCamera {
 	private final Controls controls;
 	private final Vector3 tmp = new Vector3();
 	public float followDist = 10.0f;
-	public float followHeight = 7.0f;
+	public float followHeight = 4.0f;
 	
 	public OcttreeShape aiShape;
 	public OcttreeFrustum renderFrustum;

@@ -44,11 +44,7 @@ public class Entity {
 		LIGHT,
 		LIFE,
 		GAIA,
-		FORCE,
-		
-		SLOT1,
-		SLOT2,
-		SLOT3
+		FORCE
 	}
 	
 	public boolean DISPOSED = false;

@@ -12,7 +12,6 @@ import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
-import com.Lyeeedar.Entities.Items.Spell;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
@@ -21,7 +20,6 @@ import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Picker;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.utils.Array;
 
 public final class GLOBALS {

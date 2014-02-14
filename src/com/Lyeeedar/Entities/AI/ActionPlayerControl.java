@@ -126,17 +126,10 @@ public class ActionPlayerControl extends Action
 		{
 			stopUsing(Equipment_Slot.RARM, eData);
 		}
-		
-		if (controls.slot1()) use(Equipment_Slot.SLOT1, eData);
+		if (controls.leftClick()) use(Equipment_Slot.LARM, eData);
 		else 
 		{
-			stopUsing(Equipment_Slot.SLOT1, eData);
-		}
-		
-		if (controls.slot2()) use(Equipment_Slot.SLOT2, eData);
-		else 
-		{
-			stopUsing(Equipment_Slot.SLOT2, eData);
+			stopUsing(Equipment_Slot.LARM, eData);
 		}
 		
 		entity.writeData(pData);
@@ -151,9 +144,8 @@ public class ActionPlayerControl extends Action
 	{
 		Entity entity = (Entity) getData("entity", null);
 		entity.readData(eData);
+		stopUsing(Equipment_Slot.LARM, eData);
 		stopUsing(Equipment_Slot.RARM, eData);
-		stopUsing(Equipment_Slot.SLOT1, eData);
-		stopUsing(Equipment_Slot.SLOT2, eData);
 		entity.writeData(eData);
 	}
 

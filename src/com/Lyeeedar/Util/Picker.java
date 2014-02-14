@@ -19,7 +19,7 @@ public class Picker
 	public int numHits;
 	
 	public Entity source;
-	public Array<Entity> output;
+	public CircularArrayRing<Entity> output;
 	
 	public boolean allies;
 	
@@ -51,7 +51,7 @@ public class Picker
 		RUNNING = false;
 	}
 
-	public void set(Entity source, Array<Entity> output, Camera cam, float range, int numHits, boolean allies, float pickSpeed, Vector3 tintColour)
+	public void set(Entity source, CircularArrayRing<Entity> output, Camera cam, float range, int numHits, boolean allies, float pickSpeed, Vector3 tintColour)
 	{
 		this.source = source;
 		this.output = output;
@@ -69,9 +69,7 @@ public class Picker
 	}
 	
 	public void update(float delta)
-	{
-		if (output.size == numHits) return;
-		
+	{		
 		pickCD -= delta;
 		if (pickCD > 0) return;
 		
@@ -97,20 +95,30 @@ public class Picker
 			
 			if (valid)
 			{
-				output.add(hit);
+				if (!output.contains(hit))
+				{
+					output.add(hit);
+					
+					ray.clearSkips();
+					source.readData(pData);
+					ray.setSkipObject(pData.physicsBody);
+					for (int i = 0; i < output.size(); i++)
+					{
+						Entity e = output.get(i);
+						e.readData(pData);
+						ray.setSkipObject(pData.physicsBody);
+					}
+				}
 				pickCD = pickSpeed;
 			}
-			
-			hit.readData(pData);
-			
-			ray.setSkipObject(pData.physicsBody);
 		}
 	}
 	
 	public void tint()
 	{
-		for (Entity e : output)
+		for (int i = 0; i < output.size(); i++)
 		{
+			Entity e = output.get(i);
 			e.readData(aData);
 			aData.colour.set(tintColour);
 			e.writeData(aData);

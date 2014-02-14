@@ -20,7 +20,9 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Pools;
 
 public class ParticleEffect implements Queueable {
-		
+	
+	public String name;
+	
 	public final Array<Emitter> emitters = new Array<Emitter>();
 	
 	public final Vector3 pos = new Vector3();
@@ -39,6 +41,7 @@ public class ParticleEffect implements Queueable {
 		this.playing = true;
 		this.repeat = repeat;
 		duration = 0;
+		time = 0;
 		for (Emitter e : emitters)
 		{
 			if (e.emitter.duration > duration) duration = e.emitter.duration;
@@ -208,6 +211,7 @@ public class ParticleEffect implements Queueable {
 	public ParticleEffect copy()
 	{
 		ParticleEffect effect = new ParticleEffect();
+		effect.name = name;
 		if (playing) effect.play(repeat);
 		
 		for (Emitter e : emitters)

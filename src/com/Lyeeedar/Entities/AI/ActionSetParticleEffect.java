@@ -7,16 +7,16 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FileUtils;
 
 public class ActionSetParticleEffect extends Action
 {
-	public final ParticleEffect pe;
+	public final String effect;
 	private final PositionalData pData = new PositionalData();
 	
-	public ActionSetParticleEffect(ParticleEffect pe)
+	public ActionSetParticleEffect(String effect)
 	{
-		this.pe = pe;
-		pe.dispose();
+		this.effect = effect;
 	}
 	
 	@Override
@@ -25,7 +25,7 @@ public class ActionSetParticleEffect extends Action
 		Entity entity = (Entity) getData("entity", null);
 		entity.readData(pData);
 		
-		ParticleEffect npe = pe.copy();
+		ParticleEffect npe = FileUtils.obtainParticleEffect(effect);
 		npe.setPosition(pData.position);
 		npe.play(false);
 		
@@ -44,7 +44,7 @@ public class ActionSetParticleEffect extends Action
 	@Override
 	public BehaviourTreeNode copy()
 	{
-		return new ActionSetParticleEffect(pe);
+		return new ActionSetParticleEffect(effect);
 	}
 
 	@Override

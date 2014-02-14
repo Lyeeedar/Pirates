@@ -17,6 +17,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.UBJsonReader;
 
@@ -106,10 +107,41 @@ public class FileUtils {
 		
 		Json json = new Json();
 		ParticleEffect effect = json.fromJson(ParticleEffect.class, Gdx.files.internal(name));
+		effect.name = name;
 		
 		loadedEffects.put(name, effect);
 		
 		return effect;
+	}
+	
+	private static HashMap<String, Array<ParticleEffect>> pooledEffects = new HashMap<String, Array<ParticleEffect>>();
+	public static ParticleEffect obtainParticleEffect(String name)
+	{
+		Array<ParticleEffect> pool = null;
+		if (pooledEffects.containsKey(name))
+		{
+			pool = pooledEffects.get(name);
+			if (pool.size > 0)
+			{
+				return pool.removeIndex(0);
+			}
+		}
+		
+		ParticleEffect effect = loadParticleEffect(name);
+		
+		if (pool == null)
+		{
+			pool = new Array<ParticleEffect>(false, 16);
+			pooledEffects.put(name, pool);
+		}
+		
+		pool.add(effect);
+		
+		return effect;
+	}
+	public static void freeParticleEffect(ParticleEffect effect)
+	{
+		pooledEffects.get(effect.name).add(effect);
 	}
 
 	private static final HashMap<String, Texture> loadedTextures = new HashMap<String, Texture>();

@@ -164,8 +164,6 @@ public abstract class Selector extends BehaviourTreeNode
 			}
 		}
 
-
-
 		@Override
 		public Selector copy()
 		{

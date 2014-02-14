@@ -28,6 +28,10 @@ public class CircularArrayRing<E> extends AbstractCollection<E> implements Ring<
 	private int head;
 	private boolean filled = false;
 
+	/**
+	 * Create a new circular array ring with a capacity of i
+	 * @param i
+	 */
 	@SuppressWarnings("unchecked")
 	public CircularArrayRing(int i) 
 	{
@@ -35,6 +39,10 @@ public class CircularArrayRing<E> extends AbstractCollection<E> implements Ring<
 		head = 0;
 	}
 
+	/**
+	 * Create a new circular array ring with a capacity of 20
+	 * @param i
+	 */
 	@SuppressWarnings("unchecked")
 	public CircularArrayRing()
 	{
@@ -42,6 +50,13 @@ public class CircularArrayRing<E> extends AbstractCollection<E> implements Ring<
 		head = 0;
 	}
 
+	@Override
+	public void clear()
+	{
+		head = 0;
+		filled = false;
+	}
+	
 	public boolean add(E e) {
 		ring[head] = e;
 		head++;
@@ -69,6 +84,16 @@ public class CircularArrayRing<E> extends AbstractCollection<E> implements Ring<
 			}
 		}
 		return e;
+	}
+	
+	@Override
+	public boolean contains(Object e)
+	{
+		for (int i = 0; i < size(); i++)
+		{
+			if (get(i) == e) return true;
+		}
+		return false;
 	}
 
 	public E get(int index) throws IndexOutOfBoundsException {
@@ -101,7 +126,7 @@ public class CircularArrayRing<E> extends AbstractCollection<E> implements Ring<
 	}
 
 	public Iterator<E> iterator() {
-		return new RingIterator<E>(this);
+		return staticIterator();
 	}
 
 	public int size() {
