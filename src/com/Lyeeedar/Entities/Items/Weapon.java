@@ -15,6 +15,7 @@ import com.Lyeeedar.Graphics.Queueables.MotionTrail;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.CircularArrayRing;
+import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
@@ -310,6 +311,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		@Override
 		public void begin(Entity entity, HashMap<String, Object> data)
 		{
+			output.clear();
 			GLOBALS.picker.set(entity, output, cam, range, numHits, allies, pickSpeed, tintColour);
 			GLOBALS.picker.begin();
 		}
@@ -328,7 +330,6 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		AnimatedModel model;
 		
 		boolean shouldCast;
-		HashMap<String, Object> data;
 		
 		private final StatusData sData = new StatusData();
 		private final StatusData sData2 = new StatusData();
@@ -350,7 +351,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		@Override
 		public void begin(Entity entity, HashMap<String, Object> data)
 		{
-			this.data = data;
+			((BehaviourTree) baseSpell.getAI()).setData("Enemy", null);
 			shouldCast = true;
 			i = 0;
 		}
@@ -361,7 +362,6 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			if (shouldCast)
 			{
 				shouldCast = false;
-				((BehaviourTree) baseSpell.getAI()).setData("Enemy", null);
 				
 				if (data != null)
 				{
@@ -467,13 +467,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 							sData.damage = damage + ran.nextInt(damageVar);
 							e.writeData(sData);
 							ray.setSkipObject(arr.at(i));
+							GLOBALS.unanchoredEffects.add(FileUtils.obtainParticleEffect("data/effects/sparks.effect"));
 						}
-	//					else
-	//					{
-	//						shouldSwing = false;
-	//						inSwing = false;
-	//						ray.clearSkips();
-	//					}
+						else
+						{
+							GLOBALS.unanchoredEffects.add(FileUtils.obtainParticleEffect("data/effects/sparks.effect"));
+						}
 					}
 				}
 			}
