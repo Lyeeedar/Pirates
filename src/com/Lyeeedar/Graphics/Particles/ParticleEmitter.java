@@ -15,8 +15,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
+import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.Gdx;
@@ -112,6 +116,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient int i2;
 	private transient int arrayLen;
 	public transient boolean created = false;
+	public transient Vector3[] emissionMesh;
+	public transient Queueable emissionObject;
+	public transient Entity base;
 	
 	public transient float time = 0;
 	// ----- End Transient Variables ----- //
@@ -570,6 +577,18 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			int etype = (int) getAttributeValue(time, ParticleAttribute.EMISSIONTYPE)[0];
 			int rotType = (int) getAttributeValue(time, ParticleAttribute.ROTATIONTYPE)[0];
 			float[] exyz = getAttributeValue(time, ParticleAttribute.EMISSIONAREA);
+			float x = this.x;
+			float y = this.y;
+			float z = this.z;
+			
+			if (emissionMesh != null)
+			{
+				Vector3 vertex = tmpVec.set(emissionMesh[ran.nextInt(emissionMesh.length)]);
+				vertex.mul(emissionObject.getTransform());
+				x = vertex.x;
+				y = vertex.y;
+				z = vertex.z;
+			}
 			
 			if (etype == 0)
 			{
@@ -641,6 +660,14 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				p.update(delta, p.vx, p.vy, p.vz);
 			}
 
+			if (base != null)
+			{
+				PositionalData pData = base.readOnlyRead(PositionalData.class);
+				p.x += pData.deltaPos.x;
+				p.y += pData.deltaPos.y;
+				p.z += pData.deltaPos.z;
+			}
+			
 			if (p.lifetime > particleLifetime)
 			{
 				pItr.remove();

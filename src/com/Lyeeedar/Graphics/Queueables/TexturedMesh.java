@@ -12,6 +12,7 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -80,4 +81,34 @@ public final class TexturedMesh implements Queueable {
 	{
 		model_matrix.mul(mat);
 	}
+
+	@Override
+	public Matrix4 getTransform()
+	{
+		return model_matrix;
+	}
+
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		final int nverts = mesh.getNumVertices();
+		final int vsize = mesh.getVertexSize();
+		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
+		
+		Vector3[] varray = new Vector3[nverts];
+		
+		for (int i = 0; i < nverts; i++)
+		{
+			varray[i] = new Vector3(
+					vertices[poff+(i*vsize)+0],
+					vertices[poff+(i*vsize)+1],
+					vertices[poff+(i*vsize)+2]
+					);
+		}
+		
+		return varray;
+	}
+	
+	
 }

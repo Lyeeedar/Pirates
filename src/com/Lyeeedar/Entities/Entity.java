@@ -443,6 +443,8 @@ public class Entity {
 		public final Vector3 position = new Vector3();
 		public final Vector3 lastRot1 = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 lastRot2 = new Vector3(GLOBALS.DEFAULT_ROTATION);
+		public final Vector3 deltaPos = new Vector3();
+		public final Vector3 deltaRot = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
 		public final Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
@@ -486,6 +488,8 @@ public class Entity {
 			position.set(data.position);
 			lastRot1.set(data.lastRot1);
 			lastRot2.set(data.lastRot2);
+			deltaPos.set(data.deltaPos);
+			deltaRot.set(data.deltaRot);
 			rotation.set(data.rotation);		
 			velocity.set(data.velocity);
 			up.set(data.up);
@@ -562,6 +566,17 @@ public class Entity {
 			tmpMat.setToRotation(axis, angle);
 			rotation.mul(tmpMat).nor();
 			up.mul(tmpMat).nor();
+		}
+		
+		public void setRotation(Vector3 rotation)
+		{
+			setRotation(rotation.x, rotation.y, rotation.z);
+		}
+		
+		public void setRotation(float x, float y, float z)
+		{
+			rotation.set(x, y, z);
+			up.set(rotation).crs(GLOBALS.DEFAULT_UP).crs(rotation);
 		}
 		// ------------------------- ROTATE ------------------------- //
 		
@@ -668,6 +683,7 @@ public class Entity {
 				PositionalData pData = base.readOnlyRead(PositionalData.class);
 				tmpMat.set(pData.composed).translate(tmpVec.set(position).mul(pData.lastInv));
 				position.set(0, 0, 0).mul(tmpMat);
+				deltaPos.set(position).sub(lastPos);
 				
 				tmpVec.set(pData.lastRot2);
 				tmpVec.y = 0; tmpVec.nor();
@@ -677,6 +693,8 @@ public class Entity {
 				
 				rotation.mul(tmpMat);
 				up.mul(tmpMat);
+				
+				deltaRot.set(rotation).sub(lastRot1);
 			}
 			
 			if (velocity.len2() == 0) 
@@ -780,6 +798,7 @@ public class Entity {
 				position.y =  waveHeight;
 				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 				//graph.popAndInsert(GLOBALS.WORLD);
+				locationCD = 0.5f;
 				location = LOCATION.SEA;
 				Ycollide = true;
 				this.base = null;

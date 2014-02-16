@@ -67,6 +67,7 @@ public class Sprite3D implements Queueable {
 	private final Vector3 colour = new Vector3(1.0f, 1.0f, 1.0f);
 	private float alpha = 1.0f;
 	private final Vector3 finalColour = new Vector3();
+	public final Matrix4 transform = new Matrix4();
 
 	private Decal decal;
 	private TextureRegion region;
@@ -506,5 +507,18 @@ public class Sprite3D implements Queueable {
 	{
 		position.mul(mat);
 		rotation.rot(mat);
+	}
+	
+	@Override
+	public Matrix4 getTransform()
+	{
+		transform.setToTranslation(position);
+		return transform;
+	}
+	
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		return new Vector3[]{new Vector3()};
 	}
 }

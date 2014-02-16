@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
@@ -300,5 +301,35 @@ public class ModelBatcher implements Queueable {
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+
+	@Override
+	public Matrix4 getTransform()
+	{
+		return null;
+	}
+
+
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		final int nverts = mesh.getNumVertices();
+		final int vsize = mesh.getVertexSize();
+		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
+		
+		Vector3[] varray = new Vector3[nverts];
+		
+		for (int i = 0; i < nverts; i++)
+		{
+			varray[i] = new Vector3(
+					vertices[poff+(i*vsize)+0],
+					vertices[poff+(i*vsize)+1],
+					vertices[poff+(i*vsize)+2]
+					);
+		}
+		
+		return varray;
 	}
 }

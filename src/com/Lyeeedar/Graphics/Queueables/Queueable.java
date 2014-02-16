@@ -16,12 +16,16 @@ public interface Queueable {
 
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches);
 	
+	public Matrix4 getTransform();
+	
 	public void set(Entity source, Vector3 offset);
 	public void set(Matrix4 transform);
 	
 	public void transform(Matrix4 mat);
 	
 	public void update(float delta, Camera cam, LightManager lights);
+	
+	public Vector3[] getVertexArray();
 	
 	public Queueable copy();
 	

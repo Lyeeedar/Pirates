@@ -10,7 +10,9 @@ import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.model.Animation;
@@ -30,6 +32,7 @@ public class AnimatedModel implements Queueable {
 	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
 	public String defaultAnim;
 	public String currentAnim = "";
+	public Matrix4 transform = new Matrix4();
 	
 	private final Matrix4 tmpMat = new Matrix4();
 	
@@ -64,28 +67,36 @@ public class AnimatedModel implements Queueable {
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.queue(delta, cam, batches);
+			am.queueable.queue(delta, cam, batches);
 		}
+	}
+	
+	@Override
+	public Matrix4 getTransform()
+	{
+		return transform;
 	}
 
 	@Override
 	public void set(Entity source, Vector3 offset) {
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			model.transform.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
+			transform.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
 		}
 		else
 		{
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			model.transform.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
+			transform.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
 		}
+		
+		model.transform.set(transform);
 		
 		AnimationData aData = source.readOnlyRead(AnimationData.class);
 		colour.set(aData.colour);
 		if(aData.animationLock && model.getAnimation(aData.anim) != null)
 		{
 			anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);
-			currentAnim = "";
+			currentAnim = aData.anim;
 		}
 		else if (!currentAnim.equals(aData.anim))
 		{
@@ -103,30 +114,32 @@ public class AnimatedModel implements Queueable {
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.set(source, offset);
+			am.queueable.set(source, offset);
 			if(am.node != null) 
 			{
 				tmpMat.set(model.transform).mul(am.node.globalTransform);
-				am.model.set(tmpMat);
+				am.queueable.set(tmpMat);
 			}
-			am.model.transform(am.offset);
+			am.queueable.transform(am.offset);
 		}
 	}
 	
 	@Override
 	public void transform(Matrix4 mat)
 	{
-		model.transform.mul(mat);
+		transform.mul(mat);
+		
+		model.transform.set(transform);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.transform(mat);
+			am.queueable.transform(mat);
 			if(am.node != null) 
 			{
 				tmpMat.set(model.transform).mul(am.node.globalTransform);
-				am.model.set(tmpMat);
+				am.queueable.set(tmpMat);
 			}
-			am.model.transform(am.offset);
+			am.queueable.transform(am.offset);
 		}
 	}
 
@@ -136,7 +149,7 @@ public class AnimatedModel implements Queueable {
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.update(delta, cam, lights);
+			am.queueable.update(delta, cam, lights);
 		}
 	}
 
@@ -145,7 +158,7 @@ public class AnimatedModel implements Queueable {
 		AnimatedModel nm = new AnimatedModel(model.model, textures, colour, defaultAnim);
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			nm.attach(am.node.id, am.model.copy(), am.offset);
+			nm.attach(am.node.id, am.queueable.copy(), am.offset);
 		}
 		return nm;
 	}
@@ -154,20 +167,20 @@ public class AnimatedModel implements Queueable {
 	public void dispose() {
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.dispose();
+			am.queueable.dispose();
 		}
 	}
 
 	private static class ATTACHED_MODEL
 	{
 		public Node node;
-		public Queueable model;
+		public Queueable queueable;
 		public Matrix4 offset = new Matrix4();
 		
 		public ATTACHED_MODEL(Node node, Queueable model, Matrix4 offset)
 		{
 			this.node = node;
-			this.model = model;
+			this.queueable = model;
 			this.offset.set(offset);
 		}
 	}
@@ -175,18 +188,62 @@ public class AnimatedModel implements Queueable {
 	@Override
 	public void set(Matrix4 transform)
 	{
+		this.transform.set(transform);
+		
 		model.transform.set(transform);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			am.model.set(transform);
+			am.queueable.set(transform);
 			if(am.node != null) 
 			{
 				tmpMat.set(model.transform).mul(am.node.globalTransform);
-				am.model.set(tmpMat);
+				am.queueable.set(tmpMat);
 			}
-			am.model.transform(am.offset);
+			am.queueable.transform(am.offset);
 		}
 		
+	}
+
+	@Override
+	public Vector3[] getVertexArray()
+	{
+
+		Vector3[][] varrays = new Vector3[model.model.meshes.size][];
+		int total = 0;
+		
+		for (int r = 0; r < model.model.meshes.size; r++)
+		{
+			Mesh mesh = model.model.meshes.get(r);
+			
+			final int nverts = mesh.getNumVertices();
+			final int vsize = mesh.getVertexSize();
+			float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+			int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
+			
+			Vector3[] varray = new Vector3[nverts];
+			
+			for (int i = 0; i < nverts; i++)
+			{
+				varray[i] = new Vector3(
+						vertices[poff+(i*vsize)+0],
+						vertices[poff+(i*vsize)+1],
+						vertices[poff+(i*vsize)+2]
+						);
+			}
+			
+			varrays[r] = varray;
+			total += varray.length;
+		}
+		
+		Vector3[] varray = new Vector3[total];
+		int index = 0;
+		for (int i = 0; i < varrays.length; i++)
+		{
+			System.arraycopy(varrays[i], 0, varray, index, varrays[i].length);
+			index += varrays[i].length;
+		}
+		
+		return varray;
 	}
 }

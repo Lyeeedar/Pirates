@@ -45,6 +45,7 @@ public class MotionTrail implements Queueable {
 	public final boolean managed;
 	public final Vector3 offsetBot = new Vector3();
 	public final Vector3 offsetTop = new Vector3();
+	public final Matrix4 transform = new Matrix4();
 	
 	private boolean up = false;
 	
@@ -156,6 +157,8 @@ public class MotionTrail implements Queueable {
 	{
 		addVert(bottom);
 		addVert(top);
+		
+		transform.setToTranslation(top);
 	}
 	
 	public void dispose()
@@ -170,6 +173,17 @@ public class MotionTrail implements Queueable {
 
 	@Override
 	public void set(Entity source, Vector3 offset) {
+		
+		if (source.readOnlyRead(PositionalData.class) != null)
+		{
+			PositionalData pData = source.readOnlyRead(PositionalData.class);
+			for (int i = 0; i < vertNum; i++)
+			{
+				Vector3 vert = trailRing.get(i);
+				vert.add(pData.deltaPos);
+			}
+		}
+		
 		if (!managed)
 		{			
 			if (source.readOnlyRead(PositionalData.class) != null)
@@ -232,5 +246,17 @@ public class MotionTrail implements Queueable {
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Matrix4 getTransform()
+	{
+		return transform;
+	}
+
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		return new Vector3[]{new Vector3()};
 	}
 }

@@ -12,16 +12,26 @@ public class ActionUpdateAnimations extends Action
 {
 	private final AnimationData aData = new AnimationData();
 	private final PositionalData pData = new PositionalData();
+	
+	private float lockCD = 0;
 
 	@Override
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) data.get("entity");
+		float delta = (Float) getData("delta", 0);
+		
+		lockCD -= delta;
+		
 		entity.readData(aData);
 		entity.readData(pData);
 		boolean moved = (Boolean) getData("moved", false);
 		
 		if (aData.animationLock)
+		{
+			lockCD = 0.5f;
+		}
+		else if (lockCD > 0)
 		{
 			
 		}

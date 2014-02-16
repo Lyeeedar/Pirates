@@ -22,6 +22,7 @@ public class Sprite2D implements Queueable {
 	
 	private final Decal decal;
 	private final Vector3 position = new Vector3();
+	private final Matrix4 transform = new Matrix4();
 	private final float x;
 	private final float y;
 	
@@ -86,6 +87,19 @@ public class Sprite2D implements Queueable {
 	public void transform(Matrix4 mat)
 	{
 		position.mul(mat);
+	}
+
+	@Override
+	public Matrix4 getTransform()
+	{
+		transform.setToTranslation(position);
+		return transform;
+	}
+	
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		return new Vector3[]{new Vector3()};
 	}
 
 }

@@ -23,9 +23,10 @@ public class ParticleEffect implements Queueable {
 	
 	public String name;
 	
-	public final Array<Emitter> emitters = new Array<Emitter>();
+	public final Array<Emitter> emitters = new Array<Emitter>(false, 16);
 	
 	public final Vector3 pos = new Vector3();
+	public final Matrix4 transform = new Matrix4();
 	
 	private boolean playing = false;
 	private boolean repeat = false;
@@ -269,6 +270,23 @@ public class ParticleEffect implements Queueable {
 		
 		return active;
 	}
+	
+	public void setBase(Entity base)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.base = base;
+		}
+	}
+	
+	public void setEmission(Vector3[] emissionArray, Queueable emissionObject)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.emissionMesh = emissionArray;
+			e.emitter.emissionObject = emissionObject;
+		}
+	}
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
@@ -293,6 +311,7 @@ public class ParticleEffect implements Queueable {
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
 			tmp.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).add(offset);
+			setBase(source);
 		}
 		else
 		{
@@ -326,6 +345,19 @@ public class ParticleEffect implements Queueable {
 		pos.add(tmp);
 		setPosition(pos);
 		Pools.free(tmp);
+	}
+
+	@Override
+	public Matrix4 getTransform()
+	{
+		transform.setToTranslation(pos);
+		return transform;
+	}
+
+	@Override
+	public Vector3[] getVertexArray()
+	{
+		return new Vector3[]{new Vector3()};
 	}
 
 }

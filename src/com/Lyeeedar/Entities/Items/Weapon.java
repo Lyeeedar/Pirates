@@ -440,6 +440,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			ParticleEffect npe = FileUtils.obtainParticleEffect(effect);
 			npe.setPosition(tmpVec.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform)));
 			npe.play(false);
+			npe.setBase(entity);
 			GLOBALS.unanchoredEffects.add(npe);
 		}
 
