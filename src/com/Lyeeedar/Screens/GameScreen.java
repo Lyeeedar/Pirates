@@ -55,6 +55,7 @@ import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionLockOn;
+import com.Lyeeedar.Entities.Items.Weapon.AttackActionParticleEffect;
 import com.Lyeeedar.Entities.Items.Weapon.AttackMotionTrail;
 import com.Lyeeedar.Entities.Items.Weapon.AttackSpellCast;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.RepeatingSpellEffect;
@@ -242,21 +243,23 @@ public class GameScreen extends AbstractScreen {
 		player.setAI(btree);
 
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-		System.out.println(sword.model.model.meshes.get(0).getNumVertices());
-		MotionTrail swordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+		AnimatedModel axe = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		MotionTrail axeTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		player.addRenderable(am, new Vector3());
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		am.attach("DEF-palm_01_R", sword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
-		am.attach(null, swordTrail, new Matrix4());
+		am.attach("DEF-palm_01_R", axe, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -30));
+		am.attach("DEF-forearm_02_L", sword, new Matrix4().rotate(1, 0, 0, -90));
+		am.attach(null, axeTrail, new Matrix4());
 				
 		//player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
 		player.readOnlyRead(StatusData.class).mass = 2f;
+		player.readOnlyRead(StatusData.class).speed = 25;
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData);
@@ -264,14 +267,10 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
 		ATTACK_STAGE[] wattacks = {
-				new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null),
-				new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(sword, swordTrail, 20, 10), null)
+				new ATTACK_STAGE("attack_main_1", 1.5f, 1, null, new AttackMotionTrail(axe, axeTrail, 20, 10), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 1),
+				new ATTACK_STAGE("attack_main_2", 1.5f, 2, null, new AttackMotionTrail(axe, axeTrail, 20, 10), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.5f, 3, null, new AttackMotionTrail(axe, axeTrail, 20, 10), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 1),
+				new ATTACK_STAGE("attack_main_2", 1.5f, 2, null, new AttackMotionTrail(axe, axeTrail, 20, 10), null, 0, 0),
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(wattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null));
 		
@@ -308,12 +307,12 @@ public class GameScreen extends AbstractScreen {
 		
 		spell.setAI(ssbtree);
 		ATTACK_STAGE[] sattacks = {
-				new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackSpellCast(spell, sword), null),
-				new ATTACK_STAGE("attack1_1", 2.0f, 2, null, new AttackSpellCast(spell, sword), null),
-				new ATTACK_STAGE("attack1_1", 2.0f, 3, null, new AttackSpellCast(spell, sword), null),
-				new ATTACK_STAGE("attack1_1", 1.0f, -1, null, new AttackSpellCast(spell, sword), null)
+				new ATTACK_STAGE("cast_off_1", 2.0f, 1, null, new AttackSpellCast(spell, sword), null, 0, 0),
+				new ATTACK_STAGE("cast_off_2", 2.0f, 2, null, new AttackSpellCast(spell, sword), null, 0, 0),
+				new ATTACK_STAGE("cast_off_2", 2.0f, 3, null, new AttackSpellCast(spell, sword), null, 0, 0),
+				new ATTACK_STAGE("cast_off_2", 1.0f, -1, null, new AttackSpellCast(spell, sword), null, 0, 0)
 		};
-		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, new ATTACK_STAGE(null, new AttackActionLockOn(cam, 250, 2, false, 0.1f, new Vector3(0.1f, 1.0f, 0.0f)), null)));
+		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, new ATTACK_STAGE("charge_off", 1.0f, -1, null, new AttackActionLockOn(cam, 250, 2, false, 0.1f, new Vector3(0.1f, 1.0f, 0.0f)), null, 0, 0)));
 		
 //		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
 //		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
@@ -440,7 +439,7 @@ public class GameScreen extends AbstractScreen {
 			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
 			ge.readOnlyRead(StatusData.class).speed = 25;
 			
-			AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+			AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 			AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 			AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 			MotionTrail gswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
@@ -451,14 +450,14 @@ public class GameScreen extends AbstractScreen {
 			gam.attach(null, gswordTrail, new Matrix4());
 			
 			ATTACK_STAGE[] gwattacks = {
-					new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null),
-					new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null)
+					new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0),
+					new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(gsword, gswordTrail, 20, 10), null, 0, 0)
 			};
 			
 			ge.readData(eData);
@@ -519,7 +518,7 @@ public class GameScreen extends AbstractScreen {
 				gge.readOnlyRead(StatusData.class).factions.add("Enemy");
 				gge.readOnlyRead(StatusData.class).speed = 25;
 				
-				AnimatedModel ggam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "walk");
+				AnimatedModel ggam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 				AnimatedModel gghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 				AnimatedModel ggsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 				MotionTrail ggswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
@@ -530,14 +529,14 @@ public class GameScreen extends AbstractScreen {
 				ggam.attach(null, ggswordTrail, new Matrix4());
 				
 				ATTACK_STAGE[] ggwattacks = {
-						new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null),
-						new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null)
+						new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0),
+						new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(ggsword, ggswordTrail, 20, 10), null, 0, 0)
 				};
 				
 				gge.readData(eData);

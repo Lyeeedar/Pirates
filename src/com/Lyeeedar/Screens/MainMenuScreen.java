@@ -94,6 +94,7 @@ public class MainMenuScreen extends AbstractScreen {
 		btnContinue.getLabel().setAlignment(Align.left, Align.left);
 		btnContinue.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				game.switchScreen(Screen.GAME);
 				return false;
 			}
 		});
@@ -102,6 +103,7 @@ public class MainMenuScreen extends AbstractScreen {
 		btnNewGame.getLabel().setAlignment(Align.left, Align.left);
 		btnNewGame.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				game.screens.get(Screen.GAME).create();
 				game.switchScreen(Screen.GAME);
 				return false;
 			}

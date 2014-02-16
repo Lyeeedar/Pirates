@@ -766,7 +766,7 @@ public class Entity {
 				if (locationCD < 0)
 				{
 					location = LOCATION.AIR;
-					locationCD = 0.5f;
+					locationCD = 0.8f;
 					this.base = null;
 				}
 			}

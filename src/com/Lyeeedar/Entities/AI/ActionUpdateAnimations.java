@@ -40,7 +40,8 @@ public class ActionUpdateAnimations extends Action
 			else aData.updateAnimations = false;
 			aData.animate = true;
 			aData.animate_speed = 1f;
-			aData.anim = "swim";
+			if (moved) aData.anim = "move_water";
+			else aData.anim = "idle_water";
 			aData.base_anim = "idle";
 		}
 		else if (moved) {
@@ -48,14 +49,14 @@ public class ActionUpdateAnimations extends Action
 			else aData.updateAnimations = false;
 			aData.animate = true;
 			aData.animate_speed = 1f;
-			aData.anim = "run";
+			aData.anim = "move_ground";
 			aData.base_anim = "idle";
 		}
 		else {
 			if (!aData.animate) aData.updateAnimations = true;
 			else aData.updateAnimations = false;
 			aData.animate = false;
-			aData.anim = "idle";
+			aData.anim = "idle_ground";
 			aData.base_anim = "idle";
 			aData.animate_speed = 0.5f;
 		}

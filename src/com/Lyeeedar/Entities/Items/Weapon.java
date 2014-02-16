@@ -10,6 +10,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
@@ -43,7 +44,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public boolean charging = false;
 	public final HashMap<String, Object> data = new HashMap<String, Object>();
 	
-	private final AnimationData aData = new AnimationData();	
+	private final AnimationData aData = new AnimationData();
+	private final PositionalData pData = new PositionalData();
 
 	private Entity holder;
 
@@ -134,6 +136,10 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		else
 		{
 			if (attacks[animationStage].middle != null) attacks[animationStage].middle.evaluate(delta, entity, data);
+			entity.readData(pData);
+			pData.forward_backward(attacks[animationStage].fb);
+			pData.left_right(attacks[animationStage].lr);
+			entity.writeData(pData);
 		}
 		
 		if (charging)
@@ -245,19 +251,24 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public final AttackAction begin;
 		public final AttackAction middle;
 		public final AttackAction end;
+		public final float lr;
+		public final float fb;
 		
 		public final boolean hasAnim;
 		
-		public ATTACK_STAGE(AttackAction begin, AttackAction middle, AttackAction end)
+		public ATTACK_STAGE(AttackAction begin, AttackAction middle, AttackAction end, float lr, float fb)
 		{
 			this.begin = begin;
 			this.middle = middle;
 			this.end = end;
 			
+			this.lr = lr;
+			this.fb = fb;
+			
 			this.hasAnim = false;
 		}
 		
-		public ATTACK_STAGE(String animationName, float speed, int nextAnim, AttackAction begin, AttackAction middle, AttackAction end)
+		public ATTACK_STAGE(String animationName, float speed, int nextAnim, AttackAction begin, AttackAction middle, AttackAction end, float lr, float fb)
 		{
 			this.animationName = animationName;
 			this.speed = speed;
@@ -265,6 +276,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			this.begin = begin;
 			this.middle = middle;
 			this.end = end;
+			
+			this.lr = lr;
+			this.fb = fb;
 			
 			this.hasAnim = true;
 		}
@@ -375,6 +389,10 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 							shouldCast = true;
 						}
 					}
+					else if (targetted.size() != 0)
+					{
+						return;
+					}
 				}
 				
 				entity.readData(sData);
@@ -398,6 +416,46 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		@Override
 		public void end(Entity entity, HashMap<String, Object> data)
 		{
+		}
+		
+	}
+	
+	public static class AttackActionParticleEffect implements AttackAction
+	{
+		String effect;
+		private AnimatedModel model;
+		
+		Vector3 tmpVec = new Vector3();
+		Matrix4 tmp = new Matrix4();
+		
+		public AttackActionParticleEffect(AnimatedModel model, String effect)
+		{
+			this.effect = effect;
+			this.model = model;
+		}
+		
+		@Override
+		public void begin(Entity entity, HashMap<String, Object> data)
+		{
+			ParticleEffect npe = FileUtils.obtainParticleEffect(effect);
+			npe.setPosition(tmpVec.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform)));
+			npe.play(false);
+			GLOBALS.unanchoredEffects.add(npe);
+		}
+
+		@Override
+		public void evaluate(float delta, Entity entity,
+				HashMap<String, Object> data)
+		{
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void end(Entity entity, HashMap<String, Object> data)
+		{
+			// TODO Auto-generated method stub
+			
 		}
 		
 	}
@@ -466,13 +524,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 						{
 							sData.damage = damage + ran.nextInt(damageVar);
 							e.writeData(sData);
-							ray.setSkipObject(arr.at(i));
-							GLOBALS.unanchoredEffects.add(FileUtils.obtainParticleEffect("data/effects/sparks.effect"));
 						}
-						else
-						{
-							GLOBALS.unanchoredEffects.add(FileUtils.obtainParticleEffect("data/effects/sparks.effect"));
-						}
+						ray.setSkipObject(arr.at(i));
+
+						ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
+						npe.setPosition(ray.getHitPointWorld().at(i));
+						npe.play(false);
+						GLOBALS.unanchoredEffects.add(npe);
 					}
 				}
 			}

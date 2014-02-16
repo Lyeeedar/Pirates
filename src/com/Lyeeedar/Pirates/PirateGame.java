@@ -26,7 +26,7 @@ public class PirateGame extends Game {
 		OPTIONS
 	}
 	
-	HashMap<Screen, AbstractScreen> screens = new HashMap<Screen, AbstractScreen>();
+	public final HashMap<Screen, AbstractScreen> screens = new HashMap<Screen, AbstractScreen>();
 
 	@Override
 	public void create() {
