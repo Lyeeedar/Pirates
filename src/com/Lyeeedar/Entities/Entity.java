@@ -1018,9 +1018,13 @@ public class Entity {
 		
 		public float mass = 1.0f;
 		
+		public boolean solid = false;
+		public boolean blocking = false;
+		
 		public Array<String> factions = new Array<String>(false, 16);
 		
 		private final Array<SpellEffect> spellEffects = new Array<SpellEffect>();
+		
 		public void addSpellEffect(SpellEffect se)
 		{
 			spellEffects.add(se);
@@ -1056,8 +1060,10 @@ public class Entity {
 			spellEffects.addAll(data.spellEffects);
 			
 			speed = data.speed;
-			
+			solid = data.solid;
 			mass = data.mass;
+			
+			blocking = data.blocking;
 		}
 		
 		public boolean isAlly(StatusData other)

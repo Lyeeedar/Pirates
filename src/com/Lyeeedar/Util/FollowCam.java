@@ -37,6 +37,8 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 	
+	private Entity lockOn;
+	
 	public FollowCam(Controls controls, OcttreeShape aiShape, float sizeLim)
 	{
 		this.controls = controls;
@@ -46,6 +48,16 @@ public class FollowCam extends PerspectiveCamera {
 	
 	private float Yangle = -15;
 	private float Xangle = 0;
+	
+	public boolean isLockOn()
+	{
+		return lockOn != null;
+	}
+	
+	public void lockOn(Entity entity)
+	{
+		this.lockOn = entity;
+	}
 	
 	public void setYAngle(float angle)
 	{
@@ -100,11 +112,20 @@ public class FollowCam extends PerspectiveCamera {
 		
 		PositionalData pData = entity.readOnlyRead(PositionalData.class);
 		
+		if (lockOn != null)
+		{
+			direction.set(lockOn.readOnlyRead(PositionalData.class).position).sub(pData.position).nor();
+		}
+		else
+		{
+			direction.set(GLOBALS.DEFAULT_ROTATION);
+			direction.rotate(Xangle, 0, 1, 0);
+			Yrotate(Yangle);
+		}
+		if (direction.isZero()) direction.set(GLOBALS.DEFAULT_ROTATION);
+		//up.set(direction).crs(GLOBALS.DEFAULT_UP).crs(direction);
 		up.set(pData.up);
-		direction.set(GLOBALS.DEFAULT_ROTATION);
-		direction.rotate(Xangle, 0, 1, 0);
-		Yrotate(Yangle);
-
+		
 		tmp.set(direction).scl(-1*followDist).add(pData.position).add(0, followHeight, 0);
 		position.set(tmp);
 		

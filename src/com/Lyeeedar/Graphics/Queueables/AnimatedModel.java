@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.g3d.model.Animation;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.model.NodeAnimation;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -33,6 +34,8 @@ public class AnimatedModel implements Queueable {
 	public String defaultAnim;
 	public String currentAnim = "";
 	public Matrix4 transform = new Matrix4();
+	
+	private AnimationDesc current;
 	
 	private final Matrix4 tmpMat = new Matrix4();
 	
@@ -76,9 +79,19 @@ public class AnimatedModel implements Queueable {
 	{
 		return transform;
 	}
+	
+	public float animationProgress()
+	{
+		if (current == null) return 0;
+		
+		AnimationDesc ca = current;
+		float dur = ca.duration;
+		return ( ( ca.time ) / ( ( dur - ca.offset ) / ca.speed ) ) * 100.0f;
+	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Vector3 offset) 
+	{
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
 			transform.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
@@ -93,21 +106,31 @@ public class AnimatedModel implements Queueable {
 		
 		AnimationData aData = source.readOnlyRead(AnimationData.class);
 		colour.set(aData.colour);
-		if(aData.animationLock && model.getAnimation(aData.anim) != null)
+		
+		if (currentAnim.equals(aData.anim))
 		{
-			anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);
+			
+		}
+		else if (aData.anim.equals(""))
+		{
+			current = null;
+			currentAnim = "";
+		}
+		else if (aData.animationLock && model.getAnimation(aData.anim) != null)
+		{
+			current = anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);
 			currentAnim = aData.anim;
 		}
-		else if (!currentAnim.equals(aData.anim))
+		else
 		{
 			if (model.getAnimation(aData.anim) != null)
 			{
-				anim.animate(aData.anim, -1, aData.animate_speed, aData.listener, 0.1f);
+				current = anim.animate(aData.anim, -1, aData.animate_speed, aData.listener, 0.1f);
 				currentAnim = aData.anim;
 			}
 			else if (!currentAnim.equals(aData.base_anim) && model.getAnimation(aData.base_anim) != null)
 			{
-				anim.animate(aData.base_anim, -1, aData.animate_speed, aData.listener, 0.1f);
+				current = anim.animate(aData.base_anim, -1, aData.animate_speed, aData.listener, 0.1f);
 				currentAnim = aData.base_anim;
 			}
 		}

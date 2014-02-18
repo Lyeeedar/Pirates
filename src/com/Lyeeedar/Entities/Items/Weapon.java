@@ -5,6 +5,7 @@ import java.util.Random;
 
 import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.BulletWorld.AllHitsRayResultSkippingCallback;
+import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Entity.AnimationData;
@@ -23,6 +24,7 @@ import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObjectConstArray;
+import com.badlogic.gdx.physics.bullet.collision.btTriangleRaycastCallback;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pools;
 
@@ -30,6 +32,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 	public ATTACK_STAGE[] attacks;
 	public ATTACK_STAGE charge;
+	public ATTACK_STAGE recoil;
+	
+	private ATTACK_STAGE currentStage;
 	
 	private float linkTime;
 	private float linkCD = -1;
@@ -40,7 +45,6 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public boolean inSwing = false;
 	public boolean shouldSwing = false;
 	public int animationStage = 0;
-	public boolean needsAnimUpdate = false;
 	public boolean charging = false;
 	public final HashMap<String, Object> data = new HashMap<String, Object>();
 	
@@ -54,13 +58,14 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		super();
 	}
 	
-	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, float linkTime, ATTACK_STAGE charge)
+	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, float linkTime, ATTACK_STAGE charge, ATTACK_STAGE recoil)
 	{
 		super(spritesheet, desc);
 		this.hitSpeed = speed;
 		this.linkTime = linkTime;
 		this.attacks = attacks;
 		this.charge = charge;
+		this.recoil = recoil;
 	}
 
 	@Override
@@ -76,6 +81,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		hitSpeed = cother.hitSpeed;
 		attacks = cother.attacks;
 		charge = cother.charge;
+		recoil = cother.recoil;
 		
 		return this;
 	}
@@ -84,130 +90,98 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public Item copy() {
 		return Pools.obtain(Weapon.class).set(this);
 	}
+	
+	private void nextStage()
+	{
+		animationStage = currentStage != null ? currentStage.nextAnim : 0 ; 
+	}
+	
+	private void switchStage(Entity entity, HashMap<String, Object> data, ATTACK_STAGE nstage, boolean runEnd)
+	{		
+		if (currentStage != null)
+		{
+			if (currentStage.middle != null) currentStage.middle.end(entity, data);
+			if (runEnd && currentStage.end != null) currentStage.end.begin(entity, data);
+			if (runEnd && currentStage.end != null) currentStage.end.evaluate(0, entity, data);
+			if (runEnd && currentStage.end != null) currentStage.end.end(entity, data);
+		}
+		
+		currentStage = nstage;
+		
+		if (currentStage != null)
+		{
+			if (currentStage.begin != null) currentStage.begin.begin(entity, data);
+			if (currentStage.begin != null) currentStage.begin.evaluate(0, entity, data);
+			if (currentStage.begin != null) currentStage.begin.end(entity, data);
+			if (currentStage.middle != null) currentStage.middle.begin(entity, data);
+			
+			if (currentStage.hasAnim)
+			{
+				playAnimation(aData, currentStage.animationName);
+				aData.listener = this;
+				aData.animate_speed = currentStage.speed;
+				aData.base_anim = "attack";
+				aData.animationLocker = this;
+			}
+		}
+	}
+	
+	private void end(Entity entity, HashMap<String, Object> data)
+	{
+		animationStage = 0;
+		linkCD = -1;
+		inSwing = false;
+		hitCD = hitSpeed;
+		data.clear();
+	}
 
 	@Override
 	public void update(float delta, Entity entity) {
 		holder = entity;
 		
+		hitCD -= delta;
+		
 		entity.readData(aData);
 		if (aData.animationLock && aData.animationLocker != this) 
 		{
-			if (charging) 
-			{
-				if (charge.middle != null) charge.middle.end(entity, data);
-				if (charge.end != null) charge.end.begin(entity, data);
-				if (charge.end != null) charge.end.evaluate(delta, entity, data);
-				if (charge.end != null) charge.end.end(entity, data);
-			}
-			animationStage = 0;
-			linkCD = -1;
-			data.clear();
+			switchStage(entity, data, null, false);
+			end(entity, data);
 			return;
 		}
+		
+		if (currentStage != null && currentStage.middle != null) currentStage.middle.evaluate(delta, entity, data);
 		
 		if (linkCD > 0)
 		{
 			linkCD -= delta;
 			
-			if (shouldSwing)
-			{
-				animationStage = attacks[animationStage].nextAnim;
-				needsAnimUpdate = true;
-				inSwing = true;
-			}
-			
 			if (linkCD <= 0 || animationStage == -1)
 			{
-				hitCD = hitSpeed;
-				animationStage = 0;
-				needsAnimUpdate = false;
-				linkCD = -1;
-				inSwing = false;
-				data.clear();
+				switchStage(entity, data, null, true);
+				end(entity, data);
 			}
 		}
 		
-		hitCD -= delta;
+		if (recoil != null && currentStage != null && currentStage.middle != null)
+		{
+			if (currentStage.middle.needsRecoil())
+			{
+				switchStage(entity, data, recoil, false);
+				inSwing = true;
+				linkCD = -1;
+			}
+		}
+		
+		if (shouldSwing && !inSwing)
+		{
+			switchStage(entity, data, attacks[animationStage], true);
+			inSwing = true;
+			linkCD = -1;
+		}
 		
 		if (!inSwing)
 		{
 			aData.animationLock = false;
-		}
-		else
-		{
-			if (attacks[animationStage].middle != null) attacks[animationStage].middle.evaluate(delta, entity, data);
-			entity.readData(pData);
-			pData.forward_backward(attacks[animationStage].fb);
-			pData.left_right(attacks[animationStage].lr);
-			entity.writeData(pData);
-		}
-		
-		if (charging)
-		{
-			if (charge.middle != null) charge.middle.evaluate(delta, entity, data);
-			if (!shouldSwing)
-			{
-				charging = false;
-				
-				if (charge.middle != null) charge.middle.end(entity, data);
-				if (charge.end != null) charge.end.begin(entity, data);
-				if (charge.end != null) charge.end.evaluate(delta, entity, data);
-				if (charge.end != null) charge.end.end(entity, data);
-				
-				shouldSwing = true;
-				inSwing = true;
-				needsAnimUpdate = true;
-				animationStage = 0;
-				linkCD = -1;
-			}
-		}
-		
-		if (!shouldSwing)
-		{
-			entity.writeData(aData);
-			return;
-		}
-		
-		if (inSwing)
-		{
-			
-		}
-		else if (charging)
-		{
-			
-		}
-		else if (animationStage == 0 && charge != null)
-		{
-			if (charge.begin != null) charge.begin.begin(entity, data);
-			if (charge.begin != null) charge.begin.evaluate(delta, entity, data);
-			if (charge.begin != null) charge.begin.end(entity, data);
-			if (charge.middle != null) charge.middle.begin(entity, data);
-			charging = true;
-		}
-		else if (hitCD < 0 && linkCD < 0)
-		{
-			inSwing = true;
-			needsAnimUpdate = true;
-			animationStage = 0;
-			linkCD = -1;
-		}
-		
-		if (needsAnimUpdate)
-		{
-			linkCD = -1;
-			
-			playAnimation(aData, attacks[animationStage].animationName);
-			aData.listener = this;
-			aData.animate_speed = attacks[animationStage].speed;
-			aData.base_anim = "attack";
-			aData.animationLocker = this;
-			
-			if (attacks[animationStage].begin != null) attacks[animationStage].begin.begin(entity, data);
-			if (attacks[animationStage].begin != null) attacks[animationStage].begin.evaluate(delta, entity, data);
-			if (attacks[animationStage].begin != null) attacks[animationStage].begin.end(entity, data);
-			if (attacks[animationStage].middle != null) attacks[animationStage].middle.begin(entity, data);
-			
-			needsAnimUpdate = false;
 		}
 		
 		entity.writeData(aData);
@@ -232,10 +206,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public void onEnd(AnimationDesc animation) {
 		linkCD = linkTime;
 		inSwing = false;
-		if (attacks[animationStage].middle != null) attacks[animationStage].middle.end(holder, data);
-		if (attacks[animationStage].end != null) attacks[animationStage].end.begin(holder, data);
-		if (attacks[animationStage].end != null) attacks[animationStage].end.evaluate(0, holder, data);
-		if (attacks[animationStage].end != null) attacks[animationStage].end.end(holder, data);
+		nextStage();
+		switchStage(holder, data, null, true);
+		
+		holder.readData(aData);
+		aData.anim = "";
+		holder.writeData(aData);
 	}
 
 	@Override
@@ -289,6 +265,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public void begin(Entity entity, HashMap<String, Object> data);
 		public void evaluate(float delta, Entity entity, HashMap<String, Object> data);
 		public void end(Entity entity, HashMap<String, Object> data);
+		
+		public boolean needsRecoil();
 	}
 	
 	public static class AttackActionLockOn implements AttackAction
@@ -335,6 +313,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			GLOBALS.picker.end();
 			data.put("targetted", GLOBALS.picker.output);
+		}
+
+		@Override
+		public boolean needsRecoil()
+		{
+			return false;
 		}
 	}
 	
@@ -389,7 +373,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 							shouldCast = true;
 						}
 					}
-					else if (targetted.size() != 0)
+					else if (targetted == null || targetted.size() != 0)
 					{
 						return;
 					}
@@ -416,6 +400,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		@Override
 		public void end(Entity entity, HashMap<String, Object> data)
 		{
+		}
+
+		@Override
+		public boolean needsRecoil()
+		{
+			return false;
 		}
 		
 	}
@@ -458,6 +448,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public boolean needsRecoil()
+		{
+			return false;
+		}
 		
 	}
 	
@@ -468,79 +464,151 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		private final Random ran = new Random();
 		
-		private AnimatedModel model;
+		private AnimatedModel weaponModel;
+		private AnimatedModel animationModel;
 		private MotionTrail mt;
 		
+		private final Vector3 pbot = new Vector3();
+		private final Vector3 ptop = new Vector3();
 		private final Vector3 bot = new Vector3();
 		private final Vector3 top = new Vector3();
 		private final Matrix4 tmp = new Matrix4();
 		
-		public final AllHitsRayResultSkippingCallback ray = new AllHitsRayResultSkippingCallback(new Vector3(), new Vector3());
+		private final Vector3 ray1 = new Vector3();
+		private final Vector3 ray2 = new Vector3();
+		
+		public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
 		public final Array<Entity> entities = new Array<Entity>();
 		
 		private final PositionalData pData = new PositionalData();
 		private final StatusData sData = new StatusData();
 		
-		public AttackMotionTrail(AnimatedModel model, MotionTrail mt, int damage, int damageVar)
+		private boolean needsRecoil;
+		private boolean first = false;
+		private boolean canBounce = false;
+		
+		private final float startBounce;
+		private final float endBounce;
+		
+		public AttackMotionTrail(AnimatedModel weaponModel, AnimatedModel animationModel, MotionTrail mt, int damage, int damageVar, float startBounce, float endBounce)
 		{
-			this.model = model;
+			this.weaponModel = weaponModel;
+			this.animationModel = animationModel;
 			this.mt = mt;
 			this.damage = damage;
 			this.damageVar = damageVar;
+			
+			this.startBounce = startBounce;
+			this.endBounce = endBounce;
 		}
 		
 		@Override
 		public void begin(Entity entity, HashMap<String, Object> data)
 		{
 			ray.clearSkips();
+			
+			entity.readData(pData);
+			ray.setSkipObject(pData.physicsBody);
+			needsRecoil = false;
+			first = true;
+		}
+		
+		private void doCollision(Entity entity)
+		{
+			if (needsRecoil) return;
+			
+			ray.getRayFromWorld().setValue(ray1.x, ray1.y, ray1.z);
+			ray.getRayToWorld().setValue(ray2.x, ray2.y, ray2.z);
+			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			ray.setCollisionObject(null);
+			ray.setClosestHitFraction(1f);
+			
+			GLOBALS.physicsWorld.world.rayTest(ray1, ray2, ray);
+			if (ray.hasHit())
+			{
+				Entity e = (Entity) ray.getCollisionObject().userData;
+				boolean hasStatus = e.readData(sData);
+				
+				if (canBounce && (!hasStatus || sData.solid))
+				{
+					ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
+					npe.setPosition(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
+					npe.play(false);
+					npe.setBase(entity);
+					GLOBALS.unanchoredEffects.add(npe);
+						
+					needsRecoil = true;
+					return;
+				}
+				else
+				{
+					sData.damage = damage + ran.nextInt(damageVar);
+					e.writeData(sData);
+				}
+
+				ray.setSkipObject(ray.getCollisionObject());
+			}
+			
 		}
 		
 		@Override
 		public void evaluate(float delta, Entity entity, HashMap<String, Object> data)
 		{
-			bot.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("bottom").globalTransform));
-			top.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform));
+			float progress = animationModel.animationProgress();
+			canBounce = (progress >= startBounce || progress <= endBounce);
+			
+			if (!first)
+			{
+				pbot.set(bot);
+				ptop.set(top);
+			}
+			
+			bot.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("bottom").globalTransform));
+			top.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("top").globalTransform));
+			
+			if (first)
+			{
+				pbot.set(bot);
+				ptop.set(top);
+			}
+			
 			mt.draw(bot, top);
 			mt.update(bot, top);
 			
 			entity.readData(pData);
 			
-			ray.getRayFromWorld().setValue(bot.x, bot.y, bot.z);
-			ray.getRayToWorld().setValue(top.x, top.y, top.z);
-			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
-			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
-			ray.setSkipObject(pData.physicsBody);
-			ray.setCollisionObject(null);
+			ray1.set(pbot);
+			ray2.set(bot);
+			doCollision(entity);
 			
-			GLOBALS.physicsWorld.world.rayTest(bot, top, ray);
-			if (ray.hasHit())
-			{
-				btCollisionObjectConstArray arr = ray.getCollisionObjects();
-				for (int i = 0; i < arr.size(); i++)
-				{
-					if (!ray.hasSkip(arr.at(i).getCPointer()))
-					{
-						Entity e = (Entity) arr.at(i).userData;
-						if (e.readData(sData))
-						{
-							sData.damage = damage + ran.nextInt(damageVar);
-							e.writeData(sData);
-						}
-						ray.setSkipObject(arr.at(i));
-
-						ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
-						npe.setPosition(ray.getHitPointWorld().at(i));
-						npe.play(false);
-						GLOBALS.unanchoredEffects.add(npe);
-					}
-				}
-			}
+			ray1.set(ptop);
+			ray2.set(top);
+			doCollision(entity);
+			
+			ray1.set(bot);
+			ray2.set(top);
+			doCollision(entity);
+			
+			ray1.set(pbot);
+			ray2.set(top);
+			doCollision(entity);
+			
+			ray1.set(ptop);
+			ray2.set(bot);
+			doCollision(entity);
 		}
 		
 		@Override
 		public void end(Entity entity, HashMap<String, Object> data)
 		{
 			mt.stopDraw();
+		}
+
+		@Override
+		public boolean needsRecoil()
+		{
+			return needsRecoil;
 		}
 	}
 }
