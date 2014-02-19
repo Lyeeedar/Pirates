@@ -9,8 +9,10 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.AllHitsRayResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.ClosestConvexResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.ClosestRayResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.ContactResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.LocalConvexResult;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseProxy;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
@@ -127,9 +129,9 @@ public class BulletWorld {
 		debugDrawer.lineRenderer.setProjectionMatrix(cam.combined);
 
 		if (debugDrawer.getDebugMode() > 0) {
-			//debugDrawer.begin();
-			//world.debugDrawWorld();
-			//debugDrawer.end();
+//			debugDrawer.begin();
+//			world.debugDrawWorld();
+//			debugDrawer.end();
 		}
 	}
 
@@ -216,6 +218,43 @@ public class BulletWorld {
 		{
 			collided = true;
 			return 0f;
+		}
+	}
+	
+	public static class ClosestConvexResultSkippingCallback extends ClosestConvexResultCallback
+	{
+		public HashSet<Long> skipObjects = new HashSet<Long>();
+		
+		public void clearSkips()
+		{
+			skipObjects.clear();
+		}
+		
+		public boolean hasSkip(long skip)
+		{
+			return skipObjects.contains(skip);
+		}
+		
+		public void setSkipObject(btCollisionObject object)
+		{
+			if (!skipObjects.contains(object.getCPointer()))
+			{
+				skipObjects.add(object.getCPointer());
+			}
+
+		}
+
+		public ClosestConvexResultSkippingCallback(Vector3 convexFromWorld,
+				Vector3 convexToWorld)
+		{
+			super(convexFromWorld, convexToWorld);
+		}
+		
+		@Override
+		public boolean needsCollision(btBroadphaseProxy proxy)
+		{
+			if (skipObjects.contains(proxy.getClientObject())) return false;
+			return super.needsCollision(proxy);
 		}
 	}
 	

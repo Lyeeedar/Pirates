@@ -54,6 +54,7 @@ import com.Lyeeedar.Entities.Items.Armour;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
+import com.Lyeeedar.Entities.Items.Weapon.AttackActionBlock;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionLockOn;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionParticleEffect;
 import com.Lyeeedar.Entities.Items.Weapon.AttackMotionTrail;
@@ -106,6 +107,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.collision.btBvhTriangleMeshShape;
+import com.badlogic.gdx.physics.bullet.collision.btCapsuleShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
@@ -169,11 +171,11 @@ public class GameScreen extends AbstractScreen {
 		
 		terrain.readOnlyRead(PositionalData.class).calculateComposed();
 		
-//		fb = ImageUtils.extractAlpha(hmpm);
-//		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
-//		hf.setLocalScaling(new Vector3(10f, 500f, 10f));
-//		
-//		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
+		fb = ImageUtils.extractAlpha(hmpm);
+		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
+		hf.setLocalScaling(new Vector3(10f, 500f, 10f));
+		
+		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
 		// END HEIGHTMAP
 
@@ -196,7 +198,7 @@ public class GameScreen extends AbstractScreen {
 		ssselect.addNode(new ActionGravityAndMovement());
 		//ssselect.addNode(new ActionMove(1));
 		
-		ship.setAI(sbtree);
+		//ship.setAI(sbtree);
 		
 		//ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
 		
@@ -217,7 +219,8 @@ public class GameScreen extends AbstractScreen {
 		BoundingBox sbb = shipModel.calculateBoundingBox();
 		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
-		//ship.readOnlyRead(PositionalData.class).scale.set(3, 3, 3);
+		ship.readOnlyRead(PositionalData.class).needsOffset = false;
+		ship.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(sbb.getDimensions());
 		rw.add(entry);
 		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
@@ -276,6 +279,7 @@ public class GameScreen extends AbstractScreen {
 		player.readOnlyRead(StatusData.class).factions.add("Player");
 		player.readOnlyRead(StatusData.class).mass = 2f;
 		player.readOnlyRead(StatusData.class).speed = 25;
+		player.readOnlyRead(StatusData.class).blocking = true;
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData);
@@ -297,7 +301,7 @@ public class GameScreen extends AbstractScreen {
 		spell.addRenderable(orb, new Vector3());
 		spell.addRenderable(trailX, new Vector3());
 		spell.addRenderable(trailY, new Vector3());
-		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
+		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
 		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
 		spell.readOnlyRead(StatusData.class).mass = 0.0f;
@@ -363,10 +367,15 @@ public class GameScreen extends AbstractScreen {
 		
 		player.writeData(eData);
 		
-		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		player.readOnlyRead(PositionalData.class).position.set(100, 5, 100);
+		
+		Vector3 dimensions = new Vector3(1, 2, 1);
+		
+		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
+		player.readOnlyRead(PositionalData.class).collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
-		bw.add(new btSphereShape(10), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
 		// END PLAYER
 		
@@ -409,158 +418,14 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE ENEMIES
 		
-		Random ran = new Random();
-		for (int i = 0; i < 0; i++)
+		for (int i = 0; i < 30; i++)
 		{
-			Entity ge = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
 			
-			Selector gsselect = new ConcurrentSelector();
-			BehaviourTree gbtree = new BehaviourTree(gsselect);
-			gsselect.addNode(new ActionUpdateAnimations(), 0);
-			gsselect.addNode(new ActionEvaluateDamage(), 1);
-			gsselect.addNode(new ActionGravityAndMovement(), 2);
+			Entity leader = makeEntity(null, rw, bw);
 			
-			Selector gpselect = new PrioritySelector();
-			Selector grselect = new RandomSelector(new Random());
-			grselect.addNode(new ActionWait(1), 0);
-			grselect.addNode(new ActionRandomWalk(new Random(), 1), 1);
-			gpselect.addNode(grselect, 0);
-			
-			Selector gsselect2 = new SequenceSelector();
-			
-			Selector gpselect2 = new PrioritySelector();
-			
-			gpselect2.addNode(new ActionMoveTo(true, 15, "enemy"), 0);
-			gpselect2.addNode(new ActionAttack(15, false, true, "enemy"), 1);
-			gpselect2.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED), 2);
-			
-			gsselect2.addNode(gpselect2, 0);
-			gsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")), 1);
-			
-			gpselect.addNode(gsselect2, 1);
-			
-			gsselect.addNode(gpselect, 3);
-			
-			//AI_Follow ai = new AI_Follow();
-			//ai.setFollowTarget(player);
-			ge.setAI(gbtree);
-			PositionalData pData = ge.readOnlyRead(PositionalData.class);
-			pData.position.set(ran.nextFloat()*10000, 0, ran.nextFloat()*10000);
-			pData.position.y = terrain == null ? 0 : terrain.getHeight(pData.position.x,  pData.position.z);
-			//pData.scale.set(2, 2, 2);
-
-			ge.readOnlyRead(StatusData.class).factions.add("Enemy");
-			ge.readOnlyRead(StatusData.class).speed = 25;
-			
-			AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-			AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-			AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-			MotionTrail gswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-			ge.addRenderable(gam, new Vector3());
-			
-			gam.attach("DEF-head", ghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-			gam.attach("DEF-palm_01_R", gsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
-			gam.attach(null, gswordTrail, new Matrix4());
-			
-			ATTACK_STAGE[] gwattacks = {
-					new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-					new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0)
-			};
-			
-			ge.readData(eData);
-			eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
-			ge.writeData(eData);
-			
-			entry = rw.createEntry(ge, pData.position, new Vector3(10, 5, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
-			pData.octtreeEntry = entry;
-			rw.add(entry);
-			bw.add(new btBoxShape(new Vector3(10, 5, 10)), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
-	
 			for (int ii = 0; ii < 5; ii++)
 			{
-				Entity gge = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-				
-				
-				Selector ggrselect = new RandomSelector(new Random());
-				ggrselect.addNode(new ActionWait(1));
-				ggrselect.addNode(new ActionRandomWalk(new Random(), 1));
-				
-				Selector ggsselect3 = new SequenceSelector();
-				ggsselect3.addNode(new ActionMoveTo(true, 50, "leader"));
-				ggsselect3.addNode(new ActionSetValue("leader", ge));
-				
-				Selector ggpselect2 = new PrioritySelector();
-				ggpselect2.addNode(new ActionMoveTo(true, 15, "enemy"));
-				ggpselect2.addNode(new ActionAttack(15, false, true, "enemy"));
-				
-				Selector ggsselect2 = new SequenceSelector();
-				ggsselect2.addNode(ggpselect2);
-				ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
-				
-				Selector ggsselect4 = new SequenceSelector();
-				ggsselect4.addNode(new ActionMoveTo(false, 500, "enemy"));
-				ggsselect4.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
-				ggsselect4.addNode(new ActionBuilder(new GetSelf(), new CheckHPThreshold(false, 50), new DoNothing()));
-				
-				Selector ggpselect = new PrioritySelector();
-				ggpselect.addNode(ggrselect);
-				ggpselect.addNode(ggsselect3);
-				ggpselect.addNode(ggsselect2);
-				ggpselect.addNode(ggsselect4);
-				ggpselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-				
-				Selector ggsselect = new ConcurrentSelector();
-				BehaviourTree ggbtree = new BehaviourTree(ggsselect);
-				ggsselect.addNode(new ActionUpdateAnimations());
-				ggsselect.addNode(new ActionEvaluateDamage());
-				ggsselect.addNode(new ActionGravityAndMovement());
-				ggsselect.addNode(ggpselect);
-				
-				gge.setAI(ggbtree);
-				PositionalData pData2 = gge.readOnlyRead(PositionalData.class);
-				pData2.position.set(pData.position.x+(ran.nextFloat()*100-50), 0, pData.position.z+(ran.nextFloat()*100-50));
-				pData2.position.y = terrain == null ? 0 : terrain.getHeight(pData.position.x,  pData.position.z);
-				//pData2.scale.set(2, 2, 2);
-
-				gge.readOnlyRead(StatusData.class).factions.add("Enemy");
-				gge.readOnlyRead(StatusData.class).speed = 25;
-				
-				AnimatedModel ggam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-				AnimatedModel gghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-				AnimatedModel ggsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-				MotionTrail ggswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-				gge.addRenderable(ggam, new Vector3());
-				
-				ggam.attach("DEF-head", gghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-				ggam.attach("DEF-palm_01_R", ggsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
-				ggam.attach(null, ggswordTrail, new Matrix4());
-				
-				ATTACK_STAGE[] ggwattacks = {
-						new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0),
-						new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(ggsword, ggam, ggswordTrail, 2, 10, 10, 60), null, 0, 0)
-				};
-				
-				gge.readData(eData);
-				eData.equip(Equipment_Slot.RARM, new Weapon(ggwattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
-				gge.writeData(eData);
-				
-				entry = rw.createEntry(gge, pData2.position, new Vector3(10, 5, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
-				pData2.octtreeEntry = entry;
-				rw.add(entry);
-				bw.add(new btBoxShape(new Vector3(10, 5, 10)), new Matrix4().setToTranslation(pData2.position), gge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
-		
+				makeEntity(leader, rw, bw);
 			}
 			
 		}
@@ -569,43 +434,134 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE TREES
 		
-//		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-//		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
-//		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, new Vector3(1, 1, 1), false), 1, 2500, 50);
-//		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
-//		BoundingBox bb = grassMesh.calculateBoundingBox();
-//		for (Entity v : veggies)
-//		{
-//			v.update(0);
-//			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER);
-//			rw.add(entry);
-//			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-//		}
-//		veggies.clear();
-//		
-//		// END TREES
-//		
-//		// MAKE GRASS
-//		
-//		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
-//		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
-//		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
-//		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
-//		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, new Vector3(1, 1, 1), true), 1, 50000, 50);
-//		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
-//		for (Entity v : veggies)
-//		{
-//			v.update(0);
-//			//rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
-//			btCollisionObject o = new btCollisionObject();
-//			o.setCollisionShape(box);
-//			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
-//			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER);
-//			veggieTree.add(oe);
-//		}
-//		veggies.clear();
+		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
+		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, new Vector3(1, 1, 1), false), 1, 2500, 50);
+		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
+		BoundingBox bb = grassMesh.calculateBoundingBox();
+		for (Entity v : veggies)
+		{
+			v.update(0);
+			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER);
+			rw.add(entry);
+			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		}
+		veggies.clear();
+		
+		// END TREES
+		
+		// MAKE GRASS
+		
+		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
+		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
+		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
+		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, new Vector3(1, 1, 1), true), 1, 50000, 50);
+		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
+		for (Entity v : veggies)
+		{
+			v.update(0);
+			//rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
+			btCollisionObject o = new btCollisionObject();
+			o.setCollisionShape(box);
+			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
+			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER);
+			veggieTree.add(oe);
+		}
+		veggies.clear();
 		
 		// END GRASS
+	}
+	
+	private Entity makeEntity(Entity leader, Octtree<Entity> rw, BulletWorld bw)
+	{
+		Entity ge = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+		
+		Selector ggrselect = new RandomSelector(new Random());
+		ggrselect.addNode(new ActionWait(1));
+		ggrselect.addNode(new ActionRandomWalk(new Random(), 1));
+		
+		Selector ggsselect3 = new SequenceSelector();
+		ggsselect3.addNode(new ActionMoveTo(true, 50, "leader"));
+		ggsselect3.addNode(new ActionSetValue("leader", leader));
+		
+		Selector ggpselect2 = new PrioritySelector();
+		ggpselect2.addNode(new ActionMoveTo(true, 15, "enemy"));
+		ggpselect2.addNode(new ActionAttack(15, false, true, "enemy"));
+		
+		Selector ggsselect2 = new SequenceSelector();
+		ggsselect2.addNode(ggpselect2);
+		ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
+		
+		Selector ggsselect4 = new SequenceSelector();
+		ggsselect4.addNode(new ActionMoveTo(false, 500, "enemy"));
+		ggsselect4.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
+		ggsselect4.addNode(new ActionBuilder(new GetSelf(), new CheckHPThreshold(false, 50), new DoNothing()));
+		
+		Selector ggpselect = new PrioritySelector();
+		ggpselect.addNode(ggrselect);
+		if (leader != null) ggpselect.addNode(ggsselect3);
+		ggpselect.addNode(ggsselect2);
+		ggpselect.addNode(ggsselect4);
+		ggpselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		
+		Selector ggrselect2 = new RandomSelector(new Random());
+		//ggrselect2.addNode(new ActionWait(1));
+		//ggrselect2.addNode(new ActionWait(1));
+		ggrselect2.addNode(ggpselect);
+		
+		Selector ggsselect = new ConcurrentSelector();
+		BehaviourTree ggbtree = new BehaviourTree(ggsselect);
+		ggsselect.addNode(new ActionUpdateAnimations());
+		ggsselect.addNode(new ActionEvaluateDamage());
+		ggsselect.addNode(new ActionGravityAndMovement());
+		ggsselect.addNode(ggrselect2);
+		
+		ge.setAI(ggbtree);
+		PositionalData pData = ge.readOnlyRead(PositionalData.class);
+		if (leader != null)
+		{
+			PositionalData pData2 = leader.readOnlyRead(PositionalData.class);
+			pData.position.set(pData2.position).add(ran.nextFloat()*500-250, 0, ran.nextFloat()*500-250);
+		}
+		else pData.position.set(ran.nextFloat()*10000, 0, ran.nextFloat()*10000);
+		pData.position.y = terrain == null ? 0 : terrain.getHeight(pData.position.x,  pData.position.z);
+
+		ge.readOnlyRead(StatusData.class).factions.add("Enemy");
+		ge.readOnlyRead(StatusData.class).speed = 15;
+		
+		AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+		MotionTrail gswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+		ge.addRenderable(gam, new Vector3());
+		
+		gam.attach("DEF-head", ghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
+		gam.attach("DEF-palm_01_R", gsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
+		gam.attach(null, gswordTrail, new Matrix4());
+		
+		ATTACK_STAGE[] gwattacks = {
+				new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
+				new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0)
+		};
+		
+		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
+		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(gsword, "data/effects/sparks.effect"), null, null, 0, -1)));
+		
+		Vector3 dimensions = new Vector3(1, 2, 1);
+		OcttreeEntry<Entity> entry = rw.createEntry(ge, pData.position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		pData.octtreeEntry = entry;
+		pData.collisionShape = new btCapsuleShape(1, 2);
+		rw.add(entry);
+		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+
+		return ge;
 	}
 
 	@Override
@@ -845,28 +801,37 @@ public class GameScreen extends AbstractScreen {
 		
 		if (Gdx.input.isKeyPressed(Keys.TAB))
 		{
-			lockOn = true;
-			if (cam.isLockOn())
+			if (lockOn)
 			{
-				cam.lockOn(null);
+				
 			}
 			else
 			{
-				lockOnArr.clear();
-				GLOBALS.picker.set(player, lockOnArr, cam, 200, 1, false, 0.1f, lockOnCol);
-				GLOBALS.picker.begin();
-				GLOBALS.picker.update(delta);
-				GLOBALS.picker.end();
+				lockOn = true;
 				
-				if (lockOnArr.size() == 0)
+				if (cam.isLockOn())
 				{
 					cam.lockOn(null);
 				}
 				else
 				{
-					cam.lockOn(lockOnArr.get(0));
+					lockOnArr.clear();
+					GLOBALS.picker.set(player, lockOnArr, cam, 200, 1, false, 0.1f, lockOnCol);
+					GLOBALS.picker.begin();
+					GLOBALS.picker.update(delta);
+					GLOBALS.picker.end();
+					
+					if (lockOnArr.size() == 0)
+					{
+						cam.lockOn(null);
+					}
+					else
+					{
+						cam.lockOn(lockOnArr.get(0));
+					}
 				}
 			}
+
 		}
 		else
 		{

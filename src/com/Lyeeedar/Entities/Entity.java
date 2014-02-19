@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.BulletWorld.ClosestConvexResultSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.ContactSensorSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
@@ -24,6 +25,9 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.ClosestNotMeConvexResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.ConvexResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.btConvexShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.utils.Array;
 
@@ -140,13 +144,13 @@ public class Entity {
 	
 	public Vector3 getPosition()
 	{
-		if (entityData.containsKey(PositionalData.class))
+		if (entityData.containsKey(EntityDataType.POSITIONAL))
 		{
-			return ((PositionalData)entityData.get(PositionalData.class)).position;
+			return ((PositionalData) entityData.get(EntityDataType.POSITIONAL)).position;
 		}
 		else
 		{
-			return ((MinimalPositionalData)entityData.get(MinimalPositionalData.class)).position;
+			return ((MinimalPositionalData) entityData.get(EntityDataType.MINIMALPOSITIONAL)).position;
 		}
 	}
 	
@@ -447,7 +451,6 @@ public class Entity {
 		public final Vector3 deltaRot = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
-		public final Vector3 scale = new Vector3(1.0f, 1.0f, 1.0f);
 		public final Vector3 velocity = new Vector3();
 		
 		public final Matrix4 composed = new Matrix4();
@@ -464,15 +467,18 @@ public class Entity {
 		private final Vector3 tmpVec = new Vector3();
 		private final Vector3 tmpVec2 = new Vector3();
 		private final Matrix4 tmpMat = new Matrix4();
+		private final Matrix4 tmpMat2 = new Matrix4();
 		private final Vector3 v = new Vector3();
 
+		public boolean needsOffset = true;
 		public btRigidBody physicsBody;
+		public btConvexShape collisionShape;
 		public OcttreeEntry<Entity> octtreeEntry;
 		
 		public float locationCD = 0;
 		
-		public ClosestRayResultSkippingCallback ray;
 		public ContactSensorSkippingCallback sensor;
+		public ClosestConvexResultSkippingCallback sweep;
 		
 		public Entity base;
 		
@@ -503,11 +509,12 @@ public class Entity {
 			Zcollide = data.Zcollide;
 			
 			jumpToken = data.jumpToken;
-			scale.set(data.scale);
 			
-			ray = data.ray;
+			needsOffset = data.needsOffset;
 			sensor = data.sensor;
+			sweep = data.sweep;
 			physicsBody = data.physicsBody;
+			collisionShape = data.collisionShape;
 			octtreeEntry = data.octtreeEntry;
 			
 			base = data.base;
@@ -523,12 +530,12 @@ public class Entity {
 		{
 			PositionalData ed = new PositionalData();
 			ed.write(this);
-			if (ed.ray != null)
+			if (ed.sweep != null)
 			{
-				ed.ray = new ClosestRayResultSkippingCallback();
-				for (long l : ray.skipObjects)
+				ed.sweep = new ClosestConvexResultSkippingCallback(new Vector3(), new Vector3());
+				for (long l : sweep.skipObjects)
 				{
-					ed.ray.skipObjects.add(l);
+					ed.sweep.skipObjects.add(l);
 				}
 			}
 			if (ed.sensor != null)
@@ -546,9 +553,9 @@ public class Entity {
 		public void calculateComposed()
 		{
 			tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, rotation);
-			composed.setToTranslationAndScaling(position, scale).mul(tmpMat);
+			composed.setToTranslation(position).mul(tmpMat);
 			rotationTra.set(tmpMat).tra();
-			inverse.set(rotationTra).scale(1.0f/scale.x, 1.0f/scale.y, 1.0f/scale.z).translate(-position.x, -position.y, -position.z);
+			inverse.set(rotationTra).translate(-position.x, -position.y, -position.z);
 		}
 		
 		// ------------------------- ROTATE ------------------------- //
@@ -616,8 +623,10 @@ public class Entity {
 			
 			calculateComposed();
 			
-			physicsBody.setWorldTransform(composed);
-			octtreeEntry.box.pos.set(position);
+			float py = needsOffset ? position.y+octtreeEntry.box.extents.y : position.y ;
+			tmpMat.setToTranslation(position.x, py, position.z).rotate(GLOBALS.DEFAULT_ROTATION, rotation);
+			physicsBody.setWorldTransform(tmpMat);
+			octtreeEntry.box.pos.set(position.x, position.y+octtreeEntry.box.extents.y, position.z);
 			octtreeEntry.updatePosition();			
 		}
 		
@@ -670,10 +679,10 @@ public class Entity {
 		
 		private void collisionRay(float delta, float mass)
 		{
-			if (ray == null)
+			if (sweep == null)
 			{
-				ray = new ClosestRayResultSkippingCallback();
-				ray.setSkipObject(physicsBody);
+				sweep = new ClosestConvexResultSkippingCallback(new Vector3(), new Vector3());
+				sweep.setSkipObject(physicsBody);
 			}
 			
 			locationCD -= delta;
@@ -707,40 +716,46 @@ public class Entity {
 			
 			if (v.x != 0)
 			{
-				ray.setCollisionObject(null);
-	            ray.setClosestHitFraction(1f);
-
-				tmpVec.set(position).add(0, GLOBALS.STEP, 0);
-				tmpVec2.set(position).add(v.x, GLOBALS.STEP, 0);
+				tmpVec.set(position).add(0, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
 				
-				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				tmpMat.setToTranslation(tmpVec);
+				tmpMat2.setToTranslation(tmpVec2);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+							
+				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
 				
-				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
-				if (ray.hasHit())
+				if (sweep.hasHit())
 				{
 					v.x = 0;
-					//position.x = ray.getHitPointWorld().x();
 					Xcollide = true;
 				}
 			}
 			
 			if (v.z != 0)
 			{
-				ray.setCollisionObject(null);
-	            ray.setClosestHitFraction(1f);
-
-				tmpVec.set(position).add(v.x, GLOBALS.STEP, 0);
-				tmpVec2.set(position).add(v.x, GLOBALS.STEP, v.z);
+				tmpVec.set(position).add(v.x, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
+				tmpVec2.set(position).add(v.x, GLOBALS.STEP+octtreeEntry.box.extents.y, v.z);
 				
-				ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-				ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+				tmpMat.setToTranslation(tmpVec);
+				tmpMat2.setToTranslation(tmpVec2);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+							
+				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
 				
-				GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
-				if (ray.hasHit())
+				if (sweep.hasHit())
 				{
 					v.z = 0;
-					//position.z = ray.getHitPointWorld().z();
 					Zcollide = true;
 				}
 			}
@@ -749,53 +764,81 @@ public class Entity {
 			
 			velocity.x = 0;
 			velocity.z = 0;
-
-			ray.setCollisionObject(null);
-            ray.setClosestHitFraction(1f);
-
-			tmpVec.set(position).add(0, GLOBALS.STEP, 0);
-			tmpVec2.set(position).add(0, v.y, 0);
 			
-			ray.getRayFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-			ray.getRayToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
-			ray.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
-			ray.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
-			
-			GLOBALS.physicsWorld.world.rayTest(tmpVec, tmpVec2, ray);
-			if (ray.hasHit())
-			{
-				Entity base = (Entity) ray.getCollisionObject().userData;
-				if (ray.getHitPointWorld().y() != tmpVec.y)
+			if (v.y < 0)
+			{	
+				tmpVec.set(position).add(0, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
+				tmpVec2.set(position).add(0, octtreeEntry.box.extents.y+v.y, 0);
+	
+				tmpMat.setToTranslation(tmpVec);
+				tmpMat2.setToTranslation(tmpVec2);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+							
+				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+							
+				if (sweep.hasHit())
 				{
+					Entity base = (Entity) sweep.getHitCollisionObject().userData;
 					if (v.y < 0) jumpToken = 2;
 					velocity.y = 0;
 					v.y = 0;
-					position.y = ray.getHitPointWorld().y();
-					//graph.popAndInsert(base);
+					position.y = sweep.getHitPointWorld().y();
 					location = LOCATION.GROUND;
 					locationCD = 0.5f;
 					this.base = base.walkable ? base : null ;
 				}
-				Ycollide = true;
-			}
-			else
-			{
-				//graph.popAndInsert(GLOBALS.WORLD);
-				if (locationCD < 0)
+				else
 				{
-					location = LOCATION.AIR;
-					locationCD = 0.8f;
-					this.base = null;
-				}
+					if (locationCD < 0)
+					{
+						location = LOCATION.AIR;
+						locationCD = 0.8f;
+						this.base = null;
+					}
+				}			
 			}
+			else if (v.y > 0)
+			{
+				tmpVec.set(position).add(0, octtreeEntry.box.extents.y, 0);
+				tmpVec2.set(position).add(0, octtreeEntry.box.extents.y+v.y, 0);
+	
+				tmpMat.setToTranslation(tmpVec);
+				tmpMat2.setToTranslation(tmpVec2);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+							
+				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+							
+				if (sweep.hasHit())
+				{
+					velocity.y = 0;
+					v.y = 0;
+					position.y = sweep.getHitPointWorld().y()-(octtreeEntry.box.extents.y*2);
+				}
+				
+				location = LOCATION.AIR;
+				locationCD = 0.8f;
+				this.base = null;
+			}
+			
+			position.add(0, v.y, 0);
 			
 			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
 			
 			if (position.y < waveHeight)
 			{
-				if (velocity.y < 0) velocity.y = 0;
-				if (v.y < 0) v.y = 0;
-				position.y =  waveHeight;
+				velocity.y = 0;
+				v.y = 0;
+				position.y = waveHeight;
 				//GLOBALS.sea.modifyVelocity(v, delta, position.x, position.z);
 				//graph.popAndInsert(GLOBALS.WORLD);
 				locationCD = 0.5f;
@@ -803,8 +846,6 @@ public class Entity {
 				Ycollide = true;
 				this.base = null;
 			}
-			
-			position.add(0, v.y, 0);
 			
 			float angle = 0;
 			Vector3 point = new Vector3(rotation).scl(10).add(position).add(v);

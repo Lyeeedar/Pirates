@@ -114,6 +114,12 @@ public class FollowCam extends PerspectiveCamera {
 		
 		if (lockOn != null)
 		{
+			if (lockOn.DISPOSED) 
+			{
+				lockOn = null;
+				update(entity);
+				return;
+			}
 			direction.set(lockOn.readOnlyRead(PositionalData.class).position).sub(pData.position).nor();
 		}
 		else

@@ -269,6 +269,36 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public boolean needsRecoil();
 	}
 	
+	public static class AttackActionBlock implements AttackAction
+	{
+
+		@Override
+		public void begin(Entity entity, HashMap<String, Object> data)
+		{
+			entity.readOnlyRead(StatusData.class).blocking = true;
+		}
+
+		@Override
+		public void evaluate(float delta, Entity entity,
+				HashMap<String, Object> data)
+		{
+			entity.readOnlyRead(StatusData.class).blocking = true;
+		}
+
+		@Override
+		public void end(Entity entity, HashMap<String, Object> data)
+		{
+			entity.readOnlyRead(StatusData.class).blocking = false;
+		}
+
+		@Override
+		public boolean needsRecoil()
+		{
+			return false;
+		}
+		
+	}
+	
 	public static class AttackActionLockOn implements AttackAction
 	{
 		private final CircularArrayRing<Entity> output;
@@ -477,11 +507,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		private final Vector3 ray1 = new Vector3();
 		private final Vector3 ray2 = new Vector3();
 		
+		private final Vector3 tmpVec = new Vector3();
+		
 		public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
-		public final Array<Entity> entities = new Array<Entity>();
 		
 		private final PositionalData pData = new PositionalData();
 		private final StatusData sData = new StatusData();
+		private final StatusData sData2 = new StatusData();
 		
 		private boolean needsRecoil;
 		private boolean first = false;
@@ -508,6 +540,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			ray.clearSkips();
 			
 			entity.readData(pData);
+			entity.readData(sData2);
 			ray.setSkipObject(pData.physicsBody);
 			needsRecoil = false;
 			first = true;
@@ -529,8 +562,17 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			{
 				Entity e = (Entity) ray.getCollisionObject().userData;
 				boolean hasStatus = e.readData(sData);
+				boolean isBlocking = false;
 				
-				if (canBounce && (!hasStatus || sData.solid))
+				if (hasStatus && sData.blocking)
+				{
+					double angle = GLOBALS.angle(entity.getPosition(), e.getPosition(), tmpVec);
+					
+					isBlocking = true;
+					System.out.println("blocking");
+				}
+				
+				if (isBlocking || (canBounce && (!hasStatus || sData.solid)))
 				{
 					ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
 					npe.setPosition(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
@@ -541,7 +583,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 					needsRecoil = true;
 					return;
 				}
-				else
+				else if (!sData.isAlly(sData2))
 				{
 					sData.damage = damage + ran.nextInt(damageVar);
 					e.writeData(sData);

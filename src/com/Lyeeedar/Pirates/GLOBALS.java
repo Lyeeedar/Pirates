@@ -39,7 +39,7 @@ public final class GLOBALS {
 		FORCE // Gravity, physical buffs
 	}
 
-	public static final float STEP = 0.5f;
+	public static final float STEP = 0.1f;
 
 	public static final int MAX_SPEED_X = 1;
 	public static final int MAX_SPEED_Y = 1;
