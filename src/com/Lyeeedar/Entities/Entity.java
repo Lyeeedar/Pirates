@@ -822,7 +822,7 @@ public class Entity {
 				{
 					velocity.y = 0;
 					v.y = 0;
-					position.y = sweep.getHitPointWorld().y()-(octtreeEntry.box.extents.y*2);
+					position.y = sweep.getHitPointWorld().y()-(octtreeEntry.box.extents.y*2.0f);
 				}
 				
 				location = LOCATION.AIR;

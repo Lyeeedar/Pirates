@@ -517,12 +517,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		private boolean needsRecoil;
 		private boolean first = false;
-		private boolean canBounce = false;
+		private boolean canCollide = false;
 		
-		private final float startBounce;
-		private final float endBounce;
+		private final float startCollide;
+		private final float endCollide;
 		
-		public AttackMotionTrail(AnimatedModel weaponModel, AnimatedModel animationModel, MotionTrail mt, int damage, int damageVar, float startBounce, float endBounce)
+		public AttackMotionTrail(AnimatedModel weaponModel, AnimatedModel animationModel, MotionTrail mt, int damage, int damageVar, float startCollide, float endCollide)
 		{
 			this.weaponModel = weaponModel;
 			this.animationModel = animationModel;
@@ -530,8 +530,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			this.damage = damage;
 			this.damageVar = damageVar;
 			
-			this.startBounce = startBounce;
-			this.endBounce = endBounce;
+			this.startCollide = startCollide;
+			this.endCollide = endCollide;
 		}
 		
 		@Override
@@ -572,7 +572,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 					System.out.println("blocking");
 				}
 				
-				if (isBlocking || (canBounce && (!hasStatus || sData.solid)))
+				if (isBlocking || !hasStatus || sData.solid)
 				{
 					ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
 					npe.setPosition(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
@@ -598,47 +598,55 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public void evaluate(float delta, Entity entity, HashMap<String, Object> data)
 		{
 			float progress = animationModel.animationProgress();
-			canBounce = (progress >= startBounce || progress <= endBounce);
+			canCollide = progress > startCollide && progress < endCollide;
 			
-			if (!first)
-			{
-				pbot.set(bot);
-				ptop.set(top);
+			if (canCollide)
+			{	
+				animationModel.colour.set(0, 1, 0);
+				if (!first)
+				{
+					pbot.set(bot);
+					ptop.set(top);
+				}
+				
+				bot.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("bottom").globalTransform));
+				top.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("top").globalTransform));
+				
+				if (first)
+				{
+					pbot.set(bot);
+					ptop.set(top);
+				}
+				
+				mt.update(bot, top);
+				
+				entity.readData(pData);
+				
+				ray1.set(pbot);
+				ray2.set(bot);
+				doCollision(entity);
+				
+				ray1.set(ptop);
+				ray2.set(top);
+				doCollision(entity);
+				
+				ray1.set(bot);
+				ray2.set(top);
+				doCollision(entity);
+				
+				ray1.set(pbot);
+				ray2.set(top);
+				doCollision(entity);
+				
+				ray1.set(ptop);
+				ray2.set(bot);
+				doCollision(entity);			
 			}
-			
-			bot.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("bottom").globalTransform));
-			top.set(0, 0, 0).mul(tmp.set(weaponModel.model.transform).mul(weaponModel.model.getNode("top").globalTransform));
-			
-			if (first)
+			else
 			{
-				pbot.set(bot);
-				ptop.set(top);
+				animationModel.colour.set(1, 0, 0);
+				mt.stopDraw();
 			}
-			
-			mt.draw(bot, top);
-			mt.update(bot, top);
-			
-			entity.readData(pData);
-			
-			ray1.set(pbot);
-			ray2.set(bot);
-			doCollision(entity);
-			
-			ray1.set(ptop);
-			ray2.set(top);
-			doCollision(entity);
-			
-			ray1.set(bot);
-			ray2.set(top);
-			doCollision(entity);
-			
-			ray1.set(pbot);
-			ray2.set(top);
-			doCollision(entity);
-			
-			ray1.set(ptop);
-			ray2.set(bot);
-			doCollision(entity);
 		}
 		
 		@Override

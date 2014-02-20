@@ -85,7 +85,7 @@ public class AnimatedModel implements Queueable {
 		if (current == null) return 0;
 		
 		AnimationDesc ca = current;
-		float dur = ca.duration;
+		float dur = ca.animation.duration;
 		return ( ( ca.time ) / ( ( dur - ca.offset ) / ca.speed ) ) * 100.0f;
 	}
 

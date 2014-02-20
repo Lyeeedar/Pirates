@@ -120,6 +120,8 @@ public class GameScreen extends AbstractScreen {
 	private Entity player;
 	Terrain terrain;
 	
+	private AnimatedModel pmodel;
+	
 	private final LinkedList<TextParticle> tParticles = new LinkedList<TextParticle>();
 	private final LinkedList<ParticleEmitter> visibleEmitters = new LinkedList<ParticleEmitter>();
 	private final Array<Entity> veggies = new Array<Entity>();
@@ -262,10 +264,11 @@ public class GameScreen extends AbstractScreen {
 		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		AnimatedModel axe = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		MotionTrail axeTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+		MotionTrail axeTrail = new MotionTrail(60, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/fire.effect");
 		TexturedMesh shield = new TexturedMesh(FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		player.addRenderable(am, new Vector3());
+		pmodel = am;
 		//player.addRenderable(fire, new Vector3());
 		//fire.setEmission(axe.getVertexArray(), axe);
 		
@@ -287,17 +290,17 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
 		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
 		ATTACK_STAGE[] wattacks = {
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 30, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 10, 90), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 3, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 10, 80), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 10, 80), null, 0, 0),
+				
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 70, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 81, 91), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0)
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(wattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(axe, "data/effects/sparks.effect"), null, null, 0, -1)));
 		
 		Entity spell = new Entity(false, new PositionalData(), new StatusData());
 		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/minun.png", true, null, null))), 1, 1);
-		MotionTrail trailX = new MotionTrail(60, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
-		MotionTrail trailY = new MotionTrail(60, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
+		MotionTrail trailX = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
+		MotionTrail trailY = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
 		spell.addRenderable(orb, new Vector3());
 		spell.addRenderable(trailX, new Vector3());
 		spell.addRenderable(trailY, new Vector3());
@@ -533,7 +536,7 @@ public class GameScreen extends AbstractScreen {
 		AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-		MotionTrail gswordTrail = new MotionTrail(60, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+		MotionTrail gswordTrail = new MotionTrail(60, 0.01f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ge.addRenderable(gam, new Vector3());
 		
 		gam.attach("DEF-head", ghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
@@ -541,14 +544,10 @@ public class GameScreen extends AbstractScreen {
 		gam.attach(null, gswordTrail, new Matrix4());
 		
 		ATTACK_STAGE[] gwattacks = {
-				new ATTACK_STAGE("attack1_1", 2.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 1.2f, 3, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 1.4f, 4, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 1.6f, 5, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 1.8f, 6, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 2.0f, 7, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0),
-				new ATTACK_STAGE("attack1_2", 2.2f, -1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 2, 10, 10, 60), null, 0, 0)
+				
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 70, 90), new AttackActionParticleEffect(gsword, "data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 81, 91), new AttackActionParticleEffect(gsword, "data/effects/groundburst.effect"), 0, 0)
 		};
 		
 		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
@@ -583,7 +582,7 @@ public class GameScreen extends AbstractScreen {
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
 			d.queue2D(batch);
-		}
+		}		
 	}
 	
 //	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)

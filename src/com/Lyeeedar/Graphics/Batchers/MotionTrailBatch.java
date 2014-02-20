@@ -43,7 +43,7 @@ public class MotionTrailBatch implements Batch {
 			
 			shader.setUniformf("u_colour", trail.colour);
 			
-			trail.mesh.render(shader, GL20.GL_TRIANGLE_STRIP);
+			trail.mesh.render(shader, GL20.GL_TRIANGLE_STRIP, 0, trail.num_active);
 		}
 		
 		shader.end();

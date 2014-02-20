@@ -28,10 +28,13 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.math.CatmullRomSpline;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 public class MotionTrail implements Queueable {
+	
+	private static final int VERT_SIZE = 5;
 	
 	private final CircularArrayRing<Vector3> trailRing;
 	private final int vertNum;
@@ -41,22 +44,26 @@ public class MotionTrail implements Queueable {
 	public final Texture texture;
 	public final long texHash;
 	private final float[] vertices;
-	private final float step;
 	public final boolean managed;
 	public final Vector3 offsetBot = new Vector3();
 	public final Vector3 offsetTop = new Vector3();
 	public final Matrix4 transform = new Matrix4();
+	public final float updateTime;
+	private float time = 0;
+	private Vector3[] top = {new Vector3(), new Vector3(), new Vector3()};
+	private Vector3[] bot = {new Vector3(), new Vector3(), new Vector3()};
 	
 	private boolean up = false;
 	
 	private boolean shouldDraw = false;
 	private boolean drawing = false; 
-	private int drawCooldown = 0;
 	private final Vector3 tmpVec = new Vector3();
 	private final Vector3 tmpVec2 = new Vector3();
 	private final Matrix4 tmpMat = new Matrix4();
-
-	public MotionTrail(int vertsNum, Color colour, Texture texture) 
+	
+	public int num_active = 0;
+	
+	public MotionTrail(int vertsNum, float updateTime, Color colour, Texture texture) 
 	{		
 		this.colour = colour;
 		this.texture = texture;
@@ -65,9 +72,9 @@ public class MotionTrail implements Queueable {
 		this.texHash = texture.hashCode();
 		this.vertNum = vertsNum * 2;
 		this.vertNum2 = vertsNum;
-		this.step = 1.0f / (float) vertNum2;
 		this.trailRing = new CircularArrayRing<Vector3>(this.vertNum);
 		this.managed = true;
+		this.updateTime = updateTime;
 		
 		for (int i = 0; i < this.vertNum; i++)
 		{
@@ -77,10 +84,10 @@ public class MotionTrail implements Queueable {
 		this.mesh = new Mesh(false, this.vertNum, 0, 
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 2, "a_texCoord0"));
-		this.vertices = new float[this.vertNum * 5];
+		this.vertices = new float[this.vertNum * VERT_SIZE];
 	}
 	
-	public MotionTrail(int vertsNum, Color colour, Texture texture, Vector3 offsetBot, Vector3 offsetTop) 
+	public MotionTrail(int vertsNum, float updateTime, Color colour, Texture texture, Vector3 offsetBot, Vector3 offsetTop) 
 	{		
 		this.colour = colour;
 		this.texture = texture;
@@ -89,11 +96,11 @@ public class MotionTrail implements Queueable {
 		this.texHash = texture.hashCode();
 		this.vertNum = vertsNum * 2;
 		this.vertNum2 = vertsNum;
-		this.step = 1.0f / (float) vertNum2;
 		this.trailRing = new CircularArrayRing<Vector3>(this.vertNum);
 		this.managed = false;
 		this.offsetBot.set(offsetBot);
 		this.offsetTop.set(offsetTop);
+		this.updateTime = updateTime;
 		
 		for (int i = 0; i < this.vertNum; i++)
 		{
@@ -103,18 +110,7 @@ public class MotionTrail implements Queueable {
 		this.mesh = new Mesh(false, this.vertNum, 0, 
 				new VertexAttribute(Usage.Position, 3, "a_position"),
 				new VertexAttribute(Usage.Generic, 2, "a_texCoord0"));
-		this.vertices = new float[this.vertNum * 5];
-	}
-	
-	public void draw(Vector3 bottom, Vector3 top)
-	{
-		if (!drawing)
-		{
-			reset(bottom, top);
-		}
-		drawCooldown = vertNum2;
-		shouldDraw = true;
-		drawing = true;
+		this.vertices = new float[this.vertNum * VERT_SIZE];
 	}
 	
 	public void stopDraw()
@@ -122,41 +118,52 @@ public class MotionTrail implements Queueable {
 		shouldDraw = false;
 	}
 	
-	public void reset(Vector3 bottom, Vector3 top)
+	public void reset()
 	{
-		for (int i = 0; i < vertNum2; i++)
-		{
-			addVert(bottom);
-			addVert(top);
-		}
+		num_active = 0;
 	}
 	
 	protected void addVert(Vector3 vert)
 	{
 		trailRing.peekAndMove().set(vert);
+		if (num_active < vertNum2) num_active++;
 	}
 
 	protected void updateVerts()
 	{
-		for (int i = 0; i < vertNum; i++)
+		float step = num_active > 0 ? 1.0f / ((float) num_active / 2.0f) : 1 ;
+		for (int i = 0; i < num_active; i++)
 		{
 			Vector3 vert = trailRing.get(i);
-			vertices[i*5] = vert.x;
-			vertices[(i*5)+1] = vert.y;
-			vertices[(i*5)+2] = vert.z;
-			vertices[(i*5)+3] = (float) (i / 2) * step;
-			vertices[(i*5)+4] = (up) ? 1.0f : 0.0f;
+			vertices[(i*VERT_SIZE)+0] = vert.x;
+			vertices[(i*VERT_SIZE)+1] = vert.y;
+			vertices[(i*VERT_SIZE)+2] = vert.z;
+			vertices[(i*VERT_SIZE)+3] = (float) (i / 2) * step;
+			vertices[(i*VERT_SIZE)+4] = (up) ? 1.0f : 0.0f;
 			
 			up = (!up);
 		}
 		
 		mesh.setVertices(vertices);
+		//mesh.updateVertices(0, vertices, 0, num_active * VERT_SIZE);
 	}
 	
-	public void update(Vector3 bottom, Vector3 top)
+	public void update(Vector3 bot, Vector3 top)
 	{
-		addVert(bottom);
+		if (!drawing)
+		{
+			reset();
+			for (Vector3 v : this.top) v.set(top);
+			for (Vector3 v : this.bot) v.set(bot);
+		}
+		shouldDraw = true;
+		drawing = true;
+		
+		this.top[this.top.length-1].set(top);
+		this.bot[this.bot.length-1].set(bot);
+		
 		addVert(top);
+		addVert(bot);
 		
 		transform.setToTranslation(top);
 	}
@@ -177,7 +184,7 @@ public class MotionTrail implements Queueable {
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
 			PositionalData pData = source.readOnlyRead(PositionalData.class);
-			for (int i = 0; i < vertNum; i++)
+			for (int i = 0; i < num_active; i++)
 			{
 				Vector3 vert = trailRing.get(i);
 				vert.add(pData.deltaPos);
@@ -193,7 +200,6 @@ public class MotionTrail implements Queueable {
 				tmpVec.set(offsetBot).rot(tmpMat).add(pData.position).add(offset);
 				tmpVec2.set(offsetTop).rot(tmpMat).add(pData.position).add(offset);
 				
-				draw(tmpVec, tmpVec2);
 				update(tmpVec, tmpVec2);
 			}
 			else
@@ -202,7 +208,6 @@ public class MotionTrail implements Queueable {
 				tmpVec.set(pData.position).add(offsetBot).add(offset);
 				tmpVec2.set(pData.position).add(offsetTop).add(offset);
 				
-				draw(tmpVec, tmpVec2);
 				update(tmpVec, tmpVec2);
 			}
 		}
@@ -212,26 +217,42 @@ public class MotionTrail implements Queueable {
 	public void update(float delta, Camera cam, LightManager lights) {
 		if (drawing && !shouldDraw)
 		{
-			Vector3 b = trailRing.get(1);
-			Vector3 t = trailRing.get(0);
+			if (num_active >= 2) num_active -= 2;
 			
-			addVert(b);
-			addVert(t);
-			
-			drawCooldown--;
-			if (drawCooldown == 0)
+			if (num_active == 0)
 			{
 				drawing = false;
 			}
 		}
 		
-		if (drawing) updateVerts();
+		if (drawing) 
+		{
+//			time += delta;
+//			float t = 0;
+//			for (; t < time; t += updateTime)
+//			{
+//				float to = 1.0f / (top.length-1);
+//				Vector3 tp = CatmullRomSpline.calculate(tmpVec, to + ( t / time ) / (1.0f - to), top, true, tmpVec2);
+//				addVert(tp);
+//				
+//				float bo = 1.0f / (bot.length-1);
+//				Vector3 bp = CatmullRomSpline.calculate(tmpVec, bo + ( t / time ) / (1.0f - bo), bot, true, tmpVec2);
+//				addVert(bp);
+//			}
+//			
+//			time -= t;
+			
+			for (int i = 0; i < top.length-1; i++) top[i].set(top[i+1]);
+			for (int i = 0; i < bot.length-1; i++) bot[i].set(bot[i+1]);
+			
+			updateVerts();
+		}
 	}
 
 	@Override
 	public Queueable copy() {
-		if (managed) return new MotionTrail(vertNum2, colour, texture);
-		else return new MotionTrail(vertNum2, colour, texture, offsetBot, offsetTop);
+		if (managed) return new MotionTrail(vertNum2, updateTime, colour, texture);
+		else return new MotionTrail(vertNum2, updateTime, colour, texture, offsetBot, offsetTop);
 	}
 
 	@Override
