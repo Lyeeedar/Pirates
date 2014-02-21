@@ -66,7 +66,7 @@ public class AnimatedModel implements Queueable {
 	
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, textures, colour);
+		if (batches.containsKey(AnimatedModelBatch.class)) ((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(model, textures, colour);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{

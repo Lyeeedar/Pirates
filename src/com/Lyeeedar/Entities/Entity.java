@@ -79,12 +79,17 @@ public class Entity {
 		renderables.add(new EntityRenderable(r, position));
 	}
 	
-	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
+	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches, boolean update)
 	{
 		if (DISPOSED) return;
-		renderables.set(this);
-		renderables.update(delta, cam, lights);
+		if (update) renderables.set(this);
+		if (update) renderables.update(delta, cam, lights);
 		renderables.queue(delta, cam, batches);
+	}
+	
+	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches)
+	{
+		this.queueRenderables(cam, lights, delta, batches, true);
 	}
 	
 	public void setAI(AI ai)
@@ -732,6 +737,9 @@ public class Entity {
 				
 				if (sweep.hasHit())
 				{
+					float offset = octtreeEntry.box.extents.x + 0.1f;
+					//position.x = sweep.getHitPointWorld().x();
+					//position.x += (v.x < 0) ? -offset : offset ;
 					v.x = 0;
 					Xcollide = true;
 				}
@@ -755,10 +763,44 @@ public class Entity {
 				
 				if (sweep.hasHit())
 				{
+					float offset = octtreeEntry.box.extents.z + 0.1f;
+					//position.z = sweep.getHitPointWorld().z();
+					//position.z += (v.z < 0) ? -offset : offset ;
 					v.z = 0;
 					Zcollide = true;
 				}
 			}
+			
+//			if (v.x != 0 || v.z != 0)
+//			{
+//				tmpVec.set(position).add(0, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
+//				tmpVec2.set(position).add(v.x, GLOBALS.STEP+octtreeEntry.box.extents.y, v.z);
+//				
+//				tmpMat.setToTranslation(tmpVec);
+//				tmpMat2.setToTranslation(tmpVec2);
+//				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+//				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+//				sweep.setClosestHitFraction(1f);
+//				sweep.setHitCollisionObject(null);
+//				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+//				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+//							
+//				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+//				
+//				if (sweep.hasHit())
+//				{
+//					float offset = octtreeEntry.box.extents.x - 0.1f;
+//					position.x = sweep.getHitPointWorld().x();
+//					position.x += (v.x < 0) ? -offset : offset ;
+//					v.x = 0;
+//					Xcollide = true;
+//					
+//					position.z = sweep.getHitPointWorld().z();
+//					position.z += (v.z < 0) ? -offset : offset ;
+//					v.z = 0;
+//					Zcollide = true;
+//				}
+//			}
 			
 			position.add(v.x, 0, v.z);
 			
@@ -768,7 +810,7 @@ public class Entity {
 			if (v.y < 0)
 			{	
 				tmpVec.set(position).add(0, GLOBALS.STEP+octtreeEntry.box.extents.y, 0);
-				tmpVec2.set(position).add(0, octtreeEntry.box.extents.y+v.y, 0);
+				tmpVec2.set(position).add(0, v.y, 0);
 	
 				tmpMat.setToTranslation(tmpVec);
 				tmpMat2.setToTranslation(tmpVec2);

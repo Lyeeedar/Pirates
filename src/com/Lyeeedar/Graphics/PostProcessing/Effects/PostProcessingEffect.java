@@ -36,8 +36,10 @@ public abstract class PostProcessingEffect {
 	
 	public void dispose()
 	{
-		shader.dispose();
-		batch.dispose();
+		if (shader != null) shader.dispose();
+		shader = null;
+		if (batch != null) batch.dispose();
+		batch = null;
 	}
 	
 	public abstract void create();

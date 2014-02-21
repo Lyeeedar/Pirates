@@ -120,6 +120,7 @@ public class FollowCam extends PerspectiveCamera {
 				update(entity);
 				return;
 			}
+			GLOBALS.needsSilhouette.add(lockOn);
 			direction.set(lockOn.readOnlyRead(PositionalData.class).position).sub(pData.position).nor();
 		}
 		else

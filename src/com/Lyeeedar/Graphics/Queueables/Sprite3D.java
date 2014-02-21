@@ -13,6 +13,7 @@ import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -117,7 +118,7 @@ public class Sprite3D implements Queueable {
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
 		decal.setColor(finalColour.x, finalColour.y, finalColour.z, alpha);
-		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
+		if (batches.containsKey(DecalBatcher.class)) ((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 
 	}
 

@@ -15,6 +15,7 @@ import java.util.HashMap;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -28,6 +29,8 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.math.BSpline;
+import com.badlogic.gdx.math.Bezier;
 import com.badlogic.gdx.math.CatmullRomSpline;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -50,8 +53,8 @@ public class MotionTrail implements Queueable {
 	public final Matrix4 transform = new Matrix4();
 	public final float updateTime;
 	private float time = 0;
-	private Vector3[] top = {new Vector3(), new Vector3(), new Vector3()};
-	private Vector3[] bot = {new Vector3(), new Vector3(), new Vector3()};
+	private Vector3[] top = {new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+	private Vector3[] bot = {new Vector3(), new Vector3(), new Vector3(), new Vector3()};
 	
 	private boolean up = false;
 	
@@ -60,6 +63,8 @@ public class MotionTrail implements Queueable {
 	private final Vector3 tmpVec = new Vector3();
 	private final Vector3 tmpVec2 = new Vector3();
 	private final Matrix4 tmpMat = new Matrix4();
+	private final CatmullRomSpline<Vector3> splineTop = new CatmullRomSpline<Vector3>();
+	private final CatmullRomSpline<Vector3> splineBot = new CatmullRomSpline<Vector3>();
 	
 	public int num_active = 0;
 	
@@ -117,12 +122,7 @@ public class MotionTrail implements Queueable {
 	{
 		shouldDraw = false;
 	}
-	
-	public void reset()
-	{
-		num_active = 0;
-	}
-	
+		
 	protected void addVert(Vector3 vert)
 	{
 		trailRing.peekAndMove().set(vert);
@@ -150,9 +150,9 @@ public class MotionTrail implements Queueable {
 	
 	public void update(Vector3 bot, Vector3 top)
 	{
-		if (!drawing)
+		if (!drawing || !shouldDraw)
 		{
-			reset();
+			num_active = 0;
 			for (Vector3 v : this.top) v.set(top);
 			for (Vector3 v : this.bot) v.set(bot);
 		}
@@ -161,9 +161,6 @@ public class MotionTrail implements Queueable {
 		
 		this.top[this.top.length-1].set(top);
 		this.bot[this.bot.length-1].set(bot);
-		
-		addVert(top);
-		addVert(bot);
 		
 		transform.setToTranslation(top);
 	}
@@ -175,7 +172,7 @@ public class MotionTrail implements Queueable {
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		if (drawing) ((MotionTrailBatch) batches.get(MotionTrailBatch.class)).add(this);
+		if (drawing) if (batches.containsKey(MotionTrailBatch.class)) ((MotionTrailBatch) batches.get(MotionTrailBatch.class)).add(this);
 	}
 
 	@Override
@@ -217,30 +214,41 @@ public class MotionTrail implements Queueable {
 	public void update(float delta, Camera cam, LightManager lights) {
 		if (drawing && !shouldDraw)
 		{
-			if (num_active >= 2) num_active -= 2;
-			
-			if (num_active == 0)
+			time += delta;
+			float t = 0;
+			for (; t < time-updateTime; t += updateTime)
 			{
-				drawing = false;
+				if (num_active >= 2) num_active -= 2;
+				
+				if (num_active == 0)
+				{
+					drawing = false;
+				}
 			}
+			
+			time -= t;
 		}
 		
 		if (drawing) 
 		{
-//			time += delta;
-//			float t = 0;
-//			for (; t < time; t += updateTime)
-//			{
-//				float to = 1.0f / (top.length-1);
-//				Vector3 tp = CatmullRomSpline.calculate(tmpVec, to + ( t / time ) / (1.0f - to), top, true, tmpVec2);
-//				addVert(tp);
-//				
-//				float bo = 1.0f / (bot.length-1);
-//				Vector3 bp = CatmullRomSpline.calculate(tmpVec, bo + ( t / time ) / (1.0f - bo), bot, true, tmpVec2);
-//				addVert(bp);
-//			}
-//			
-//			time -= t;
+			time += delta;
+			float t = 0;
+			splineTop.set(top, false);
+			splineBot.set(bot, false);
+			for (; t < time-updateTime; t += updateTime)
+			{
+				float tt = t/time;
+				Vector3 tp = splineTop.valueAt(tmpVec, tt);
+				Vector3 bp = splineBot.valueAt(tmpVec2, tt);
+				
+				if (tp.epsilonEquals(trailRing.get(1), 0.0001f)) continue;
+				if (bp.epsilonEquals(trailRing.get(0), 0.0001f)) continue;
+				
+				addVert(tp);
+				addVert(bp);
+			}
+			
+			time -= t;
 			
 			for (int i = 0; i < top.length-1; i++) top[i].set(top[i+1]);
 			for (int i = 0; i < bot.length-1; i++) bot[i].set(bot[i+1]);

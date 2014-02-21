@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
@@ -44,7 +45,7 @@ public class Sprite2D implements Queueable {
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) 
 	{
 		decal.setColor(colour.x, colour.y, colour.z, alpha);
-		((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
+		if (batches.containsKey(DecalBatcher.class)) ((DecalBatcher) batches.get(DecalBatcher.class)).add(decal);
 	}
 
 	@Override

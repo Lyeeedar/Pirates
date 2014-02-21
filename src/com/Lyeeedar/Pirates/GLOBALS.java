@@ -15,6 +15,7 @@ import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Sound.Mixer;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Picker;
@@ -60,6 +61,7 @@ public final class GLOBALS {
 	
 	public static float PROGRAM_TIME = 0.0f;
 	
+	public static Array<Entity> needsSilhouette = new Array<Entity>(false, 16);
 	public static Array<ParticleEffect> unanchoredEffects = new Array<ParticleEffect>(false, 16);
 	public static Array<Entity> pendingEntities = new Array<Entity>(false, 16);
 	

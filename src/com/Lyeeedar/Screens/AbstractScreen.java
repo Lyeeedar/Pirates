@@ -58,7 +58,6 @@ public abstract class AbstractScreen implements Screen {
 	protected final BitmapFont font;
 	protected final Stage stage;
 	protected final PostProcessor postprocessor;
-	protected final Array<ModelBatcher> modelBatchers;
 	
 	protected final HashMap<Class, Batch> batches;
 	
@@ -92,7 +91,6 @@ public abstract class AbstractScreen implements Screen {
 		decalBatch = new DecalBatch(new DiscardCameraGroupStrategy(cam));
 		trailBatch = new MotionTrailBatch();
 		renderer = new CellShadingModelBatch();
-		modelBatchers = new Array<ModelBatcher>();
 		particleBatch = new ParticleEffectBatch();
 		
 		modelBatch = new AnimatedModelBatch(12);
@@ -106,10 +104,10 @@ public abstract class AbstractScreen implements Screen {
 		batches.put(ParticleEffectBatch.class, particleBatch);
 		
 		stage = new Stage(0, 0, true, spriteBatch);
-		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]);
+		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam);
 		
 		postprocessor.addEffect(Effect.BLOOM);
-		//postprocessor.addEffect(Effect.DOF);
+		postprocessor.addEffect(Effect.SILHOUETTE);
 		
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.BLUR);
@@ -155,7 +153,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		//Gdx.gl.glEnable(GL20.GL_BLEND);
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
+		
 		time = System.nanoTime();
 		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS, cam);
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);

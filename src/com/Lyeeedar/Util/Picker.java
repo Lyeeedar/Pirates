@@ -119,9 +119,7 @@ public class Picker
 		for (int i = 0; i < output.size(); i++)
 		{
 			Entity e = output.get(i);
-			e.readData(aData);
-			aData.colour.set(tintColour);
-			e.writeData(aData);
+			GLOBALS.needsSilhouette.add(e);
 		}
 	}
 }

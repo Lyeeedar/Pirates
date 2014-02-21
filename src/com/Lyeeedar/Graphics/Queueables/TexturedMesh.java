@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
+import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -39,7 +40,7 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, primitive_type, cam);
+		if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, primitive_type, cam);
 	}
 
 	@Override
