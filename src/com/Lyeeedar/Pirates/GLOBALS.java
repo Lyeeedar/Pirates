@@ -31,6 +31,15 @@ public final class GLOBALS {
 		FEMALE
 	}
 	
+	public enum DIRECTION
+	{
+		FORWARD,
+		BACKWARD,
+		LEFT,
+		RIGHT,
+		NONE
+	}
+	
 	public enum ELEMENTS
 	{
 		TEMPERATURE, // Hot, cold
@@ -109,7 +118,7 @@ public final class GLOBALS {
 			OcttreeEntry<Entity> entry = renderTree.createEntry(ne, ne.readOnlyRead(PositionalData.class).position, ne.readOnlyRead(PositionalData.class).octtreeEntry.box.extents, ne.readOnlyRead(PositionalData.class).octtreeEntry.bitmask);
 			ne.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 			renderTree.add(entry);
-			if (ne.readOnlyRead(PositionalData.class).collisionType == COLLISION_TYPE.RAY) physicsWorld.add(ne.readOnlyRead(PositionalData.class).physicsBody.getCollisionShape(), new Matrix4().setToTranslation(ne.readOnlyRead(PositionalData.class).position), ne, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+			if (ne.readOnlyRead(PositionalData.class).physicsBody != null) physicsWorld.add(ne.readOnlyRead(PositionalData.class).physicsBody.getCollisionShape(), new Matrix4().setToTranslation(ne.readOnlyRead(PositionalData.class).position), ne, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 			ne.readOnlyRead(PositionalData.class).calculateComposed();
 		}
 		pendingEntities.clear();

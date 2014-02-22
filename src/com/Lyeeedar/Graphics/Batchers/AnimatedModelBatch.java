@@ -42,41 +42,12 @@ public class AnimatedModelBatch implements Batch {
 			return new BatchedInstance();
 		}
 	};
-	
-	public static class RenderablePool extends Pool<Renderable> {
-		protected Array<Renderable> obtained = new Array<Renderable>();
-		
-		@Override
-		protected Renderable newObject () {
-			return new Renderable();
-		}
 
-		@Override
-		public Renderable obtain () {
-			Renderable renderable = super.obtain();
-			renderable.environment = null;
-			renderable.material = null;
-			renderable.mesh = null;
-			renderable.shader = null;
-			obtained.add(renderable);
-			return renderable;
-		}
-		
-		public void flush() {
-			super.freeAll(obtained);
-			obtained.clear();
-		}
-	}
-	
-	protected final RenderablePool renderablesPool = new RenderablePool();  
-	protected final Array<Renderable> renderables = new Array<Renderable>();
 	int current_shader = -1;
 	int textureHash;
 	
 	public void render(LightManager lights, Camera cam)
-	{
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		
+	{		
 		this.cam = cam;
 		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
 
@@ -135,7 +106,6 @@ public class AnimatedModelBatch implements Batch {
 						
 			bi.instance.mesh.render(shaders[current_shader], bi.instance.primitiveType, bi.instance.meshPartOffset, bi.instance.meshPartSize);
 			
-			renderablesPool.free(bi.instance);
 			pool.free(bi);
 		}
 		
@@ -170,17 +140,15 @@ public class AnimatedModelBatch implements Batch {
 		return shader;
 	}
 	
-	public void add(ModelInstance model, Texture[] tex, Vector3 colour)
+	public void add(Array<Renderable> renderables, Texture[] tex, Vector3 colour)
 	{
 		if (cam == null) return;
 		
-		model.getRenderables(renderables, renderablesPool);
 		for (Renderable r : renderables)
 		{
 			tmp.set(0, 0, 0).mul(r.worldTransform);
 			instances.add(pool.obtain().set(r, tex, colour, -tmp.dst2(cam.position)));
 		}
-		renderables.clear();
 	}
 
 	private static class BatchedInstance implements Comparable<BatchedInstance>

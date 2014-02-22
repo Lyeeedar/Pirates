@@ -7,6 +7,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
 import com.badlogic.gdx.math.Vector3;
 
 public class ActionMove extends Action
@@ -33,7 +34,7 @@ public class ActionMove extends Action
 		
 		entity.writeData(pData);
 		
-		parent.setDataTree("moved", true);
+		parent.setDataTree("direction", DIRECTION.FORWARD);
 		
 		state = BehaviourTreeState.FINISHED;
 		return state;

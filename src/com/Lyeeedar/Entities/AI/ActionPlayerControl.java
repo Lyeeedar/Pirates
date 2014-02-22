@@ -12,6 +12,7 @@ import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
 import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
@@ -73,41 +74,81 @@ public class ActionPlayerControl extends Action
 		}
 
 		nextRot.set(0, 0, 0);
-
-		if (controls.up()) 
+		boolean lockon = cam.isLockOn();
+		
+		if (lockon)
 		{
-			tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
-			if (nextRot.isZero()) nextRot.add(tmpVec);
-			else nextRot.add(tmpVec).scl(0.5f);
-		}
-		if (controls.down()) 
-		{
-			tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
-			if (nextRot.isZero()) nextRot.add(tmpVec);
-			else nextRot.add(tmpVec).scl(0.5f);
-		}
-
-		if (controls.left()) 
-		{
-			tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
-			tmpVec.crs(GLOBALS.DEFAULT_UP);
-			if (nextRot.isZero()) nextRot.add(tmpVec);
-			else nextRot.add(tmpVec).scl(0.5f);
-		}
-		if (controls.right()) 
-		{
-			tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
-			tmpVec.crs(GLOBALS.DEFAULT_UP);
-			if (nextRot.isZero()) nextRot.add(tmpVec);
-			else nextRot.add(tmpVec).scl(0.5f);
-		}
-
-		parent.setDataTree("moved", !nextRot.isZero());
-		if (!nextRot.isZero())
-		{
-			pData.rotation.set(nextRot.nor());
+			pData.rotation.set(cam.direction.x, 0, cam.direction.z).nor();
 			pData.up.set(GLOBALS.DEFAULT_UP);
-			pData.forward_backward(speed);
+			
+			if (controls.up()) 
+			{
+				pData.forward_backward(speed);
+				parent.setDataTree("direction", DIRECTION.FORWARD);
+			}
+			else if (controls.down()) 
+			{
+				pData.forward_backward(-speed);
+				parent.setDataTree("direction", DIRECTION.BACKWARD);
+			}
+			else if (controls.left()) 
+			{
+				pData.left_right(speed);
+				parent.setDataTree("direction", DIRECTION.LEFT);
+			}
+			else if (controls.right()) 
+			{
+				pData.left_right(-speed);
+				parent.setDataTree("direction", DIRECTION.RIGHT);
+			}
+			else
+			{
+				parent.setDataTree("direction", DIRECTION.NONE);
+			}
+		}
+		else
+		{
+
+			if (controls.up()) 
+			{
+				tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+				if (nextRot.isZero()) nextRot.add(tmpVec);
+				else nextRot.add(tmpVec).scl(0.5f);
+			}
+			if (controls.down()) 
+			{
+				tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+				if (nextRot.isZero()) nextRot.add(tmpVec);
+				else nextRot.add(tmpVec).scl(0.5f);
+			}
+	
+			if (controls.left()) 
+			{
+				tmpVec.set(-cam.direction.x, 0, -cam.direction.z).nor();
+				tmpVec.crs(GLOBALS.DEFAULT_UP);
+				if (nextRot.isZero()) nextRot.add(tmpVec);
+				else nextRot.add(tmpVec).scl(0.5f);
+			}
+			if (controls.right()) 
+			{
+				tmpVec.set(cam.direction.x, 0, cam.direction.z).nor();
+				tmpVec.crs(GLOBALS.DEFAULT_UP);
+				if (nextRot.isZero()) nextRot.add(tmpVec);
+				else nextRot.add(tmpVec).scl(0.5f);
+			}
+	
+			if (!nextRot.isZero())
+			{
+				pData.rotation.set(nextRot.nor());
+				pData.up.set(GLOBALS.DEFAULT_UP);
+				pData.forward_backward(speed);
+				parent.setDataTree("direction", DIRECTION.FORWARD);
+			}
+			else
+			{
+				parent.setDataTree("direction", DIRECTION.NONE);
+			}
+		
 		}
 
 		if (controls.jump() && !jump) {

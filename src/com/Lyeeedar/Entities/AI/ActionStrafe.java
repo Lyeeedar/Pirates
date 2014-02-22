@@ -1,20 +1,20 @@
 package com.Lyeeedar.Entities.AI;
 
+import java.util.Random;
+
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
-import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
-import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
+import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
-public class ActionMoveTo extends Action
+public class ActionStrafe extends Action
 {
-	public final float dst;
-	public final boolean towards;
+	public final float time;
+	public boolean right;
 	public final String key;
 	
 	private final PositionalData pData = new PositionalData();
@@ -23,16 +23,29 @@ public class ActionMoveTo extends Action
 	
 	private final Vector3 tmpVec = new Vector3();
 	
-	public ActionMoveTo(boolean towards, float dst, String key)
+	private final Random ran = new Random();
+	
+	public float cd = -1;
+	
+	public ActionStrafe(float time, String key)
 	{
-		this.towards = towards;
-		this.dst = dst == Float.MAX_VALUE ? dst : dst*dst;
+		this.time = time;
 		this.key = key;
 	}
 	
 	@Override
 	public BehaviourTreeState evaluate()
 	{
+		float delta = (Float) getData("delta", 0);
+		
+		if (cd < 0)
+		{
+			cd = time;
+			right = ran.nextInt(2) == 1;
+		}
+		
+		cd -= delta;
+		
 		Entity closest = (Entity) getData(key, null);
 		
 		if (closest == null)
@@ -46,60 +59,39 @@ public class ActionMoveTo extends Action
 		entity.readData(pData);
 		closest.readData(pData2);
 		
-		if (towards)
-		{
-			if (pData.position.dst2(pData2.position) < dst)
-			{
-				state = BehaviourTreeState.FAILED;
-				return BehaviourTreeState.FAILED;
-			}
-		}
-		else
-		{
-			if (pData.position.dst2(pData2.position) > dst)
-			{
-				state = BehaviourTreeState.FAILED;
-				return BehaviourTreeState.FAILED;
-			}
-		}
-		
 		entity.readData(sData);
 		
 		tmpVec.set(pData2.position).add(0, pData2.octtreeEntry.box.extents.y/2.0f, 0).sub(pData.position);
 		if (sData.mass > 0.01f) tmpVec.y = 0;
-		if (!towards)
-		{
-			tmpVec.x *= -1;
-			tmpVec.y *= -1;
-			tmpVec.z *= -1;
-		}
 		tmpVec.nor();
 		pData.rotation.set(tmpVec);
 		tmpVec.crs(GLOBALS.DEFAULT_UP);
 		tmpVec.crs(pData.rotation);
 		pData.up.set(tmpVec);
 		
-		pData.velocity.set(pData.rotation).scl(sData.speed);
+		if (right) pData.left_right(sData.speed);
+		else pData.left_right(-sData.speed);
 		
-		parent.setDataTree("direction", DIRECTION.FORWARD);
+		DIRECTION dir = right ? DIRECTION.RIGHT : DIRECTION.LEFT ;
+		
+		parent.setDataTree("direction", dir);
 		
 		entity.writeData(pData);
 		
-		state = BehaviourTreeState.RUNNING;
-		return BehaviourTreeState.RUNNING;
+		state = (cd < 0) ? BehaviourTreeState.FINISHED : BehaviourTreeState.RUNNING;
+		return state;
 	}
 
 	@Override
 	public void cancel()
 	{
-		// TODO Auto-generated method stub
-		
+		cd = -1;
 	}
 
 	@Override
 	public Action copy()
 	{
-		return new ActionMoveTo(towards, dst, key);
+		return new ActionStrafe(time, key);
 	}
 
 	@Override

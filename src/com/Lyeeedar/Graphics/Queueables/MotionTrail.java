@@ -284,8 +284,14 @@ public class MotionTrail implements Queueable {
 	}
 
 	@Override
-	public Vector3[] getVertexArray()
+	public float[][] getVertexArray()
 	{
-		return new Vector3[]{new Vector3()};
+		return new float[][]{new float[]{0}};
+	}
+
+	@Override
+	public Vector3 getTransformedVertex(float[] values, Vector3 out)
+	{
+		return out.set(0, 0, 0).mul(transform);
 	}
 }

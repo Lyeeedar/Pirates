@@ -371,7 +371,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			this.baseSpell = baseSpell;
 			baseSpell.readData(pData);
-			pData.createSensor();
+			pData.createCallback();
 			baseSpell.writeData(pData);
 			this.model = model;
 		}
@@ -403,10 +403,6 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 							shouldCast = true;
 						}
 					}
-					else if (targetted == null || targetted.size() != 0)
-					{
-						return;
-					}
 				}
 				
 				entity.readData(sData);
@@ -417,13 +413,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 				sData2.factions = sData.factions;
 				
 				pData2.position.set(0, 0, 0).mul(tmp.set(model.model.transform).mul(model.model.getNode("top").globalTransform));
-				pData2.sensor.setSkipObject(pData.physicsBody);
+				pData2.sweep.setSkipObject(pData.physicsBody);
 				pData2.rotation.set(pData.rotation);
 				
 				baseSpell.writeData(sData2);
 				baseSpell.writeData(pData2);
 				
-				GLOBALS.pendingEntities.add(baseSpell);
+				GLOBALS.pendingEntities.add(baseSpell);				
 			}
 		}
 

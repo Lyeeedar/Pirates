@@ -14,10 +14,7 @@ public class ActionEvaluateDamage extends Action
 	
 	protected float damageTime = 0.3f;
 	protected float damageCD = 0f;
-	
-	protected float deathTime = 1.5f;
-	protected float deathCD = deathTime;
-	
+		
 	protected void evaluateDamage(StatusData sData, AnimationData aData, float delta)
 	{
 		if (sData.damage != 0)
@@ -39,12 +36,10 @@ public class ActionEvaluateDamage extends Action
 		if (sData.currentHealth <= 0) 
 		{
 			aData.updateAnimations = true;
-			aData.animate = false;
-			if (deathCD > 0) deathCD -= delta;
-
-			aData.alpha = deathCD/deathTime;
-			
-			if (deathCD < 0) sData.ALIVE = false;
+			aData.anim = "death";
+			aData.animationLock = true;
+			aData.animate_speed = 1f;
+			sData.ALIVE = false;
 		}
 	}
 

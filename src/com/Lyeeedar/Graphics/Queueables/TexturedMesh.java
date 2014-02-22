@@ -90,25 +90,29 @@ public final class TexturedMesh implements Queueable {
 	}
 
 	@Override
-	public Vector3[] getVertexArray()
+	public float[][] getVertexArray()
 	{
 		final int nverts = mesh.getNumVertices();
 		final int vsize = mesh.getVertexSize();
 		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
 		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
 		
-		Vector3[] varray = new Vector3[nverts];
+		float[][] varray = new float[nverts][3];
 		
 		for (int i = 0; i < nverts; i++)
 		{
-			varray[i] = new Vector3(
-					vertices[poff+(i*vsize)+0],
-					vertices[poff+(i*vsize)+1],
-					vertices[poff+(i*vsize)+2]
-					);
+			varray[i][0] = vertices[poff+(i*vsize)+0];
+			varray[i][1] = vertices[poff+(i*vsize)+1];
+			varray[i][2] = vertices[poff+(i*vsize)+2];
 		}
 		
 		return varray;
+	}
+
+	@Override
+	public Vector3 getTransformedVertex(float[] values, Vector3 out)
+	{
+		return out.set(values[0], values[1], values[2]).mul(model_matrix);
 	}
 	
 	

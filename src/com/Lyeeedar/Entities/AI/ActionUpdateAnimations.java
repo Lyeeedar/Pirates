@@ -7,6 +7,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
+import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
 
 public class ActionUpdateAnimations extends Action
 {
@@ -25,7 +26,7 @@ public class ActionUpdateAnimations extends Action
 		
 		entity.readData(aData);
 		entity.readData(pData);
-		boolean moved = (Boolean) getData("moved", false);
+		DIRECTION dir = (DIRECTION) getData("direction", DIRECTION.NONE);
 		
 		if (aData.animationLock)
 		{
@@ -49,17 +50,61 @@ public class ActionUpdateAnimations extends Action
 			if (aData.animate) aData.updateAnimations = true;
 			else aData.updateAnimations = false;
 			aData.animate = true;
-			aData.animate_speed = 1f;
-			if (moved) aData.anim = "move_water";
-			else aData.anim = "idle_water";
+			
+			if (dir == DIRECTION.FORWARD)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_water_forward";
+			}
+			else if (dir == DIRECTION.BACKWARD)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_water_forward";
+			}
+			else if (dir == DIRECTION.LEFT)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_water_forward";
+			}
+			else if (dir == DIRECTION.RIGHT)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_water_forward";
+			}
+			else if (dir == DIRECTION.NONE)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "idle_water";
+			}
+			
 			aData.base_anim = "idle";
 		}
-		else if (moved) {
+		else if (dir != DIRECTION.NONE) {
 			if (aData.animate) aData.updateAnimations = true;
 			else aData.updateAnimations = false;
 			aData.animate = true;
-			aData.animate_speed = 1f;
-			aData.anim = "move_ground";
+			
+			if (dir == DIRECTION.FORWARD)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_ground_forward";
+			}
+			else if (dir == DIRECTION.BACKWARD)
+			{
+				aData.animate_speed = -1f;
+				aData.anim = "move_ground_forward";
+			}
+			else if (dir == DIRECTION.LEFT)
+			{
+				aData.animate_speed = 1f;
+				aData.anim = "move_ground_side";
+			}
+			else if (dir == DIRECTION.RIGHT)
+			{
+				aData.animate_speed = -1f;
+				aData.anim = "move_ground_side";
+			}
+			
 			aData.base_anim = "idle";
 		}
 		else {

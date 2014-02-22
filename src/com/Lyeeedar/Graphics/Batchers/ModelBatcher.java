@@ -312,24 +312,14 @@ public class ModelBatcher implements Queueable {
 
 
 	@Override
-	public Vector3[] getVertexArray()
+	public float[][] getVertexArray()
 	{
-		final int nverts = mesh.getNumVertices();
-		final int vsize = mesh.getVertexSize();
-		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
-		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
-		
-		Vector3[] varray = new Vector3[nverts];
-		
-		for (int i = 0; i < nverts; i++)
-		{
-			varray[i] = new Vector3(
-					vertices[poff+(i*vsize)+0],
-					vertices[poff+(i*vsize)+1],
-					vertices[poff+(i*vsize)+2]
-					);
-		}
-		
-		return varray;
+		return new float[][]{new float[]{0}};
+	}
+
+	@Override
+	public Vector3 getTransformedVertex(float[] values, Vector3 out)
+	{
+		return out.set(0, 0, 0);
 	}
 }

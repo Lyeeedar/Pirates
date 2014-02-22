@@ -32,6 +32,7 @@ import com.Lyeeedar.Entities.AI.ActionPlayerControl;
 import com.Lyeeedar.Entities.AI.ActionRandomWalk;
 import com.Lyeeedar.Entities.AI.ActionSetParticleEffect;
 import com.Lyeeedar.Entities.AI.ActionSetValue;
+import com.Lyeeedar.Entities.AI.ActionStrafe;
 import com.Lyeeedar.Entities.AI.ActionUpdateAnimations;
 import com.Lyeeedar.Entities.AI.ActionWait;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
@@ -59,6 +60,7 @@ import com.Lyeeedar.Entities.Items.Weapon.AttackActionLockOn;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionParticleEffect;
 import com.Lyeeedar.Entities.Items.Weapon.AttackMotionTrail;
 import com.Lyeeedar.Entities.Items.Weapon.AttackSpellCast;
+import com.Lyeeedar.Entities.Items.Spells.SpellEffect.InstantSpellEffect;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.RepeatingSpellEffect;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.SpellPayloadHP;
 import com.Lyeeedar.Graphics.Clouds;
@@ -72,6 +74,7 @@ import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Graphics.Queueables.Sprite2D;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
@@ -265,12 +268,14 @@ public class GameScreen extends AbstractScreen {
 		AnimatedModel axe = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		MotionTrail axeTrail = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/fire.effect");
+		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/death.effect");
 		TexturedMesh shield = new TexturedMesh(FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		player.addRenderable(am, new Vector3());
 		pmodel = am;
-		//player.addRenderable(fire, new Vector3());
-		//fire.setEmission(axe.getVertexArray(), axe);
+		player.addRenderable(fire, new Vector3());
+		float[][] var = am.getVertexArray();
+		System.out.println(var.length);
+		fire.setEmission(var, am);
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
 		am.attach("DEF-palm_01_R", axe, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20));
@@ -291,82 +296,83 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
 		ATTACK_STAGE[] wattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 70, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 70, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
 				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 70, 100), null, 0, 0),
 				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 81, 91), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0)
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(wattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(axe, "data/effects/sparks.effect"), null, null, 0, -1)));
 		
-		Entity spell = new Entity(false, new PositionalData(), new StatusData());
-		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/minun.png", true, null, null))), 1, 1);
-		MotionTrail trailX = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
-		MotionTrail trailY = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
-		spell.addRenderable(orb, new Vector3());
-		spell.addRenderable(trailX, new Vector3());
-		spell.addRenderable(trailY, new Vector3());
-		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
-		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
-		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell);
-		spell.readOnlyRead(StatusData.class).mass = 0.0f;
+//		Entity spell = new Entity(false, new PositionalData(), new StatusData());
+//		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/minun.png", true, null, null))), 1, 1);
+//		MotionTrail trailX = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
+//		MotionTrail trailY = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
+//		spell.addRenderable(orb, new Vector3());
+//		spell.addRenderable(trailX, new Vector3());
+//		spell.addRenderable(trailY, new Vector3());
+//		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
+//		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
+//		spell.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
+//		spell.readOnlyRead(StatusData.class).mass = 0.0f;
+//		
+//		Selector sssspselect = new PrioritySelector();
+//		sssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+//		sssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+//		
+//		Selector ssssselect = new SequenceSelector();
+//		ssssselect.addNode(new ActionKill());
+//		ssssselect.addNode(new ActionSetParticleEffect("data/effects/explosion.effect"));
+//		ssssselect.addNode(new ActionApplySpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+//		ssssselect.addNode(sssspselect);
+//		
+//		Selector ssspselect = new PrioritySelector();
+//		ssspselect.addNode(new ActionMoveTo(true, 0, "Enemy"));
+//		ssspselect.addNode(ssssselect);
+//		
+//		Selector sssselect = new ConcurrentSelector();
+//		BehaviourTree ssbtree = new BehaviourTree(sssselect);
+//		sssselect.addNode(new ActionGravityAndMovement());
+//		sssselect.addNode(ssspselect);
+//		
+//		spell.setAI(ssbtree);
+//		ATTACK_STAGE[] sattacks = {
+//				new ATTACK_STAGE("charge_off", 1.0f, 0, null, null, null, 0, 0)
+//		};
+//		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, new ATTACK_STAGE("charge_off", 1.0f, -1, null, new AttackActionLockOn(cam, 250, 2, false, 0.1f, new Vector3(0.1f, 1.0f, 0.0f)), null, 0, 0), null));
+//		
+		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
+		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
+		spell2.addRenderable(orb2, new Vector3());
+		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
+		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
+		spell2.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
+		spell2.readOnlyRead(StatusData.class).mass = 0.1f;
 		
-		Selector sssspselect = new PrioritySelector();
-		sssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-		sssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		Selector ssssspselect = new PrioritySelector();
+		ssssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
+		ssssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 		
-		Selector ssssselect = new SequenceSelector();
-		ssssselect.addNode(new ActionKill());
-		ssssselect.addNode(new ActionSetParticleEffect("data/effects/explosion.effect"));
-		ssssselect.addNode(new ActionApplySpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
-		ssssselect.addNode(sssspselect);
+		Selector sssssselect = new SequenceSelector();
+		sssssselect.addNode(new ActionKill());
+		sssssselect.addNode(new ActionSetParticleEffect("data/effects/explosion.effect"));
+		sssssselect.addNode(new ActionApplySpellEffect(new InstantSpellEffect(new SpellPayloadHP(50)), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
+		sssssselect.addNode(ssssspselect);
 		
-		Selector ssspselect = new PrioritySelector();
-		ssspselect.addNode(new ActionMoveTo(true, 0, "Enemy"));
-		ssspselect.addNode(ssssselect);
+		Selector sssssspselect = new PrioritySelector();
+		sssssspselect.addNode(new ActionMove(5));
+		sssssspselect.addNode(sssssselect);
 		
-		Selector sssselect = new ConcurrentSelector();
-		BehaviourTree ssbtree = new BehaviourTree(sssselect);
-		sssselect.addNode(new ActionGravityAndMovement());
-		sssselect.addNode(ssspselect);
+		Selector ssssssselect = new ConcurrentSelector();
+		BehaviourTree sssbtree = new BehaviourTree(ssssssselect);
+		ssssssselect.addNode(new ActionGravityAndMovement());
+		ssssssselect.addNode(sssssspselect);
 		
-		spell.setAI(ssbtree);
+		spell2.setAI(sssbtree);
 		ATTACK_STAGE[] sattacks = {
-				new ATTACK_STAGE("charge_off", 1.0f, 0, null, null, null, 0, 0)
+				new ATTACK_STAGE("cast_off_2", 1.0f, 1, null, null, new AttackSpellCast(spell2, axe), 0, 0),
+				new ATTACK_STAGE("cast_off_1", 1.0f, 2, null, null, new AttackSpellCast(spell2, axe), 0, 0),
+				new ATTACK_STAGE("cast_off_2", 1.0f, -1, null, null, new AttackSpellCast(spell2, axe), 0, 0)
 		};
-		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, new ATTACK_STAGE("charge_off", 1.0f, -1, null, new AttackActionLockOn(cam, 250, 2, false, 0.1f, new Vector3(0.1f, 1.0f, 0.0f)), null, 0, 0), null));
-		
-//		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
-//		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
-//		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/fire.effect");
-//		fire.play(true);
-//		//spell2.addRenderable(fire, new Vector3());
-//		spell2.addRenderable(orb2, new Vector3());
-//		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
-//		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHAPE;
-//		bw.getRigidBody(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4(), spell2);
-//		spell2.readOnlyRead(StatusData.class).mass = 0.1f;
-//		
-//		Selector ssssspselect = new PrioritySelector();
-//		ssssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-//		ssssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-//		
-//		Selector sssssselect = new SequenceSelector();
-//		sssssselect.addNode(new ActionKill());
-//		sssssselect.addNode(new ActionSetParticleEffect("data/effects/explosion.effect"));
-//		sssssselect.addNode(new ActionApplySpellEffect(new InstantSpellEffect(new SpellPayloadHP(50)), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
-//		sssssselect.addNode(ssssspselect);
-//		
-//		Selector sssssspselect = new PrioritySelector();
-//		sssssspselect.addNode(new ActionMove(5));
-//		sssssspselect.addNode(sssssselect);
-//		
-//		Selector ssssssselect = new ConcurrentSelector();
-//		BehaviourTree sssbtree = new BehaviourTree(ssssssselect);
-//		ssssssselect.addNode(new ActionGravityAndMovement());
-//		ssssssselect.addNode(sssssspselect);
-//		
-//		spell2.setAI(sssbtree);
-//		
-//		eData.equip(Equipment_Slot.SLOT2, new Spell(spell2, 0.1f, sword));
+		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
 		
 		player.writeData(eData);
 		
@@ -489,11 +495,16 @@ public class GameScreen extends AbstractScreen {
 		ggsselect3.addNode(new ActionSetValue("leader", leader));
 		
 		Selector ggpselect2 = new PrioritySelector();
-		ggpselect2.addNode(new ActionMoveTo(true, 15, "enemy"));
-		ggpselect2.addNode(new ActionAttack(15, false, true, "enemy"));
+		ggpselect2.addNode(new ActionMoveTo(true, 5, "enemy"));
+		ggpselect2.addNode(new ActionAttack(5, false, true, "enemy"));
+		
+		Selector ggrselect3 = new RandomSelector(new Random());
+		ggrselect3.addNode(new ActionWait(1));
+		ggrselect3.addNode(new ActionStrafe(1, "enemy"));
+		ggrselect3.addNode(ggpselect2);
 		
 		Selector ggsselect2 = new SequenceSelector();
-		ggsselect2.addNode(ggpselect2);
+		ggsselect2.addNode(ggrselect3);
 		ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeBox(new Vector3(), new Vector3(100, 100, 100), null)), new CheckClosest(), new DoSetEntity("enemy")));
 		
 		Selector ggsselect4 = new SequenceSelector();
@@ -508,17 +519,12 @@ public class GameScreen extends AbstractScreen {
 		ggpselect.addNode(ggsselect4);
 		ggpselect.addNode(new ConditionalAnimationLock(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
 		
-		Selector ggrselect2 = new RandomSelector(new Random());
-		//ggrselect2.addNode(new ActionWait(1));
-		//ggrselect2.addNode(new ActionWait(1));
-		ggrselect2.addNode(ggpselect);
-		
 		Selector ggsselect = new ConcurrentSelector();
 		BehaviourTree ggbtree = new BehaviourTree(ggsselect);
 		ggsselect.addNode(new ActionUpdateAnimations());
 		ggsselect.addNode(new ActionEvaluateDamage());
 		ggsselect.addNode(new ActionGravityAndMovement());
-		ggsselect.addNode(ggrselect2);
+		ggsselect.addNode(ggpselect);
 		
 		ge.setAI(ggbtree);
 		PositionalData pData = ge.readOnlyRead(PositionalData.class);
@@ -766,7 +772,15 @@ public class GameScreen extends AbstractScreen {
 			
 			if (!sData.ALIVE)
 			{
-				GLOBALS.physicsWorld.remove(e.readOnlyRead(PositionalData.class).physicsBody);
+				if (e.readOnlyRead(PositionalData.class).physicsBody != null) 
+				{
+					GLOBALS.physicsWorld.remove(e.readOnlyRead(PositionalData.class).physicsBody);
+					ParticleEffect death = FileUtils.obtainParticleEffect("data/effects/death.effect");
+					Queueable model = e.getRenderable(0);
+					death.setEmission(model.getVertexArray(), model);
+					death.play(false);
+					GLOBALS.unanchoredEffects.add(death);
+				}
 				e.readOnlyRead(PositionalData.class).octtreeEntry.remove();
 				e.dispose();
 				aiEntities.removeIndex(i);

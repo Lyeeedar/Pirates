@@ -74,6 +74,11 @@ public class Entity {
 		for (EntityData<?> d : data) entityData.put(d.getType(), d);
 	}
 	
+	public Queueable getRenderable(int i)
+	{
+		return renderables.renderables.get(i).renderable;
+	}
+	
 	public void addRenderable(Queueable r, Vector3 position)
 	{
 		renderables.add(new EntityRenderable(r, position));
@@ -435,10 +440,10 @@ public class Entity {
 	{
 		public enum COLLISION_TYPE
 		{
-			RAY,
-			SHAPE
+			COMPLEX,
+			SIMPLE
 		}
-		public COLLISION_TYPE collisionType = COLLISION_TYPE.RAY;
+		public COLLISION_TYPE collisionType = COLLISION_TYPE.COMPLEX;
 		
 		public enum LOCATION 
 		{
@@ -482,7 +487,6 @@ public class Entity {
 		
 		public float locationCD = 0;
 		
-		public ContactSensorSkippingCallback sensor;
 		public ClosestConvexResultSkippingCallback sweep;
 		
 		public Entity base;
@@ -516,7 +520,6 @@ public class Entity {
 			jumpToken = data.jumpToken;
 			
 			needsOffset = data.needsOffset;
-			sensor = data.sensor;
 			sweep = data.sweep;
 			physicsBody = data.physicsBody;
 			collisionShape = data.collisionShape;
@@ -541,15 +544,6 @@ public class Entity {
 				for (long l : sweep.skipObjects)
 				{
 					ed.sweep.skipObjects.add(l);
-				}
-			}
-			if (ed.sensor != null)
-			{
-				ed.sensor = new ContactSensorSkippingCallback();
-				ed.sensor.object = physicsBody;
-				for (long l : sensor.skipObjects)
-				{
-					ed.sensor.skipObjects.add(l);
 				}
 			}
 			return ed;
@@ -617,36 +611,35 @@ public class Entity {
 			Ycollide = false;
 			Zcollide = false;
 			
-			if (collisionType == COLLISION_TYPE.RAY)
+			if (collisionType == COLLISION_TYPE.COMPLEX)
 			{
-				collisionRay(delta, mass);
+				collisionComplex(delta, mass);
 			}
-			else if (collisionType == COLLISION_TYPE.SHAPE)
+			else if (collisionType == COLLISION_TYPE.SIMPLE)
 			{
-				collisionShape(delta, mass);
+				collisionSimple(delta, mass);
 			}
 			
 			calculateComposed();
 			
 			float py = needsOffset ? position.y+octtreeEntry.box.extents.y : position.y ;
 			tmpMat.setToTranslation(position.x, py, position.z).rotate(GLOBALS.DEFAULT_ROTATION, rotation);
-			physicsBody.setWorldTransform(tmpMat);
+			if (physicsBody != null) physicsBody.setWorldTransform(tmpMat);
 			octtreeEntry.box.pos.set(position.x, position.y+octtreeEntry.box.extents.y, position.z);
-			octtreeEntry.updatePosition();			
+			octtreeEntry.updatePosition();
 		}
 		
-		 public void createSensor()
-		 {
-			 sensor = new ContactSensorSkippingCallback();
-			sensor.object = physicsBody;
-		 }
-		
-		private void collisionShape(float delta, float mass)
+		public void createCallback()
 		{
-			if (sensor == null)
+			sweep = new ClosestConvexResultSkippingCallback(new Vector3(), new Vector3());
+			if (physicsBody != null) sweep.setSkipObject(physicsBody);
+		}
+		
+		private void collisionSimple(float delta, float mass)
+		{
+			if (sweep == null)
 			{
-				sensor = new ContactSensorSkippingCallback();
-				sensor.object = physicsBody;
+				createCallback();
 			}
 			
 			if (velocity.len2() == 0) 
@@ -657,20 +650,33 @@ public class Entity {
 			v.set(velocity.x, (velocity.y + GLOBALS.GRAVITY*delta*mass), velocity.z);
 			v.scl(delta);
 			
+			if (v.x != 0 || v.z != 0)
+			{
+				tmpVec.set(position);
+				tmpVec2.set(position).add(v);
+
+				tmpMat.setToTranslation(tmpVec);
+				tmpMat2.setToTranslation(tmpVec2);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+
+				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+
+				if (sweep.hasHit())
+				{
+					Xcollide = true;
+					Ycollide = true;
+					Zcollide = true;
+				}
+			}
+			
 			position.add(v);
 			velocity.x = 0;
 			velocity.z = 0;
-			
-			physicsBody.setWorldTransform(composed);
-			sensor.array.clear();
-			sensor.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
-			sensor.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
-			if (GLOBALS.physicsWorld.collide(sensor))
-			{
-				Xcollide = true;
-				Ycollide = true;
-				Zcollide = true;
-			}
 			
 			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
 			
@@ -682,12 +688,11 @@ public class Entity {
 			}
 		}
 		
-		private void collisionRay(float delta, float mass)
+		private void collisionComplex(float delta, float mass)
 		{
 			if (sweep == null)
 			{
-				sweep = new ClosestConvexResultSkippingCallback(new Vector3(), new Vector3());
-				sweep.setSkipObject(physicsBody);
+				createCallback();
 			}
 			
 			locationCD -= delta;

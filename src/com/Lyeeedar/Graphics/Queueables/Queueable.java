@@ -25,7 +25,9 @@ public interface Queueable {
 	
 	public void update(float delta, Camera cam, LightManager lights);
 	
-	public Vector3[] getVertexArray();
+	public float[][] getVertexArray();
+	
+	public Vector3 getTransformedVertex(float[] values, Vector3 out);
 	
 	public Queueable copy();
 	

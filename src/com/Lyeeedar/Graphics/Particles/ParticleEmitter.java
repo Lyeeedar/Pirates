@@ -116,7 +116,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient int i2;
 	private transient int arrayLen;
 	public transient boolean created = false;
-	public transient Vector3[] emissionMesh;
+	public transient float[][] emissionMesh;
 	public transient Queueable emissionObject;
 	public transient Entity base;
 	
@@ -583,8 +583,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			
 			if (emissionMesh != null)
 			{
-				Vector3 vertex = tmpVec.set(emissionMesh[ran.nextInt(emissionMesh.length)]);
-				vertex.mul(emissionObject.getTransform());
+				Vector3 vertex = emissionObject.getTransformedVertex(emissionMesh[ran.nextInt(emissionMesh.length)], tmpVec);
 				x = vertex.x;
 				y = vertex.y;
 				z = vertex.z;
@@ -657,7 +656,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			else if (p.emittedType == 1)
 			{
 				p.vy += GLOBALS.GRAVITY*delta*p.mass;
-				p.update(delta, p.vx, p.vy, p.vz);
+				p.update(delta, p.vx, p.vy + GLOBALS.GRAVITY*delta*p.mass, p.vz);
 			}
 
 			if (base != null)
