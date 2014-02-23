@@ -140,6 +140,8 @@ public class GameScreen extends AbstractScreen {
 		super(game);
 	}
 
+	AnimatedModel hair;
+	TexturedMesh hair2;
 	FloatBuffer fb;
 	@Override
 	public void create() {
@@ -264,20 +266,37 @@ public class GameScreen extends AbstractScreen {
 
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
 		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		AnimatedModel hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		AnimatedModel axe = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		MotionTrail axeTrail = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/death.effect");
+		ParticleEffect fire2 = FileUtils.loadParticleEffect("data/effects/death.effect");
+		ParticleEffect fire3 = FileUtils.loadParticleEffect("data/effects/death.effect");
+		ParticleEffect fire4 = FileUtils.loadParticleEffect("data/effects/death.effect");
 		TexturedMesh shield = new TexturedMesh(FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		hair2 = new TexturedMesh(FileUtils.loadModel("data/models/hair1.g3db").meshes.get(0), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		player.addRenderable(am, new Vector3());
 		pmodel = am;
-		player.addRenderable(fire, new Vector3());
-		float[][] var = am.getVertexArray();
-		System.out.println(var.length);
-		fire.setEmission(var, am);
+//		player.addRenderable(fire, new Vector3());
+//		float[][] var = axe.getVertexArray();
+//		fire.setEmission(var, axe);
+//		
+//		player.addRenderable(fire2, new Vector3());
+//		var = am.getVertexArray();
+//		fire2.setEmission(var, am);
+//		
+//		player.addRenderable(fire3, new Vector3());
+//		var = hair.getVertexArray();
+//		System.out.println(var.length);
+//		fire3.setEmission(var, hair);
+//		
+//		player.addRenderable(fire4, new Vector3());
+//		var = shield.getVertexArray();
+//		fire4.setEmission(var, shield);
 		
 		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
+		//am.attach("DEF-head", hair2, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
 		am.attach("DEF-palm_01_R", axe, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20));
 		am.attach("DEF-forearm_02_L", shield, new Matrix4().rotate(0, 1, 0, 90).translate(0.2f, 0, 0));
 		am.attach(null, axeTrail, new Matrix4());
@@ -297,8 +316,8 @@ public class GameScreen extends AbstractScreen {
 		ATTACK_STAGE[] wattacks = {
 				
 				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 70, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 20, 10, 81, 91), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 81, 91), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0)
 		};
 		eData.equip(Equipment_Slot.RARM, new Weapon(wattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(axe, "data/effects/sparks.effect"), null, null, 0, -1)));
 		

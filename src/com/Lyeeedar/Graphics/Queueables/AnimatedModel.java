@@ -7,10 +7,12 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
@@ -73,7 +75,7 @@ public class AnimatedModel implements Queueable {
 	{		
 		this.model = new ModelInstance(model);
 		this.model.getRenderables(renderables, renderablesPool);
-		
+	
 		anim = new AnimationController(this.model);
 		if (defaultAnim != null)
 		{
@@ -98,6 +100,7 @@ public class AnimatedModel implements Queueable {
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
 		if (batches.containsKey(AnimatedModelBatch.class)) ((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(renderables, textures, colour);
+		//if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(model.model.meshes.get(0), GL20.GL_TRIANGLES, textures, colour, transform, 1, cam);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
@@ -204,6 +207,10 @@ public class AnimatedModel implements Queueable {
 		renderablesPool.freeAll(renderables);
 		renderables.clear();
 		model.getRenderables(renderables, renderablesPool);
+//		for (Renderable r : renderables)
+//		{
+//			r.worldTransform.set(transform);
+//		}
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
@@ -274,8 +281,14 @@ public class AnimatedModel implements Queueable {
 			Mesh mesh = ren.mesh;
 						
 			final int nverts = mesh.getNumVertices();
-			final int vsize = mesh.getVertexSize();
+			final int nindices = mesh.getNumIndices();
+			final int vsize = mesh.getVertexSize() / 4;
+			
 			float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+			boolean[] used = new boolean[nverts];
+			short[] indices = new short[nindices];
+			mesh.getIndices(indices);
+			
 			int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
 			final int n = mesh.getVertexAttributes().size();
 			int bone_num = 0;
@@ -287,22 +300,29 @@ public class AnimatedModel implements Queueable {
 					
 			ArrayList<float[]> vList = new ArrayList<float[]>();
 			
-			for (int i = 0; i < nverts; i++)
+			for (int index = ren.meshPartOffset; index < ren.meshPartOffset+ren.meshPartSize; index++)
 			{
+				int i = indices[index];
+				if (used[i]) continue;
+				used[i] = true;
+				
 				float[] varray = new float[4+bone_num*2];
 				varray[0] = r;
 				varray[1] = vertices[poff+(i*vsize)+0];
 				varray[2] = vertices[poff+(i*vsize)+1];
 				varray[3] = vertices[poff+(i*vsize)+2];
-				if (varray[1] == 0 && varray[2] == 0 && varray[3] == 0) continue;
-				int idx = 4;
-				for (int ii = 0; ii < n; ii++) {
-					final VertexAttribute attr = mesh.getVertexAttributes().get(ii);
-					int offset = attr.offset / 4;
-					if (attr.usage == Usage.BoneWeight)
-					{
-						varray[idx++] = vertices[offset+(i*vsize)+0];
-						varray[idx++] = vertices[offset+(i*vsize)+1];
+				
+				if (bone_num > 0)
+				{
+					int idx = 4;
+					for (int ii = 0; ii < n; ii++) {
+						final VertexAttribute attr = mesh.getVertexAttributes().get(ii);
+						int offset = attr.offset / 4;
+						if (attr.usage == Usage.BoneWeight)
+						{
+							varray[idx++] = vertices[offset+(i*vsize)+0];
+							varray[idx++] = vertices[offset+(i*vsize)+1];
+						}
 					}
 				}
 				vList.add(varray);
@@ -328,26 +348,33 @@ public class AnimatedModel implements Queueable {
 	@Override
 	public Vector3 getTransformedVertex(float[] values, Vector3 out)
 	{
-		tmpMat2.idt();
-		for (int i = 0; i < tmpMat.val.length; i++) tmpMat.val[i] = 0;
+		Matrix4 idtMatrix = tmpMat2.idt();
+		Matrix4 skinningMat = tmpMat;
+		
+		for (int i = 0; i < 16; i++) skinningMat.val[i] = 0;
 		Renderable r = renderables.get((int) values[0]);
 		int numbones = ( values.length - 4 ) / 2;
 		
+		float weight = 0;
 		for (int b = 0; b < numbones; b++)
 		{
 			int bmatx = (int) values[4+(b*2)+0];
-			Matrix4 bmat = r.bones == null || bmatx >= r.bones.length || r.bones[bmatx] == null ? tmpMat2 : r.bones[bmatx];
-			
-			for (int i = 0; i < bmat.val.length; i++)
+			Matrix4 bmat = r.bones == null || bmatx >= r.bones.length || r.bones[bmatx] == null ? idtMatrix : r.bones[bmatx];
+			weight += values[4+(b*2)+1];
+			for (int i = 0; i < 16; i++)
 			{
-				tmpMat.val[i] += values[4+(b*2)+1] * bmat.val[i];
+				skinningMat.val[i] += values[4+(b*2)+1] * bmat.val[i];
 			}
 		}
 		
-		if (numbones == 0) 	
-			out.set(values[1], values[2], values[3]).mul(transform);
-		else 
-			out.set(values[1], values[2], values[3]).mul(tmpMat).mul(transform);
+		weight = 1.0f - weight;
+		
+		for (int i = 0; i < 16; i++)
+		{
+			skinningMat.val[i] += weight * idtMatrix.val[i];
+		}
+		 
+		out.set(values[1], values[2], values[3]).mul(skinningMat).mul(r.worldTransform);
 		
 		return out;
 	}

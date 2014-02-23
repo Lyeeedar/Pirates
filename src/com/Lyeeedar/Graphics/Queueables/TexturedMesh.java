@@ -40,7 +40,7 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, primitive_type, cam);
+		if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, type, cam);
 	}
 
 	@Override
@@ -52,8 +52,7 @@ public final class TexturedMesh implements Queueable {
 		}
 		else
 		{
-			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			model_matrix.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
+			model_matrix.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position).translate(offset);
 		}
 	}
 
@@ -93,7 +92,7 @@ public final class TexturedMesh implements Queueable {
 	public float[][] getVertexArray()
 	{
 		final int nverts = mesh.getNumVertices();
-		final int vsize = mesh.getVertexSize();
+		final int vsize = mesh.getVertexSize() / 4;
 		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
 		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
 		

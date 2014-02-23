@@ -30,15 +30,11 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 		shaderBody.setUniformf("u_viewPos", cam.position);
 		lights.applyLights(shaderBody);
 		
-		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
-
 		for (int i = drawableManager.drawables.size; --i >= 0;) {
 
 			final Drawable drawable = drawableManager.drawables.get(i);
 			
 			shaderBody.setUniformMatrix("u_mm", drawable.model_matrix);
-			normal_matrix.set(drawable.model_matrix);
-			shaderBody.setUniformMatrix("u_nm", normal_matrix);
 
 			if (textureHash != drawable.textureHash)
 			{
@@ -56,8 +52,6 @@ public class CellShadingModelBatch extends AbstractModelBatch {
 			drawable.mesh.render(shaderBody, drawable.primitiveType);
 		}
 		
-		Pools.free(normal_matrix);
-
 		shaderBody.end();
 		textureHash = 0;
 	}
