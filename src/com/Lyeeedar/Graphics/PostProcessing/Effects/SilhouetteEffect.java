@@ -3,25 +3,16 @@ package com.Lyeeedar.Graphics.PostProcessing.Effects;
 import java.util.HashMap;
 
 import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
-import com.Lyeeedar.Graphics.Batchers.CellShadingModelBatch;
-import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
-import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
-import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
-import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
-import com.Lyeeedar.Graphics.Queueables.Queueable;
+import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Util.DiscardCameraGroupStrategy;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 
 public class SilhouetteEffect extends PostProcessingEffect {
@@ -36,6 +27,9 @@ public class SilhouetteEffect extends PostProcessingEffect {
 	protected HashMap<Class, Batch> batches;
 	
 	private final Camera cam;
+	
+	private final Color outline = new Color(1, 0, 0, 1);
+	private final Color clear = new Color(0, 0, 0, 0);
 	
 	public SilhouetteEffect(int BUFFER_WIDTH, int BUFFER_HEIGHT, Camera cam) 
 	{
@@ -62,20 +56,26 @@ public class SilhouetteEffect extends PostProcessingEffect {
 		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthFunc(GL20.GL_LESS);
 		Gdx.gl.glDepthMask(true);
+		Gdx.gl.glDisable(GL20.GL_BLEND);
 		
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+		Gdx.gl20.glLineWidth(1);
 		
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS, cam);
-		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
+		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(cam, GL20.GL_LINES, outline);		
+		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(cam, GL20.GL_LINES, outline);
+		
+		Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(cam, GL20.GL_TRIANGLES, clear);
+		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(cam, GL20.GL_TRIANGLES, clear);
 
 		downsampleBuffer.end();
 		
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		
-		blur.render(downsampleBuffer.getColorBufferTexture(), downsampleBuffer, depthTexture);
+		//blur.render(downsampleBuffer.getColorBufferTexture(), downsampleBuffer, depthTexture);
 		
 		buffer.begin();
 		
@@ -106,11 +106,11 @@ public class SilhouetteEffect extends PostProcessingEffect {
 	@Override
 	public void create() 
 	{
-		CellShadingModelBatch renderer = new CellShadingModelBatch();
-		AnimatedModelBatch modelBatch = new AnimatedModelBatch(12);
+		TexturedMeshBatch renderer = new TexturedMeshBatch(true);
+		AnimatedModelBatch modelBatch = new AnimatedModelBatch(12, true);
 		
 		batches = new HashMap<Class, Batch>();
-		batches.put(AbstractModelBatch.class, renderer);
+		batches.put(TexturedMeshBatch.class, renderer);
 		batches.put(AnimatedModelBatch.class, modelBatch);
 	}
 

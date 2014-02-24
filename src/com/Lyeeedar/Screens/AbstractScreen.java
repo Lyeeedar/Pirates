@@ -13,15 +13,13 @@ package com.Lyeeedar.Screens;
 import java.util.HashMap;
 
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
-import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
-import com.Lyeeedar.Graphics.Batchers.CellShadingModelBatch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
-import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
 import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
+import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -39,7 +37,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.Array;
  
 
 public abstract class AbstractScreen implements Screen {
@@ -52,7 +49,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final SpriteBatch spriteBatch;
 	protected final DecalBatch decalBatch;
 	protected final MotionTrailBatch trailBatch;
-	protected final AbstractModelBatch renderer;
+	protected final TexturedMeshBatch renderer;
 	protected final AnimatedModelBatch modelBatch;
 	protected final ParticleEffectBatch particleBatch;
 	protected final BitmapFont font;
@@ -90,13 +87,13 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch = new SpriteBatch();
 		decalBatch = new DecalBatch(new DiscardCameraGroupStrategy(cam));
 		trailBatch = new MotionTrailBatch();
-		renderer = new CellShadingModelBatch();
+		renderer = new TexturedMeshBatch(false);
 		particleBatch = new ParticleEffectBatch();
 		
 		modelBatch = new AnimatedModelBatch(12);
 		
 		batches = new HashMap<Class, Batch>();
-		batches.put(AbstractModelBatch.class, renderer);
+		batches.put(TexturedMeshBatch.class, renderer);
 		batches.put(AnimatedModelBatch.class, modelBatch);
 		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
 		batches.put(ModelBatchers.class, new ModelBatchers());
@@ -155,7 +152,7 @@ public abstract class AbstractScreen implements Screen {
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		
 		time = System.nanoTime();
-		((AbstractModelBatch) batches.get(AbstractModelBatch.class)).flush(GLOBALS.LIGHTS, cam);
+		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(GLOBALS.LIGHTS, cam);
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
 		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
@@ -264,7 +261,6 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch.dispose();
 		font.dispose();
 		stage.dispose();
-		renderer.dispose();
 		trailBatch.dispose();
 		decalBatch.dispose();
 		

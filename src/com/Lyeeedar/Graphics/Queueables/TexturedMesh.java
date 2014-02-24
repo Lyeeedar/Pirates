@@ -5,21 +5,16 @@ import java.util.HashMap;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
-import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
-import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Pools;
 
 public final class TexturedMesh implements Queueable {
 
@@ -43,7 +38,7 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix, type, cam);
+		if (batches.containsKey(TexturedMeshBatch.class)) ((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).add(mesh, primitive_type, textures, colour, model_matrix);
 	}
 
 	@Override

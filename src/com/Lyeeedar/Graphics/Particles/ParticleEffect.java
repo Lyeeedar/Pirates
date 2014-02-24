@@ -292,6 +292,8 @@ public class ParticleEffect implements Queueable {
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 	{
+		if (!batches.containsKey(ParticleEffectBatch.class)) return;
+		
 		if (!playing) return;
 		for (Emitter e : emitters)
 		{

@@ -122,6 +122,7 @@ public class GameScreen extends AbstractScreen {
 	private SkyBox skybox;
 	private Entity player;
 	Terrain terrain;
+	Entity ship;
 	
 	private AnimatedModel pmodel;
 	
@@ -196,7 +197,7 @@ public class GameScreen extends AbstractScreen {
 		Texture shipTex = new Texture(Gdx.files.internal("data/textures/shipTex.png"));
         Mesh shipModel = FileUtils.loadMesh("data/models/shipMesh.obj");
 		
-		Entity ship = new Entity(true, new PositionalData(), new StatusData());
+		ship = new Entity(true, new PositionalData(), new StatusData());
 		ship.readOnlyRead(PositionalData.class).calculateComposed();
 		ship.readOnlyRead(StatusData.class).solid = true;
 		
@@ -758,6 +759,9 @@ public class GameScreen extends AbstractScreen {
 	public void update(float delta) {
 		
 		GLOBALS.needsSilhouette.clear();
+		
+		GLOBALS.needsSilhouette.add(ship);
+		GLOBALS.needsSilhouette.add(player);
 		
 		if (update) update = false;
 		updateCooldown -= delta;

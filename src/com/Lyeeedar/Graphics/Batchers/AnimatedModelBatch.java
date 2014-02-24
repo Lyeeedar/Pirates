@@ -6,6 +6,7 @@ import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
@@ -20,20 +21,27 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
 
-public class AnimatedModelBatch implements Batch {
-	
+public class AnimatedModelBatch implements Batch 
+{	
+	private final boolean simpleRender;
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
 
-	private float[] bones;
-	private ShaderProgram[] shaders = new ShaderProgram[8];
+	private final float[] bones;
+	private final ShaderProgram[] shaders = new ShaderProgram[8];
 	
-	private Matrix4 idtMatrix = new Matrix4();
+	private final Matrix4 idtMatrix = new Matrix4();
 	
 	public AnimatedModelBatch(int num_bones)
 	{
-		bones = new float[num_bones * 16];
+		this(num_bones, false);
+	}
+	
+	public AnimatedModelBatch(int num_bones, boolean simpleRender)
+	{
+		this.bones = new float[num_bones * 16];
+		this.simpleRender = simpleRender;
 	}
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
@@ -49,7 +57,6 @@ public class AnimatedModelBatch implements Batch {
 	public void render(LightManager lights, Camera cam)
 	{		
 		this.cam = cam;
-		Matrix3 normal_matrix = Pools.obtain(Matrix3.class);
 
 		while (!instances.isEmpty())
 		{
@@ -113,7 +120,57 @@ public class AnimatedModelBatch implements Batch {
 		current_shader = -1;
 		textureHash = 0;
 		
-		Pools.free(normal_matrix);
+	}
+	
+	public void render(Camera cam, int primitiveType, Color colour)
+	{		
+		this.cam = cam;
+
+		while (!instances.isEmpty())
+		{
+			BatchedInstance bi = instances.poll();
+			
+			if (current_shader != bi.bone_num) 
+			{
+				if (current_shader != -1)
+				{
+					shaders[current_shader].end();
+				}
+				
+				current_shader = bi.bone_num;
+				
+				if (shaders[current_shader] == null)
+				{
+					shaders[current_shader] = createShader(bi.bone_num);
+				}
+				
+				shaders[current_shader].begin();
+				
+				shaders[current_shader].setUniformMatrix("u_pv", cam.combined);
+				
+			}
+			
+			if (bi.bone_num > 0)
+			{
+				for (int i = 0; i < bones.length; i++) {
+					final int idx = i/16;
+					bones[i] = (bi.instance.bones == null || idx >= bi.instance.bones.length || bi.instance.bones[idx] == null) ? 
+						idtMatrix.val[i%16] : bi.instance.bones[idx].val[i%16];
+				}
+				shaders[current_shader].setUniformMatrix4fv("u_bones", bones, 0, bones.length);
+			}
+			
+			shaders[current_shader].setUniformMatrix("u_mm", bi.instance.worldTransform);
+			shaders[current_shader].setUniformf("u_colour", colour);
+						
+			bi.instance.mesh.render(shaders[current_shader], primitiveType, bi.instance.meshPartOffset, bi.instance.meshPartSize);
+			
+			pool.free(bi);
+		}
+		
+		if (current_shader != -1) shaders[current_shader].end();
+		current_shader = -1;
+		textureHash = 0;		
 	}
 	
 	public ShaderProgram createShader(int bone_num)
@@ -131,7 +188,7 @@ public class AnimatedModelBatch implements Batch {
 		}
 		
 		String vert = prefix.toString() + Gdx.files.internal("data/shaders/skinned_model.vertex.glsl").readString();
-		String frag = Gdx.files.internal("data/shaders/skinned_model.fragment.glsl").readString();
+		String frag = simpleRender ? Gdx.files.internal("data/shaders/skinned_model_simple.fragment.glsl").readString() : Gdx.files.internal("data/shaders/skinned_model.fragment.glsl").readString();
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	
