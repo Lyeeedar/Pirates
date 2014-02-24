@@ -10,6 +10,7 @@ import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -28,14 +29,16 @@ public final class TexturedMesh implements Queueable {
 	public final Vector3 colour;
 	public final int type;
 	public final Matrix4 model_matrix = new Matrix4();
+	public final String name;
 	
-	public TexturedMesh(Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, int type)
+	public TexturedMesh(String name, Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, int type)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
 		this.textures = textures;
 		this.colour = colour;
 		this.type = type;
+		this.name = name;
 	}
 
 	@Override
@@ -67,7 +70,7 @@ public final class TexturedMesh implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return new TexturedMesh(mesh, primitive_type, textures, colour, type);
+		return new TexturedMesh(name, mesh, primitive_type, textures, colour, type);
 	}
 
 	@Override
@@ -91,12 +94,15 @@ public final class TexturedMesh implements Queueable {
 	@Override
 	public float[][] getVertexArray()
 	{
+		float[][] varray = FileUtils.getVertexArray(name);
+		if (varray != null) return varray;
+		
 		final int nverts = mesh.getNumVertices();
 		final int vsize = mesh.getVertexSize() / 4;
 		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
 		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
 		
-		float[][] varray = new float[nverts][3];
+		varray = new float[nverts][3];
 		
 		for (int i = 0; i < nverts; i++)
 		{
@@ -104,6 +110,8 @@ public final class TexturedMesh implements Queueable {
 			varray[i][1] = vertices[poff+(i*vsize)+1];
 			varray[i][2] = vertices[poff+(i*vsize)+2];
 		}
+		
+		FileUtils.storeVertexArray(name, varray);
 		
 		return varray;
 	}

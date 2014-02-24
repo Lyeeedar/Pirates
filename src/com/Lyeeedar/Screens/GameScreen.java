@@ -209,7 +209,7 @@ public class GameScreen extends AbstractScreen {
 		
 		//ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
 		
-		TexturedMesh shipMesh = new TexturedMesh(shipModel, GL20.GL_TRIANGLES, new Texture[]{shipTex}, new Vector3(1, 1, 1), 1);
+		TexturedMesh shipMesh = new TexturedMesh("data/models/shipMesh.obj", shipModel, GL20.GL_TRIANGLES, new Texture[]{shipTex}, new Vector3(1, 1, 1), 1);
 		
 //		for (int i = 0; i < 250; i++)
 //		{
@@ -265,22 +265,22 @@ public class GameScreen extends AbstractScreen {
 		player.setAI(btree);
 
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		hair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel axe = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-		AnimatedModel sword = new AnimatedModel(FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		hair = new AnimatedModel("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel axe = new AnimatedModel("data/models/axe.g3db", FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+		AnimatedModel sword = new AnimatedModel("data/models/sword.g3db", FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		MotionTrail axeTrail = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/death.effect");
+		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/negafire.effect");
 		ParticleEffect fire2 = FileUtils.loadParticleEffect("data/effects/death.effect");
 		ParticleEffect fire3 = FileUtils.loadParticleEffect("data/effects/death.effect");
 		ParticleEffect fire4 = FileUtils.loadParticleEffect("data/effects/death.effect");
-		TexturedMesh shield = new TexturedMesh(FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
-		hair2 = new TexturedMesh(FileUtils.loadModel("data/models/hair1.g3db").meshes.get(0), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		TexturedMesh shield = new TexturedMesh("data/models/shield.obj", FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		hair2 = new TexturedMesh("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db").meshes.get(0), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		player.addRenderable(am, new Vector3());
 		pmodel = am;
-//		player.addRenderable(fire, new Vector3());
-//		float[][] var = axe.getVertexArray();
-//		fire.setEmission(var, axe);
+		player.addRenderable(fire, new Vector3());
+		float[][] var = axe.getVertexArray();
+		fire.setEmission(var, axe);
 //		
 //		player.addRenderable(fire2, new Vector3());
 //		var = am.getVertexArray();
@@ -558,9 +558,9 @@ public class GameScreen extends AbstractScreen {
 		ge.readOnlyRead(StatusData.class).factions.add("Enemy");
 		ge.readOnlyRead(StatusData.class).speed = 15;
 		
-		AnimatedModel gam = new AnimatedModel(FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		AnimatedModel ghair = new AnimatedModel(FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel gsword = new AnimatedModel(FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
+		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel ghair = new AnimatedModel("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel gsword = new AnimatedModel("data/models/axe.g3db", FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		MotionTrail gswordTrail = new MotionTrail(60, 0.01f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ge.addRenderable(gam, new Vector3());
 		

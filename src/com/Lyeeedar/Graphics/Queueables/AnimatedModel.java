@@ -11,6 +11,7 @@ import com.Lyeeedar.Graphics.Batchers.AbstractModelBatch;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
@@ -57,6 +58,7 @@ public class AnimatedModel implements Queueable {
 	
 	protected static final RenderablePool renderablesPool = new RenderablePool();  
 	public final Array<Renderable> renderables = new Array<Renderable>();
+	private float[][] vertexArray;
 	public ModelInstance model;
 	public AnimationController anim;
 	public Texture[] textures;
@@ -65,16 +67,18 @@ public class AnimatedModel implements Queueable {
 	public String defaultAnim;
 	public String currentAnim = "";
 	public Matrix4 transform = new Matrix4();
+	public final String name;
 	
 	private AnimationDesc current;
 	
 	private final Matrix4 tmpMat = new Matrix4();
 	private final Matrix4 tmpMat2 = new Matrix4();
 	
-	public AnimatedModel(Model model, Texture[] textures, Vector3 colour, String defaultAnim)
+	public AnimatedModel(String name, Model model, Texture[] textures, Vector3 colour, String defaultAnim)
 	{		
 		this.model = new ModelInstance(model);
 		this.model.getRenderables(renderables, renderablesPool);
+		this.name = name;
 	
 		anim = new AnimationController(this.model);
 		if (defaultAnim != null)
@@ -220,7 +224,7 @@ public class AnimatedModel implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		AnimatedModel nm = new AnimatedModel(model.model, textures, colour, defaultAnim);
+		AnimatedModel nm = new AnimatedModel(name, model.model, textures, colour, defaultAnim);
 		for (ATTACHED_MODEL am : attachedModels)
 		{
 			nm.attach(am.node.id, am.queueable.copy(), am.offset);
@@ -273,6 +277,9 @@ public class AnimatedModel implements Queueable {
 	@Override
 	public float[][] getVertexArray()
 	{
+		float[][] varray = FileUtils.getVertexArray(name);
+		if (varray != null) return varray;
+		
 		float[][][] varrays = new float[renderables.size][][];
 		int total = 0;
 		for (int r = 0; r < renderables.size; r++)
@@ -306,11 +313,11 @@ public class AnimatedModel implements Queueable {
 				if (used[i]) continue;
 				used[i] = true;
 				
-				float[] varray = new float[4+bone_num*2];
-				varray[0] = r;
-				varray[1] = vertices[poff+(i*vsize)+0];
-				varray[2] = vertices[poff+(i*vsize)+1];
-				varray[3] = vertices[poff+(i*vsize)+2];
+				float[] varr = new float[4+bone_num*2];
+				varr[0] = r;
+				varr[1] = vertices[poff+(i*vsize)+0];
+				varr[2] = vertices[poff+(i*vsize)+1];
+				varr[3] = vertices[poff+(i*vsize)+2];
 				
 				if (bone_num > 0)
 				{
@@ -320,19 +327,19 @@ public class AnimatedModel implements Queueable {
 						int offset = attr.offset / 4;
 						if (attr.usage == Usage.BoneWeight)
 						{
-							varray[idx++] = vertices[offset+(i*vsize)+0];
-							varray[idx++] = vertices[offset+(i*vsize)+1];
+							varr[idx++] = vertices[offset+(i*vsize)+0];
+							varr[idx++] = vertices[offset+(i*vsize)+1];
 						}
 					}
 				}
-				vList.add(varray);
+				vList.add(varr);
 			}
 			
 			varrays[r] = vList.toArray(new float[vList.size()][]);
 			total += vList.size();
 		}
 		
-		float[][] varray = new float[total][];
+		varray = new float[total][];
 		int index = 0;
 		for (int i = 0; i < varrays.length; i++)
 		{
@@ -341,6 +348,8 @@ public class AnimatedModel implements Queueable {
 				varray[index++] = varrays[i][j];
 			}
 		}
+		
+		FileUtils.storeVertexArray(name, varray);
 		
 		return varray;
 	}

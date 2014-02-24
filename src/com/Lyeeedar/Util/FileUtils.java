@@ -23,6 +23,16 @@ import com.badlogic.gdx.utils.UBJsonReader;
 
 public class FileUtils {
 	
+	private static final HashMap<String, float[][]> cachedVertexArrays = new HashMap<String, float[][]>();
+	public static float[][] getVertexArray(String name)
+	{
+		return cachedVertexArrays.get(name);
+	}
+	public static void storeVertexArray(String name, float[][] varray)
+	{
+		cachedVertexArrays.put(name, varray);
+	}
+	
 	private static final HashMap<String, Sound> loadedSounds = new HashMap<String, Sound>();
 	
 	public static Sound loadSound(String location)

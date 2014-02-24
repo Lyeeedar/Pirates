@@ -72,6 +72,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public float particleLifetime;
 	public int blendFuncSRC;
 	public int blendFuncDST;
+	public int blendEquation;
 	public String atlasName;
 	// ----- End Emitter parameters ----- //
 
@@ -89,6 +90,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	private transient static ShaderProgram shader;
 	private transient static String currentAtlas;
 	private transient static int currentBlendSRC, currentBlendDST;
+	private transient static int currentBlendEquation;
 	public transient TextureAtlas atlas;
 	public transient Texture atlasTexture;
 	public transient int texHash;
@@ -129,7 +131,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	// ----- End Non-Essential Variables ----- //
 
 	public ParticleEmitter(float particleLifetime, float duration,
-			int blendFuncSRC, int blendFuncDST,
+			int blendFuncSRC, int blendFuncDST, int blendEquation,
 			String atlasName,
 			String name)
 	{
@@ -140,6 +142,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		this.duration = duration;
 		this.blendFuncSRC = blendFuncSRC;
 		this.blendFuncDST = blendFuncDST;
+		this.blendEquation = blendEquation;
 		this.atlasName = atlasName;
 	}
 
@@ -502,12 +505,20 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 		if (currentBlendSRC == blendFuncSRC && currentBlendDST == blendFuncDST)
 		{}
-		else {
+		else 
+		{
 			Gdx.gl.glBlendFunc(blendFuncSRC, blendFuncDST);
 			currentBlendSRC = blendFuncSRC;
 			currentBlendDST = blendFuncDST;
 		}
-
+		if (currentBlendEquation == blendEquation)
+		{}
+		else 
+		{
+			Gdx.gl20.glBlendEquation(blendEquation);
+			currentBlendEquation = blendEquation;
+		}
+		
 		if (currentAtlas != null && atlasName.equals(currentAtlas)) {
 
 		}
@@ -541,11 +552,8 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 		shader.end();
 
-		Gdx.gl.glDepthMask(true);
-		Gdx.gl.glDisable(GL20.GL_BLEND);
-
 		currentAtlas = null;
-		currentBlendSRC = currentBlendDST = 0;
+		currentBlendEquation = currentBlendSRC = currentBlendDST = Integer.MAX_VALUE;
 	}
 	
 	public void update(float delta, Camera cam)
@@ -825,7 +833,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 	public ParticleEmitter copy()
 	{
-		ParticleEmitter copy = new ParticleEmitter(particleLifetime, duration, blendFuncSRC, blendFuncDST, atlasName, name);
+		ParticleEmitter copy = new ParticleEmitter(particleLifetime, duration, blendFuncSRC, blendFuncDST, blendEquation, atlasName, name);
 		copy.maxParticles = maxParticles;
 		
 //		for (ParticleAttribute pa : ParticleAttribute.values())
@@ -1019,6 +1027,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		json.writeValue("duration", duration);
 		json.writeValue("blend func SRC", blendFuncSRC);
 		json.writeValue("blend func DST", blendFuncDST);
+		json.writeValue("blend equation", blendEquation);
 		json.writeValue("atlas name", atlasName);
 
 		if (light != null)
@@ -1061,6 +1070,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				float duration = 0;
 				int blendFuncSRC = 0;
 				int blendFuncDST = 0;
+				int blendEquation = 0;
 				String atlasName = null;
 				// ----- End Emitter parameters ----- //
 
@@ -1086,8 +1096,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				particleLifetime = jsonData.getFloat("particle lifetime");
 				duration = jsonData.getFloat("duration");
 
-				blendFuncSRC = jsonData.getInt("blend func SRC");
-				blendFuncDST = jsonData.getInt("blend func DST");
+				blendFuncSRC = jsonData.getInt("blend func SRC", GL20.GL_ONE);
+				blendFuncDST = jsonData.getInt("blend func DST", GL20.GL_ONE);
+				blendEquation = jsonData.getInt("blend equation", GL20.GL_FUNC_ADD);
 
 				atlasName = jsonData.getString("atlas name");
 
@@ -1105,7 +1116,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				}
 
 				ParticleEmitter emitter = new ParticleEmitter(particleLifetime, duration,
-						blendFuncSRC, blendFuncDST,
+						blendFuncSRC, blendFuncDST, blendEquation,
 						atlasName, name);
 				emitter.maxParticles = maxParticles;
 

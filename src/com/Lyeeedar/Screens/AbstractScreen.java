@@ -191,6 +191,8 @@ public abstract class AbstractScreen implements Screen {
 		averageParticles += System.nanoTime()-time;
 		averageParticles /= 2;
 		
+		Gdx.gl20.glBlendEquation(GL20.GL_FUNC_ADD);
+		
 		time = System.nanoTime();
 		postprocessor.end();
 		averagePost += System.nanoTime()-time;
