@@ -23,6 +23,86 @@ import com.badlogic.gdx.utils.UBJsonReader;
 
 public class FileUtils {
 	
+	private static class TextureTree
+	{
+		public final String name;
+		public final Texture[] textures;
+		public final Array<TextureTree> children = new Array<TextureTree>(false, 5);
+		
+		public TextureTree(String name, Texture[] textures)
+		{
+			this.name = name;
+			this.textures = textures;
+		}
+		
+		public void add(TextureTree tt)
+		{
+			children.add(tt);
+		}
+		
+		public TextureTree get(String textureName)
+		{
+			TextureTree found = null;
+			for (TextureTree tree : children)
+			{
+				if (tree.name.equals(textureName))
+				{
+					found = tree;
+					break;
+				}
+			}
+			return found;
+		}
+		
+	}
+	
+	private static final TextureTree cachedTextures = new TextureTree("", new Texture[]{});
+	public static Texture[] getTextureArray(String[] textureNames)
+	{
+		TextureTree current = cachedTextures;
+		for (String textureName : textureNames)
+		{
+			TextureTree tree = current.get(textureName);
+			if (tree == null)
+			{
+				int ctex = current.textures.length;
+				
+				Texture diffuse = loadTexture(textureName+"_d.png", false, null, null);
+				Texture specular = loadTexture(textureName+"_s.png", false, null, null);
+				Texture emissive = loadTexture(textureName+"_e.png", false, null, null);
+				Texture blank = loadTexture("data/textures/blank.png", true, null, null);
+				
+				int ntex = 0;
+				if (diffuse != null) ntex++;
+				if (specular != null) ntex++;
+				if (emissive != null) ntex++;
+				
+				int num = Math.max(ctex, ntex);
+				
+				Texture[] ntextures = new Texture[num];
+				
+				if (ctex > 0 && diffuse != null) ntextures[0] = ImageUtils.merge(current.textures[0], diffuse);
+				else if (ctex > 0) ntextures[0] = current.textures[0];
+				else if (diffuse != null) ntextures[0] = diffuse;
+				
+				if (ctex > 1 && specular != null) ntextures[1] = ImageUtils.merge(current.textures[1], specular);
+				else if (ctex > 1) ntextures[1] = current.textures[1];
+				else if (specular != null) ntextures[1] = specular;
+				
+				if (ctex > 2 && emissive != null) ntextures[2] = ImageUtils.merge(current.textures[2], emissive);
+				else if (ctex > 2) ntextures[2] = current.textures[2];
+				else if (emissive != null) ntextures[2] = emissive;
+				
+				tree = new TextureTree(textureName, ntextures);
+				
+				current.add(tree);
+			}
+			current = tree;
+		}
+		return current.textures;
+	}
+
+	
 	private static final HashMap<String, float[][]> cachedVertexArrays = new HashMap<String, float[][]>();
 	public static float[][] getVertexArray(String name)
 	{

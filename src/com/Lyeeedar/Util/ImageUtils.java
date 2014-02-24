@@ -93,9 +93,7 @@ public final class ImageUtils {
 	{
 		final int width = bp.getWidth();
 		final int height = bp.getHeight();
-		
-		//bp.drawPixmap(bp, 0, 0, 0, 0, width, height);
-		
+				
 		Color cb = new Color();
 		Color ca = new Color();
 

@@ -10,6 +10,7 @@ import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
@@ -56,10 +57,11 @@ public class AnimatedModel implements Queueable {
 	
 	protected static final RenderablePool renderablesPool = new RenderablePool();  
 	public final Array<Renderable> renderables = new Array<Renderable>();
-	private float[][] vertexArray;
 	public ModelInstance model;
 	public AnimationController anim;
 	public Texture[] textures;
+	public Texture[] detail = new Texture[3];
+	public DetailController detailController;
 	public Vector3 colour = new Vector3();
 	public Array<ATTACHED_MODEL> attachedModels = new Array<ATTACHED_MODEL>();
 	public String defaultAnim;
@@ -88,6 +90,11 @@ public class AnimatedModel implements Queueable {
 		this.defaultAnim = defaultAnim;
 	}
 	
+	public void setDetailController(DetailController dc)
+	{
+		this.detailController = dc;
+	}
+	
 	public void attach(String nodeName, Queueable model, Matrix4 offset)
 	{
 		Node node = null;
@@ -101,8 +108,7 @@ public class AnimatedModel implements Queueable {
 	
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) {
-		if (batches.containsKey(AnimatedModelBatch.class)) ((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(renderables, textures, colour);
-		//if (batches.containsKey(AbstractModelBatch.class)) ((AbstractModelBatch) batches.get(AbstractModelBatch.class)).add(model.model.meshes.get(0), GL20.GL_TRIANGLES, textures, colour, transform, 1, cam);
+		if (batches.containsKey(AnimatedModelBatch.class)) ((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).add(renderables, textures, detail, colour);
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
@@ -156,6 +162,7 @@ public class AnimatedModel implements Queueable {
 		{
 			current = anim.animate(aData.anim, 1, aData.animate_speed, aData.listener, 0.1f);
 			currentAnim = aData.anim;
+			aData.listener = null;
 		}
 		else
 		{
@@ -209,15 +216,13 @@ public class AnimatedModel implements Queueable {
 		renderablesPool.freeAll(renderables);
 		renderables.clear();
 		model.getRenderables(renderables, renderablesPool);
-//		for (Renderable r : renderables)
-//		{
-//			r.worldTransform.set(transform);
-//		}
 		
 		for (ATTACHED_MODEL am : attachedModels)
 		{
 			am.queueable.update(delta, cam, lights);
 		}
+
+		if (detailController != null) detailController.update(delta, cam, lights, this);
 	}
 
 	@Override

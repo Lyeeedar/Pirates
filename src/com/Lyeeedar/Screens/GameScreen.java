@@ -83,6 +83,7 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
 import com.Lyeeedar.Util.CircularArrayRing;
+import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
 import com.Lyeeedar.Util.FileUtils;
@@ -266,23 +267,26 @@ public class GameScreen extends AbstractScreen {
 		player.setAI(btree);
 
 		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin", "data/textures/tattered_shirt"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		hair = new AnimatedModel("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
 		AnimatedModel axe = new AnimatedModel("data/models/axe.g3db", FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
 		AnimatedModel sword = new AnimatedModel("data/models/sword.g3db", FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
+		AnimatedModel trousers = new AnimatedModel("data/models/breastplate.g3db", FileUtils.loadModel("data/models/breastplate.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/breastplate"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		MotionTrail axeTrail = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/negafire.effect");
 		ParticleEffect fire2 = FileUtils.loadParticleEffect("data/effects/death.effect");
 		ParticleEffect fire3 = FileUtils.loadParticleEffect("data/effects/death.effect");
 		ParticleEffect fire4 = FileUtils.loadParticleEffect("data/effects/death.effect");
-		TexturedMesh shield = new TexturedMesh("data/models/shield.obj", FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		TexturedMesh shield = new TexturedMesh("data/models/shield.obj", FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null), FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		hair2 = new TexturedMesh("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db").meshes.get(0), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1, 1, 1), 1);
 		player.addRenderable(am, new Vector3());
+		//player.addRenderable(trousers, new Vector3());
 		pmodel = am;
-		player.addRenderable(fire, new Vector3());
-		float[][] var = axe.getVertexArray();
-		fire.setEmission(var, axe);
-//		
+		am.setDetailController(new DetailController());
+//		player.addRenderable(fire, new Vector3());
+//		float[][] var = axe.getVertexArray();
+//		fire.setEmission(var, axe);
+////		
 //		player.addRenderable(fire2, new Vector3());
 //		var = am.getVertexArray();
 //		fire2.setEmission(var, am);

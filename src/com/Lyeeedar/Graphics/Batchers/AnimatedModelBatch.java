@@ -110,6 +110,21 @@ public class AnimatedModelBatch implements Batch
 				}
 				textureHash = bi.texHash;
 			}
+			
+			if (bi.dtex != null)
+			{
+				int di = 4;
+				for (Texture tex : bi.dtex)
+				{
+					if (tex != null)
+					{
+						tex.bind(di);
+						shaders[current_shader].setUniformi("u_detail"+(di-4), di);
+						di++;
+					}
+				}
+				shaders[current_shader].setUniformi("u_detailNum", di-4);
+			}
 						
 			bi.instance.mesh.render(shaders[current_shader], bi.instance.primitiveType, bi.instance.meshPartOffset, bi.instance.meshPartSize);
 			
@@ -197,14 +212,14 @@ public class AnimatedModelBatch implements Batch
 		return shader;
 	}
 	
-	public void add(Array<Renderable> renderables, Texture[] tex, Vector3 colour)
+	public void add(Array<Renderable> renderables, Texture[] tex, Texture[] dtex, Vector3 colour)
 	{
 		if (cam == null) return;
 		
 		for (Renderable r : renderables)
 		{
 			tmp.set(0, 0, 0).mul(r.worldTransform);
-			instances.add(pool.obtain().set(r, tex, colour, -tmp.dst2(cam.position)));
+			instances.add(pool.obtain().set(r, tex, dtex, colour, -tmp.dst2(cam.position)));
 		}
 	}
 
@@ -215,10 +230,11 @@ public class AnimatedModelBatch implements Batch
 		private float dist;
 		public int bone_num;
 		public Texture[] tex;
+		public Texture[] dtex;
 		public Vector3 colour = new Vector3();
 		public int texHash;
 		
-		public BatchedInstance set(Renderable instance, Texture[] tex, Vector3 colour, float dist)
+		public BatchedInstance set(Renderable instance, Texture[] tex, Texture[] dtex, Vector3 colour, float dist)
 		{
 			bone_num = 0;
 			final int n = instance.mesh.getVertexAttributes().size();
@@ -230,6 +246,7 @@ public class AnimatedModelBatch implements Batch
 			
 			this.instance = instance;
 			this.tex = tex;
+			this.dtex = dtex;
 			this.texHash = tex[0].hashCode();
 			this.colour.set(colour);
 			this.dist = dist;
