@@ -1,6 +1,8 @@
 package com.Lyeeedar.Entities.Items;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Items.Equipment.EquipmentGraphics;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Util.Pools;
@@ -13,9 +15,9 @@ public class Armour extends Equipment<Armour> {
 		super();
 	}
 	
-	public Armour(SPRITESHEET spritesheet, DESCRIPTION desc)
+	public Armour(EquipmentGraphics equipmentGraphics, DESCRIPTION desc)
 	{
-		super(spritesheet, desc);
+		super(equipmentGraphics, desc);
 	}
 	
 	@Override
@@ -51,6 +53,13 @@ public class Armour extends Equipment<Armour> {
 	public void dispose() {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void addRequiredQueueables(AnimatedModel model)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }

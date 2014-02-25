@@ -11,6 +11,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Items.Equipment.EquipmentGraphics;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.MotionTrail;
@@ -19,6 +20,7 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.CircularArrayRing;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
@@ -49,7 +51,6 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	public final HashMap<String, Object> data = new HashMap<String, Object>();
 	
 	private final AnimationData aData = new AnimationData();
-	private final PositionalData pData = new PositionalData();
 
 	private Entity holder;
 
@@ -58,9 +59,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		super();
 	}
 	
-	public Weapon(ATTACK_STAGE[] attacks, SPRITESHEET spritesheet, DESCRIPTION desc, float speed, float linkTime, ATTACK_STAGE charge, ATTACK_STAGE recoil)
+	public Weapon(ATTACK_STAGE[] attacks, EquipmentGraphics equipmentGraphics, DESCRIPTION desc, float speed, float linkTime, ATTACK_STAGE charge, ATTACK_STAGE recoil)
 	{
-		super(spritesheet, desc);
+		super(equipmentGraphics, desc);
 		this.hitSpeed = speed;
 		this.linkTime = linkTime;
 		this.attacks = attacks;
@@ -219,6 +220,26 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 	}
 	
+	@Override
+	public void addRequiredQueueables(AnimatedModel model)
+	{
+		if (charge != null && charge.begin != null) charge.begin.addRequiredQueueables(model);
+		if (charge != null && charge.middle != null) charge.middle.addRequiredQueueables(model);
+		if (charge != null && charge.end != null) charge.end.addRequiredQueueables(model);
+		
+		if (recoil != null && recoil.begin != null) recoil.begin.addRequiredQueueables(model);
+		if (recoil != null && recoil.middle != null) recoil.middle.addRequiredQueueables(model);
+		if (recoil != null && recoil.end != null) recoil.end.addRequiredQueueables(model);
+		
+		
+		for (ATTACK_STAGE as : attacks)
+		{
+			if (as.begin != null) as.begin.addRequiredQueueables(model);
+			if (as.middle != null) as.middle.addRequiredQueueables(model);
+			if (as.end != null) as.end.addRequiredQueueables(model);
+		}
+	}
+	
 	public static class ATTACK_STAGE
 	{
 		public String animationName;
@@ -266,6 +287,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public void evaluate(float delta, Entity entity, HashMap<String, Object> data);
 		public void end(Entity entity, HashMap<String, Object> data);
 		
+		public void addRequiredQueueables(AnimatedModel model);
+		
 		public boolean needsRecoil();
 	}
 	
@@ -295,6 +318,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public boolean needsRecoil()
 		{
 			return false;
+		}
+
+		@Override
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			// TODO Auto-generated method stub
+			
 		}
 		
 	}
@@ -350,6 +380,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			return false;
 		}
+
+		@Override
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			// TODO Auto-generated method stub
+			
+		}
 	}
 	
 	public static class AttackSpellCast implements AttackAction
@@ -367,13 +404,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		private int i;
 		
-		public AttackSpellCast(Entity baseSpell, AnimatedModel model)
+		public AttackSpellCast(Entity baseSpell)
 		{
 			this.baseSpell = baseSpell;
 			baseSpell.readData(pData);
 			pData.createCallback();
 			baseSpell.writeData(pData);
-			this.model = model;
 		}
 		
 		@Override
@@ -433,6 +469,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			return false;
 		}
+
+		@Override
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			this.model = model;
+		}
 		
 	}
 	
@@ -444,10 +486,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		Vector3 tmpVec = new Vector3();
 		Matrix4 tmp = new Matrix4();
 		
-		public AttackActionParticleEffect(AnimatedModel model, String effect)
+		public AttackActionParticleEffect(String effect)
 		{
 			this.effect = effect;
-			this.model = model;
 		}
 		
 		@Override
@@ -479,6 +520,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public boolean needsRecoil()
 		{
 			return false;
+		}
+
+		@Override
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			this.model = model;			
 		}
 		
 	}
@@ -518,11 +565,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		private final float startCollide;
 		private final float endCollide;
 		
-		public AttackMotionTrail(AnimatedModel weaponModel, AnimatedModel animationModel, MotionTrail mt, int damage, int damageVar, float startCollide, float endCollide)
+		public AttackMotionTrail(int damage, int damageVar, float startCollide, float endCollide)
 		{
-			this.weaponModel = weaponModel;
-			this.animationModel = animationModel;
-			this.mt = mt;
 			this.damage = damage;
 			this.damageVar = damageVar;
 			
@@ -655,6 +699,15 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public boolean needsRecoil()
 		{
 			return needsRecoil;
+		}
+
+		@Override
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			weaponModel = model;
+			animationModel = model.parent;
+			mt = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+			model.attach(null, mt, new Matrix4(), "MotionTrail");
 		}
 	}
 }

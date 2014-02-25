@@ -56,6 +56,8 @@ import com.Lyeeedar.Entities.AI.Selector.PrioritySelector;
 import com.Lyeeedar.Entities.AI.Selector.RandomSelector;
 import com.Lyeeedar.Entities.AI.Selector.SequenceSelector;
 import com.Lyeeedar.Entities.Items.Armour;
+import com.Lyeeedar.Entities.Items.Equipment.EquipmentGraphics;
+import com.Lyeeedar.Entities.Items.Equipment.EquipmentModel;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
@@ -135,6 +137,7 @@ public class GameScreen extends AbstractScreen {
 	Terrain terrain;
 	Entity ship;
 	MessageList message = new MessageList(30, 10);
+	Weapon weapon;
 	
 	private AnimatedModel pmodel;
 	
@@ -198,11 +201,8 @@ public class GameScreen extends AbstractScreen {
 		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
 		// END HEIGHTMAP
-
-//		for (Entity e : ae)
-//		{
-//			bw.add(e);
-//		}
+		
+		System.out.println("heightmap done");
 		
 		// MAKE SHIP
 		
@@ -248,6 +248,8 @@ public class GameScreen extends AbstractScreen {
 		
 		// END SHIP
 		
+		System.out.println("ship done");
+		
 		//  MAKE SKYBOX
 		
 		Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
@@ -258,6 +260,8 @@ public class GameScreen extends AbstractScreen {
 		skybox = new SkyBox(sea, weather);
 		
 		// END SKYBOX
+		
+		System.out.println("skybox done");
 		
 		// MAKE PLAYER
 		
@@ -277,47 +281,10 @@ public class GameScreen extends AbstractScreen {
 		
 		player.setAI(btree);
 
-		Mesh playerMesh = FileUtils.loadMesh("data/models/human.obj");
-		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin", "data/textures/tattered_shirt"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		hair = new AnimatedModel("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel axe = new AnimatedModel("data/models/axe.g3db", FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-		AnimatedModel sword = new AnimatedModel("data/models/sword.g3db", FileUtils.loadModel("data/models/sword.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/sword_d.png", true, null, null), FileUtils.loadTexture("data/textures/sword_s.png", true, null, null), FileUtils.loadTexture("data/textures/sword_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel trousers = new AnimatedModel("data/models/breastplate.g3db", FileUtils.loadModel("data/models/breastplate.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/breastplate"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		MotionTrail axeTrail = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
-		ParticleEffect fire = FileUtils.loadParticleEffect("data/effects/negafire.effect");
-		ParticleEffect fire2 = FileUtils.loadParticleEffect("data/effects/death.effect");
-		ParticleEffect fire3 = FileUtils.loadParticleEffect("data/effects/death.effect");
-		ParticleEffect fire4 = FileUtils.loadParticleEffect("data/effects/death.effect");
-		TexturedMesh shield = new TexturedMesh("data/models/shield.obj", FileUtils.loadMesh("data/models/shield.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/shield.png", true, null, null), FileUtils.loadTexture("data/textures/shield.png", true, null, null)}, new Vector3(1, 1, 1), 1);
-		hair2 = new TexturedMesh("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db").meshes.get(0), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		player.addRenderable(am, new Vector3());
-		//player.addRenderable(trousers, new Vector3());
 		pmodel = am;
 		am.setDetailController(new DetailController());
-//		player.addRenderable(fire, new Vector3());
-//		float[][] var = axe.getVertexArray();
-//		fire.setEmission(var, axe);
-////		
-//		player.addRenderable(fire2, new Vector3());
-//		var = am.getVertexArray();
-//		fire2.setEmission(var, am);
-//		
-//		player.addRenderable(fire3, new Vector3());
-//		var = hair.getVertexArray();
-//		System.out.println(var.length);
-//		fire3.setEmission(var, hair);
-//		
-//		player.addRenderable(fire4, new Vector3());
-//		var = shield.getVertexArray();
-//		fire4.setEmission(var, shield);
-		
-		am.attach("DEF-head", hair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		//am.attach("DEF-head", hair2, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		am.attach("DEF-palm_01_R", axe, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20));
-		am.attach("DEF-forearm_02_L", shield, new Matrix4().rotate(0, 1, 0, 90).translate(0.2f, 0, 0));
-		am.attach(null, axeTrail, new Matrix4());
-				
-		//player.readOnlyRead(PositionalData.class).scale.set(2, 2, 2);
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
 		player.readOnlyRead(StatusData.class).mass = 2f;
@@ -326,54 +293,19 @@ public class GameScreen extends AbstractScreen {
 		
 		EquipmentData eData = new EquipmentData();
 		player.readData(eData);
-		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
-		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.HEAD), null));
-		eData.equip(Equipment_Slot.LEGS, new Armour(new SPRITESHEET("BasicClothes", new Color(0.4f, 0.5f, 1.0f, 1.0f), 0, SpriteLayer.TOP), null));
+		eData.am = am;
+		eData.equip(Equipment_Slot.BODY, new Armour(new EquipmentGraphics("data/textures/skin", null), null));
+		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
 		ATTACK_STAGE[] wattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 70, 90), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(axe, am, axeTrail, 200, 10, 81, 91), new AttackActionParticleEffect(axe, "data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(200, 10, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(200, 10, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(200, 10, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
 		};
-		eData.equip(Equipment_Slot.RARM, new Weapon(wattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(axe, "data/effects/sparks.effect"), null, null, 0, -1)));
+		EquipmentGraphics axeg = new EquipmentGraphics("data/textures/plate", new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
+		weapon = new Weapon(wattacks, axeg, new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1));
+		eData.equip(Equipment_Slot.RARM, weapon);
 		
-//		Entity spell = new Entity(false, new PositionalData(), new StatusData());
-//		Sprite2D orb = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/minun.png", true, null, null))), 1, 1);
-//		MotionTrail trailX = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(-1, 0, 0), new Vector3(1, 0, 0));
-//		MotionTrail trailY = new MotionTrail(60, 0.05f, new Color(1, 1, 0.7f, 0.5f), FileUtils.loadTexture("data/textures/gradient.png", true, null, null), new Vector3(0, -1, 0), new Vector3(0, 1, 0));
-//		spell.addRenderable(orb, new Vector3());
-//		spell.addRenderable(trailX, new Vector3());
-//		spell.addRenderable(trailY, new Vector3());
-//		spell.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
-//		spell.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
-//		spell.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
-//		spell.readOnlyRead(StatusData.class).mass = 0.0f;
-//		
-//		Selector sssspselect = new PrioritySelector();
-//		sssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-//		sssspselect.addNode(new ConditionalCollided(BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
-//		
-//		Selector ssssselect = new SequenceSelector();
-//		ssssselect.addNode(new ActionKill());
-//		ssssselect.addNode(new ActionSetParticleEffect("data/effects/explosion.effect"));
-//		ssssselect.addNode(new ActionApplySpellEffect(new RepeatingSpellEffect(new SpellPayloadHP(15), 5), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
-//		ssssselect.addNode(sssspselect);
-//		
-//		Selector ssspselect = new PrioritySelector();
-//		ssspselect.addNode(new ActionMoveTo(true, 0, "Enemy"));
-//		ssspselect.addNode(ssssselect);
-//		
-//		Selector sssselect = new ConcurrentSelector();
-//		BehaviourTree ssbtree = new BehaviourTree(sssselect);
-//		sssselect.addNode(new ActionGravityAndMovement());
-//		sssselect.addNode(ssspselect);
-//		
-//		spell.setAI(ssbtree);
-//		ATTACK_STAGE[] sattacks = {
-//				new ATTACK_STAGE("charge_off", 1.0f, 0, null, null, null, 0, 0)
-//		};
-//		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, new ATTACK_STAGE("charge_off", 1.0f, -1, null, new AttackActionLockOn(cam, 250, 2, false, 0.1f, new Vector3(0.1f, 1.0f, 0.0f)), null, 0, 0), null));
-//		
 		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
 		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
 		spell2.addRenderable(orb2, new Vector3());
@@ -408,11 +340,11 @@ public class GameScreen extends AbstractScreen {
 		
 		spell2.setAI(sssbtree);
 		ATTACK_STAGE[] sattacks = {
-				new ATTACK_STAGE("cast_off_2", 1.0f, 1, null, null, new AttackSpellCast(spell2, axe), 0, 0),
-				new ATTACK_STAGE("cast_off_1", 1.0f, 2, null, null, new AttackSpellCast(spell2, axe), 0, 0),
-				new ATTACK_STAGE("cast_off_2", 1.0f, -1, null, null, new AttackSpellCast(spell2, axe), 0, 0)
+				new ATTACK_STAGE("cast_off_2", 1.0f, 1, null, null, new AttackSpellCast(spell2), 0, 0),
+				new ATTACK_STAGE("cast_off_1", 1.0f, 2, null, null, new AttackSpellCast(spell2), 0, 0),
+				new ATTACK_STAGE("cast_off_2", 1.0f, -1, null, null, new AttackSpellCast(spell2), 0, 0)
 		};
-		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
+		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new EquipmentGraphics(null, new EquipmentModel("data/models/bone-only.g3db", new String[]{"data/textures/blank"}, null, new Vector3(), "DEF-palm_01_L", new Matrix4())), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
 		
 		player.writeData(eData);
 		
@@ -427,6 +359,8 @@ public class GameScreen extends AbstractScreen {
 		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
 		// END PLAYER
+		
+		System.out.println("player done");
 		
 		// MAKE NPC 1
 		
@@ -459,11 +393,13 @@ public class GameScreen extends AbstractScreen {
 		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
 		npc.readOnlyRead(StatusData.class).factions.add("Player");
 		npc.readData(eData);
-		eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
-		eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
+		//eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+		//eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
 		npc.writeData(eData);
 		
 		// END NPC 1
+		
+		System.out.println("npc1 done");
 		
 		// MAKE ENEMIES
 		
@@ -480,6 +416,8 @@ public class GameScreen extends AbstractScreen {
 		}
 		
 		// END ENEMIES
+		
+		System.out.println("enemies done");
 		
 		// MAKE TREES
 		
@@ -498,6 +436,8 @@ public class GameScreen extends AbstractScreen {
 		veggies.clear();
 		
 		// END TREES
+		
+		System.out.println("trees done");
 		
 		// MAKE GRASS
 		
@@ -520,6 +460,8 @@ public class GameScreen extends AbstractScreen {
 		veggies.clear();
 		
 		// END GRASS
+		
+		System.out.println("grass done");
 	}
 	
 	private Entity makeEntity(Entity leader, Octtree<Entity> rw, BulletWorld bw)
@@ -579,25 +521,24 @@ public class GameScreen extends AbstractScreen {
 		ge.readOnlyRead(StatusData.class).factions.add("Enemy");
 		ge.readOnlyRead(StatusData.class).speed = 15;
 		
-		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/skin_d.png", true, null, null), FileUtils.loadTexture("data/textures/skin_s.png", true, null, null)}, new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		AnimatedModel ghair = new AnimatedModel("data/models/hair1.g3db", FileUtils.loadModel("data/models/hair1.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/hair.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), null);
-		AnimatedModel gsword = new AnimatedModel("data/models/axe.g3db", FileUtils.loadModel("data/models/axe.g3db"), new Texture[]{FileUtils.loadTexture("data/textures/axe_d.png", true, null, null), FileUtils.loadTexture("data/textures/axe_s.png", true, null, null), FileUtils.loadTexture("data/textures/axe_e.png", true, null, null)}, new Vector3(1.0f, 1.0f, 1.0f), "idle");
-		MotionTrail gswordTrail = new MotionTrail(60, 0.01f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
+		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		ge.addRenderable(gam, new Vector3());
-		
-		gam.attach("DEF-head", ghair, new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0));
-		gam.attach("DEF-palm_01_R", gsword, new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, 20));
-		gam.attach(null, gswordTrail, new Matrix4());
-		
+				
 		ATTACK_STAGE[] gwattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 70, 90), new AttackActionParticleEffect(gsword, "data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(gsword, gam, gswordTrail, 20, 10, 81, 91), new AttackActionParticleEffect(gsword, "data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(20, 10, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(20, 10, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(20, 10, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
 		};
 		
 		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
-		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(gsword, "data/effects/sparks.effect"), null, null, 0, -1)));
+		eData.am = gam;
+		
+		eData.equip(Equipment_Slot.BODY, new Armour(new EquipmentGraphics("data/textures/skin", null), null));
+		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
+		
+		EquipmentGraphics axeg = new EquipmentGraphics(null, new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
+		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, axeg, new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1)));
 		Item item = new Item(new DESCRIPTION("Orb", "An Orb", ITEM_TYPE.MISC, "data/textures/orb.png"));
 		item.dropRate = 50;
 		eData.addItem(item);
@@ -750,8 +691,9 @@ public class GameScreen extends AbstractScreen {
 	Random ran = new Random();
 	PositionalData pData = new PositionalData();
 	boolean lockOn = false;
-	CircularArrayRing<Entity> lockOnArr = new CircularArrayRing<Entity>(1);
-	Vector3 lockOnCol = new Vector3(1, 1, 1);
+	boolean flip = false;
+	boolean equipped = true;
+
 	@Override
 	public void update(float delta) {
 		
@@ -878,6 +820,28 @@ public class GameScreen extends AbstractScreen {
 		
 		GLOBALS.proccessPendingEntities();
 		
+		if (Gdx.input.isKeyPressed(Keys.R))
+		{
+			if (!flip)
+			{
+				if (equipped)
+				{
+					player.readOnlyRead(EquipmentData.class).unequip(Equipment_Slot.RARM);
+					equipped = false;
+				}
+				else
+				{
+					player.readOnlyRead(EquipmentData.class).equip(Equipment_Slot.RARM, weapon);
+					equipped = true;
+				}
+			}
+			flip = true;
+		}
+		else
+		{
+			flip = false;
+		}
+		
 		if (Gdx.input.isKeyPressed(Keys.TAB))
 		{
 			if (lockOn)
@@ -894,7 +858,6 @@ public class GameScreen extends AbstractScreen {
 				}
 				else
 				{
-					lockOnArr.clear();
 					PositionalData pData = player.readOnlyRead(PositionalData.class);
 					StatusData sData = player.readOnlyRead(StatusData.class);
 					Entity closest = null;

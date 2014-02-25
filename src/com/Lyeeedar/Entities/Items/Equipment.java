@@ -3,27 +3,27 @@ package com.Lyeeedar.Entities.Items;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 
-public abstract class Equipment<E extends Equipment<E>> extends Item {
-	
-	public SPRITESHEET spritesheet = null;
-	
-	public static final int START_FRAME = 0;
-	public static final int END_FRAME = 3;
-	
-	public Equipment_Slot equipped = null;
+public abstract class Equipment<E extends Equipment<E>> extends Item 
+{
+	public EquipmentGraphics equipmentGraphics;
+	public Equipment_Slot equipped;
 	
 	public Equipment()
 	{
 		super();
 	}
 	
-	public Equipment(SPRITESHEET spritesheet, DESCRIPTION desc)
+	public Equipment(EquipmentGraphics equipmentGraphics, DESCRIPTION desc)
 	{
 		super(desc);
-		this.spritesheet = spritesheet;
+		this.equipmentGraphics = equipmentGraphics;
 	}
 	
 	public void playAnimation(AnimationData aData, String animationName)
@@ -34,8 +34,6 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 		aData.anim = animationName;
 		aData.playAnimation = 0;
 		aData.nextAnimation = aData.animation;
-		aData.startFrame = START_FRAME;
-		aData.endFrame = END_FRAME;
 		aData.useDirection = true;
 	}
 	
@@ -44,7 +42,7 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	{
 		super.set(other);
 		Equipment<E> cother = (Equipment<E>) other;
-		this.spritesheet = cother.spritesheet;
+		cother.equipmentGraphics = equipmentGraphics;
 		return this;
 	}
 	
@@ -52,4 +50,37 @@ public abstract class Equipment<E extends Equipment<E>> extends Item {
 	public abstract void use();
 	public abstract void stopUsing();
 	public abstract void dispose();
+	public abstract void addRequiredQueueables(AnimatedModel model);
+	
+	public static class EquipmentGraphics
+	{
+		public Array<String> textureNames = new Array<String>();
+		public Array<EquipmentModel> models = new Array<EquipmentModel>();
+		
+		public EquipmentGraphics(String tex, EquipmentModel model)
+		{
+			if (tex != null) textureNames.add(tex);
+			if (model != null) models.add(model);
+		}
+	}
+	
+	public static class EquipmentModel
+	{
+		public final String modelName;
+		public final String[] textureNames;
+		public final String defaultAnim;
+		public final Vector3 colour = new Vector3();
+		public final String nodeName;
+		public final Matrix4 transform = new Matrix4();
+		
+		public EquipmentModel(String modelName, String[] textureNames, String defaultAnim, Vector3 colour, String nodeName, Matrix4 transform)
+		{
+			this.modelName = modelName;
+			this.textureNames = textureNames;
+			this.defaultAnim = defaultAnim;
+			this.colour.set(colour);
+			this.nodeName = nodeName;
+			this.transform.set(transform);
+		}
+	}
 }

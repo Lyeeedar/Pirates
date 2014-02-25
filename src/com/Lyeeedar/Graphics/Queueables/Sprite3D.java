@@ -124,53 +124,53 @@ public class Sprite3D implements Queueable {
 
 	public void updateSpritesheets(Entity source)
 	{
-		source.readData(eData);
-
-		for (SpriteLayer layer : SpriteLayer.values())
-		{
-			for (SPRITESHEET s : layers.get(layer))
-			{
-				s.found = false;
-			}
-		}
-		boolean update = false;
-		Iterator<Equipment<?>> itr = eData.iterator();
-		while (itr.hasNext())
-		{
-			Equipment<?> equip = itr.next();
-			if (equip == null || equip.spritesheet == null) continue;
-			SortedSet<SPRITESHEET> layer = layers.get(equip.spritesheet.layer);
-			boolean found = false;
-			for (SPRITESHEET s : layer)
-			{
-				if (s.filename.equals(equip.spritesheet.filename)) 
-				{
-					s.found = true;
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				update = true;
-				layer.add(equip.spritesheet);
-				equip.spritesheet.found = true;
-			}
-		}
-		for (SpriteLayer layer : SpriteLayer.values())
-		{
-			Iterator<SPRITESHEET> i = layers.get(layer).iterator();
-			while (i.hasNext())
-			{
-				SPRITESHEET s = i.next();
-				if (!s.found) 
-				{
-					i.remove();
-					update = true;
-				}
-			}
-		}
-		if (update) create();
+//		source.readData(eData);
+//
+//		for (SpriteLayer layer : SpriteLayer.values())
+//		{
+//			for (SPRITESHEET s : layers.get(layer))
+//			{
+//				s.found = false;
+//			}
+//		}
+//		boolean update = false;
+//		Iterator<Equipment<?>> itr = eData.iterator();
+//		while (itr.hasNext())
+//		{
+//			Equipment<?> equip = itr.next();
+//			if (equip == null || equip.spritesheet == null) continue;
+//			SortedSet<SPRITESHEET> layer = layers.get(equip.spritesheet.layer);
+//			boolean found = false;
+//			for (SPRITESHEET s : layer)
+//			{
+//				if (s.filename.equals(equip.spritesheet.filename)) 
+//				{
+//					s.found = true;
+//					found = true;
+//					break;
+//				}
+//			}
+//			if (!found)
+//			{
+//				update = true;
+//				layer.add(equip.spritesheet);
+//				equip.spritesheet.found = true;
+//			}
+//		}
+//		for (SpriteLayer layer : SpriteLayer.values())
+//		{
+//			Iterator<SPRITESHEET> i = layers.get(layer).iterator();
+//			while (i.hasNext())
+//			{
+//				SPRITESHEET s = i.next();
+//				if (!s.found) 
+//				{
+//					i.remove();
+//					update = true;
+//				}
+//			}
+//		}
+//		if (update) create();
 	}
 	
 	@Override

@@ -58,6 +58,7 @@ public class AnimatedModel implements Queueable {
 	protected static final RenderablePool renderablesPool = new RenderablePool();  
 	public final Array<Renderable> renderables = new Array<Renderable>();
 	public ModelInstance model;
+	public AnimatedModel parent;
 	public AnimationController anim;
 	public Texture[] textures;
 	public Texture[] detail = new Texture[3];
@@ -95,7 +96,7 @@ public class AnimatedModel implements Queueable {
 		this.detailController = dc;
 	}
 	
-	public void attach(String nodeName, Queueable model, Matrix4 offset)
+	public void attach(String nodeName, Queueable model, Matrix4 offset, String name)
 	{
 		Node node = null;
 		if (nodeName != null)
@@ -103,7 +104,23 @@ public class AnimatedModel implements Queueable {
 			 node = this.model.getNode(nodeName, true);
 			 if (node == null) System.err.println("Failed to find node "+nodeName);
 		}
-		attachedModels.add(new ATTACHED_MODEL(node, model, offset));
+		attachedModels.add(new ATTACHED_MODEL(node, model, offset, name));
+		if (model instanceof AnimatedModel) ((AnimatedModel) model).parent = this;
+	}
+	
+	public Queueable remove(String name)
+	{
+		for (int i = 0; i < attachedModels.size; i++)
+		{
+			ATTACHED_MODEL am = attachedModels.get(i);
+			if (am.name.equals(name))
+			{
+				attachedModels.removeIndex(i);
+				if (am.queueable instanceof AnimatedModel) ((AnimatedModel) am.queueable).parent = null;
+				return am.queueable;
+			}
+		}
+		return null;
 	}
 	
 	@Override
@@ -230,7 +247,7 @@ public class AnimatedModel implements Queueable {
 		AnimatedModel nm = new AnimatedModel(name, model.model, textures, colour, defaultAnim);
 		for (ATTACHED_MODEL am : attachedModels)
 		{
-			nm.attach(am.node.id, am.queueable.copy(), am.offset);
+			nm.attach(am.node.id, am.queueable.copy(), am.offset, am.name);
 		}
 		return nm;
 	}
@@ -248,12 +265,14 @@ public class AnimatedModel implements Queueable {
 		public Node node;
 		public Queueable queueable;
 		public Matrix4 offset = new Matrix4();
+		public String name;
 		
-		public ATTACHED_MODEL(Node node, Queueable model, Matrix4 offset)
+		public ATTACHED_MODEL(Node node, Queueable model, Matrix4 offset, String name)
 		{
 			this.node = node;
 			this.queueable = model;
 			this.offset.set(offset);
+			this.name = name;
 		}
 	}
 

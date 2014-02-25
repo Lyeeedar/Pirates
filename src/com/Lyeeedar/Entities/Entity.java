@@ -14,13 +14,16 @@ import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity.EntityData.EntityDataType;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.Items.Equipment;
+import com.Lyeeedar.Entities.Items.Equipment.EquipmentModel;
 import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
 import com.badlogic.gdx.math.Matrix4;
@@ -30,6 +33,7 @@ import com.badlogic.gdx.physics.bullet.collision.ConvexResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.btConvexShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pools;
 
 public class Entity {
 	
@@ -944,7 +948,9 @@ public class Entity {
 	public static class EquipmentData extends EntityData<EquipmentData>
 	{
 		private EnumMap<Equipment_Slot, Equipment<?>> equipment = new EnumMap<Equipment_Slot, Equipment<?>>(Equipment_Slot.class);
-		private final EnumMap<ITEM_TYPE, Array<Item>> items = new EnumMap<ITEM_TYPE, Array<Item>>(ITEM_TYPE.class);
+		private EnumMap<ITEM_TYPE, Array<Item>> items = new EnumMap<ITEM_TYPE, Array<Item>>(ITEM_TYPE.class);
+		
+		public AnimatedModel am;
 		
 		public EquipmentData()
 		{
@@ -992,18 +998,62 @@ public class Entity {
 		
 		public void equip(Equipment_Slot slot, Equipment<?> e)
 		{
-			if (equipment.get(slot) != null)
-			{
-				equipment.get(slot).equipped = null;
-			}
+			unequip(slot);
 			equipment.put(slot, e);
 			e.equipped = slot;
+			
+			if (am != null)
+			{
+				Array<String> textures = Pools.obtain(Array.class);
+				textures.clear();
+				for (Equipment<?> equip : equipment.values())
+				{
+					if (equip != null && equip.equipmentGraphics != null)
+					{
+						textures.addAll(equip.equipmentGraphics.textureNames);
+					}
+				}
+				am.textures = FileUtils.getTextureArray(textures);
+				textures.clear();
+				Pools.free(textures);
+				
+				if (e.equipmentGraphics != null) for (EquipmentModel em : e.equipmentGraphics.models)
+				{
+					AnimatedModel nam = new AnimatedModel(em.modelName, FileUtils.loadModel(em.modelName), FileUtils.getTextureArray(em.textureNames), em.colour, em.defaultAnim);
+					am.attach(em.nodeName, nam, em.transform, em.modelName+em.nodeName);
+					e.addRequiredQueueables(nam);
+				}
+			}
 		}
 		
 		public void unequip(Equipment_Slot slot)
 		{
-			equipment.get(slot).equipped = null;
+			Equipment<?> e = equipment.get(slot);
+			if (e == null) return;
+			e.equipped = null;
 			equipment.put(slot, null);
+			
+			if (am != null)
+			{			
+				Array<String> textures = Pools.obtain(Array.class);
+				textures.clear();
+				for (Equipment<?> equip : equipment.values())
+				{
+					if (equip != null && equip.equipmentGraphics != null)
+					{
+						textures.addAll(equip.equipmentGraphics.textureNames);
+					}
+				}
+				am.textures = FileUtils.getTextureArray(textures);
+				textures.clear();
+				Pools.free(textures);
+				
+				if (e.equipmentGraphics != null) for (EquipmentModel em : e.equipmentGraphics.models)
+				{
+					Queueable q = am.remove(em.modelName+em.nodeName);
+					q.dispose();
+				}			
+			}
 		}
 		
 		public Equipment<?> getEquipment(Equipment_Slot slot)
@@ -1018,63 +1068,9 @@ public class Entity {
 		
 		@Override
 		public void write(EquipmentData data) {
-//			for (Map.Entry<Equipment_Slot, Equipment<?>> entry : data.equipment.entrySet())
-//			{
-//				@SuppressWarnings("rawtypes")
-//				Equipment current = equipment.get(entry.getKey());
-//				
-//				if (entry.getValue() == null) {
-//					if (current != null)
-//					{
-//						Pools.free(current);
-//					}
-//					equipment.put(entry.getKey(), null);
-//					continue;
-//				}
-//				
-//				if (current == null) 
-//				{
-//					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
-//				}
-//				else if (current.getClass().equals(entry.getValue().getClass()))
-//				{
-//					current.set(entry.getValue());
-//				}
-//				else
-//				{
-//					Pools.free(current);
-//					equipment.put(entry.getKey(), (Equipment<?>) entry.getValue().copy());
-//				}
-//			}
-//			
-//			
-//			for (ITEM_TYPE it : ITEM_TYPE.values())
-//			{
-//				HashMap<String, Item> iitems = items.get(it);
-//				HashMap<String, Item> ditems = data.items.get(it);
-//				
-//				for (Item i : iitems.values())
-//				{
-//					if (!ditems.containsKey(i.description.name))
-//					{
-//						Item rm = iitems.remove(i.description.name);
-//						Pools.free(rm);
-//					}
-//				}
-//				
-//				for (Item i : ditems.values())
-//				{
-//					if (!iitems.containsKey(i.description.name))
-//					{
-//						iitems.put(i.description.name, i.copy());
-//					}
-//					else
-//					{
-//						iitems.get(i.description.name).set(i);
-//					}
-//				}
-//			}
 			equipment = data.equipment;
+			items = data.items;
+			am = data.am;
 		}
 
 		@Override
