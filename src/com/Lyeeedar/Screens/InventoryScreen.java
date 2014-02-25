@@ -367,7 +367,7 @@ public class InventoryScreen extends AbstractScreen {
 
 		Node node = new Node(new Label(title, ls));
 		Table stack = new Table();
-		for (final Item i : eData.getItems(type).values())
+		for (final Item i : eData.getItems(type))
 		{
 			final Table b = new Table();
 			b.defaults().left().expandX();

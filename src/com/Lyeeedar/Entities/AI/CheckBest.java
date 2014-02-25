@@ -1,6 +1,7 @@
 package com.Lyeeedar.Entities.AI;
 
 import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
@@ -12,6 +13,55 @@ public interface CheckBest
 	
 	public CheckBest copy();
 	public void dispose();
+	
+	public static class CheckHasEquipment implements CheckBest
+	{
+		private final PositionalData pData = new PositionalData();
+		private final PositionalData pData2 = new PositionalData();
+		
+		@Override
+		public Entity checkBest(Array<Entity> entities, Action parent)
+		{
+			Entity entity = (Entity) parent.getData("entity", null);
+			
+			entity.readData(pData);
+			
+			Entity closest = null;
+			float dst = Float.MAX_VALUE;
+			
+			for (int i = 0; i < entities.size; i++)
+			{
+				Entity tmp = entities.get(i);
+				
+				if (tmp.readOnlyRead(EquipmentData.class) == null) continue;
+
+				tmp.readData(pData2);
+				float tdst = pData.position.dst2(pData2.position);
+				
+				if (tdst < dst)
+				{
+					dst = tdst;
+					closest = tmp;
+				}
+			}
+			
+			return closest;
+		}
+
+		@Override
+		public CheckBest copy()
+		{
+			return new CheckHasEquipment();
+		}
+
+		@Override
+		public void dispose()
+		{
+			pData.dispose();
+			pData2.dispose();
+		}
+		
+	}
 	
 	public static class CheckClosest implements CheckBest
 	{

@@ -30,6 +30,8 @@ public class ActionMove extends Action
 		entity.readData(pData);
 		entity.readData(sData);
 		
+		pData.velocity.x = 0;
+		pData.velocity.z = 0;
 		pData.forward_backward(velocity*sData.speed);
 		
 		entity.writeData(pData);

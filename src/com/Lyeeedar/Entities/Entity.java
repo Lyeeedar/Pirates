@@ -671,12 +671,13 @@ public class Entity {
 					Xcollide = true;
 					Ycollide = true;
 					Zcollide = true;
+					
+					v.set(0, 0, 0);
+					velocity.set(0, 0, 0);
 				}
 			}
 			
 			position.add(v);
-			velocity.x = 0;
-			velocity.z = 0;
 			
 			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
 			
@@ -685,6 +686,11 @@ public class Entity {
 				Xcollide = true;
 				Ycollide = true;
 				Zcollide = true;
+				
+				v.set(0, 0, 0);
+				velocity.set(0, 0, 0);
+				
+				position.y = waveHeight;
 			}
 		}
 		
@@ -938,7 +944,7 @@ public class Entity {
 	public static class EquipmentData extends EntityData<EquipmentData>
 	{
 		private EnumMap<Equipment_Slot, Equipment<?>> equipment = new EnumMap<Equipment_Slot, Equipment<?>>(Equipment_Slot.class);
-		private final EnumMap<ITEM_TYPE, HashMap<String, Item>> items = new EnumMap<ITEM_TYPE, HashMap<String, Item>>(ITEM_TYPE.class);
+		private final EnumMap<ITEM_TYPE, Array<Item>> items = new EnumMap<ITEM_TYPE, Array<Item>>(ITEM_TYPE.class);
 		
 		public EquipmentData()
 		{
@@ -949,7 +955,7 @@ public class Entity {
 			
 			for (ITEM_TYPE it : ITEM_TYPE.values())
 			{
-				items.put(it, new HashMap<String, Item>());
+				items.put(it, new Array<Item>(false, 16));
 			}
 		}
 		
@@ -964,14 +970,23 @@ public class Entity {
 		
 		public void addItem(Item item)
 		{
-			HashMap<String, Item> hash = items.get(item.description.item_type);
-			if (hash.containsKey(item.description.name))
+			Array<Item> hash = items.get(item.description.item_type);
+			Item found = null;
+			for (Item i : hash)
 			{
-				hash.get(item.description.name).num++;
+				if (i.description.name.equals(item.description.name))
+				{
+					found = i;
+					break;
+				}
+			}
+			if (found != null)
+			{
+				found.num++;
 			}
 			else
 			{
-				hash.put(item.description.name, item);
+				hash.add(item);
 			}
 		}
 		
@@ -996,7 +1011,7 @@ public class Entity {
 			return equipment.get(slot);
 		}
 
-		public HashMap<String, Item> getItems(ITEM_TYPE it)
+		public Array<Item> getItems(ITEM_TYPE it)
 		{
 			return items.get(it);
 		}

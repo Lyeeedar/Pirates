@@ -1,7 +1,5 @@
 package com.Lyeeedar.Entities.Items;
 
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Pools;
 
 public class Item {
@@ -31,6 +29,7 @@ public class Item {
 
 	public DESCRIPTION description;
 	public int num = 1; 
+	public float dropRate = 0;
 	
 	public Item ()
 	{

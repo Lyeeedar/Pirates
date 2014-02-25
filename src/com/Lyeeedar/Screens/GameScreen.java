@@ -11,6 +11,7 @@ import com.Lyeeedar.Collision.BulletWorld;
 import com.Lyeeedar.Collision.Octtree;
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
+import com.Lyeeedar.Collision.Octtree.OcttreeFrustum;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
@@ -39,11 +40,14 @@ import com.Lyeeedar.Entities.AI.BehaviourTree;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.AI.CheckBest.CheckClosest;
 import com.Lyeeedar.Entities.AI.CheckBest.CheckHPThreshold;
+import com.Lyeeedar.Entities.AI.CheckBest.CheckHasEquipment;
 import com.Lyeeedar.Entities.AI.ConditionalAnimationLock;
 import com.Lyeeedar.Entities.AI.ConditionalCollided;
 import com.Lyeeedar.Entities.AI.ConditionalTimer;
+import com.Lyeeedar.Entities.AI.DoAction.DoGiveItem;
 import com.Lyeeedar.Entities.AI.DoAction.DoNothing;
 import com.Lyeeedar.Entities.AI.DoAction.DoSetEntity;
+import com.Lyeeedar.Entities.AI.GetEntities.GetAll;
 import com.Lyeeedar.Entities.AI.GetEntities.GetEnemies;
 import com.Lyeeedar.Entities.AI.GetEntities.GetSelf;
 import com.Lyeeedar.Entities.AI.Selector;
@@ -52,7 +56,9 @@ import com.Lyeeedar.Entities.AI.Selector.PrioritySelector;
 import com.Lyeeedar.Entities.AI.Selector.RandomSelector;
 import com.Lyeeedar.Entities.AI.Selector.SequenceSelector;
 import com.Lyeeedar.Entities.Items.Armour;
+import com.Lyeeedar.Entities.Items.Item;
 import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
+import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionBlock;
@@ -64,6 +70,9 @@ import com.Lyeeedar.Entities.Items.Spells.SpellEffect.InstantSpellEffect;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.RepeatingSpellEffect;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.SpellPayloadHP;
 import com.Lyeeedar.Graphics.Clouds;
+import com.Lyeeedar.Graphics.MessageList;
+import com.Lyeeedar.Graphics.MessageList.Message;
+import com.Lyeeedar.Graphics.MessageList.Text;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
@@ -95,6 +104,7 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
@@ -124,6 +134,7 @@ public class GameScreen extends AbstractScreen {
 	private Entity player;
 	Terrain terrain;
 	Entity ship;
+	MessageList message = new MessageList(30, 10);
 	
 	private AnimatedModel pmodel;
 	
@@ -369,7 +380,7 @@ public class GameScreen extends AbstractScreen {
 		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
 		spell2.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
-		spell2.readOnlyRead(StatusData.class).mass = 0.1f;
+		spell2.readOnlyRead(StatusData.class).mass = 0f;
 		
 		Selector ssssspselect = new PrioritySelector();
 		ssssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
@@ -381,8 +392,13 @@ public class GameScreen extends AbstractScreen {
 		sssssselect.addNode(new ActionApplySpellEffect(new InstantSpellEffect(new SpellPayloadHP(50)), new OcttreeBox(new Vector3(), new Vector3(15, 15, 15), null)));
 		sssssselect.addNode(ssssspselect);
 		
+		Selector ggsselect2 = new SequenceSelector();
+		ggsselect2.addNode(new ActionMoveTo(true, 0, "enemy"));
+		ggsselect2.addNode(new ActionBuilder(new GetEnemies(new OcttreeFrustum(new PerspectiveCamera(90, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]), 0)), new CheckClosest(), new DoSetEntity("enemy")));
+		
 		Selector sssssspselect = new PrioritySelector();
 		sssssspselect.addNode(new ActionMove(5));
+		sssssspselect.addNode(ggsselect2);
 		sssssspselect.addNode(sssssselect);
 		
 		Selector ssssssselect = new ConcurrentSelector();
@@ -582,6 +598,9 @@ public class GameScreen extends AbstractScreen {
 		
 		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
 		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, new SPRITESHEET("sword", Color.WHITE, 0, SpriteLayer.OTHER), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect(gsword, "data/effects/sparks.effect"), null, null, 0, -1)));
+		Item item = new Item(new DESCRIPTION("Orb", "An Orb", ITEM_TYPE.MISC, "data/textures/orb.png"));
+		item.dropRate = 50;
+		eData.addItem(item);
 		
 		Vector3 dimensions = new Vector3(1, 2, 1);
 		OcttreeEntry<Entity> entry = rw.createEntry(ge, pData.position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
@@ -608,39 +627,13 @@ public class GameScreen extends AbstractScreen {
 //		{
 //			font.draw(spriteBatch, ""+e.getActivationAction().getDesc(), 220, 220);
 //		}
-		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
 			d.queue2D(batch);
-		}		
+		}
+		message.render(batch, font, 20, 20);
 	}
 	
-//	protected Entity activate(CollisionShape<?> shape, EntityGraph graph, List<EntityGraph> list, Vector3 pos, PositionalData pData)
-//	{
-//		boolean found = GLOBALS.WORLD.collide(shape, graph, list);
-//		if (!found) return null;
-//		
-//		float min = Float.MAX_VALUE;
-//		Entity chosen = null;
-//		
-//		for (EntityGraph eg : list)
-//		{
-//			if (eg.entity != null && eg.entity.hasActivationAction())
-//			{
-//				eg.entity.readData(pData, PositionalData.class);
-//				float dist = pos.dst2(pData.position);
-//				if (dist < min) 
-//				{
-//					min = dist;
-//					chosen = eg.entity;
-//				}
-//			}
-//		}
-//		list.clear();
-//		
-//		return chosen;
-//	}
-
 	ImmediateModeRenderer imr = new ImmediateModeRenderer20(false, false, 0);
 	@Override
 	public void drawSkybox(float delta)
@@ -762,6 +755,8 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void update(float delta) {
 		
+		message.update(delta);
+		
 		GLOBALS.needsSilhouette.clear();
 		
 		GLOBALS.needsSilhouette.add(ship);
@@ -807,6 +802,48 @@ public class GameScreen extends AbstractScreen {
 					death.setEmission(model.getVertexArray(), model);
 					death.play(false);
 					GLOBALS.unanchoredEffects.add(death);
+				}
+				if (e.readOnlyRead(EquipmentData.class) != null)
+				{
+					for (ITEM_TYPE it : ITEM_TYPE.values())
+					{
+						for (Item item : e.readOnlyRead(EquipmentData.class).getItems(it))
+						{
+							float dropVal = ran.nextFloat()*100.0f;
+							if (dropVal <= item.dropRate)
+							{
+								item.dropRate = 100;
+								Entity drop = new Entity(false, new PositionalData(), new StatusData());
+								
+								Sprite2D icon = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture(item.description.icon, true, null, null))), 1, 1);
+								drop.addRenderable(icon, new Vector3());
+								drop.readOnlyRead(PositionalData.class).octtreeEntry = GLOBALS.renderTree.createEntry(drop, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ITEM);
+								drop.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
+								drop.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
+								drop.readOnlyRead(PositionalData.class).position.set(e.readOnlyRead(PositionalData.class).position);
+								drop.readOnlyRead(PositionalData.class).velocity.set(20*(ran.nextInt(2)-1)*ran.nextFloat(), 25+25*ran.nextFloat(), 20*(ran.nextInt(2)-1)*ran.nextFloat());
+								drop.readOnlyRead(StatusData.class).mass = 1f;
+
+								Selector sselect2 = new SequenceSelector();
+								sselect2.addNode(new ActionKill());
+								sselect2.addNode(new ActionBuilder(new GetAll(new OcttreeBox(new Vector3(), new Vector3(1, 1, 1), null)), new CheckHasEquipment(), new DoGiveItem(item)));
+								
+								Selector sselect = new ConcurrentSelector();
+								sselect.addNode(new ActionGravityAndMovement());
+								sselect.addNode(sselect2);
+								
+								BehaviourTree tree = new BehaviourTree(sselect);
+								
+								drop.setAI(tree);
+								
+								GLOBALS.renderTree.add(drop.readOnlyRead(PositionalData.class).octtreeEntry);
+								
+								Message m = new Message();
+								m.addLine(new Text("Something", Color.GREEN), new Text(" dropped an ", Color.BLACK), new Text("Orb", Color.YELLOW));
+								message.addMessage(m);
+							}
+						}
+					}
 				}
 				e.readOnlyRead(PositionalData.class).octtreeEntry.remove();
 				e.dispose();
@@ -858,19 +895,28 @@ public class GameScreen extends AbstractScreen {
 				else
 				{
 					lockOnArr.clear();
-					GLOBALS.picker.set(player, lockOnArr, cam, 200, 1, false, 0.1f, lockOnCol);
-					GLOBALS.picker.begin();
-					GLOBALS.picker.update(delta);
-					GLOBALS.picker.end();
+					PositionalData pData = player.readOnlyRead(PositionalData.class);
+					StatusData sData = player.readOnlyRead(StatusData.class);
+					Entity closest = null;
+					float DST = 10000;
 					
-					if (lockOnArr.size() == 0)
+					for (Entity e : renderEntities)
 					{
-						cam.lockOn(null);
+						StatusData sData2 = e.readOnlyRead(StatusData.class);
+						if (sData2 == null || sData2.factions.size == 0 || sData.isAlly(sData2))
+						{
+							continue;
+						}
+						
+						float dst = pData.position.dst2(e.getPosition());
+						if (dst < DST)
+						{
+							DST = dst;
+							closest = e;
+						}
 					}
-					else
-					{
-						cam.lockOn(lockOnArr.get(0));
-					}
+					
+					cam.lockOn(closest);
 				}
 			}
 
