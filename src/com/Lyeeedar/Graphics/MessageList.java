@@ -66,6 +66,22 @@ public class MessageList
 	{
 		Array<Array<Text>> lines = new Array<Array<Text>>();
 		
+		public Message()
+		{
+			
+		}
+		
+		public Message(Text... text)
+		{
+			Array<Text> line = new Array<Text>();
+			for (Text t : text)
+			{
+				line.add(t);
+			}
+			
+			lines.add(line);
+		}
+		
 		public void addLine(Text... text)
 		{
 			Array<Text> line = new Array<Text>();

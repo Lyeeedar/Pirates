@@ -241,6 +241,7 @@ public class FileUtils {
 		Json json = new Json();
 		ParticleEffect effect = json.fromJson(ParticleEffect.class, Gdx.files.internal(name));
 		effect.name = name;
+		effect.dispose();
 		
 		loadedEffects.put(name, effect);
 		
@@ -259,18 +260,14 @@ public class FileUtils {
 				return pool.removeIndex(0);
 			}
 		}
-		
-		ParticleEffect effect = loadParticleEffect(name);
-		
+				
 		if (pool == null)
 		{
 			pool = new Array<ParticleEffect>(false, 16);
 			pooledEffects.put(name, pool);
 		}
-		
-		pool.add(effect);
-		
-		return effect;
+				
+		return loadParticleEffect(name);
 	}
 	public static void freeParticleEffect(ParticleEffect effect)
 	{

@@ -269,7 +269,10 @@ public class CharacterScreen extends AbstractScreen
 				}
 				public void enter (InputEvent event, float x, float y, int pointer, Actor fromActor) 
 				{
-					StatusData sd = eData.getEquipment(slot) != null ? eData.getEquipment(slot).statusModifier : emptySData ;
+					Equipment_Slot slotReal = slot;
+					if (slotReal == Equipment_Slot.LARMOFF1 || slotReal == Equipment_Slot.LARMOFF2 || slotReal == Equipment_Slot.LARMOFF3) slotReal = Equipment_Slot.LARM;
+					if (slotReal == Equipment_Slot.RARMOFF1 || slotReal == Equipment_Slot.RARMOFF2 || slotReal == Equipment_Slot.RARMOFF3) slotReal = Equipment_Slot.RARM;
+					StatusData sd = eData.getEquipment(slotReal) != null ? eData.getEquipment(slotReal).statusModifier : emptySData ;
 					fillRight(sd, e.statusModifier);
 					entry.setColor(211.0f/255.0f, 165.0f/255.0f, 125.0f/255.0f, 1.0f);
 				}
@@ -435,9 +438,9 @@ public class CharacterScreen extends AbstractScreen
 			}
 			public void enter (InputEvent event, float x, float y, int pointer, Actor fromActor) {
 				i.setColor(0.7f, 0.7f, 0.7f, 0.7f);
+				bl.clear();
 				if (e != null)
-				{
-					bl.clear();
+				{	
 					bl.add(e.getDescriptionSimple()).expand().fill();
 				}
 			}
@@ -478,7 +481,7 @@ public class CharacterScreen extends AbstractScreen
 		if (updateCD > 0.5f)
 		{
 			updateCD = 0;
-			create();
+			//create();
 		}
 	}
 

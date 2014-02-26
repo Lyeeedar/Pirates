@@ -137,6 +137,7 @@ public class ParticleEffect implements Queueable {
 			else
 			{
 				playing = false;
+				return;
 			}
 		}
 		duration = 0;

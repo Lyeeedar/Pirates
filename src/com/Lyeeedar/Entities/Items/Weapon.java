@@ -656,11 +656,11 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 				
 				if (isBlocking || !hasStatus || sData.solid)
 				{
-					ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
-					npe.setPosition(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
-					npe.play(false);
-					npe.setBase(entity);
-					GLOBALS.unanchoredEffects.add(npe);
+//					ParticleEffect npe = FileUtils.obtainParticleEffect("data/effects/sparks.effect");
+//					npe.setPosition(ray.getHitPointWorld().x(), ray.getHitPointWorld().y(), ray.getHitPointWorld().z());
+//					npe.play(false);
+//					npe.setBase(entity);
+//					GLOBALS.unanchoredEffects.add(npe);
 						
 					needsRecoil = true;
 					return;

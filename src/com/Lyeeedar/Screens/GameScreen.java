@@ -301,9 +301,9 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
 		ATTACK_STAGE[] wattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(200, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(200, 70, 90), null, 0, 0),
 				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(200, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(200, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(200, 81, 91), null, 0, 0)
 		};
 		EquipmentGraphics axeg = new EquipmentGraphics("data/textures/plate", new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
 		weapon = new Weapon(wattacks, axeg, new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1));
@@ -538,9 +538,9 @@ public class GameScreen extends AbstractScreen {
 				
 		ATTACK_STAGE[] gwattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(20, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(20, 70, 90), null, 0, 0),
 				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(20, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(20, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(20, 81, 91), null, 0, 0)
 		};
 		
 		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
@@ -550,7 +550,7 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
 		
 		EquipmentGraphics axeg = new EquipmentGraphics(null, new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
-		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, axeg, new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1)));
+		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, axeg, new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, null, null, null, 0, -1)));
 		Item item = new Item(new DESCRIPTION("Orb", "An Orb", "An orbular thingymobob", ITEM_TYPE.MISC, "data/textures/orb.png"));
 		item.dropRate = 50;
 		eData.addItem(item);
@@ -663,16 +663,20 @@ public class GameScreen extends AbstractScreen {
 			d.queue3D(decalBatch);
 		}
 		
-		for (int i = 0; i < GLOBALS.unanchoredEffects.size; i++)
+		Iterator<ParticleEffect> peItr = GLOBALS.unanchoredEffects.iterator();
+		while(peItr.hasNext())
 		{
-			ParticleEffect pe = GLOBALS.unanchoredEffects.get(i);
+			ParticleEffect pe = peItr.next();
 			pe.update(delta, cam, GLOBALS.LIGHTS);
-			pe.queue(delta, cam, batches);
+			
 			if (!pe.isPlaying())
 			{
-				GLOBALS.unanchoredEffects.removeIndex(i);
-				i--;
+				peItr.remove();
 				FileUtils.freeParticleEffect(pe);
+			}
+			else
+			{
+				pe.queue(delta, cam, batches);
 			}
 		}
 	}
