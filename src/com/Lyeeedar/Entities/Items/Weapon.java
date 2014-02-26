@@ -133,6 +133,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		linkCD = -1;
 		inSwing = false;
 		hitCD = hitSpeed;
+		charging = false;
 		data.clear();
 	}
 
@@ -200,7 +201,16 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 	@Override
 	public void dispose() {
-		aData.dispose();
+		end(holder, data);
+		switchStage(holder, data, null, false);
+		
+		if (charge != null) charge.dispose();
+		if (recoil != null) recoil.dispose();
+		
+		for (ATTACK_STAGE as : attacks)
+		{
+			as.dispose();
+		}
 	}
 
 	@Override
@@ -223,20 +233,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 	@Override
 	public void addRequiredQueueables(AnimatedModel model)
 	{
-		if (charge != null && charge.begin != null) charge.begin.addRequiredQueueables(model);
-		if (charge != null && charge.middle != null) charge.middle.addRequiredQueueables(model);
-		if (charge != null && charge.end != null) charge.end.addRequiredQueueables(model);
-		
-		if (recoil != null && recoil.begin != null) recoil.begin.addRequiredQueueables(model);
-		if (recoil != null && recoil.middle != null) recoil.middle.addRequiredQueueables(model);
-		if (recoil != null && recoil.end != null) recoil.end.addRequiredQueueables(model);
-		
+		if (charge != null) charge.addRequiredQueueables(model);		
+		if (recoil != null) recoil.addRequiredQueueables(model);
 		
 		for (ATTACK_STAGE as : attacks)
 		{
-			if (as.begin != null) as.begin.addRequiredQueueables(model);
-			if (as.middle != null) as.middle.addRequiredQueueables(model);
-			if (as.end != null) as.end.addRequiredQueueables(model);
+			as.addRequiredQueueables(model);
 		}
 	}
 	
@@ -279,6 +281,20 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			
 			this.hasAnim = true;
 		}
+		
+		public void addRequiredQueueables(AnimatedModel model)
+		{
+			if (begin != null) begin.addRequiredQueueables(model);
+			if (middle != null) middle.addRequiredQueueables(model);
+			if (end != null) end.addRequiredQueueables(model);
+		}
+		
+		public void dispose()
+		{
+			if (begin != null) begin.dispose();
+			if (middle != null) middle.dispose();
+			if (end != null) end.dispose();
+		}
 	}
 	
 	public static interface AttackAction
@@ -290,6 +306,8 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		public void addRequiredQueueables(AnimatedModel model);
 		
 		public boolean needsRecoil();
+		
+		public void dispose();
 	}
 	
 	public static class AttackActionBlock implements AttackAction
@@ -322,6 +340,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 		@Override
 		public void addRequiredQueueables(AnimatedModel model)
+		{
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void dispose()
 		{
 			// TODO Auto-generated method stub
 			
@@ -383,6 +408,13 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 
 		@Override
 		public void addRequiredQueueables(AnimatedModel model)
+		{
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void dispose()
 		{
 			// TODO Auto-generated method stub
 			
@@ -475,6 +507,12 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			this.model = model;
 		}
+
+		@Override
+		public void dispose()
+		{
+			model = null;
+		}
 		
 	}
 	
@@ -527,13 +565,18 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			this.model = model;			
 		}
+
+		@Override
+		public void dispose()
+		{
+			model = null;
+		}
 		
 	}
 	
 	public static class AttackMotionTrail implements AttackAction
 	{
-		public final int damage;
-		public final int damageVar;
+		public final int damagePercentage;
 		
 		private final Random ran = new Random();
 		
@@ -565,10 +608,9 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		private final float startCollide;
 		private final float endCollide;
 		
-		public AttackMotionTrail(int damage, int damageVar, float startCollide, float endCollide)
+		public AttackMotionTrail(int damagePercentage, float startCollide, float endCollide)
 		{
-			this.damage = damage;
-			this.damageVar = damageVar;
+			this.damagePercentage = damagePercentage;
 			
 			this.startCollide = startCollide;
 			this.endCollide = endCollide;
@@ -625,7 +667,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 				}
 				else if (!sData.isAlly(sData2))
 				{
-					sData.damage = damage + ran.nextInt(damageVar);
+					sData.damage(damagePercentage, sData2.attack);
 					e.writeData(sData);
 				}
 
@@ -708,6 +750,15 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 			animationModel = model.parent;
 			mt = new MotionTrail(100, 0.005f, Color.WHITE, FileUtils.loadTexture("data/textures/gradient.png", true, null, null));
 			model.attach(null, mt, new Matrix4(), "MotionTrail");
+		}
+
+		@Override
+		public void dispose()
+		{
+			if (mt != null) mt.dispose();
+			mt = null;
+			animationModel = null;
+			weaponModel = null;
 		}
 	}
 }

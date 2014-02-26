@@ -195,18 +195,10 @@ public class ParticleEffect implements Queueable {
 		{
 			e.emitter.dispose();
 		}
-	}
-	
-	public void delete()
-	{
-		Iterator<Emitter> itr = emitters.iterator();
-		
-		while(itr.hasNext())
-		{
-			Emitter e = itr.next();
-			e.emitter.dispose();
-			itr.remove();
-		}
+		time = 0;
+		duration = 0;
+		playing = false;
+		repeat = false;
 	}
 	
 	public ParticleEffect copy()

@@ -3,6 +3,7 @@ package com.Lyeeedar.Entities.Items;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AnimationData;
 import com.Lyeeedar.Entities.Entity.Equipment_Slot;
+import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
 import com.badlogic.gdx.math.Matrix4;
@@ -12,6 +13,7 @@ import com.badlogic.gdx.utils.Array;
 
 public abstract class Equipment<E extends Equipment<E>> extends Item 
 {
+	public StatusData statusModifier = new StatusData();
 	public EquipmentGraphics equipmentGraphics;
 	public Equipment_Slot equipped;
 	

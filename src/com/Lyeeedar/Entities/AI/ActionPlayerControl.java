@@ -10,6 +10,7 @@ import com.Lyeeedar.Entities.Entity.Equipment_Slot;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
 import com.Lyeeedar.Entities.Entity.PositionalData.LOCATION;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Entities.Items.Equipment;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
@@ -26,6 +27,8 @@ public class ActionPlayerControl extends Action
 	private final FollowCam cam;
 	
 	private boolean jump = false;
+	private boolean switchL = false;
+	private boolean switchR = false;
 	
 	private final PositionalData pData = new PositionalData();
 	private final EquipmentData eData = new EquipmentData();
@@ -66,7 +69,7 @@ public class ActionPlayerControl extends Action
 		entity.readData(sData);
 
 		// Evaluate controls
-		int speed = sData.speed;
+		int speed = sData.stats.get(STATS.SPEED);
 		if (controls.sprint()) speed = 10;
 		if (Gdx.input.isKeyPressed(Keys.ALT_LEFT))
 		{
@@ -151,7 +154,8 @@ public class ActionPlayerControl extends Action
 		
 		}
 
-		if (controls.jump() && !jump) {
+		if (controls.jump() && !jump) 
+		{
 			pData.velocity.y = 70;
 			pData.jumpToken--;
 			jump = true;
@@ -161,6 +165,43 @@ public class ActionPlayerControl extends Action
 			jump = false;
 		}
 
+		if (controls.switchL() && !switchL) 
+		{
+			Equipment<?> lmain = eData.getEquipment(Equipment_Slot.LARM);
+			Equipment<?> loff1 = eData.getEquipment(Equipment_Slot.LARMOFF1);
+			Equipment<?> loff2 = eData.getEquipment(Equipment_Slot.LARMOFF2);
+			Equipment<?> loff3 = eData.getEquipment(Equipment_Slot.LARMOFF3);
+			
+			eData.equip(Equipment_Slot.LARM, loff1);
+			eData.equip(Equipment_Slot.LARMOFF1, loff2);
+			eData.equip(Equipment_Slot.LARMOFF2, loff3);
+			eData.equip(Equipment_Slot.LARMOFF3, lmain);
+			
+			switchL = true;
+		}
+		else if (!controls.switchL())
+		{
+			switchL = false;
+		}
+		
+		if (controls.switchR() && !switchR) 
+		{
+			Equipment<?> rmain = eData.getEquipment(Equipment_Slot.RARM);
+			Equipment<?> roff1 = eData.getEquipment(Equipment_Slot.RARMOFF1);
+			Equipment<?> roff2 = eData.getEquipment(Equipment_Slot.RARMOFF2);
+			Equipment<?> roff3 = eData.getEquipment(Equipment_Slot.RARMOFF3);
+			
+			eData.equip(Equipment_Slot.RARM, roff1);
+			eData.equip(Equipment_Slot.RARMOFF1, roff2);
+			eData.equip(Equipment_Slot.RARMOFF2, roff3);
+			eData.equip(Equipment_Slot.RARMOFF3, rmain);
+			
+			switchR = true;
+		}
+		else if (!controls.switchR())
+		{
+			switchR = false;
+		}
 
 		if (controls.rightClick()) use(Equipment_Slot.RARM, eData);
 		else 

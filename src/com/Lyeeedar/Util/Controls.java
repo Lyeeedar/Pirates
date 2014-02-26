@@ -123,7 +123,7 @@ public class Controls {
 		return retval;
 	}
 	
-	public boolean slot1()
+	public boolean switchL()
 	{
 		if (isAndroid)
 		{
@@ -135,7 +135,7 @@ public class Controls {
 		}
 	}
 	
-	public boolean slot2()
+	public boolean switchR()
 	{
 		if (isAndroid)
 		{

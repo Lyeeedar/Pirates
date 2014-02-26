@@ -137,6 +137,16 @@ public class MainMenuScreen extends AbstractScreen {
 				return false;
 			}
 		});
+		
+		TextButton btnCharacter = new TextButton("Character", tbs);
+		btnCharacter.getLabel().setAlignment(Align.left, Align.left);
+		btnCharacter.addListener(new InputListener() {
+			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+				game.switchScreen(Screen.CHARACTER);
+				return false;
+			}
+		});
+
 
 
 		int width = 300;
@@ -164,6 +174,8 @@ public class MainMenuScreen extends AbstractScreen {
 		btable.add(btnExit).width(width).height(height).padBottom(bpad).padLeft(lpad);
 		btable.row();
 		btable.add(btnInventory).width(width).height(height).padBottom(bpad).padLeft(lpad);
+		btable.row();
+		btable.add(btnCharacter).width(width).height(height).padBottom(bpad).padLeft(lpad);
 		
 		table.add(btable).left().expandY();
 		table.row();

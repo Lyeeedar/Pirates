@@ -23,6 +23,7 @@ import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Pirates.GLOBALS.ELEMENTS;
 import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
@@ -39,20 +40,16 @@ public class Entity {
 	
 	public enum Equipment_Slot
 	{
-		HEAD,
 		BODY,
+		HAIR,
+		
+		HEAD,
 		TORSO,
 		LEGS,
 		FEET,
-		LARM,
-		RARM,
-		MISC,
 		
-		TEMPERATURE,
-		LIGHT,
-		LIFE,
-		GAIA,
-		FORCE
+		LARM, LARMOFF1, LARMOFF2, LARMOFF3,
+		RARM, RARMOFF1, RARMOFF2, RARMOFF3
 	}
 	
 	public boolean DISPOSED = false;
@@ -75,7 +72,11 @@ public class Entity {
 	public Entity(boolean walkable, EntityData<?>... data)
 	{
 		this.walkable = walkable;
-		for (EntityData<?> d : data) entityData.put(d.getType(), d);
+		for (EntityData<?> d : data) 
+		{
+			entityData.put(d.getType(), d);
+			d.parent = this;
+		}
 	}
 	
 	public Queueable getRenderable(int i)
@@ -91,6 +92,9 @@ public class Entity {
 	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches, boolean update)
 	{
 		if (DISPOSED) return;
+		
+		if (entityData.containsKey(EntityDataType.EQUIPMENT)) ((EquipmentData) entityData.get(EntityDataType.EQUIPMENT)).doGraphicsUpdates();
+		
 		if (update) renderables.set(this);
 		if (update) renderables.update(delta, cam, lights);
 		renderables.queue(delta, cam, batches);
@@ -299,6 +303,8 @@ public class Entity {
 	
 	public static abstract class EntityData<E extends EntityData<E>>
 	{
+		public Entity parent;
+		
 		public enum EntityDataType
 		{
 			ANIMATION,
@@ -381,6 +387,8 @@ public class Entity {
 			
 			colour.set(data.colour);
 			alpha = data.alpha;
+			
+			parent = data.parent;
 		}
 		
 		@Override
@@ -414,6 +422,8 @@ public class Entity {
 		@Override
 		public void write(MinimalPositionalData data) {
 			position.set(data.position);
+			
+			parent = data.parent;
 		}
 
 		@Override
@@ -530,6 +540,8 @@ public class Entity {
 			octtreeEntry = data.octtreeEntry;
 			
 			base = data.base;
+			
+			parent = data.parent;
 		}
 		
 		@Override
@@ -952,6 +964,8 @@ public class Entity {
 		
 		public AnimatedModel am;
 		
+		private Array<Object[]> needsEquip = new Array<Object[]>(false, 16);
+		
 		public EquipmentData()
 		{
 			for (Equipment_Slot es : Equipment_Slot.values())
@@ -974,18 +988,32 @@ public class Entity {
 			}
 		}
 		
+		public void doGraphicsUpdates()
+		{
+			for (Object[] pair : needsEquip)
+			{
+				doEquip( (Equipment_Slot) pair[0], (Equipment<?>) pair[1]);
+			}
+			needsEquip.clear();
+		}
+		
 		public void addItem(Item item)
 		{
 			Array<Item> hash = items.get(item.description.item_type);
 			Item found = null;
-			for (Item i : hash)
+			
+			if (item.stackable)
 			{
-				if (i.description.name.equals(item.description.name))
+				for (Item i : hash)
 				{
-					found = i;
-					break;
+					if (i.description.name.equals(item.description.name))
+					{
+						found = i;
+						break;
+					}
 				}
 			}
+			
 			if (found != null)
 			{
 				found.num++;
@@ -998,9 +1026,25 @@ public class Entity {
 		
 		public void equip(Equipment_Slot slot, Equipment<?> e)
 		{
-			unequip(slot);
-			equipment.put(slot, e);
+			needsEquip.add(new Object[]{slot, e});
+		}
+		
+		private void doEquip(Equipment_Slot slot, Equipment<?> e)
+		{
+			doUnequip(slot);
+			if (e == null) return;
+			equipment.put(slot, e);			
 			e.equipped = slot;
+			
+			if (
+					slot == Equipment_Slot.LARMOFF1 || slot == Equipment_Slot.LARMOFF2 || slot == Equipment_Slot.LARMOFF3 ||
+					slot == Equipment_Slot.RARMOFF1 || slot == Equipment_Slot.RARMOFF2 || slot == Equipment_Slot.RARMOFF3
+					)
+			{
+				return;
+			}
+			
+			parent.readOnlyRead(StatusData.class).add(e.statusModifier);
 			
 			if (am != null)
 			{
@@ -1026,12 +1070,22 @@ public class Entity {
 			}
 		}
 		
-		public void unequip(Equipment_Slot slot)
+		private void doUnequip(Equipment_Slot slot)
 		{
 			Equipment<?> e = equipment.get(slot);
 			if (e == null) return;
 			e.equipped = null;
 			equipment.put(slot, null);
+			
+			if (
+					slot == Equipment_Slot.LARMOFF1 || slot == Equipment_Slot.LARMOFF2 || slot == Equipment_Slot.LARMOFF3 ||
+					slot == Equipment_Slot.RARMOFF1 || slot == Equipment_Slot.RARMOFF2 || slot == Equipment_Slot.RARMOFF3
+					)
+			{
+				return;
+			}
+			
+			parent.readOnlyRead(StatusData.class).remove(e.statusModifier);
 			
 			if (am != null)
 			{			
@@ -1071,6 +1125,9 @@ public class Entity {
 			equipment = data.equipment;
 			items = data.items;
 			am = data.am;
+			needsEquip = data.needsEquip;
+			
+			parent = data.parent;
 		}
 
 		@Override
@@ -1106,16 +1163,23 @@ public class Entity {
 	}
 	public static class StatusData extends EntityData<StatusData>
 	{
+		public static enum STATS
+		{
+			MAXHEALTH,
+			SPEED,
+			MASS
+		}
+		
+		public String name;
+		
 		public boolean ALIVE = true;
 		public int DAMAGED = 0;
-		
-		public int MAX_HEALTH = 150;
-		public int currentHealth = MAX_HEALTH;
 		public int damage = 0;
+		public int currentHealth = 0;
 		
-		public int speed = 50;
-		
-		public float mass = 1.0f;
+		public final EnumMap<STATS, Integer> stats = new EnumMap<STATS, Integer>(STATS.class);
+		public final EnumMap<ELEMENTS, Integer> defense = new EnumMap<ELEMENTS, Integer>(ELEMENTS.class);
+		public final EnumMap<ELEMENTS, Integer> attack = new EnumMap<ELEMENTS, Integer>(ELEMENTS.class);
 		
 		public boolean solid = false;
 		public boolean blocking = false;
@@ -1123,6 +1187,20 @@ public class Entity {
 		public Array<String> factions = new Array<String>(false, 16);
 		
 		private final Array<SpellEffect> spellEffects = new Array<SpellEffect>();
+		
+		public StatusData()
+		{
+			for (STATS stat : STATS.values())
+			{
+				stats.put(stat, 0);
+			}
+			
+			for (ELEMENTS element : ELEMENTS.values())
+			{
+				defense.put(element, 0);
+				attack.put(element, 0);
+			}
+		}
 		
 		public void addSpellEffect(SpellEffect se)
 		{
@@ -1144,12 +1222,56 @@ public class Entity {
 			}
 		}
 		
+		public void setAttack(int FIRE, int WATER, int EARTH, int WOOD, int METAL)
+		{
+			attack.put(ELEMENTS.FIRE, FIRE);
+			attack.put(ELEMENTS.WATER, WATER);
+			attack.put(ELEMENTS.EARTH, EARTH);
+			attack.put(ELEMENTS.WOOD, WOOD);
+			attack.put(ELEMENTS.METAL, METAL);
+		}
+		
+		public void setDefense(int FIRE, int WATER, int EARTH, int WOOD, int METAL)
+		{
+			defense.put(ELEMENTS.FIRE, FIRE);
+			defense.put(ELEMENTS.WATER, WATER);
+			defense.put(ELEMENTS.EARTH, EARTH);
+			defense.put(ELEMENTS.WOOD, WOOD);
+			defense.put(ELEMENTS.METAL, METAL);
+		}
+		
+		public void add(StatusData data)
+		{
+			combine(data, 1);
+		}
+		
+		public void remove(StatusData data)
+		{
+			combine(data, -1);
+		}
+		
+		private void combine(StatusData data, int sf)
+		{
+			for (STATS stat : STATS.values())
+			{
+				stats.put(stat, stats.get(stat) + data.stats.get(stat) * sf);
+			}
+			
+			for (ELEMENTS element : ELEMENTS.values())
+			{
+				defense.put(element, defense.get(element) + data.defense.get(element) * sf);
+				attack.put(element, attack.get(element) + data.attack.get(element) * sf);
+			}
+		}
+		
 		@Override
 		public void write(StatusData data) {
+			
+			name = data.name;
+			
 			ALIVE = data.ALIVE;
 			DAMAGED = data.DAMAGED;
 			
-			MAX_HEALTH = data.MAX_HEALTH;
 			currentHealth = data.currentHealth;
 			damage = data.damage;
 			factions.clear();
@@ -1158,11 +1280,20 @@ public class Entity {
 			spellEffects.clear();
 			spellEffects.addAll(data.spellEffects);
 			
-			speed = data.speed;
-			solid = data.solid;
-			mass = data.mass;
-			
 			blocking = data.blocking;
+			
+			for (STATS stat : STATS.values())
+			{
+				stats.put(stat, data.stats.get(stat));
+			}
+			
+			for (ELEMENTS element : ELEMENTS.values())
+			{
+				defense.put(element, data.defense.get(element));
+				attack.put(element, data.attack.get(element));
+			}
+			
+			parent = data.parent;
 		}
 		
 		public boolean isAlly(StatusData other)
@@ -1179,6 +1310,14 @@ public class Entity {
 			}
 			
 			return ally;
+		}
+		
+		public void damage(int percentage, EnumMap<ELEMENTS, Integer> attackPower)
+		{
+			for (ELEMENTS element : ELEMENTS.values())
+			{
+				damage += Math.max( 0, (int) (( (float) attackPower.get(element) / 100.0f ) * (float) percentage - (float) defense.get(element) ) );
+			}
 		}
 		
 		public void applyDamage()

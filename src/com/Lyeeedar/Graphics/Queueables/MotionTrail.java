@@ -42,7 +42,7 @@ public class MotionTrail implements Queueable {
 	private final CircularArrayRing<Vector3> trailRing;
 	private final int vertNum;
 	private final int vertNum2;
-	public final Mesh mesh;
+	public Mesh mesh;
 	public final Color colour;
 	public final Texture texture;
 	public final long texHash;
@@ -167,7 +167,9 @@ public class MotionTrail implements Queueable {
 	
 	public void dispose()
 	{
-		mesh.dispose();
+		if (mesh != null) mesh.dispose();
+		mesh = null;
+		drawing = false;
 	}
 
 	@Override

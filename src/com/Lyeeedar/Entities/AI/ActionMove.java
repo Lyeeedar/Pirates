@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
 import com.badlogic.gdx.math.Vector3;
@@ -32,7 +33,7 @@ public class ActionMove extends Action
 		
 		pData.velocity.x = 0;
 		pData.velocity.z = 0;
-		pData.forward_backward(velocity*sData.speed);
+		pData.forward_backward(velocity*sData.stats.get(STATS.SPEED));
 		
 		entity.writeData(pData);
 		

@@ -105,11 +105,11 @@ public class InventoryScreen extends AbstractScreen {
 		{
 			for (ITEM_TYPE it : ITEM_TYPE.values())
 			{
-				Item item = new Armour(null, new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", it, "data/skins/HAND.png"));
+				Item item = new Armour(null, new DESCRIPTION(""+it+" "+i, "Bla bla bla bla bla cheesy cakes nomn omn omn lol wtf is this wauygasbkmnasbfkjasbfkmbasf sdm,bfmsdbfm sdmb fmsdbfmsdbmsdbmfsbm", "fs", it, "data/skins/HAND.png"));
 				eData.addItem(item);
 			}
 		}
-		eData.equip(Equipment_Slot.HEAD, new Armour(null, new DESCRIPTION("A HEAD", "THis is a head. It is a big head and it looks funny and that is like super cool and usj vjrrdu vskrd pir snd stifff lovely banans darn thay stifff well thatysd a gpppf point DOWEHY!", ITEM_TYPE.ARMOUR_HEAD, "data/skins/TORSO.png")));
+		eData.equip(Equipment_Slot.HEAD, new Armour(null, new DESCRIPTION("A HEAD", "THis is a head. It is a big head and it lo", "oks funny and that is like super cool and usj vjrrdu vskrd pir snd stifff lovely banans darn thay stifff well thatysd a gpppf point DOWEHY!", ITEM_TYPE.ARMOUR_HEAD, "data/skins/TORSO.png")));
 	}
 
 	@Override
@@ -180,11 +180,11 @@ public class InventoryScreen extends AbstractScreen {
 		Image larm = getEquipSlot(eData, Equipment_Slot.LARM, "data/skins/HEAD.png");
 		Image rarm = getEquipSlot(eData, Equipment_Slot.RARM, "data/skins/HEAD.png");
 
-		Image temp = getEquipSlot(eData, Equipment_Slot.TEMPERATURE, "data/skins/HEAD.png");
-		Image light = getEquipSlot(eData, Equipment_Slot.LIGHT, "data/skins/HEAD.png");
-		Image life = getEquipSlot(eData, Equipment_Slot.LIFE, "data/skins/HEAD.png");
-		Image gaia = getEquipSlot(eData, Equipment_Slot.GAIA, "data/skins/HEAD.png");
-		Image force = getEquipSlot(eData, Equipment_Slot.FORCE, "data/skins/HEAD.png");
+//		Image temp = getEquipSlot(eData, Equipment_Slot.TEMPERATURE, "data/skins/HEAD.png");
+//		Image light = getEquipSlot(eData, Equipment_Slot.LIGHT, "data/skins/HEAD.png");
+//		Image life = getEquipSlot(eData, Equipment_Slot.LIFE, "data/skins/HEAD.png");
+//		Image gaia = getEquipSlot(eData, Equipment_Slot.GAIA, "data/skins/HEAD.png");
+//		Image force = getEquipSlot(eData, Equipment_Slot.FORCE, "data/skins/HEAD.png");
 
 		right.add(tr).expand().uniform().fill();
 		right.row();
@@ -205,16 +205,16 @@ public class InventoryScreen extends AbstractScreen {
 		rarmour.row();
 		rarmour.add(feet);
 
-		rbuffs.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(GLOBALS.sclY(9), GLOBALS.sclX(5), GLOBALS.sclY(5), GLOBALS.sclX(5));
-		rbuffs.add(temp);
-		rbuffs.row();
-		rbuffs.add(light);
-		rbuffs.row();
-		rbuffs.add(life);
-		rbuffs.row();
-		rbuffs.add(gaia);
-		rbuffs.row();
-		rbuffs.add(force);
+//		rbuffs.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(GLOBALS.sclY(9), GLOBALS.sclX(5), GLOBALS.sclY(5), GLOBALS.sclX(5));
+//		rbuffs.add(temp);
+//		rbuffs.row();
+//		rbuffs.add(light);
+//		rbuffs.row();
+//		rbuffs.add(life);
+//		rbuffs.row();
+//		rbuffs.add(gaia);
+//		rbuffs.row();
+//		rbuffs.add(force);
 
 		rattacks.defaults().width(GLOBALS.sclX(30)).height(GLOBALS.sclY(45)).pad(0, GLOBALS.sclX(11), 0, GLOBALS.sclX(5)).left();
 		rattacks.add(larm);
@@ -274,8 +274,8 @@ public class InventoryScreen extends AbstractScreen {
 		});
 
 		if (selected == 0) buildTreeArmour(tree, eData);
-		else if (selected == 1) buildTreeWeapon(tree, eData);
-		else if (selected == 2) buildTreeBuff(tree, eData);
+//		else if (selected == 1) buildTreeWeapon(tree, eData);
+//		else if (selected == 2) buildTreeBuff(tree, eData);
 		else if (selected == 3) buildTreeMisc(tree, eData);
 
 
@@ -334,24 +334,24 @@ public class InventoryScreen extends AbstractScreen {
 		tree.add(buildNode("Feet", ITEM_TYPE.ARMOUR_FEET, eData, Equipment_Slot.FEET));
 	}
 
-	private void buildTreeBuff(Tree tree, EquipmentData eData)
-	{
-		tree.add(buildNode("Temperature", ITEM_TYPE.BUFF_TEMPERATURE, eData, Equipment_Slot.TEMPERATURE));
-		tree.add(buildNode("Light", ITEM_TYPE.BUFF_LIGHT, eData, Equipment_Slot.LIGHT));
-		tree.add(buildNode("Life", ITEM_TYPE.BUFF_LIFE, eData, Equipment_Slot.LIFE));
-		tree.add(buildNode("Gaia", ITEM_TYPE.BUFF_GAIA, eData, Equipment_Slot.GAIA));
-		tree.add(buildNode("Force", ITEM_TYPE.BUFF_FORCE, eData, Equipment_Slot.FORCE));
-	}
-
-	private void buildTreeWeapon(Tree tree, EquipmentData eData)
-	{
-		tree.add(buildNode("Mundane", ITEM_TYPE.WEAPON_MUNDANE, eData, Equipment_Slot.LARM));
-		tree.add(buildNode("Temperature", ITEM_TYPE.WEAPON_TEMPERATURE, eData, Equipment_Slot.LARM));
-		tree.add(buildNode("Light", ITEM_TYPE.WEAPON_LIGHT, eData, Equipment_Slot.LARM));
-		tree.add(buildNode("Life", ITEM_TYPE.WEAPON_LIFE, eData, Equipment_Slot.LARM));
-		tree.add(buildNode("Gaia", ITEM_TYPE.WEAPON_GAIA, eData, Equipment_Slot.LARM));
-		tree.add(buildNode("Force", ITEM_TYPE.WEAPON_FORCE, eData, Equipment_Slot.LARM));
-	}
+//	private void buildTreeBuff(Tree tree, EquipmentData eData)
+//	{
+//		tree.add(buildNode("Temperature", ITEM_TYPE.BUFF_TEMPERATURE, eData, Equipment_Slot.TEMPERATURE));
+//		tree.add(buildNode("Light", ITEM_TYPE.BUFF_LIGHT, eData, Equipment_Slot.LIGHT));
+//		tree.add(buildNode("Life", ITEM_TYPE.BUFF_LIFE, eData, Equipment_Slot.LIFE));
+//		tree.add(buildNode("Gaia", ITEM_TYPE.BUFF_GAIA, eData, Equipment_Slot.GAIA));
+//		tree.add(buildNode("Force", ITEM_TYPE.BUFF_FORCE, eData, Equipment_Slot.FORCE));
+//	}
+//
+//	private void buildTreeWeapon(Tree tree, EquipmentData eData)
+//	{
+//		tree.add(buildNode("Mundane", ITEM_TYPE.WEAPON_MUNDANE, eData, Equipment_Slot.LARM));
+//		tree.add(buildNode("Temperature", ITEM_TYPE.WEAPON_TEMPERATURE, eData, Equipment_Slot.LARM));
+//		tree.add(buildNode("Light", ITEM_TYPE.WEAPON_LIGHT, eData, Equipment_Slot.LARM));
+//		tree.add(buildNode("Life", ITEM_TYPE.WEAPON_LIFE, eData, Equipment_Slot.LARM));
+//		tree.add(buildNode("Gaia", ITEM_TYPE.WEAPON_GAIA, eData, Equipment_Slot.LARM));
+//		tree.add(buildNode("Force", ITEM_TYPE.WEAPON_FORCE, eData, Equipment_Slot.LARM));
+//	}
 
 	private void buildTreeMisc(Tree tree, EquipmentData eData)
 	{
@@ -457,7 +457,8 @@ public class InventoryScreen extends AbstractScreen {
 					if (button == Buttons.RIGHT)
 					{
 						br.clear();
-						eData.unequip(e.equipped);
+						eData.equip(e.equipped, null);
+						eData.doGraphicsUpdates();
 						buildRightSlots();
 						
 						Object[] old = equipped.get(slot);
@@ -497,7 +498,7 @@ public class InventoryScreen extends AbstractScreen {
 		Table main = new Table();
 
 		main.add(new Image(FileUtils.loadTexture(desc.icon, true, null, null))).width(GLOBALS.sclX(100)).height(GLOBALS.sclY(150)).left().padRight(GLOBALS.sclX(10)).padLeft(GLOBALS.sclX(20));
-		Label l = new Label(desc.description, ls);
+		Label l = new Label(desc.longDesc, ls);
 		l.setWrap(true);
 		main.add(l).width(GLOBALS.sclX(180));
 

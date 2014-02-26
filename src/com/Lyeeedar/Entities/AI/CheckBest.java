@@ -4,6 +4,7 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.EquipmentData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.badlogic.gdx.utils.Array;
 
@@ -136,7 +137,7 @@ public interface CheckBest
 				
 				tmp.readData(sData);
 				
-				float thp = ((float) sData.currentHealth / (float) sData.MAX_HEALTH) * 100;
+				float thp = ((float) sData.currentHealth / (float) sData.stats.get(STATS.MAXHEALTH)) * 100;
 				
 				if (greaterThan)
 				{

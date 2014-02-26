@@ -20,6 +20,7 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Entities.Terrain;
 import com.Lyeeedar.Entities.AI.ActionApplySpellEffect;
 import com.Lyeeedar.Entities.AI.ActionAttack;
@@ -287,8 +288,10 @@ public class GameScreen extends AbstractScreen {
 		am.setDetailController(new DetailController());
 		
 		player.readOnlyRead(StatusData.class).factions.add("Player");
-		player.readOnlyRead(StatusData.class).mass = 2f;
-		player.readOnlyRead(StatusData.class).speed = 25;
+		player.readOnlyRead(StatusData.class).stats.put(STATS.MAXHEALTH, 100);
+		player.readOnlyRead(StatusData.class).currentHealth = 100;
+		player.readOnlyRead(StatusData.class).stats.put(STATS.MASS, 100);
+		player.readOnlyRead(StatusData.class).stats.put(STATS.SPEED, 25);
 		player.readOnlyRead(StatusData.class).blocking = true;
 		
 		EquipmentData eData = new EquipmentData();
@@ -298,12 +301,13 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
 		ATTACK_STAGE[] wattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(200, 10, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(200, 10, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(200, 10, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(200, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(200, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(200, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
 		};
 		EquipmentGraphics axeg = new EquipmentGraphics("data/textures/plate", new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
-		weapon = new Weapon(wattacks, axeg, new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1));
+		weapon = new Weapon(wattacks, axeg, new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1));
+		weapon.statusModifier.setAttack(0, 0, 0, 0, 1000);
 		eData.equip(Equipment_Slot.RARM, weapon);
 		
 		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
@@ -312,7 +316,9 @@ public class GameScreen extends AbstractScreen {
 		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
 		spell2.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
-		spell2.readOnlyRead(StatusData.class).mass = 0f;
+		spell2.readOnlyRead(StatusData.class).stats.put(STATS.SPEED, 25);
+		spell2.readOnlyRead(StatusData.class).currentHealth = 1;
+		spell2.readOnlyRead(StatusData.class).stats.put(STATS.MAXHEALTH, 1);
 		
 		Selector ssssspselect = new PrioritySelector();
 		ssssspselect.addNode(new ConditionalTimer(5, BehaviourTreeState.FINISHED, BehaviourTreeState.FAILED));
@@ -344,7 +350,7 @@ public class GameScreen extends AbstractScreen {
 				new ATTACK_STAGE("cast_off_1", 1.0f, 2, null, null, new AttackSpellCast(spell2), 0, 0),
 				new ATTACK_STAGE("cast_off_2", 1.0f, -1, null, null, new AttackSpellCast(spell2), 0, 0)
 		};
-		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new EquipmentGraphics(null, new EquipmentModel("data/models/bone-only.g3db", new String[]{"data/textures/blank"}, null, new Vector3(), "DEF-palm_01_L", new Matrix4())), new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, null));
+		eData.equip(Equipment_Slot.LARM, new Weapon(sattacks, new EquipmentGraphics(null, new EquipmentModel("data/models/bone-only.g3db", new String[]{"data/textures/blank"}, null, new Vector3(), "DEF-palm_01_L", new Matrix4())), new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, null));
 		
 		player.writeData(eData);
 		
@@ -357,6 +363,8 @@ public class GameScreen extends AbstractScreen {
 		player.readOnlyRead(PositionalData.class).collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
 		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		
+		GLOBALS.player = player;
 		
 		// END PLAYER
 		
@@ -519,16 +527,20 @@ public class GameScreen extends AbstractScreen {
 		pData.position.y = terrain == null ? 0 : terrain.getHeight(pData.position.x,  pData.position.z);
 
 		ge.readOnlyRead(StatusData.class).factions.add("Enemy");
-		ge.readOnlyRead(StatusData.class).speed = 15;
+		ge.readOnlyRead(StatusData.class).stats.put(STATS.SPEED, 15);
+		ge.readOnlyRead(StatusData.class).stats.put(STATS.MASS, 100);
+		ge.readOnlyRead(StatusData.class).stats.put(STATS.MAXHEALTH, 150);
+		ge.readOnlyRead(StatusData.class).currentHealth = 100;
+		ge.readOnlyRead(StatusData.class).blocking = false;
 		
 		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		ge.addRenderable(gam, new Vector3());
 				
 		ATTACK_STAGE[] gwattacks = {
 				
-				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(20, 10, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
-				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(20, 10, 70, 100), null, 0, 0),
-				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(20, 10, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
+				new ATTACK_STAGE("attack_main_1", 1.0f, 1, null, new AttackMotionTrail(20, 70, 90), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0),
+				new ATTACK_STAGE("attack_main_2", 1.0f, 2, null, new AttackMotionTrail(20, 70, 100), null, 0, 0),
+				new ATTACK_STAGE("attack_main_3", 1.0f, 1, null, new AttackMotionTrail(20, 81, 91), new AttackActionParticleEffect("data/effects/groundburst.effect"), 0, 0)
 		};
 		
 		EquipmentData eData = ge.readOnlyRead(EquipmentData.class);
@@ -538,8 +550,8 @@ public class GameScreen extends AbstractScreen {
 		eData.equip(Equipment_Slot.HEAD, new Armour(new EquipmentGraphics(null, new EquipmentModel("data/models/hair1.g3db", new String[]{"data/textures/hair"}, null, new Vector3(1.0f, 1.0f, 1.0f), "DEF-head", new Matrix4().rotate(0, 0, 1, -90).translate(0.1f, 0.5f, 0))), null));
 		
 		EquipmentGraphics axeg = new EquipmentGraphics(null, new EquipmentModel("data/models/axe.g3db", new String[]{"data/textures/axe"}, "idle", new Vector3(1.0f, 1.0f, 1.0f), "DEF-palm_01_R", new Matrix4().rotate(1, 0, 0, 180).rotate(0, 0, 1, -20)));
-		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, axeg, new DESCRIPTION(null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1)));
-		Item item = new Item(new DESCRIPTION("Orb", "An Orb", ITEM_TYPE.MISC, "data/textures/orb.png"));
+		eData.equip(Equipment_Slot.RARM, new Weapon(gwattacks, axeg, new DESCRIPTION(null, null, null, null, null), 0.5f, 0.3f, null, new ATTACK_STAGE("recoil_main", 3, -1, new AttackActionParticleEffect("data/effects/sparks.effect"), null, null, 0, -1)));
+		Item item = new Item(new DESCRIPTION("Orb", "An Orb", "An orbular thingymobob", ITEM_TYPE.MISC, "data/textures/orb.png"));
 		item.dropRate = 50;
 		eData.addItem(item);
 		
@@ -725,7 +737,7 @@ public class GameScreen extends AbstractScreen {
 			StatusData sData = e.readOnlyRead(StatusData.class);
 			if (sData.DAMAGED > 0)
 			{
-				float mag = 1.0f - ((float)sData.DAMAGED) / ((float)sData.MAX_HEALTH/2);
+				float mag = 1.0f - ((float)sData.DAMAGED) / ((float)sData.stats.get(STATS.MAXHEALTH)/2);
 				if (mag > 1.0f) mag = 1.0f;
 				
 				e.readData(pData);
@@ -764,7 +776,7 @@ public class GameScreen extends AbstractScreen {
 								drop.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
 								drop.readOnlyRead(PositionalData.class).position.set(e.readOnlyRead(PositionalData.class).position);
 								drop.readOnlyRead(PositionalData.class).velocity.set(20*(ran.nextInt(2)-1)*ran.nextFloat(), 25+25*ran.nextFloat(), 20*(ran.nextInt(2)-1)*ran.nextFloat());
-								drop.readOnlyRead(StatusData.class).mass = 1f;
+								drop.readOnlyRead(StatusData.class).stats.put(STATS.MASS, 100);
 
 								Selector sselect2 = new SequenceSelector();
 								sselect2.addNode(new ActionKill());
@@ -819,28 +831,6 @@ public class GameScreen extends AbstractScreen {
 		}
 		
 		GLOBALS.proccessPendingEntities();
-		
-		if (Gdx.input.isKeyPressed(Keys.R))
-		{
-			if (!flip)
-			{
-				if (equipped)
-				{
-					player.readOnlyRead(EquipmentData.class).unequip(Equipment_Slot.RARM);
-					equipped = false;
-				}
-				else
-				{
-					player.readOnlyRead(EquipmentData.class).equip(Equipment_Slot.RARM, weapon);
-					equipped = true;
-				}
-			}
-			flip = true;
-		}
-		else
-		{
-			flip = false;
-		}
 		
 		if (Gdx.input.isKeyPressed(Keys.TAB))
 		{

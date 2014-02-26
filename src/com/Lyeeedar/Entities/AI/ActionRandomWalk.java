@@ -8,6 +8,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Pirates.GLOBALS;
 
 public class ActionRandomWalk extends Action
@@ -50,7 +51,7 @@ public class ActionRandomWalk extends Action
 			pData.up.set(GLOBALS.DEFAULT_UP);
 		}
 		
-		pData.forward_backward(sData.speed);
+		pData.forward_backward(sData.stats.get(STATS.SPEED));
 		
 		entity.writeData(pData);
 		

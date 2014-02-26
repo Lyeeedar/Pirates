@@ -7,6 +7,7 @@ import com.Lyeeedar.Collision.BulletTest;
 import com.Lyeeedar.Graphics.Lights.Light;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Screens.AbstractScreen;
+import com.Lyeeedar.Screens.CharacterScreen;
 import com.Lyeeedar.Screens.GameScreen;
 import com.Lyeeedar.Screens.InventoryScreen;
 import com.Lyeeedar.Screens.MainMenuScreen;
@@ -23,6 +24,7 @@ public class PirateGame extends Game {
 		GAME,
 		GAMEMENU,
 		INVENTORY,
+		CHARACTER,
 		OPTIONS
 	}
 	
@@ -51,6 +53,7 @@ public class PirateGame extends Game {
 		screens.put(Screen.GAME, new GameScreen(this));
 		screens.put(Screen.MAINMENU, new MainMenuScreen(this));
 		screens.put(Screen.INVENTORY, new InventoryScreen(this));
+		screens.put(Screen.CHARACTER, new CharacterScreen(this));
 		
 		for (Entry<Screen, AbstractScreen> entry : screens.entrySet())
 		{

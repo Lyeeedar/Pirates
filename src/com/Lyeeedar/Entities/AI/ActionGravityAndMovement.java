@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Pirates.GLOBALS;
 
 public class ActionGravityAndMovement extends Action
@@ -23,8 +24,8 @@ public class ActionGravityAndMovement extends Action
 		entity.readData(pData);
 		entity.readData(sData);
 		
-		pData.applyVelocity(delta, sData.mass);
-		pData.velocity.add(0, GLOBALS.GRAVITY*delta*sData.mass, 0);
+		pData.applyVelocity(delta, ((float)sData.stats.get(STATS.MASS)/100.0f));
+		pData.velocity.add(0, GLOBALS.GRAVITY*delta*((float)sData.stats.get(STATS.MASS)/100.0f), 0);
 		
 		entity.writeData(pData);
 		

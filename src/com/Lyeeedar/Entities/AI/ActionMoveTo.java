@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeNode;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.GLOBALS.DIRECTION;
 import com.badlogic.gdx.math.MathUtils;
@@ -66,7 +67,7 @@ public class ActionMoveTo extends Action
 		entity.readData(sData);
 		
 		tmpVec.set(pData2.position).add(0, pData2.octtreeEntry.box.extents.y/2.0f, 0).sub(pData.position);
-		if (sData.mass > 0.01f) tmpVec.y = 0;
+		if (sData.stats.get(STATS.MASS) > 1) tmpVec.y = 0;
 		if (!towards)
 		{
 			tmpVec.x *= -1;
@@ -79,7 +80,7 @@ public class ActionMoveTo extends Action
 		tmpVec.crs(pData.rotation);
 		pData.up.set(tmpVec);
 		
-		pData.velocity.set(pData.rotation).scl(sData.speed);
+		pData.velocity.set(pData.rotation).scl(sData.stats.get(STATS.SPEED));
 		
 		parent.setDataTree("direction", DIRECTION.FORWARD);
 		

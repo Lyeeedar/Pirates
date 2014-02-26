@@ -5,6 +5,7 @@ import java.util.Random;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.StatusData;
+import com.Lyeeedar.Entities.Entity.StatusData.STATS;
 import com.Lyeeedar.Entities.AI.BehaviourTree.Action;
 import com.Lyeeedar.Entities.AI.BehaviourTree.BehaviourTreeState;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -62,15 +63,15 @@ public class ActionStrafe extends Action
 		entity.readData(sData);
 		
 		tmpVec.set(pData2.position).add(0, pData2.octtreeEntry.box.extents.y/2.0f, 0).sub(pData.position);
-		if (sData.mass > 0.01f) tmpVec.y = 0;
+		if (sData.stats.get(STATS.MASS) > 1) tmpVec.y = 0;
 		tmpVec.nor();
 		pData.rotation.set(tmpVec);
 		tmpVec.crs(GLOBALS.DEFAULT_UP);
 		tmpVec.crs(pData.rotation);
 		pData.up.set(tmpVec);
 		
-		if (right) pData.left_right(sData.speed);
-		else pData.left_right(-sData.speed);
+		if (right) pData.left_right(sData.stats.get(STATS.SPEED));
+		else pData.left_right(-sData.stats.get(STATS.SPEED));
 		
 		DIRECTION dir = right ? DIRECTION.RIGHT : DIRECTION.LEFT ;
 		

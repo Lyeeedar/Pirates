@@ -42,11 +42,11 @@ public final class GLOBALS {
 	
 	public enum ELEMENTS
 	{
-		TEMPERATURE, // Hot, cold
-		LIGHT, // Shadow, lasers, illusions
-		LIFE, // Healing, necromancy
-		GAIA, // Earth, plants, weather
-		FORCE // Gravity, physical buffs
+		FIRE,
+		WATER,
+		EARTH,
+		WOOD,
+		METAL
 	}
 
 	public static final float STEP = 0.1f;
