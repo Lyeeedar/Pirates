@@ -440,7 +440,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		{
 			this.baseSpell = baseSpell;
 			baseSpell.readData(pData);
-			pData.createCallback();
+			pData.createSweep();
 			baseSpell.writeData(pData);
 		}
 		

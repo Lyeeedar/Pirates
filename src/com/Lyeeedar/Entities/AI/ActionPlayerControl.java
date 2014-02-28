@@ -156,8 +156,7 @@ public class ActionPlayerControl extends Action
 
 		if (controls.jump() && !jump) 
 		{
-			pData.velocity.y = 70;
-			pData.jumpToken--;
+			pData.jump(70);
 			jump = true;
 		}
 		else if (!controls.jump())

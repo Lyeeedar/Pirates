@@ -199,7 +199,7 @@ public class GameScreen extends AbstractScreen {
 		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
 		hf.setLocalScaling(new Vector3(10f, 500f, 10f));
 		
-		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
+		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE));
 		
 		// END HEIGHTMAP
 		
@@ -213,13 +213,14 @@ public class GameScreen extends AbstractScreen {
 		ship = new Entity(true, new PositionalData(), new StatusData());
 		ship.readOnlyRead(PositionalData.class).calculateComposed();
 		ship.readOnlyRead(StatusData.class).solid = true;
+		ship.readOnlyRead(StatusData.class).stats.put(STATS.SPEED, 10);
 		
 		Selector ssselect = new ConcurrentSelector();
 		BehaviourTree sbtree = new BehaviourTree(ssselect);
 		ssselect.addNode(new ActionGravityAndMovement());
-		//ssselect.addNode(new ActionMove(1));
+		ssselect.addNode(new ActionMove(1));
 		
-		//ship.setAI(sbtree);
+		ship.setAI(sbtree);
 		
 		//ship.setActivationAction(new Action_AISwapper("THis is a ship woooot", new AI_Ship_Control(controls), new AI_RotOnly(controls)));
 		
@@ -239,11 +240,11 @@ public class GameScreen extends AbstractScreen {
 		
 		BoundingBox sbb = shipModel.calculateBoundingBox();
 		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		ship.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHIP;
 		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
-		ship.readOnlyRead(PositionalData.class).needsOffset = false;
 		ship.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(sbb.getDimensions());
 		rw.add(entry);
-		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_WALKABLE), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST | BulletWorld.FILTER_WALKABLE));
 		
 		//cam.lockOn(ship);
 		
@@ -362,7 +363,7 @@ public class GameScreen extends AbstractScreen {
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 		player.readOnlyRead(PositionalData.class).collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
-		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		bw.add(new btCapsuleShape(1, 2), new Matrix4().setToTranslation(player.readOnlyRead(PositionalData.class).position), player, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 		
 		GLOBALS.player = player;
 		
@@ -411,7 +412,7 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE ENEMIES
 		
-		for (int i = 0; i < 30; i++)
+		for (int i = 0; i < 60; i++)
 		{
 			
 			Entity leader = makeEntity(null, rw, bw);
@@ -560,7 +561,7 @@ public class GameScreen extends AbstractScreen {
 		pData.octtreeEntry = entry;
 		pData.collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
-		bw.add(new btBoxShape(dimensions), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
+		bw.add(new btCapsuleShape(1, 2), new Matrix4().setToTranslation(pData.position), ge, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST));
 
 		return ge;
 	}
@@ -759,6 +760,7 @@ public class GameScreen extends AbstractScreen {
 					Queueable model = e.getRenderable(0);
 					death.setEmission(model.getVertexArray(), model);
 					death.play(false);
+					death.setHomeTarget(player.getRenderable(0));
 					GLOBALS.unanchoredEffects.add(death);
 				}
 				if (e.readOnlyRead(EquipmentData.class) != null)

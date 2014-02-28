@@ -5,6 +5,7 @@ import java.util.HashSet;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AI;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -31,6 +32,7 @@ import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
 import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
+import com.badlogic.gdx.physics.bullet.linearmath.btVector3;
 import com.badlogic.gdx.utils.Array;
 
 public class BulletWorld {
@@ -39,6 +41,7 @@ public class BulletWorld {
 	public static final short FILTER_AI = 1 << 13;
 	public static final short FILTER_RENDER = 1 << 12;
 	public static final short FILTER_GHOST = 1 << 11;
+	public static final short FILTER_WALKABLE = 1 << 10;
 
 	DebugDrawer debugDrawer = null;
 
@@ -72,8 +75,8 @@ public class BulletWorld {
 
 	public boolean collide(final ContactSensorSkippingCallback sensor) 
 	{		
-		world.contactTest(sensor.object, sensor);
-		return sensor.array.size != 0;
+		world.contactTest(sensor.me, sensor);
+		return sensor.objects.size != 0;
 	}
 	
 	public void remove(btRigidBody body)
@@ -221,6 +224,50 @@ public class BulletWorld {
 		}
 	}
 	
+	public static class KinematicCallback extends ClosestConvexResultSkippingCallback
+	{
+		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
+		public float minDot;
+		
+		private final Vector3 hitNormalWorld = new Vector3();
+
+		public KinematicCallback(Vector3 convexFromWorld, Vector3 convexToWorld)
+		{
+			super(convexFromWorld, convexToWorld);
+		}
+		
+		public void set(Vector3 up, float minDot)
+		{
+			this.up.set(up);
+			this.minDot = minDot;
+		}
+		
+		@Override
+		public float addSingleResult(LocalConvexResult convexResult, boolean normalInWorldSpace)
+		{	
+			hitNormalWorld.set(convexResult.getHitNormalLocal().x(), convexResult.getHitNormalLocal().y(), convexResult.getHitNormalLocal().z());
+			if (!normalInWorldSpace)
+			{
+				///need to transform normal into worldspace
+				hitNormalWorld.mul(convexResult.getHitCollisionObject().getWorldTransform());
+			}
+
+			float dotUp = up.dot(hitNormalWorld);
+			if (dotUp < minDot) 
+			{
+				return 1.0f;
+			}
+			return super.addSingleResult(convexResult, normalInWorldSpace);
+		}
+
+		@Override
+		public boolean needsCollision(btBroadphaseProxy proxy)
+		{
+			if (skipObjects.contains(proxy.getClientObject())) return false;
+			return super.needsCollision(proxy);
+		}
+	}
+	
 	public static class ClosestConvexResultSkippingCallback extends ClosestConvexResultCallback
 	{
 		public HashSet<Long> skipObjects = new HashSet<Long>();
@@ -262,8 +309,9 @@ public class BulletWorld {
 	{
 		public HashSet<Long> skipObjects = new HashSet<Long>();
 		
-		public btCollisionObject object;
-		public final Array<btCollisionObject> array = new Array<btCollisionObject>();
+		public btCollisionObject me;
+		public final Array<btCollisionObject> objects = new Array<btCollisionObject>();
+		public final Array<btManifoldPoint> manifolds = new Array<btManifoldPoint>();
 
 		public void clearSkips()
 		{
@@ -288,7 +336,7 @@ public class BulletWorld {
 				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1) 
 
 		{
-			btCollisionObject other = colObj0Wrap.getCollisionObject() == object ? colObj1Wrap.getCollisionObject() : colObj0Wrap.getCollisionObject();
+			btCollisionObject other = colObj0Wrap.getCollisionObject() == me ? colObj1Wrap.getCollisionObject() : colObj0Wrap.getCollisionObject();
 
 			if (skipObjects.contains(other.getCPointer()))
 			{
@@ -296,8 +344,10 @@ public class BulletWorld {
 			}
 			
 			if (other != null) {
-				array.add(other);
+				objects.add(other);
 			}
+			
+			manifolds.add(cp);
 
 			return 0f;
 		}

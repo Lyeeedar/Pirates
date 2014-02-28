@@ -120,6 +120,7 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public transient boolean created = false;
 	public transient float[][] emissionMesh;
 	public transient Queueable emissionObject;
+	public transient Queueable homeTarget;
 	public transient Entity base;
 	
 	public transient float time = 0;
@@ -663,8 +664,25 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			}
 			else if (p.emittedType == 1)
 			{
-				p.vy += GLOBALS.GRAVITY*delta*p.mass;
-				p.update(delta, p.vx, p.vy + GLOBALS.GRAVITY*delta*p.mass, p.vz);
+				if (homeTarget != null)
+				{
+					tmpVec.set(0, 0, 0).mul(homeTarget.getTransform()).sub(p.x, p.y, p.z);
+					tmpVec2.set(p.vx, p.vy, p.vz);
+					float len = tmpVec2.len()+delta;
+					
+					tmpVec2.add(tmpVec.sub(tmpVec2).scl(delta)).nor().scl(len);
+					
+					p.vx = tmpVec2.x;
+					p.vy = tmpVec2.y;
+					p.vz = tmpVec2.z;
+					
+					p.update(delta, p.vx, p.vy, p.vz);
+				}
+				else
+				{
+					p.vy += GLOBALS.GRAVITY*delta*p.mass;
+					p.update(delta, p.vx, p.vy + GLOBALS.GRAVITY*delta*p.mass, p.vz);
+				}
 			}
 
 			if (base != null)
@@ -836,13 +854,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		ParticleEmitter copy = new ParticleEmitter(particleLifetime, duration, blendFuncSRC, blendFuncDST, blendEquation, atlasName, name);
 		copy.maxParticles = maxParticles;
 		
-//		for (ParticleAttribute pa : ParticleAttribute.values())
-//		{
-//			TimelineValue[] tv = timelines.get(pa);
-//			TimelineValue[] cpytv = new TimelineValue[tv.length];
-//			for (int i = 0; i < tv.length; i++) cpytv[i] = tv[i].copy();
-//			copy.timelines.put(pa, cpytv);
-//		}
+		copy.emissionMesh = emissionMesh;
+		copy.emissionObject = emissionObject;
+		copy.homeTarget = homeTarget;
 		
 		copy.timelines = timelines;
 

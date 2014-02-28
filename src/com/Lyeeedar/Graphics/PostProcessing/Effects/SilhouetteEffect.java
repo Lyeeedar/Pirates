@@ -37,37 +37,38 @@ public class SilhouetteEffect extends PostProcessingEffect {
 		this.BUFFER_HEIGHT = BUFFER_HEIGHT;
 		this.cam = cam;
 		
-		downsampleBuffer = new FrameBuffer(Format.RGBA8888, BUFFER_WIDTH, BUFFER_HEIGHT, true);
+		downsampleBuffer = new FrameBuffer(Format.RGBA8888, BUFFER_WIDTH, BUFFER_HEIGHT, false);
 		blur = new BlurEffect(0.98f, 1.2f, BUFFER_WIDTH, BUFFER_HEIGHT);
 	}
 
 	@Override
 	public void render(Texture texture, FrameBuffer buffer, Texture depthTexture)
 	{
+		downsampleBuffer.begin();
+		
+		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glDepthMask(false);
+		Gdx.gl.glDisable(GL20.GL_BLEND);
+		
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+		Gdx.gl20.glLineWidth(10);
+		
 		for (Entity e : GLOBALS.needsSilhouette)
 		{
 			e.queueRenderables(cam, GLOBALS.LIGHTS, 0, batches, false);
 		}
 		
-		downsampleBuffer.begin();
-		
-		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-		Gdx.gl.glCullFace(GL20.GL_BACK);
-		
-		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		Gdx.gl.glDisable(GL20.GL_BLEND);
-		
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		Gdx.gl20.glLineWidth(1);
-		
 		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(cam, GL20.GL_LINES, outline);		
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(cam, GL20.GL_LINES, outline);
 		
-		Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+		for (Entity e : GLOBALS.needsSilhouette)
+		{
+			e.queueRenderables(cam, GLOBALS.LIGHTS, 0, batches, false);
+		}
+		
 		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(cam, GL20.GL_TRIANGLES, clear);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(cam, GL20.GL_TRIANGLES, clear);
 
@@ -81,15 +82,12 @@ public class SilhouetteEffect extends PostProcessingEffect {
 		
 		Gdx.graphics.getGL20().glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
-		Gdx.graphics.getGL20().glDisable(GL20.GL_DEPTH_TEST);		
-		Gdx.graphics.getGL20().glDisable(GL20.GL_CULL_FACE);
 
 		batch.setShader(null);
 		batch.getProjectionMatrix().setToOrtho2D(0, 0, buffer.getWidth(), buffer.getHeight());
 		
 		batch.begin();
-		batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ONE);
+		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		
 		batch.draw(texture, 0, 0, buffer.getWidth(), buffer.getHeight(),
 				0, 0, texture.getWidth(), texture.getHeight(),

@@ -25,7 +25,7 @@ public class ActionGravityAndMovement extends Action
 		entity.readData(sData);
 		
 		pData.applyVelocity(delta, ((float)sData.stats.get(STATS.MASS)/100.0f));
-		pData.velocity.add(0, GLOBALS.GRAVITY*delta*((float)sData.stats.get(STATS.MASS)/100.0f), 0);
+		//pData.velocity.add(0, GLOBALS.GRAVITY*delta*((float)sData.stats.get(STATS.MASS)/100.0f), 0);
 		
 		entity.writeData(pData);
 		

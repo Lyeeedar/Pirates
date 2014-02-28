@@ -282,6 +282,14 @@ public class ParticleEffect implements Queueable {
 		}
 	}
 
+	public void setHomeTarget(Queueable target)
+	{
+		for (Emitter e : emitters)
+		{
+			e.emitter.homeTarget = target;
+		}
+	}
+	
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches)
 	{

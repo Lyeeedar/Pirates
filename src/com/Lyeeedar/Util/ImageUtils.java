@@ -337,10 +337,10 @@ public final class ImageUtils {
 		return s + (e-s)*a;
 	}
 	
-	public static final Vector3 lerp(Vector3 s, Vector3 e, float a, Vector3 dst)
+	public static final Vector3 lerp(Vector3 s, Vector3 e, float a, Vector3 out)
 	{
-		dst.set(e).sub(s).scl(a).add(s);		
-		return dst;
+		out.set(lerp(s.x, e.x, a), lerp(s.y, e.y, a), lerp(s.z, e.z, a));
+		return out;
 	}
 	
 	public static final float bilerp(float s00, float s01, float s10, float s11, float xfrac, float yfrac) {
