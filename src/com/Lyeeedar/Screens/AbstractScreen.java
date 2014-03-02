@@ -13,6 +13,7 @@ package com.Lyeeedar.Screens;
 import java.util.HashMap;
 
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
+import com.Lyeeedar.Graphics.LineRenderer;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
@@ -103,8 +104,11 @@ public abstract class AbstractScreen implements Screen {
 		stage = new Stage(0, 0, true, spriteBatch);
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam);
 		
+		if (GLOBALS.lineRenderer == null) GLOBALS.lineRenderer = new LineRenderer();
+		
 		postprocessor.addEffect(Effect.BLOOM);
-		postprocessor.addEffect(Effect.SILHOUETTE);
+		//postprocessor.addEffect(Effect.SILHOUETTE);
+		postprocessor.addEffect(Effect.UNDERWATER);
 		
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.BLUR);
@@ -112,9 +116,19 @@ public abstract class AbstractScreen implements Screen {
 		
 	}
 
+	float[] deltas = new float[10];
+	
 	@Override
 	public void render(float delta) 
 	{
+		for (int i = 0; i < deltas.length-1; i++)
+		{
+			deltas[i] = deltas[i+1];
+			delta += deltas[i];
+		}
+		delta /= (float)deltas.length;
+		deltas[deltas.length-1] = delta;
+		
 		if (controls.esc()) game.switchScreen(PirateGame.Screen.MAINMENU);
 		
 		postprocessor.begin();
@@ -139,7 +153,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		//Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -156,6 +170,7 @@ public abstract class AbstractScreen implements Screen {
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
 		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
+		GLOBALS.lineRenderer.render(cam);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		
@@ -210,6 +225,7 @@ public abstract class AbstractScreen implements Screen {
         	Gdx.app.log("Update", "");
 			Gdx.app.log("	FPS         ", ""+Gdx.graphics.getFramesPerSecond());
 			Gdx.app.log("	Frame Time  ", ""+averageFrame/1000000f);
+			Gdx.app.log("	Delta       ", ""+delta);
 	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
 	        Gdx.app.log("	Update      ", ""+averageUpdate);
 	        Gdx.app.log("	Queue       ", ""+averageQueue);

@@ -56,7 +56,6 @@ public class BulletWorld {
 
 	public BulletWorld(Vector3 worldMin, Vector3 worldMax)
 	{
-		//broadphase = new btAxisSweep3(worldMin,worldMax);
 		broadphase = new btDbvtBroadphase();
 
 		config = new btDefaultCollisionConfiguration();
@@ -65,7 +64,6 @@ public class BulletWorld {
 		solver = new btSequentialImpulseConstraintSolver();
 
 		world = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, config);
-		world.setGravity(new Vector3(0, -10, 0));
 
 		debugDrawer = new DebugDrawer();
 		world.setDebugDrawer(debugDrawer);       
@@ -76,7 +74,14 @@ public class BulletWorld {
 	public boolean collide(final ContactSensorSkippingCallback sensor) 
 	{		
 		world.contactTest(sensor.me, sensor);
-		return sensor.objects.size != 0;
+		return sensor.manifolds.size != 0;
+	}
+	
+	public boolean collide(final SimpleSkippingCallback sensor) 
+	{		
+		sensor.collided = false;
+		world.contactTest(sensor.me, sensor);
+		return sensor.collided;
 	}
 	
 	public void remove(btRigidBody body)
@@ -144,11 +149,7 @@ public class BulletWorld {
 		
 		public ClosestRayResultSkippingCallback()
 		{
-			this(new Vector3(), new Vector3());
-		}
-
-		public ClosestRayResultSkippingCallback(Vector3 rayFromWorld, Vector3 rayToWorld) {
-			super(rayFromWorld, rayToWorld);
+			super(new Vector3(), new Vector3());
 		}
 		
 		public void clearSkips()
@@ -211,16 +212,55 @@ public class BulletWorld {
 		}
 	}
 	
-	public static class SimpleContactTestCallback extends ContactResultCallback
+	public static class SimpleSkippingCallback extends ContactResultCallback
 	{
 		public boolean collided = false;
+		
+		public btCollisionObject me;
+		public HashSet<Long> skipObjects = new HashSet<Long>();
+		
+		public void setCollisionShape(btCollisionShape shape, Matrix4 trans)
+		{
+			if (me == null)
+			{
+				me = new btCollisionObject();
+			}
+			me.setCollisionShape(shape);
+			me.setWorldTransform(trans);
+		}
+		
+		public void clearSkips()
+		{
+			skipObjects.clear();
+		}
+		
+		public boolean hasSkip(long skip)
+		{
+			return skipObjects.contains(skip);
+		}
+		
+		public void setSkipObject(btCollisionObject object)
+		{
+			if (!skipObjects.contains(object.getCPointer()))
+			{
+				skipObjects.add(object.getCPointer());
+			}
+		}
+		
+		@Override
+		public boolean needsCollision(btBroadphaseProxy proxy)
+		{
+			if (collided) return false;
+			if (skipObjects.contains(proxy.getClientObject())) return false;
+			return super.needsCollision(proxy);
+		}
 		
 		public float addSingleResult (btManifoldPoint cp, btCollisionObjectWrapper colObj0Wrap, int partId0, int index0,
 				btCollisionObjectWrapper colObj1Wrap, int partId1, int index1) 
 
 		{
 			collided = true;
-			return 0f;
+			return 1f;
 		}
 	}
 	
@@ -231,9 +271,9 @@ public class BulletWorld {
 		
 		private final Vector3 hitNormalWorld = new Vector3();
 
-		public KinematicCallback(Vector3 convexFromWorld, Vector3 convexToWorld)
+		public KinematicCallback()
 		{
-			super(convexFromWorld, convexToWorld);
+			super();
 		}
 		
 		public void set(Vector3 up, float minDot)
@@ -258,13 +298,6 @@ public class BulletWorld {
 				return 1.0f;
 			}
 			return super.addSingleResult(convexResult, normalInWorldSpace);
-		}
-
-		@Override
-		public boolean needsCollision(btBroadphaseProxy proxy)
-		{
-			if (skipObjects.contains(proxy.getClientObject())) return false;
-			return super.needsCollision(proxy);
 		}
 	}
 	
@@ -291,10 +324,9 @@ public class BulletWorld {
 
 		}
 
-		public ClosestConvexResultSkippingCallback(Vector3 convexFromWorld,
-				Vector3 convexToWorld)
+		public ClosestConvexResultSkippingCallback()
 		{
-			super(convexFromWorld, convexToWorld);
+			super(new Vector3(), new Vector3());
 		}
 		
 		@Override
@@ -312,7 +344,18 @@ public class BulletWorld {
 		public btCollisionObject me;
 		public final Array<btCollisionObject> objects = new Array<btCollisionObject>();
 		public final Array<btManifoldPoint> manifolds = new Array<btManifoldPoint>();
+		public final Array<Byte> signs = new Array<Byte>();
 
+		public void setCollisionShape(btCollisionShape shape, Matrix4 trans)
+		{
+			if (me == null)
+			{
+				me = new btCollisionObject();
+			}
+			me.setCollisionShape(shape);
+			me.setWorldTransform(trans);
+		}
+		
 		public void clearSkips()
 		{
 			skipObjects.clear();
@@ -340,7 +383,7 @@ public class BulletWorld {
 
 			if (skipObjects.contains(other.getCPointer()))
 			{
-				return 0f;
+				return 1f;
 			}
 			
 			if (other != null) {
@@ -348,8 +391,10 @@ public class BulletWorld {
 			}
 			
 			manifolds.add(cp);
+			byte sign = (byte) (colObj0Wrap.getCollisionObject() == me ? -1 : 1) ;
+			signs.add(sign);
 
-			return 0f;
+			return 1f;
 		}
 
 	}

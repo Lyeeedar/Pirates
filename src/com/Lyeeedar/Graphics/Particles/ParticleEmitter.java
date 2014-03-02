@@ -295,6 +295,12 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		active = null;
 		if (inactive != null) Pools.freeAll(inactive);
 		inactive = null;
+		base = null;
+		emissionMesh = null;
+		emissionObject = null;
+		atlas = null;
+		atlasTexture = null;
+		homeTarget = null;
 		created = false;
 	}
 
@@ -688,9 +694,9 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			if (base != null)
 			{
 				PositionalData pData = base.readOnlyRead(PositionalData.class);
-				p.x += pData.deltaPos.x;
-				p.y += pData.deltaPos.y;
-				p.z += pData.deltaPos.z;
+				p.x += pData.position.x - pData.lastPos1.x;
+				p.y += pData.position.y - pData.lastPos1.y;
+				p.z += pData.position.z - pData.lastPos1.z;
 			}
 			
 			if (p.lifetime > particleLifetime)

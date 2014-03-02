@@ -35,9 +35,12 @@ public class FollowCam extends PerspectiveCamera {
 	private final Vector3 tmpVec = new Vector3();
 	private final Vector3 tmpVec2 = new Vector3();
 	
-	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
+	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback();
 	
 	private Entity lockOn;
+	
+	public boolean underwater = false;
+	private float underwaterCD = 0;
 	
 	public FollowCam(Controls controls, OcttreeShape aiShape, float sizeLim)
 	{
@@ -99,7 +102,7 @@ public class FollowCam extends PerspectiveCamera {
 		update();
 	}
 	
-	public void update(Entity entity)
+	public void update(Entity entity, float delta)
 	{
 		followDist += controls.scrolled();
 		followDist = MathUtils.clamp(followDist, 5, 50);
@@ -117,7 +120,7 @@ public class FollowCam extends PerspectiveCamera {
 			if (lockOn.DISPOSED) 
 			{
 				lockOn = null;
-				update(entity);
+				update(entity, delta);
 				return;
 			}
 			GLOBALS.needsSilhouette.add(lockOn);
@@ -179,16 +182,79 @@ public class FollowCam extends PerspectiveCamera {
 			}
 		}
 		
-		float seaY = 0;
+		underwaterCD -= delta;
 		
-		for (int i = 0; i < 2; i++)
+		if (underwaterCD < 0)
 		{
-			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
-			float diff = seaHeight - frustum.planePoints[i].y;
-			if (diff > seaY) seaY = diff;
+			int success = 0;
+			int i = underwater ? 0 : 2 ;
+			int in  = underwater ? 2 : 4 ;
+			for (; i < in; i++)
+			{
+				float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z)+0.1f;
+				float diff = seaHeight - frustum.planePoints[i].y;
+				if (underwater) 
+				{
+					if (diff < 0) 
+					{
+						success++;
+					}
+				}
+				else 
+				{
+					if (diff > 0) 
+					{
+						success++;
+					}
+				}
+			}
+			if (success == 2)
+			{
+				underwaterCD = 1.0f;
+				underwater = !underwater;
+				
+				if (underwater)
+				{
+					GLOBALS.FOG_MIN = 0;
+					GLOBALS.FOG_MAX = 2000;
+				}
+				else
+				{
+					GLOBALS.FOG_MIN = 1000;
+					GLOBALS.FOG_MAX = 6000;
+				}
+			}
 		}
 		
-		if (seaY > 0)
+		float seaY = 0;
+		boolean sea = false;
+		int i = underwater ? 2 : 0 ;
+		int in  = underwater ? 4 : 2 ;
+		for (; i < in; i++)
+		{
+			float seaHeight = GLOBALS.SKYBOX.sea.waveHeight(frustum.planePoints[i].x, frustum.planePoints[i].z);
+			seaHeight += underwater ? -0.1f : 0.1f ;
+			float diff = seaHeight - frustum.planePoints[i].y;
+			
+			if (underwater) 
+			{
+				if (diff < seaY) 
+				{
+					seaY = diff;
+					sea = true;
+				}
+			}
+			else 
+			{
+				if (diff > seaY) 
+				{
+					seaY = diff;
+					sea = true;
+				}
+			}
+		}
+		
+		if (sea)
 		{
 			position.y += seaY;
 			update();

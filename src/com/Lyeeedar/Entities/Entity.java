@@ -11,6 +11,7 @@ import com.Lyeeedar.Collision.BulletWorld.ClosestConvexResultSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.ClosestRayResultSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.ContactSensorSkippingCallback;
 import com.Lyeeedar.Collision.BulletWorld.KinematicCallback;
+import com.Lyeeedar.Collision.BulletWorld.SimpleSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity.EntityData.EntityDataType;
 import com.Lyeeedar.Entities.AI.BehaviourTree;
@@ -33,6 +34,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.ClosestNotMeConvexResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.ConvexResultCallback;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btConvexShape;
 import com.badlogic.gdx.physics.bullet.collision.btManifoldPoint;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
@@ -471,12 +473,12 @@ public class Entity {
 		}
 		public LOCATION location = LOCATION.AIR;
 
-		public final Vector3 lastPos = new Vector3();
+		public final Vector3 lastSafePos = new Vector3();
+		public final Vector3 lastPos1 = new Vector3();
+		public final Vector3 lastPos2 = new Vector3();
 		public final Vector3 position = new Vector3();
 		public final Vector3 lastRot1 = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 lastRot2 = new Vector3(GLOBALS.DEFAULT_ROTATION);
-		public final Vector3 deltaPos = new Vector3();
-		public final Vector3 deltaRot = new Vector3();
 		public final Vector3 rotation = new Vector3(GLOBALS.DEFAULT_ROTATION);
 		public final Vector3 up = new Vector3(GLOBALS.DEFAULT_UP);
 		public final Vector3 velocity = new Vector3();
@@ -512,15 +514,17 @@ public class Entity {
 		private final Vector3 walkNor = new Vector3();
 
 		public btRigidBody physicsBody;
-		public btConvexShape collisionShape;
+		public btCollisionShape collisionShape;
 		public OcttreeEntry<Entity> octtreeEntry;
 
 		public float locationCD = 0;
 
 		public KinematicCallback sweep;
 		public ContactSensorSkippingCallback sensor;
+		public SimpleSkippingCallback simpleCallback;
 
 		public Entity base;
+		public int baseDepth = 0;
 
 		@Override
 		public void write(PositionalData data)
@@ -530,12 +534,12 @@ public class Entity {
 			location = data.location;
 			locationCD = data.locationCD;
 
-			lastPos.set(data.lastPos);
+			lastSafePos.set(data.lastSafePos);
+			lastPos1.set(data.lastPos1);
+			lastPos2.set(data.lastPos2);
 			position.set(data.position);
 			lastRot1.set(data.lastRot1);
 			lastRot2.set(data.lastRot2);
-			deltaPos.set(data.deltaPos);
-			deltaRot.set(data.deltaRot);
 			rotation.set(data.rotation);		
 			velocity.set(data.velocity);
 			up.set(data.up);
@@ -552,11 +556,13 @@ public class Entity {
 
 			sweep = data.sweep;
 			sensor = data.sensor;
+			simpleCallback = data.simpleCallback;
 			physicsBody = data.physicsBody;
 			collisionShape = data.collisionShape;
 			octtreeEntry = data.octtreeEntry;
 
 			base = data.base;
+			baseDepth = data.baseDepth;
 
 			parent = data.parent;
 
@@ -576,7 +582,7 @@ public class Entity {
 			ed.write(this);
 			if (ed.sweep != null)
 			{
-				ed.sweep = new KinematicCallback(new Vector3(), new Vector3());
+				ed.createSweep();
 				for (long l : sweep.skipObjects)
 				{
 					ed.sweep.skipObjects.add(l);
@@ -657,55 +663,157 @@ public class Entity {
 		{
 			if (sensor == null) createSensor();
 			sensor.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
-			sensor.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			sensor.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);			
+			tmpMat.setToTranslation(currentPos);
+			sensor.setCollisionShape(collisionShape, tmpMat);
 
 			sensor.manifolds.clear();
 			sensor.objects.clear();
-
+			sensor.signs.clear();
+			
 			boolean penetration = false;
 			float maxPen = 0.0f;
 
 			if (GLOBALS.physicsWorld.collide(sensor))
 			{
-				for (btManifoldPoint pt : sensor.manifolds)
+				for (int i = 0; i < sensor.manifolds.size; i++)
 				{
+					btManifoldPoint pt = sensor.manifolds.get(i);
 					float dist = pt.getDistance();
+					
+					Vector3 normal = tmpVec.set(pt.getNormalWorldOnB().x(), pt.getNormalWorldOnB().y(), pt.getNormalWorldOnB().z()).scl(sensor.signs.get(i));
 
-					if (Math.abs(dist) > 0.2f)
+					if (Math.abs(dist) > 0.02f)
 					{
-						tmpVec.set(pt.getNormalWorldOnB().x(), pt.getNormalWorldOnB().y(), pt.getNormalWorldOnB().z()).scl(-1);
+						Vector3 start = Pools.obtain(Vector3.class).set(pt.getPositionWorldOnB().x(), pt.getPositionWorldOnB().y(), pt.getPositionWorldOnB().z());
+						Vector3 end = Pools.obtain(Vector3.class).set(normal).scl(5).add(start);
+						Vector3 colour = Pools.obtain(Vector3.class).set(1, 0, 0);
+						GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+						Pools.free(start);
+						Pools.free(end);
+						Pools.free(colour);
+						
 						if (dist < maxPen)
 						{
 							maxPen = dist;
-							normalTouch.set(tmpVec);
+							normalTouch.set(normal);
 
 						}
-						currentPos.add(tmpVec.scl(dist*0.2f));
+						currentPos.add(normal.scl(dist*0.2f));
 						penetration = true;
-					} 
+					}
+
 				}
 			}
-
+			
+			sensor.manifolds.clear();
+			sensor.objects.clear();
+			sensor.signs.clear();
+			
 			return penetration;
+		}
+		
+		private Entity recoverFromPenetration(Vector3 out)
+		{
+			out.set(0, 0, 0);
+			
+			if (sensor == null) createSensor();
+			sensor.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			sensor.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);			
+			tmpMat.setToTranslation(currentPos);
+			sensor.setCollisionShape(collisionShape, tmpMat);
+
+			sensor.manifolds.clear();
+			sensor.objects.clear();
+			sensor.signs.clear();
+			
+			float maxPen = 0.0f;
+			Entity base = null;
+
+			if (GLOBALS.physicsWorld.collide(sensor))
+			{
+				for (int i = 0; i < sensor.manifolds.size; i++)
+				{
+					btManifoldPoint pt = sensor.manifolds.get(i);
+					
+					float dist = pt.getDistance();
+					Vector3 normal = tmpVec.set(pt.getNormalWorldOnB().x(), pt.getNormalWorldOnB().y(), pt.getNormalWorldOnB().z());//.scl(sensor.signs.get(i));
+
+					if (dist < 0.0f)
+					{
+						Vector3 start = Pools.obtain(Vector3.class).set(pt.getPositionWorldOnB().x(), pt.getPositionWorldOnB().y(), pt.getPositionWorldOnB().z());
+						Vector3 end = Pools.obtain(Vector3.class).set(normal).scl(5).add(start);
+						Vector3 colour = Pools.obtain(Vector3.class).set(1, 0, 0);
+						GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+						Pools.free(start);
+						Pools.free(end);
+						Pools.free(colour);
+						
+						if (dist < maxPen)
+						{
+							maxPen = dist;
+							out.set(normal).scl(dist*-1.0f);
+							base = (Entity) sensor.objects.get(i).userData;
+						}
+					}
+
+				}
+			}
+			
+			sensor.manifolds.clear();
+			sensor.objects.clear();
+			sensor.signs.clear();
+			
+			return base;
 		}
 
 		private void preStep()
 		{
-			int numPenetrationLoops = 0;
-			normalContact = false;
+//			currentPos.set(position).add(0, octtreeEntry.box.extents.y, 0);
+//			
+//			tmpVec.set(lastPos2).add(0, octtreeEntry.box.extents.y, 0);
+//			tmpVec2.set(currentPos);
+//
+//			tmpMat.setToTranslation(tmpVec);
+//			tmpMat2.setToTranslation(tmpVec2);
+//			sweep.setCollisionFilterMask(BulletWorld.FILTER_WALKABLE);
+//			sweep.setCollisionFilterGroup(BulletWorld.FILTER_WALKABLE);
+//			sweep.setClosestHitFraction(1f);
+//			sweep.setHitCollisionObject(null);
+//			sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+//			sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+//			sweep.set(GLOBALS.DEFAULT_UP, -1.0f);
+//
+//			GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
+//			
+//			if (sweep.hasHit())
+//			{
+//				Vector3 start = Pools.obtain(Vector3.class).set(sweep.getHitPointWorld().x(), sweep.getHitPointWorld().y(), sweep.getHitPointWorld().z());
+//				Vector3 end = Pools.obtain(Vector3.class).set(sweep.getHitNormalWorld().x(), sweep.getHitNormalWorld().y(), sweep.getHitNormalWorld().z()).scl(5).add(start);
+//				Vector3 colour = Pools.obtain(Vector3.class).set(0, 1, 0);
+//				
+//				GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+//				
+//				Pools.free(start);
+//				Pools.free(end);
+//				Pools.free(colour);
+//			}
 			
 			currentPos.set(position).add(0, octtreeEntry.box.extents.y, 0);
 			
+			int numPenetrationLoops = 0;
+			normalContact = false;
+			
 			while (recoverFromPenetration())
-			{
+			{				
 				numPenetrationLoops++;
 				normalContact = true;
 				if (numPenetrationLoops > 4)
 				{
+					System.err.println("Character could not recover from penetration after "+numPenetrationLoops+" loops.");
 					break;
 				}
 			}
-			targetPos.set(currentPos);
 		}
 
 		private void stepUp()
@@ -724,7 +832,7 @@ public class Entity {
 			sweep.getConvexToWorld().setValue(targetPos.x, targetPos.y, targetPos.z);
 			sweep.set(tmpVec.set(0, -1, 0), 0.707f);
 
-			GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep, GLOBALS.physicsWorld.world.getDispatchInfo().getAllowedCcdPenetration());
+			GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
 
 			if (sweep.hasHit())
 			{
@@ -749,9 +857,9 @@ public class Entity {
 		{
 //			Vector3 movementVec = tmpVec.set(targetPos).sub(currentPos);
 //			Vector3 projectedVec = tmpVec2.set(hitNormal).scl(movementVec.dot(hitNormal));
+//			projectedVec.y = 0.0f;
 //			Vector3 newVec = tmpVec3.set(projectedVec).scl(-1.9f).add(movementVec);
-//			//newVec.scl(movementVec.len() / newVec.len());
-//			targetPos.set(newVec).scl(collisionFraction).add(currentPos);
+//			targetPos.set(newVec).scl(normalMag).add(currentPos);
 			
 			Vector3 movementDirection = tmpVec4.set(targetPos).sub(currentPos);
 			float movementLength = movementDirection.len();
@@ -770,6 +878,7 @@ public class Entity {
 				if (normalMag != 0.0)
 				{
 					Vector3 perpComponent = perpindicularDir.scl(normalMag*movementLength);
+					perpComponent.y = 0;
 					targetPos.add(perpComponent);
 				}
 			}
@@ -777,9 +886,59 @@ public class Entity {
 
 		private void stepForwardAndStrafe(Vector3 walkMove, Vector3 walkNormal, short filter)
 		{
+//			targetPos.set(currentPos).add(walkVec.x, 0, 0);
+//			tmpVec.set(currentPos);
+//			tmpVec2.set(targetPos);
+//
+//			tmpMat.setToTranslation(tmpVec);
+//			tmpMat2.setToTranslation(tmpVec2);
+//			sweep.setCollisionFilterMask(BulletWorld.FILTER_WALKABLE);
+//			sweep.setCollisionFilterGroup(BulletWorld.FILTER_WALKABLE);
+//			sweep.setClosestHitFraction(1f);
+//			sweep.setHitCollisionObject(null);
+//			sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+//			sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+//			sweep.set(GLOBALS.DEFAULT_UP, -1.0f);
+//
+//			GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+//
+//			if (sweep.hasHit())
+//			{
+//				Xcollide = true;
+//				walkVec.x = 0;
+//				targetPos.x = currentPos.x;
+//			}
+//			
+//			currentPos.x += walkVec.x;
+//			
+//			targetPos.set(currentPos).add(0, 0, walkVec.z);
+//			tmpVec.set(currentPos);
+//			tmpVec2.set(targetPos);
+//
+//			tmpMat.setToTranslation(tmpVec);
+//			tmpMat2.setToTranslation(tmpVec2);
+//			sweep.setCollisionFilterMask(BulletWorld.FILTER_WALKABLE);
+//			sweep.setCollisionFilterGroup(BulletWorld.FILTER_WALKABLE);
+//			sweep.setClosestHitFraction(1f);
+//			sweep.setHitCollisionObject(null);
+//			sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
+//			sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
+//			sweep.set(GLOBALS.DEFAULT_UP, -1.0f);
+//
+//			GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+//
+//			if (sweep.hasHit())
+//			{
+//				Zcollide = true;
+//				walkVec.z = 0;
+//				targetPos.z = currentPos.z;
+//			}
+//			
+//			currentPos.z += walkVec.z;
+			
 			// phase 2: forward and strafe
 			targetPos.set(currentPos).add(walkMove);
-
+			
 			float fraction = 1.0f;
 			float distance2 = currentPos.dst2(targetPos);
 
@@ -809,7 +968,7 @@ public class Entity {
 				float margin = collisionShape.getMargin();
 				collisionShape.setMargin(margin + 0.02f);
 
-				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep, GLOBALS.physicsWorld.world.getDispatchInfo().getAllowedCcdPenetration());
+				GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
 
 				collisionShape.setMargin(margin);
 
@@ -870,9 +1029,9 @@ public class Entity {
 			sweep.getConvexFromWorld().setValue(currentPos.x, currentPos.y, currentPos.z);
 			sweep.getConvexToWorld().setValue(targetPos.x, targetPos.y, targetPos.z);
 			sweep.set(GLOBALS.DEFAULT_UP, (float) Math.cos(45));
-
-			GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep, GLOBALS.physicsWorld.world.getDispatchInfo().getAllowedCcdPenetration());
-
+			
+			GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
+			
 			if (sweep.hasHit() && ((Entity) sweep.getHitCollisionObject().userData).walkable)
 			{
 				// we dropped a fraction of the height -> hit floor
@@ -886,6 +1045,7 @@ public class Entity {
 				location = LOCATION.GROUND;
 				locationCD = 0.5f;
 				this.base = base;
+				baseDepth = 1 + base.readOnlyRead(PositionalData.class).baseDepth;
 			} 
 			else 
 			{
@@ -897,31 +1057,10 @@ public class Entity {
 				{
 					location = LOCATION.AIR;
 					locationCD = 0.8f;
-					this.base = null;
+					base = null;
+					baseDepth = 0;
 				}
 			}	
-		}
-
-		private void playerStep(float dt, float mass)
-		{
-			onGround = velocity.y == 0.0f && verticalOffset == 0.0f;
-
-			// Update fall velocity.
-			velocity.y += GLOBALS.GRAVITY * dt * mass;
-			verticalOffset = velocity.y * dt;
-
-			walkVec.set(velocity.x, 0, velocity.z).scl(dt);
-			walkNor.set(walkVec).nor();
-
-			preStep();
-			stepUp();
-			stepForwardAndStrafe(walkVec, walkNor, BulletWorld.FILTER_COLLISION);
-			stepDown(dt);
-
-			position.set(currentPos).sub(0, octtreeEntry.box.extents.y, 0);
-
-			velocity.x = 0;
-			velocity.z = 0;
 		}
 		
 		public void jump(float mag)
@@ -932,11 +1071,12 @@ public class Entity {
 
 		public void applyVelocity(float delta, float mass)
 		{
-			lastPos.set(position);
+			lastPos2.set(lastPos1);
+			lastPos1.set(position);
 			lastRot2.set(lastRot1);
 			lastRot1.set(rotation);
 			lastInv.set(inverse);
-
+			
 			Xcollide = false;
 			Ycollide = false;
 			Zcollide = false;
@@ -957,16 +1097,35 @@ public class Entity {
 			calculateComposed();
 		}
 
+		public void createSimpleCallback()
+		{
+			simpleCallback = new SimpleSkippingCallback();
+			if (sweep != null)
+			{
+				simpleCallback.skipObjects = sweep.skipObjects;
+			}
+			else 
+			{
+				simpleCallback.setSkipObject(physicsBody);
+			}
+		}
+		
 		public void createSensor()
 		{
 			sensor = new ContactSensorSkippingCallback();
-			sensor.skipObjects = sweep.skipObjects;
-			sensor.me = physicsBody;
+			if (sweep != null)
+			{
+				sensor.skipObjects = sweep.skipObjects;
+			}
+			else 
+			{
+				sensor.setSkipObject(physicsBody);
+			}
 		}
 
 		public void createSweep()
 		{
-			sweep = new KinematicCallback(new Vector3(), new Vector3());
+			sweep = new KinematicCallback();
 			if (physicsBody != null) sweep.setSkipObject(physicsBody);
 		}
 
@@ -1001,7 +1160,7 @@ public class Entity {
 				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
 				sweep.set(GLOBALS.DEFAULT_UP, -1.0f);
 
-				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
+				GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
 
 				if (sweep.hasHit())
 				{
@@ -1051,7 +1210,9 @@ public class Entity {
 				PositionalData pData = base.readOnlyRead(PositionalData.class);
 				tmpMat.set(pData.composed).translate(tmpVec.set(position).mul(pData.lastInv));
 				position.set(0, 0, 0).mul(tmpMat);
-				deltaPos.set(position).sub(lastPos);
+				
+				tmpMat.set(pData.composed).translate(tmpVec.set(lastSafePos).mul(pData.lastInv));
+				lastSafePos.set(0, 0, 0).mul(tmpMat);
 
 				tmpVec.set(pData.lastRot2);
 				tmpVec.y = 0; tmpVec.nor();
@@ -1062,21 +1223,278 @@ public class Entity {
 				rotation.mul(tmpMat);
 				up.mul(tmpMat);
 
-				deltaRot.set(rotation).sub(lastRot1);
 			}
+			
+			onGround = velocity.y == 0.0f && verticalOffset == 0.0f;
 
-			playerStep(delta, mass);
+			// Update fall velocity.
+			velocity.y += GLOBALS.GRAVITY * delta * mass;
+			
+			verticalOffset = velocity.y * delta;
 
+			walkVec.set(velocity.x, 0, velocity.z).scl(delta);
+			walkNor.set(walkVec).nor();
+			
+			// RECOVER FROM PENETRATION
+						
+			for (int i = 0; i < 1; i++)
+			{
+				Vector3 recoverVec = tmpVec4;
+				Entity base = recoverFromPenetration(tmpVec4);
+				if (base == null || recoverVec.isZero(0.01f))
+				{
+					break;
+				}
+				currentPos.add(recoverVec);
+				
+				if (base.walkable)
+				{
+					location = LOCATION.GROUND;
+					locationCD = 0.5f;
+					this.base = base;
+					baseDepth = 1 + base.readOnlyRead(PositionalData.class).baseDepth;
+				}
+			}
+			
+			// UP
+			currentPos.set(position).add(0, octtreeEntry.box.extents.y, 0);
+			
+			targetPos.set(currentPos).add(0, GLOBALS.STEP, 0);
+			targetPos.y += verticalOffset > 0.0f ? verticalOffset : 0.0f ;
+
+			tmpMat.setToTranslation(currentPos);
+			tmpMat2.setToTranslation(targetPos);
+			sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			sweep.setClosestHitFraction(1f);
+			sweep.setHitCollisionObject(null);
+			sweep.getConvexFromWorld().setValue(currentPos.x, currentPos.y, currentPos.z);
+			sweep.getConvexToWorld().setValue(targetPos.x, targetPos.y, targetPos.z);
+			sweep.set(tmpVec.set(0, -1, 0), 0.707f);
+
+			GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
+
+			if (sweep.hasHit())
+			{
+				// Only modify the position if the hit was a slope and not a wall or ceiling.
+				if(sweep.getHitNormalWorld().dot(GLOBALS.DEFAULT_UP) > 0.0f)
+				{
+					// we moved up only a fraction of the step height
+					stepOffset = GLOBALS.STEP * sweep.getClosestHitFraction();
+					ImageUtils.lerp(currentPos, targetPos, sweep.getClosestHitFraction(), currentPos);
+				}
+				velocity.y = 0.0f;
+				verticalOffset = 0.0f;
+			} 
+			else 
+			{
+				stepOffset = -GLOBALS.STEP;
+				currentPos.set(targetPos);
+			}
+			
+			// SLIDE
+			
+			targetPos.set(currentPos).add(walkVec);
+
+			float fraction = 1.0f;
+			int maxIter = 10;
+
+			while (fraction > 0.01f && maxIter-- > 0)
+			{
+				tmpMat.setToTranslation(currentPos);
+				tmpMat2.setToTranslation(targetPos);
+				sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+				sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+				sweep.setClosestHitFraction(1f);
+				sweep.setHitCollisionObject(null);
+				sweep.getConvexFromWorld().setValue(currentPos.x, currentPos.y, currentPos.z);
+				sweep.getConvexToWorld().setValue(targetPos.x, targetPos.y, targetPos.z);
+				
+				Vector3 sweepDirNegative = tmpVec4.set(currentPos).sub(targetPos);
+				sweep.set(sweepDirNegative, 0.0f);
+
+				float margin = collisionShape.getMargin();
+				collisionShape.setMargin(margin + 0.02f);
+
+				GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
+
+				collisionShape.setMargin(margin);
+
+				fraction -= sweep.getClosestHitFraction();
+
+				if (sweep.hasHit())
+				{
+					// we moved only a fraction
+					Vector3 normalVec = tmpVec5.set(sweep.getHitNormalWorld().x(), sweep.getHitNormalWorld().y(), sweep.getHitNormalWorld().z());
+					updateTargetPositionBasedOnCollision(normalVec, 1.0f);
+					Vector3 currentDir = tmpVec5.set(targetPos).sub(currentPos);
+					float distance2 = currentDir.len2();
+					if (distance2 > 0.01f)
+					{
+						currentDir.nor();
+						/* See Quake2: "If velocity is against original velocity, stop ead to avoid tiny oscillations in sloping corners." */
+						if (currentDir.dot(walkNor) <= 0.0f)
+						{
+							break;
+						}
+					}
+					else
+					{
+						break;
+					}
+				} 
+				else 
+				{
+					// we moved whole way
+					currentPos.set(targetPos);
+					break;
+				}
+
+			}
+			
+			// DOWN
+			
+			float downVelocity = velocity.y < 0.f ? velocity.y : 0.f ;
+			downVelocity *= delta;
+			
+			if (downVelocity > -GLOBALS.STEP*delta)
+			{
+				downVelocity = -GLOBALS.STEP*delta;
+			}
+			
+			targetPos.set(currentPos).add(0, stepOffset+downVelocity, 0);
+
+			tmpMat.setToTranslation(currentPos);
+			tmpMat2.setToTranslation(targetPos);
+			sweep.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			sweep.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			sweep.setClosestHitFraction(1f);
+			sweep.setHitCollisionObject(null);
+			sweep.getConvexFromWorld().setValue(currentPos.x, currentPos.y, currentPos.z);
+			sweep.getConvexToWorld().setValue(targetPos.x, targetPos.y, targetPos.z);
+			sweep.set(GLOBALS.DEFAULT_UP, (float) Math.cos(45));
+
+			GLOBALS.physicsWorld.world.convexSweepTest((btConvexShape) collisionShape, tmpMat, tmpMat2, sweep);
+
+			if (sweep.hasHit() && ((Entity) sweep.getHitCollisionObject().userData).walkable)
+			{
+				// we dropped a fraction of the height -> hit floor
+				ImageUtils.lerp(currentPos, targetPos, sweep.getClosestHitFraction(), currentPos);
+				velocity.y = 0.0f;
+				verticalOffset = 0.0f;
+				wasJumping = false;
+				onGround = true;
+
+				Entity base = (Entity) sweep.getHitCollisionObject().userData;
+				location = LOCATION.GROUND;
+				locationCD = 0.5f;
+				this.base = base;
+				baseDepth = 1 + base.readOnlyRead(PositionalData.class).baseDepth;
+			} 
+			else 
+			{
+				// we dropped the full height
+				currentPos.set(targetPos);
+				onGround = false;
+			}
+			
+			if (sweep.hasHit())
+			{
+				
+			}
+			
+			// RECOVER FROM PENETRATION
+			
+			for (int i = 0; i < 1; i++)
+			{
+				Vector3 recoverVec = tmpVec4;
+				Entity base = recoverFromPenetration(tmpVec4);
+				if (base == null || recoverVec.isZero(0.01f))
+				{
+					break;
+				}
+				currentPos.add(recoverVec);
+				
+				if (base.walkable)
+				{
+					location = LOCATION.GROUND;
+					locationCD = 0.5f;
+					this.base = base;
+					baseDepth = 1 + base.readOnlyRead(PositionalData.class).baseDepth;
+				}
+			}
+			
+			// CHECK VALID
+			
+			if (simpleCallback == null)
+			{
+				createSimpleCallback();
+			}
+			tmpMat.setToTranslationAndScaling(currentPos.x, currentPos.y, currentPos.z, 0.9f, 0.9f, 0.9f);
+			simpleCallback.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
+			simpleCallback.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
+			simpleCallback.setCollisionShape(collisionShape, tmpMat);
+
+			Vector3 colour = Pools.obtain(Vector3.class).set(0, 0, 1);
+			Vector3 start = Pools.obtain(Vector3.class).set(currentPos);
+			Vector3 end = Pools.obtain(Vector3.class).set(start);
+			
+			if (GLOBALS.physicsWorld.collide(simpleCallback))
+			{
+				currentPos.set(lastSafePos).add(0, octtreeEntry.box.extents.y, 0);
+				velocity.y = 0;
+				end.add(0, 5, 0);
+			}
+			else
+			{
+				colour.set(0, 1, 0);
+				end.add(0, 2, 0);
+				lastSafePos.set(currentPos).sub(0, octtreeEntry.box.extents.y, 0);
+			}
+			
+			GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+			Pools.free(start);
+			Pools.free(end);
+			Pools.free(colour);
+			
+			// COMMIT POSITION
+			
+			position.set(currentPos).sub(0, octtreeEntry.box.extents.y, 0);
+
+			velocity.x = 0;
+			velocity.z = 0;
+			
+			// WATER REPULSION
+			
 			float waveHeight = GLOBALS.SKYBOX.sea.waveHeight(position.x, position.z);
-
 			if (position.y < waveHeight)
 			{
-				velocity.y = 0;
-				position.y = waveHeight;
+				if (velocity.y < 0.0f)
+				{
+					velocity.y += -GLOBALS.GRAVITY * delta * mass * 4.0f ;
+				}
+				else
+				{
+					velocity.y += -GLOBALS.GRAVITY * delta * mass * 1.3f ;
+				}
+								
+				if (position.y+velocity.y*delta > waveHeight)
+				{
+					velocity.y = (waveHeight - position.y)/delta;
+				}
+				
 				locationCD = 0.5f;
 				location = LOCATION.SEA;
-				Ycollide = true;
-				this.base = null;
+			}
+						
+			// UPDATE BASE
+			
+			if (locationCD < 0)
+			{
+				location = LOCATION.AIR;
+				locationCD = 0.8f;
+				base = null;
+				baseDepth = 0;
 			}
 			
 			tmpMat.setToTranslation(position.x, position.y+octtreeEntry.box.extents.y, position.z).rotate(GLOBALS.DEFAULT_ROTATION, rotation);
@@ -1086,43 +1504,35 @@ public class Entity {
 		}
 		
 		private void collisionShip(float delta, float mass)
-		{
-			if (sweep == null)
+		{			
+			if (simpleCallback == null)
 			{
-				createSweep();
+				createSimpleCallback();
 			}
 
 			locationCD -= delta;
 
 			walkVec.set(velocity.x, 0, velocity.z).scl(delta);
 
-//			if (walkVec.x != 0 || walkVec.z != 0)
-//			{
-//				tmpVec.set(position);
-//				tmpVec2.set(position).add(walkVec);
-//
-//				tmpMat.setToTranslation(tmpVec);
-//				tmpMat2.setToTranslation(tmpVec2);
-//				sweep.setCollisionFilterMask(BulletWorld.FILTER_WALKABLE);
-//				sweep.setCollisionFilterGroup(BulletWorld.FILTER_WALKABLE);
-//				sweep.setClosestHitFraction(1f);
-//				sweep.setHitCollisionObject(null);
-//				sweep.getConvexFromWorld().setValue(tmpVec.x, tmpVec.y, tmpVec.z);
-//				sweep.getConvexToWorld().setValue(tmpVec2.x, tmpVec2.y, tmpVec2.z);
-//				sweep.set(GLOBALS.DEFAULT_UP, -1.0f);
-//
-//				GLOBALS.physicsWorld.world.convexSweepTest(collisionShape, tmpMat, tmpMat2, sweep);
-//
-//				if (sweep.hasHit())
-//				{
-//					Xcollide = true;
-//					Ycollide = true;
-//					Zcollide = true;
-//
-//					walkVec.set(0, 0, 0);
-//					velocity.set(0, 0, 0);
-//				}
-//			}
+			if (walkVec.x != 0 || walkVec.z != 0)
+			{
+				tmpVec.set(position).add(walkVec);
+
+				tmpMat.setToTranslation(tmpVec);
+				simpleCallback.setCollisionFilterMask(BulletWorld.FILTER_WALKABLE);
+				simpleCallback.setCollisionFilterGroup(BulletWorld.FILTER_WALKABLE);
+				simpleCallback.setCollisionShape(collisionShape, tmpMat);
+
+				if (GLOBALS.physicsWorld.collide(simpleCallback))
+				{
+					Xcollide = true;
+					Ycollide = true;
+					Zcollide = true;
+
+					walkVec.set(0, 0, 0);
+					velocity.set(0, 0, 0);
+				}
+			}
 
 			position.add(walkVec);
 

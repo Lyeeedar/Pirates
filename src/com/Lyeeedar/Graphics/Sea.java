@@ -79,6 +79,7 @@ public class Sea {
 	public void render(Camera cam, Vector3 position, LightManager lights)
 	{
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_BLEND);
 		
 		mat41.set(cam.combined);
 		

@@ -2,6 +2,7 @@ package com.Lyeeedar.Screens;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -64,18 +65,16 @@ import com.Lyeeedar.Entities.Items.Item.DESCRIPTION;
 import com.Lyeeedar.Entities.Items.Item.ITEM_TYPE;
 import com.Lyeeedar.Entities.Items.Weapon;
 import com.Lyeeedar.Entities.Items.Weapon.ATTACK_STAGE;
-import com.Lyeeedar.Entities.Items.Weapon.AttackActionBlock;
-import com.Lyeeedar.Entities.Items.Weapon.AttackActionLockOn;
 import com.Lyeeedar.Entities.Items.Weapon.AttackActionParticleEffect;
 import com.Lyeeedar.Entities.Items.Weapon.AttackMotionTrail;
 import com.Lyeeedar.Entities.Items.Weapon.AttackSpellCast;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.InstantSpellEffect;
-import com.Lyeeedar.Entities.Items.Spells.SpellEffect.RepeatingSpellEffect;
 import com.Lyeeedar.Entities.Items.Spells.SpellEffect.SpellPayloadHP;
 import com.Lyeeedar.Graphics.Clouds;
 import com.Lyeeedar.Graphics.MessageList;
 import com.Lyeeedar.Graphics.MessageList.Message;
 import com.Lyeeedar.Graphics.MessageList.Text;
+import com.Lyeeedar.Graphics.LineRenderer;
 import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
@@ -85,16 +84,12 @@ import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
-import com.Lyeeedar.Graphics.Queueables.MotionTrail;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Graphics.Queueables.Sprite2D;
-import com.Lyeeedar.Graphics.Queueables.Sprite3D.SPRITESHEET;
-import com.Lyeeedar.Graphics.Queueables.Sprite3D.SpriteLayer;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
-import com.Lyeeedar.Util.CircularArrayRing;
 import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -128,7 +123,6 @@ import com.badlogic.gdx.physics.bullet.collision.btCapsuleShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -161,8 +155,9 @@ public class GameScreen extends AbstractScreen {
 	TexturedMesh hair2;
 	FloatBuffer fb;
 	@Override
-	public void create() {
-		
+	public void create()
+	{
+
 		GLOBALS.picker = new Picker();
 		
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
@@ -214,6 +209,7 @@ public class GameScreen extends AbstractScreen {
 		ship.readOnlyRead(PositionalData.class).calculateComposed();
 		ship.readOnlyRead(StatusData.class).solid = true;
 		ship.readOnlyRead(StatusData.class).stats.put(STATS.SPEED, 10);
+		ship.readOnlyRead(StatusData.class).name = "Ship";
 		
 		Selector ssselect = new ConcurrentSelector();
 		BehaviourTree sbtree = new BehaviourTree(ssselect);
@@ -242,7 +238,7 @@ public class GameScreen extends AbstractScreen {
 		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
 		ship.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHIP;
 		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
-		ship.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(sbb.getDimensions());
+		ship.readOnlyRead(PositionalData.class).collisionShape = shipShape;
 		rw.add(entry);
 		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_WALKABLE), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST | BulletWorld.FILTER_WALKABLE));
 		
@@ -412,7 +408,7 @@ public class GameScreen extends AbstractScreen {
 		
 		// MAKE ENEMIES
 		
-		for (int i = 0; i < 60; i++)
+		for (int i = 0; i < 50; i++)
 		{
 			
 			Entity leader = makeEntity(null, rw, bw);
@@ -591,7 +587,8 @@ public class GameScreen extends AbstractScreen {
 	ImmediateModeRenderer imr = new ImmediateModeRenderer20(false, false, 0);
 	@Override
 	public void drawSkybox(float delta)
-	{
+	{		
+		
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
@@ -710,7 +707,15 @@ public class GameScreen extends AbstractScreen {
 	boolean lockOn = false;
 	boolean flip = false;
 	boolean equipped = true;
-
+	
+	Comparator<Entity> aiComparator = new Comparator<Entity>(){
+		@Override
+		public int compare(Entity e1, Entity e2)
+		{
+			return e1.readOnlyRead(PositionalData.class).baseDepth-e2.readOnlyRead(PositionalData.class).baseDepth;
+		}
+	};
+	
 	@Override
 	public void update(float delta) {
 		
@@ -734,6 +739,12 @@ public class GameScreen extends AbstractScreen {
 			GLOBALS.physicsWorld.update(delta);
 			aiEntities.clear();
 			GLOBALS.renderTree.collectAll(aiEntities, cam.aiShape, Octtree.MASK_AI);
+			aiEntities.sort(aiComparator);
+//			for (int i = 0; i < aiEntities.size; i++)
+//			{
+//				System.out.println(aiEntities.get(i).readOnlyRead(PositionalData.class).baseDepth);
+//			}
+//			System.out.println("");
 		}
 		for (int i = 0; i < aiEntities.size; i++)
 		{
@@ -820,7 +831,7 @@ public class GameScreen extends AbstractScreen {
 		
 		GLOBALS.SKYBOX.update(delta);
 						
-		((FollowCam)cam).update(player);
+		((FollowCam)cam).update(player, delta);
 		veggieCam.position.set(cam.position);
 		veggieCam.direction.set(cam.direction);
 		veggieCam.update();

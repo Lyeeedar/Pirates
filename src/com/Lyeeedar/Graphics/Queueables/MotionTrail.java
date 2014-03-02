@@ -186,7 +186,7 @@ public class MotionTrail implements Queueable {
 			for (int i = 0; i < num_active; i++)
 			{
 				Vector3 vert = trailRing.get(i);
-				vert.add(pData.deltaPos);
+				vert.add(pData.position.x - pData.lastPos1.x, pData.position.y - pData.lastPos1.y, pData.position.z - pData.lastPos1.z);
 			}
 		}
 		

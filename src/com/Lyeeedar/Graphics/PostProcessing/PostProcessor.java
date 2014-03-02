@@ -20,7 +20,9 @@ import com.Lyeeedar.Graphics.PostProcessing.Effects.DepthOfFieldEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.EdgeDetectionEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.PostProcessingEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.SilhouetteEffect;
+import com.Lyeeedar.Graphics.PostProcessing.Effects.UnderwaterEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -38,7 +40,8 @@ public class PostProcessor {
 		BLOOM,
 		EDGE_DETECT,
 		DOF,
-		SILHOUETTE
+		SILHOUETTE,
+		UNDERWATER
 	}
 	
 	public static boolean ON = true;
@@ -58,9 +61,9 @@ public class PostProcessor {
 	
 	private final ShaderProgram shader;
 	
-	private final Camera cam;
+	private final FollowCam cam;
 
-	public PostProcessor(Format format, int width, int height, Camera cam) {
+	public PostProcessor(Format format, int width, int height, FollowCam cam) {
 		this.format = format;
 		this.width = width;
 		this.height = height;
@@ -104,6 +107,7 @@ public class PostProcessor {
 		effects.put(Effect.EDGE_DETECT, new EdgeDetectionEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.DOF, new DepthOfFieldEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.SILHOUETTE, new SilhouetteEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam));
+		effects.put(Effect.UNDERWATER, new UnderwaterEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam));
 	}
 	
 	public void updateBufferSettings(Format format, int f, int g) {

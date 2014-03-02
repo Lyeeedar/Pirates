@@ -595,7 +595,7 @@ public class Weapon extends Equipment<Weapon> implements AnimationListener {
 		
 		private final Vector3 tmpVec = new Vector3();
 		
-		public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback(new Vector3(), new Vector3());
+		public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback();
 		
 		private final PositionalData pData = new PositionalData();
 		private final StatusData sData = new StatusData();

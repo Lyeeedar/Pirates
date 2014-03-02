@@ -12,6 +12,7 @@ import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Entities.Entity.PositionalData.COLLISION_TYPE;
+import com.Lyeeedar.Graphics.LineRenderer;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
@@ -49,7 +50,7 @@ public final class GLOBALS {
 		METAL
 	}
 
-	public static final float STEP = 0.1f;
+	public static final float STEP = 0.5f;
 
 	public static final int MAX_SPEED_X = 1;
 	public static final int MAX_SPEED_Y = 1;
@@ -58,21 +59,23 @@ public final class GLOBALS {
 	public static final Vector3 DEFAULT_UP = new Vector3(0, 1, 0);
 	public static final Vector3 DEFAULT_ROTATION = new Vector3(0, 0, 1);
 
-	public static final float GRAVITY = -85;
+	public static final float GRAVITY = -150;
 
 	public static final int[] RESOLUTION = {1960, 1080};
 	public static final int[] SCREEN_SIZE = {RESOLUTION[0], RESOLUTION[1]};
 	
-	public static final float FOG_MIN = 1000.0f;
-	public static final float FOG_MAX = 6000.0f;
+	public static float FOG_MIN = 1000.0f;
+	public static float FOG_MAX = 6000.0f;
 
 	public static boolean ANDROID = false;
 	
 	public static float PROGRAM_TIME = 0.0f;
 	
-	public static Array<Entity> needsSilhouette = new Array<Entity>(false, 16);
-	public static Array<ParticleEffect> unanchoredEffects = new Array<ParticleEffect>(false, 16);
-	public static Array<Entity> pendingEntities = new Array<Entity>(false, 16);
+	public static LineRenderer lineRenderer;
+	
+	public static final Array<Entity> needsSilhouette = new Array<Entity>(false, 16);
+	public static final Array<ParticleEffect> unanchoredEffects = new Array<ParticleEffect>(false, 16);
+	public static final Array<Entity> pendingEntities = new Array<Entity>(false, 16);
 	
 	public static BulletWorld physicsWorld;
 	public static Octtree<Entity> renderTree;

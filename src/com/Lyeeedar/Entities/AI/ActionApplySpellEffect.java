@@ -1,6 +1,6 @@
 package com.Lyeeedar.Entities.AI;
 
-import com.Lyeeedar.Collision.BulletWorld.SimpleContactTestCallback;
+import com.Lyeeedar.Collision.BulletWorld.SimpleSkippingCallback;
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
@@ -21,7 +21,7 @@ public class ActionApplySpellEffect extends Action
 	private final PositionalData pData = new PositionalData();
 	private final PositionalData pData2 = new PositionalData();
 	private final StatusData sData = new StatusData();
-	private final SimpleContactTestCallback sensor = new SimpleContactTestCallback();
+	private final SimpleSkippingCallback sensor = new SimpleSkippingCallback();
 	
 	private final GetEnemies getEnemies;
 	
