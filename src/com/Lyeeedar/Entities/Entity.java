@@ -741,13 +741,13 @@ public class Entity {
 
 					if (dist < 0.0f)
 					{
-						Vector3 start = Pools.obtain(Vector3.class).set(pt.getPositionWorldOnB().x(), pt.getPositionWorldOnB().y(), pt.getPositionWorldOnB().z());
-						Vector3 end = Pools.obtain(Vector3.class).set(normal).scl(5).add(start);
-						Vector3 colour = Pools.obtain(Vector3.class).set(1, 0, 0);
-						GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
-						Pools.free(start);
-						Pools.free(end);
-						Pools.free(colour);
+//						Vector3 start = Pools.obtain(Vector3.class).set(pt.getPositionWorldOnB().x(), pt.getPositionWorldOnB().y(), pt.getPositionWorldOnB().z());
+//						Vector3 end = Pools.obtain(Vector3.class).set(normal).scl(5).add(start);
+//						Vector3 colour = Pools.obtain(Vector3.class).set(1, 0, 0);
+//						GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+//						Pools.free(start);
+//						Pools.free(end);
+//						Pools.free(colour);
 						
 						if (dist < maxPen)
 						{
@@ -1434,29 +1434,29 @@ public class Entity {
 			simpleCallback.setCollisionFilterMask(BulletWorld.FILTER_COLLISION);
 			simpleCallback.setCollisionFilterGroup(BulletWorld.FILTER_COLLISION);
 			simpleCallback.setCollisionShape(collisionShape, tmpMat);
-
-			Vector3 colour = Pools.obtain(Vector3.class).set(0, 0, 1);
-			Vector3 start = Pools.obtain(Vector3.class).set(currentPos);
-			Vector3 end = Pools.obtain(Vector3.class).set(start);
+//
+//			Vector3 colour = Pools.obtain(Vector3.class).set(0, 0, 1);
+//			Vector3 start = Pools.obtain(Vector3.class).set(currentPos);
+//			Vector3 end = Pools.obtain(Vector3.class).set(start);
 			
 			if (GLOBALS.physicsWorld.collide(simpleCallback))
 			{
 				currentPos.set(lastSafePos).add(0, octtreeEntry.box.extents.y, 0);
 				velocity.y = 0;
-				end.add(0, 5, 0);
+//				end.add(0, 5, 0);
 			}
 			else
 			{
-				colour.set(0, 1, 0);
-				end.add(0, 2, 0);
+//				colour.set(0, 1, 0);
+//				end.add(0, 2, 0);
 				lastSafePos.set(currentPos).sub(0, octtreeEntry.box.extents.y, 0);
 			}
 			
-			GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
-			Pools.free(start);
-			Pools.free(end);
-			Pools.free(colour);
-			
+//			GLOBALS.lineRenderer.set(start.x, start.y, start.z, end.x, end.y, end.z, colour.x, colour.y, colour.z);
+//			Pools.free(start);
+//			Pools.free(end);
+//			Pools.free(colour);
+//			
 			// COMMIT POSITION
 			
 			position.set(currentPos).sub(0, octtreeEntry.box.extents.y, 0);

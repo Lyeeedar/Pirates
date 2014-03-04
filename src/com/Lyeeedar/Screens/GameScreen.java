@@ -90,6 +90,7 @@ import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator;
 import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -173,6 +174,26 @@ public class GameScreen extends AbstractScreen {
 		
 		veggieCam = new FollowCam(controls, null, 0);
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
+		
+		// VOXEL
+		
+		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
+		TexturedMesh voxelMesh = new TexturedMesh("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/grass.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		Entity voxelEntity = new Entity(false, new MinimalPositionalData());
+		voxelEntity.addRenderable(voxelMesh, new Vector3());
+		
+		voxelEntity.update(0);
+		
+		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1000, 1000, 1000), Octtree.MASK_RENDER);
+		rw.add(ventry);
+		
+		Array<MeshPart> vparts = new Array<MeshPart>();
+		vparts.add(new MeshPart("", voxels, 0, voxels.getNumVertices(), GL20.GL_TRIANGLES));
+		//btCollisionShape voxelShape = new btBvhTriangleMeshShape(vparts, true);
+		
+		//bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(MinimalPositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		
+		// END VOXELS
 				
 		// HEIGHT MAP
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
@@ -232,7 +253,7 @@ public class GameScreen extends AbstractScreen {
 		ship.addRenderable(shipMesh, new Vector3());
 		Array<MeshPart> parts = new Array<MeshPart>();
 		parts.add(new MeshPart("", shipModel, 0, shipModel.getNumIndices(), GL20.GL_TRIANGLES));
-		btCollisionShape shipShape = new btBvhTriangleMeshShape(parts);
+		btCollisionShape shipShape = new btBvhTriangleMeshShape(parts, true);
 		
 		BoundingBox sbb = shipModel.calculateBoundingBox();
 		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
@@ -455,10 +476,6 @@ public class GameScreen extends AbstractScreen {
 		for (Entity v : veggies)
 		{
 			v.update(0);
-			//rw.add(new btBoxShape(new Vector3(1, 1, 1)), new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, BulletWorld.FILTER_RENDER, BulletWorld.FILTER_GHOST);
-			btCollisionObject o = new btCollisionObject();
-			o.setCollisionShape(box);
-			o.setWorldTransform(new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position));
 			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER);
 			veggieTree.add(oe);
 		}

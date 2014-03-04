@@ -434,7 +434,7 @@ public class Shapes {
 		return mesh;
 	}
 	
-	public static Mesh getBoxMesh(float x, float y, float z, boolean normals, boolean texcoords)
+	public static float[] getBoxVertices(float px, float py, float pz, float x, float y, float z, boolean normals, boolean texcoords)
 	{
 		int vertSize = 3;
 		
@@ -442,35 +442,35 @@ public class Shapes {
 		if (texcoords) vertSize += 2;
 		
 		float[] cubeVerts = {
-				-x, -y, -z, // bottom
-				-x, -y, z,
-				x, -y, z,
-				x, -y, -z,
+				px-x, py-y, pz-z, // bottom
+				px-x, py-y, pz+z,
+				px+x, py-y, pz+z,
+				px+x, py-y, pz-z,
 
-				-x, y, -z, // top
-				-x, y, z,
-				x, y, z,
-				x, y, -z,
+				px-x, py+y, pz-z, // top
+				px-x, py+y, pz+z,
+				px+x, py+y, pz+z,
+				px+x, py+y, pz-z,
 
-				-x, -y, -z, // back
-				-x, y, -z,
-				x, y, -z,
-				x, -y, -z,
+				px-x, py-y, pz-z, // back
+				px-x, py+y, pz-z,
+				px+x, py+y, pz-z,
+				px+x, py-y, pz-z,
 
-				-x, -y, z, // front
-				-x, y, z,
-				x, y, z,
-				x, -y, z,
+				px-x, py-y, pz+z, // front
+				px-x, py+y, pz+z,
+				px+x, py+y, pz+z,
+				px+x, py-y, pz+z,
 
-				-x, -y, -z, // left
-				-x, -y, z,
-				-x, y, z,
-				-x, y, -z,
+				px-x, py-y, pz-z, // left
+				px-x, py-y, pz+z,
+				px-x, py+y, pz+z,
+				px-x, py+y, pz-z,
 
-				x, -y, -z, // right
-				x, -y, z,
-				x, y, z,
-				x, y, -z};
+				px+x, py-y, pz-z, // right
+				px+x, py-y, pz+z,
+				px+x, py+y, pz+z,
+				px+x, py+y, pz-z};
 		
 		float[] cubeNormals = {
 				0, -1, 0, // bottom
@@ -559,6 +559,13 @@ public class Shapes {
 				vertices[i++] = cubeTex[tIdx++];
 			}
 		}
+		
+		return vertices;
+	}
+	
+	public static Mesh getBoxMesh(float x, float y, float z, boolean normals, boolean texcoords)
+	{
+		float[] vertices = getBoxVertices(0, 0, 0, x, y, z, normals, texcoords);
 
 		short[] indices = {
 				0, 2, 1, // bottom
