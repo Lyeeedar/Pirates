@@ -1,16 +1,20 @@
 package com.Lyeeedar.Graphics.PostProcessing.Effects;
 
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.math.Vector3;
 
 public class UnderwaterEffect extends PostProcessingEffect 
 {
 	private Texture texture;
 	private final FollowCam cam;
+	private final Vector3 colour = new Vector3(0, 0.4f, 0.6f);
+	private final Vector3 drawColour = new Vector3();
 	
 	public UnderwaterEffect(int BUFFER_WIDTH, int BUFFER_HEIGHT, FollowCam cam) 
 	{
@@ -37,7 +41,8 @@ public class UnderwaterEffect extends PostProcessingEffect
 		
 		if (cam.underwater)
 		{
-			batch.setColor(0, 0.4f, 0.6f, 0.6f);
+			drawColour.set(colour).scl(GLOBALS.LIGHTS.ambientColour);
+			batch.setColor(drawColour.x, drawColour.y, drawColour.z, 0.6f);
 			batch.draw(this.texture, 0, 0, buffer.getWidth(), buffer.getHeight());
 		}
 		batch.setColor(1, 1, 1, 1);

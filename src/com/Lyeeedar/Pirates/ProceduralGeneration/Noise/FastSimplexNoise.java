@@ -553,7 +553,7 @@ public class FastSimplexNoise
         }
         if (gradient != null)
         {
-        	float len = Vector3.len2(gradient[0], gradient[1], gradient[2]);
+        	float len = Vector3.len(gradient[0], gradient[1], gradient[2]);
         	gradient[0] /= len;
         	gradient[1] /= len;
         	gradient[2] /= len;

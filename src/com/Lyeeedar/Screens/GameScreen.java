@@ -203,11 +203,11 @@ public class GameScreen extends AbstractScreen {
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 500, -50, 1337135);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 500, -500, 1337135);
 		Pixmap hmpm = ImageUtils.arrayToPixmap(sg.generate(ae));
 		Texture hm = ImageUtils.PixmapToTexture(hmpm);
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -50.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -50.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -500.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -500.0f)});
 		
 		terrain.readOnlyRead(PositionalData.class).calculateComposed();
 		
@@ -912,6 +912,8 @@ public class GameScreen extends AbstractScreen {
 		{
 			lockOn = false;
 		}
+		
+		GLOBALS.LIGHTS.lights.get(0).position.set(player.getPosition());
 	}
 
 	@Override
