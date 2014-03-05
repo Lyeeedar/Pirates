@@ -84,6 +84,7 @@ import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
+import com.Lyeeedar.Graphics.Queueables.ChunkedTerrain;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Graphics.Queueables.Sprite2D;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
@@ -175,10 +176,15 @@ public class GameScreen extends AbstractScreen {
 		veggieCam = new FollowCam(controls, null, 0);
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		
+		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		
 		// VOXEL
 		
 		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
-		TexturedMesh voxelMesh = new TexturedMesh("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/grass.png", true, null, null)}, new Vector3(1, 1, 1), 1);
+		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
 		Entity voxelEntity = new Entity(false, new MinimalPositionalData());
 		voxelEntity.addRenderable(voxelMesh, new Vector3());
 		
@@ -196,10 +202,6 @@ public class GameScreen extends AbstractScreen {
 		// END VOXELS
 				
 		// HEIGHT MAP
-		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
-		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
-		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
-		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		

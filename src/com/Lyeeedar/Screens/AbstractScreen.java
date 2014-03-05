@@ -16,6 +16,7 @@ import com.Lyeeedar.Collision.Octtree.OcttreeBox;
 import com.Lyeeedar.Graphics.LineRenderer;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.ChunkedTerrainBatch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
 import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
@@ -53,6 +54,7 @@ public abstract class AbstractScreen implements Screen {
 	protected final TexturedMeshBatch renderer;
 	protected final AnimatedModelBatch modelBatch;
 	protected final ParticleEffectBatch particleBatch;
+	protected final ChunkedTerrainBatch terrainBatch;
 	protected final BitmapFont font;
 	protected final Stage stage;
 	protected final PostProcessor postprocessor;
@@ -90,7 +92,7 @@ public abstract class AbstractScreen implements Screen {
 		trailBatch = new MotionTrailBatch();
 		renderer = new TexturedMeshBatch(false);
 		particleBatch = new ParticleEffectBatch();
-		
+		terrainBatch = new ChunkedTerrainBatch();
 		modelBatch = new AnimatedModelBatch(12);
 		
 		batches = new HashMap<Class, Batch>();
@@ -100,6 +102,7 @@ public abstract class AbstractScreen implements Screen {
 		batches.put(ModelBatchers.class, new ModelBatchers());
 		batches.put(MotionTrailBatch.class, trailBatch);
 		batches.put(ParticleEffectBatch.class, particleBatch);
+		batches.put(ChunkedTerrainBatch.class, terrainBatch);
 		
 		stage = new Stage(0, 0, true, spriteBatch);
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam);
@@ -153,7 +156,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		//Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_BACK);
 		
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -166,10 +169,10 @@ public abstract class AbstractScreen implements Screen {
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		
 		time = System.nanoTime();
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(GLOBALS.LIGHTS, cam);
 		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
+		((ChunkedTerrainBatch) batches.get(ChunkedTerrainBatch.class)).render(GLOBALS.LIGHTS, cam);
 		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
 		GLOBALS.lineRenderer.render(cam);
 		averageModel += System.nanoTime()-time;
