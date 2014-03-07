@@ -213,16 +213,16 @@ public class FollowCam extends PerspectiveCamera {
 				underwaterCD = 1.0f;
 				underwater = !underwater;
 				
-				if (underwater)
-				{
-					GLOBALS.FOG_MIN = 0;
-					GLOBALS.FOG_MAX = 2000;
-				}
-				else
-				{
-					GLOBALS.FOG_MIN = 1000;
-					GLOBALS.FOG_MAX = 6000;
-				}
+//				if (underwater)
+//				{
+//					GLOBALS.FOG_MIN = 0;
+//					GLOBALS.FOG_MAX = 2000;
+//				}
+//				else
+//				{
+//					GLOBALS.FOG_MIN = 1000;
+//					GLOBALS.FOG_MAX = 6000;
+//				}
 			}
 		}
 		

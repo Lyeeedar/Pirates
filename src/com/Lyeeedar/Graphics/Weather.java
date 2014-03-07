@@ -2,6 +2,7 @@ package com.Lyeeedar.Graphics;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FollowCam;
 import com.Lyeeedar.Util.ImageUtils;
 import com.Lyeeedar.Util.Shapes;
 import com.badlogic.gdx.Gdx;
@@ -30,6 +31,9 @@ public class Weather {
 	Vector3 shiftDay = new Vector3();
 	Vector3 colNight = new Vector3();
 	Vector3 shiftNight = new Vector3();
+	Vector3 tmpVec = new Vector3();
+	private final Vector3 surface = new Vector3(0.0f, 1.0f, 0.9f);
+	private final Vector3 deep = new Vector3(0.0f, 0.0f, 0.2f);
 	
 	public Weather(Vector3 colDay, Vector3 shiftDay, Vector3 colNight, Vector3 shiftNight, Clouds clouds)
 	{
@@ -51,7 +55,7 @@ public class Weather {
 	}
 	
 	boolean increase = true;
-	public void update(float delta)
+	public void update(float delta, FollowCam cam)
 	{
 		clouds.update(delta);
 		
@@ -106,7 +110,18 @@ public class Weather {
 			ImageUtils.lerp(colDay, colNight, alpha, GLOBALS.LIGHTS.ambientColour);
 			ImageUtils.lerp(shiftDay, shiftNight, alpha, cs);
 			GLOBALS.LIGHTS.directionalLight.colour.set(1.0f-alpha, 1.0f-alpha, 0);
-		}	
+		}
+		
+		if (cam.underwater)
+		{
+			float depth = cam.position.y / -500.0f;
+			if (depth > 1) depth = 1;
+			depth = depth * depth;
+			ImageUtils.lerp(surface, deep, depth, tmpVec);
+			GLOBALS.LIGHTS.ambientColour.scl(tmpVec);
+			GLOBALS.LIGHTS.directionalLight.colour.scl(1.0f - depth);
+		}
+		
 //		
 //		lights.ambientColour.x = (lights.directionalLight.direction.y+1)/2;
 //		lights.ambientColour.y = (lights.directionalLight.direction.y+1)/2;
@@ -129,7 +144,7 @@ public class Weather {
 	}
 	
 	Vector3 cs = new Vector3(-2, -2, -2);
-	public void render(Camera cam, LightManager lights)
+	public void render(FollowCam cam, LightManager lights)
 	{	
 		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glCullFace(GL20.GL_FRONT);
@@ -152,7 +167,7 @@ public class Weather {
 		
 		skyShader.end();
 		
-		clouds.render(cam, lights);
+		if (!cam.underwater) clouds.render(cam, lights);
 	}
 	
 }

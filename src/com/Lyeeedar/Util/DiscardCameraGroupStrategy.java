@@ -20,7 +20,7 @@ import java.util.Comparator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalMaterial;
 import com.badlogic.gdx.graphics.g3d.decals.GroupStrategy;
@@ -132,7 +132,7 @@ public class DiscardCameraGroupStrategy implements GroupStrategy, Disposable {
 	@Override
 	public void beforeGroup (int group, Array<Decal> contents) {
 		if (group == GROUP_BLEND) {
-			Gdx.gl.glEnable(GL10.GL_BLEND);
+			Gdx.gl.glEnable(GL30.GL_BLEND);
 			contents.sort(cameraSorter);
 		} else {
 			for (int i = 0, n = contents.size; i < n; i++) {
@@ -161,23 +161,17 @@ public class DiscardCameraGroupStrategy implements GroupStrategy, Disposable {
 	@Override
 	public void afterGroup (int group) {
 		if (group == GROUP_BLEND) {
-			Gdx.gl.glDisable(GL10.GL_BLEND);
+			Gdx.gl.glDisable(GL30.GL_BLEND);
 		}
 	}
 
 	@Override
 	public void beforeGroups () {
-		Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+		Gdx.gl.glEnable(GL30.GL_DEPTH_TEST);
 		if (shader != null) {
 			shader.begin();
 			shader.setUniformMatrix("u_projectionViewMatrix", camera.combined);
 			shader.setUniformi("u_texture", 0);
-		} else {
-			Gdx.gl.glEnable(GL10.GL_TEXTURE_2D);
-			Gdx.gl10.glMatrixMode(GL10.GL_PROJECTION);
-			Gdx.gl10.glLoadMatrixf(camera.projection.val, 0);
-			Gdx.gl10.glMatrixMode(GL10.GL_MODELVIEW);
-			Gdx.gl10.glLoadMatrixf(camera.view.val, 0);
 		}
 	}
 
@@ -186,12 +180,12 @@ public class DiscardCameraGroupStrategy implements GroupStrategy, Disposable {
 		if (shader != null) {
 			shader.end();
 		}
-		Gdx.gl.glDisable(GL10.GL_TEXTURE_2D);
-		Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
+		Gdx.gl.glDisable(GL30.GL_TEXTURE_2D);
+		Gdx.gl.glDisable(GL30.GL_DEPTH_TEST);
 	}
 
 	private void createDefaultShader () {
-		if (Gdx.graphics.isGL20Available()) {
+		if (Gdx.graphics.isGL30Available()) {
 			String vertexShader = "attribute vec4 " + ShaderProgram.POSITION_ATTRIBUTE + ";\n" //
 				+ "attribute vec4 " + ShaderProgram.COLOR_ATTRIBUTE + ";\n" //
 				+ "attribute vec2 " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n" //

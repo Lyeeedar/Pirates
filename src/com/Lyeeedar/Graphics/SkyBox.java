@@ -1,5 +1,7 @@
 package com.Lyeeedar.Graphics;
 
+import com.Lyeeedar.Util.FollowCam;
+
 
 public class SkyBox {
 	
@@ -14,8 +16,8 @@ public class SkyBox {
 		this.weather = weather;
 	}
 	
-	public void update(float delta)
+	public void update(float delta, FollowCam cam)
 	{
-		weather.update(delta);
+		weather.update(delta, cam);
 	}
 }

@@ -157,10 +157,9 @@ public class Octtree <E> {
 		
 		if (collisions == 0)
 		{
-			throw new RuntimeException("Octtree Add failed to find collisions!!!");
-		}
-		
-		if (collisions == 1)
+			//throw new RuntimeException("Octtree Add failed to find collisions!!!");
+		}		
+		else if (collisions == 1)
 		{
 			chosen.add(e);
 		}

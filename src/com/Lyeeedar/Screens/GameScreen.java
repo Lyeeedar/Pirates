@@ -117,6 +117,7 @@ import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
@@ -125,6 +126,8 @@ import com.badlogic.gdx.physics.bullet.collision.btCapsuleShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.badlogic.gdx.physics.bullet.collision.btHeightfieldTerrainShape;
+import com.badlogic.gdx.physics.bullet.collision.btStaticPlaneShape;
+import com.badlogic.gdx.physics.bullet.collision.btTriangleMesh;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends AbstractScreen {
@@ -181,23 +184,29 @@ public class GameScreen extends AbstractScreen {
 		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		
+		Plane plane = new Plane(new Vector3(0, 1, 0), new Vector3(0, 0, 0));
+		btCollisionShape planeShape = new btStaticPlaneShape(plane.normal, plane.d);
+		Entity planeEntity = new Entity(false, new MinimalPositionalData());
+		planeEntity.readOnlyRead(MinimalPositionalData.class).position.set(0, -750, 0);
+		
+		bw.add(planeShape, new Matrix4().translate(0, -750, 0), planeEntity, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
+		
 		// VOXEL
 		
 		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
 		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
-		Entity voxelEntity = new Entity(false, new MinimalPositionalData());
+		Entity voxelEntity = new Entity(true, new PositionalData());
+		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
 		voxelEntity.addRenderable(voxelMesh, new Vector3());
 		
 		voxelEntity.update(0);
 		
-		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1000, 1000, 1000), Octtree.MASK_RENDER);
+		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
 		rw.add(ventry);
 		
-		Array<MeshPart> vparts = new Array<MeshPart>();
-		vparts.add(new MeshPart("", voxels, 0, voxels.getNumVertices(), GL20.GL_TRIANGLES));
-		//btCollisionShape voxelShape = new btBvhTriangleMeshShape(vparts, true);
+		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
 		
-		//bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(MinimalPositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		
 		// END VOXELS
 				
@@ -205,11 +214,11 @@ public class GameScreen extends AbstractScreen {
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
 		
-		SerkGenerator sg = new SerkGenerator(1000, 10000, 500, -500, 1337135);
+		SerkGenerator sg = new SerkGenerator(1000, 10000, 250, -50, 1337135);
 		Pixmap hmpm = ImageUtils.arrayToPixmap(sg.generate(ae));
 		Texture hm = ImageUtils.PixmapToTexture(hmpm);
 		hm.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -500.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 500.0f, 10000, -500.0f)});
+		terrain = new Terrain(new Texture[]{sand, grass, dirt, rock}, -750.0f, new Terrain.HeightMap[]{new Terrain.HeightMap(hm, new Vector3(0f, 0f, 0f), 1000.0f, 10000, -750.0f)});
 		
 		terrain.readOnlyRead(PositionalData.class).calculateComposed();
 		
@@ -217,7 +226,7 @@ public class GameScreen extends AbstractScreen {
 		btHeightfieldTerrainShape hf = new btHeightfieldTerrainShape(1000, 1000, fb, 1.f, 0.f, 1.f, 1, false);
 		hf.setLocalScaling(new Vector3(10f, 500f, 10f));
 		
-		bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE));
+		//bw.add(hf, new Matrix4().setToTranslation(5000f, 200f, 5000f), terrain, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_WALKABLE));
 		
 		// END HEIGHTMAP
 		
@@ -253,9 +262,8 @@ public class GameScreen extends AbstractScreen {
 //		}
 		
 		ship.addRenderable(shipMesh, new Vector3());
-		Array<MeshPart> parts = new Array<MeshPart>();
-		parts.add(new MeshPart("", shipModel, 0, shipModel.getNumIndices(), GL20.GL_TRIANGLES));
-		btCollisionShape shipShape = new btBvhTriangleMeshShape(parts, true);
+
+		btCollisionShape shipShape = BulletWorld.meshToCollisionShape(shipModel);
 		
 		BoundingBox sbb = shipModel.calculateBoundingBox();
 		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
@@ -277,7 +285,7 @@ public class GameScreen extends AbstractScreen {
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		//seatex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
-		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), terrain);
+		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.8f, 0.7f), terrain);
 		skybox = new SkyBox(sea, weather);
 		
 		// END SKYBOX
@@ -848,7 +856,7 @@ public class GameScreen extends AbstractScreen {
 		GLOBALS.waitTillTasksComplete();
 		
 		
-		GLOBALS.SKYBOX.update(delta);
+		GLOBALS.SKYBOX.update(delta, cam);
 						
 		((FollowCam)cam).update(player, delta);
 		veggieCam.position.set(cam.position);
@@ -915,7 +923,7 @@ public class GameScreen extends AbstractScreen {
 			lockOn = false;
 		}
 		
-		GLOBALS.LIGHTS.lights.get(0).position.set(player.getPosition());
+		GLOBALS.LIGHTS.lights.get(0).position.set(player.getPosition()).add(0, 1, 0);
 	}
 
 	@Override

@@ -63,6 +63,7 @@ public class ActionPlayerControl extends Action
 	public BehaviourTreeState evaluate()
 	{
 		Entity entity = (Entity) getData("entity", null);
+		float delta = (Float) getData("delta", 0);
 		
 		entity.readData(pData);
 		entity.readData(eData);
@@ -162,6 +163,11 @@ public class ActionPlayerControl extends Action
 		else if (!controls.jump())
 		{
 			jump = false;
+		}
+		
+		if (controls.getActivate())
+		{
+			pData.velocity.y -= 500*delta;
 		}
 
 		if (controls.switchL() && !switchL) 

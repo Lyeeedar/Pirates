@@ -26,6 +26,7 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
@@ -117,7 +118,7 @@ public class FrameBuffer implements Disposable {
 	}
 
 	private void build () {
-		if (!Gdx.graphics.isGL20Available()) throw new GdxRuntimeException("GL2 is required.");
+		//if (!Gdx.graphics.isGL30Available()) throw new GdxRuntimeException("GL3 is required.");
 
 		GL20 gl = Gdx.graphics.getGL20();
 

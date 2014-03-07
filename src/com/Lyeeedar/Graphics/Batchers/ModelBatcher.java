@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Batchers;
 
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
@@ -12,19 +13,20 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Pool;
 
 public class ModelBatcher implements Queueable {
 	
-	public static final int MAX_INSTANCES = 1;
+	public static int MAX_INSTANCES;
 		
 	private final Mesh mesh;
 	private final int primitive_type;
@@ -38,6 +40,8 @@ public class ModelBatcher implements Queueable {
 	private static ShaderProgram solidShader;
 	private static ShaderProgram transparentShader;
 	private static ShaderProgram shader;
+	
+	private final float[] offsetArray;
 		
 	private Camera cam;
 	
@@ -57,6 +61,17 @@ public class ModelBatcher implements Queueable {
 		this.textures = textures;
 		this.colour.set(colour);
 		this.transparent = transparent;
+		
+		IntBuffer ib = BufferUtils.newIntBuffer(16);
+		Gdx.gl.glGetIntegerv(GL30.GL_MAX_UNIFORM_BLOCK_SIZE, ib);
+		int limitBytes = ib.get(0);
+		System.out.println("Uniform Block limit (bytes): " + limitBytes);
+		System.out.println("Uniform Block limit (floats): " + (limitBytes / 4));
+		System.out.println("Uniform Block limit (vec4): " + (limitBytes / 16));
+		int supportedMax = (limitBytes / 16);
+		MAX_INSTANCES = Math.min(500, supportedMax) ;
+		
+		offsetArray = new float[MAX_INSTANCES * 4];
 	}
 	
 
@@ -134,7 +149,7 @@ public class ModelBatcher implements Queueable {
 		flush(transparentInstances, true);
 	}
 	
-	private void flush(PriorityQueue<BatchedInstance> instances, boolean t)
+	private void flush(PriorityQueue<BatchedInstance> instances, boolean transparent)
 	{
 		shader.setUniformi("u_texNum", textures.length);
 		
@@ -145,24 +160,33 @@ public class ModelBatcher implements Queueable {
 		}
 		
 		shader.setUniformf("u_colour", colour);
-		
-		float fade = -1;
-		
+				
+		int i = 0;
 		while (!instances.isEmpty())
 		{			
 			BatchedInstance bi = instances.poll();
 			Vector3 p = bi.position;
 			
-			if (fade != bi.fade) 
-			{
-				if (t) shader.setUniformf("u_fade", bi.fade);
-				fade = bi.fade;
-			}
-			shader.setUniformf("instance_position", p);
+			offsetArray[(i)*4+0] = p.x;
+			offsetArray[(i)*4+1] = p.y;
+			offsetArray[(i)*4+2] = p.z;
+			offsetArray[(i)*4+3] = transparent ? bi.fade : 1.0f ;
 			
-			mesh.render(shader, primitive_type);
+			i++;
+			if (i == MAX_INSTANCES)
+			{
+				shader.setUniform4fv("instanceOffsets", offsetArray, 0, i*4);
+				mesh.renderInstanced(shader, primitive_type, i);
+				i = 0;
+			}
 			
 			pool.free(bi);
+		}
+		
+		if (i > 0)
+		{
+			shader.setUniform4fv("instanceOffsets", offsetArray, 0, i*4);
+			mesh.renderInstanced(shader, primitive_type, i);
 		}
 		
 		queued = false;
@@ -208,16 +232,18 @@ public class ModelBatcher implements Queueable {
 	
 	public static void loadSolidShader()
 	{
-		String vert = Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
+		String vert = "#define MAX_INSTANCES " + MAX_INSTANCES + "\n" + Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
 		String frag = Gdx.files.internal("data/shaders/modelbatcher.fragment.glsl").readString();
 		solidShader = new ShaderProgram(vert, frag);
+		if (!solidShader.isCompiled()) System.err.println(solidShader.getLog());
 	}
 	
 	public static void loadTransparentShader()
 	{
-		String vert = Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
+		String vert = "#define MAX_INSTANCES " + MAX_INSTANCES + "\n" + Gdx.files.internal("data/shaders/modelbatcher.vertex.glsl").readString();
 		String frag = "#define HAS_TRANSPARENT\n" + Gdx.files.internal("data/shaders/modelbatcher.fragment.glsl").readString();
 		transparentShader = new ShaderProgram(vert, frag);
+		if (!transparentShader.isCompiled()) System.err.println(transparentShader.getLog());
 	}
 	
 	public static class ModelBatchers implements Batch

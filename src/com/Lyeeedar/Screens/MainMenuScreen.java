@@ -221,7 +221,7 @@ public class MainMenuScreen extends AbstractScreen {
 
 	@Override
 	public void update(float delta) {
-		GLOBALS.SKYBOX.update(delta);
+		GLOBALS.SKYBOX.update(delta, cam);
 		((FollowCam)cam).updateBasic(pData);
 		
 	}

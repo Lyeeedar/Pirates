@@ -6,7 +6,12 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.AI;
 import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.FileUtils;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.AllHitsRayResultCallback;
@@ -16,6 +21,7 @@ import com.badlogic.gdx.physics.bullet.collision.ContactResultCallback;
 import com.badlogic.gdx.physics.bullet.collision.LocalConvexResult;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseProxy;
+import com.badlogic.gdx.physics.bullet.collision.btBvhTriangleMeshShape;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionDispatcher;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionObjectArray;
@@ -26,6 +32,7 @@ import com.badlogic.gdx.physics.bullet.collision.btDefaultCollisionConfiguration
 import com.badlogic.gdx.physics.bullet.collision.btGhostObject;
 import com.badlogic.gdx.physics.bullet.collision.btGhostPairCallback;
 import com.badlogic.gdx.physics.bullet.collision.btManifoldPoint;
+import com.badlogic.gdx.physics.bullet.collision.btTriangleMesh;
 import com.badlogic.gdx.physics.bullet.dynamics.btConstraintSolver;
 import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
@@ -93,7 +100,7 @@ public class BulletWorld {
 	{
 		world.removeCollisionObject(body);
 	}
-
+	
 	public void add(btCollisionShape shape, Matrix4 transform, Entity entity, short group, short mask)
 	{
 		btRigidBody rigidBody = getRigidBody(shape, transform, entity);
@@ -140,6 +147,57 @@ public class BulletWorld {
 //			debugDrawer.begin();
 //			world.debugDrawWorld();
 //			debugDrawer.end();
+		}
+	}
+	
+	public static btCollisionShape meshToCollisionShape(Mesh mesh)
+	{
+		if (mesh.getNumIndices() != 0)
+		{
+			Array<MeshPart> parts = new Array<MeshPart>();
+			parts.add(new MeshPart("", mesh, 0, mesh.getNumIndices(), GL20.GL_TRIANGLES));
+			return new btBvhTriangleMeshShape(parts, true);
+		}
+		else
+		{
+			btTriangleMesh tm = new btTriangleMesh();
+						
+			final int nverts = mesh.getNumVertices();
+			final int vsize = mesh.getVertexSize() / 4;
+			float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+			int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
+			
+			for (int i = 0; i < nverts;)
+			{
+				Vector3 v1 = new Vector3();
+				Vector3 v2 = new Vector3();
+				Vector3 v3 = new Vector3();
+				
+				v1.set(
+						vertices[poff+(i*vsize)+0],
+						vertices[poff+(i*vsize)+1],
+						vertices[poff+(i*vsize)+2]
+								);
+				i++;
+				
+				v2.set(
+						vertices[poff+(i*vsize)+0],
+						vertices[poff+(i*vsize)+1],
+						vertices[poff+(i*vsize)+2]
+								);
+				i++;
+				
+				v3.set(
+						vertices[poff+(i*vsize)+0],
+						vertices[poff+(i*vsize)+1],
+						vertices[poff+(i*vsize)+2]
+								);
+				i++;
+
+				tm.addTriangle(v1, v2, v3);
+			}
+			
+			return new btBvhTriangleMeshShape(tm, true);
 		}
 	}
 
