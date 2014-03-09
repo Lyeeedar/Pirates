@@ -178,7 +178,7 @@ public class MotionTrail implements Queueable {
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Matrix4 offset) {
 		
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
@@ -196,16 +196,16 @@ public class MotionTrail implements Queueable {
 			{
 				PositionalData pData = source.readOnlyRead(PositionalData.class);
 				tmpMat.setToRotation(GLOBALS.DEFAULT_ROTATION, pData.rotation);
-				tmpVec.set(offsetBot).rot(tmpMat).add(pData.position).add(offset);
-				tmpVec2.set(offsetTop).rot(tmpMat).add(pData.position).add(offset);
+				tmpVec.set(offsetBot).rot(tmpMat).add(pData.position).mul(offset);
+				tmpVec2.set(offsetTop).rot(tmpMat).add(pData.position).mul(offset);
 				
 				update(tmpVec, tmpVec2);
 			}
 			else
 			{
 				MinimalPositionalData pData = source.readOnlyRead(MinimalPositionalData.class);
-				tmpVec.set(pData.position).add(offsetBot).add(offset);
-				tmpVec2.set(pData.position).add(offsetTop).add(offset);
+				tmpVec.set(pData.position).add(offsetBot).mul(offset);
+				tmpVec2.set(pData.position).add(offsetTop).mul(offset);
 				
 				update(tmpVec, tmpVec2);
 			}

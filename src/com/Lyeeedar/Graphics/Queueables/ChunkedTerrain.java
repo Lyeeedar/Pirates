@@ -43,15 +43,15 @@ public class ChunkedTerrain implements Queueable
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Matrix4 offset) {
 		
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			model_matrix.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
+			model_matrix.set(source.readOnlyRead(PositionalData.class).composed).mul(offset);
 		}
 		else
 		{
-			model_matrix.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position).translate(offset);
+			model_matrix.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position).mul(offset);
 		}
 	}
 

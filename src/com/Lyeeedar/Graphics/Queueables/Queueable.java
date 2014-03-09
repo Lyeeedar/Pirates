@@ -15,7 +15,7 @@ public interface Queueable {
 	
 	public Matrix4 getTransform();
 	
-	public void set(Entity source, Vector3 offset);
+	public void set(Entity source, Matrix4 offset);
 	public void set(Matrix4 transform);
 	
 	public void transform(Matrix4 mat);

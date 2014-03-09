@@ -309,18 +309,18 @@ public class ParticleEffect implements Queueable {
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset)
+	public void set(Entity source, Matrix4 offset)
 	{
 		Vector3 tmp = Pools.obtain(Vector3.class);
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			tmp.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).add(offset);
+			tmp.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).mul(offset);
 			setBase(source);
 		}
 		else
 		{
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			tmp.set(data.position).add(offset);
+			tmp.set(data.position).mul(offset);
 		}
 		setPosition(tmp);
 		Pools.free(tmp);

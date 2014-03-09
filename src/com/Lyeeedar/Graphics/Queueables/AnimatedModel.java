@@ -149,16 +149,16 @@ public class AnimatedModel implements Queueable {
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) 
+	public void set(Entity source, Matrix4 offset) 
 	{
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			transform.set(source.readOnlyRead(PositionalData.class).composed).translate(offset);
+			transform.set(source.readOnlyRead(PositionalData.class).composed).mul(offset);
 		}
 		else
 		{
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			transform.setToTranslation(data.position.x, data.position.y, data.position.z).translate(offset);
+			transform.setToTranslation(data.position.x, data.position.y, data.position.z).mul(offset);
 		}
 		
 		model.transform.set(transform);

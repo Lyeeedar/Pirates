@@ -111,7 +111,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		postprocessor.addEffect(Effect.BLOOM);
 		//postprocessor.addEffect(Effect.SILHOUETTE);
-		//postprocessor.addEffect(Effect.UNDERWATER);
+		postprocessor.addEffect(Effect.UNDERWATER);
 		
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.BLUR);

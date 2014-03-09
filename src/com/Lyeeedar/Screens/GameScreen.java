@@ -92,6 +92,7 @@ import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.LSystems.VolumePartitioner;
 import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -187,28 +188,40 @@ public class GameScreen extends AbstractScreen {
 		Plane plane = new Plane(new Vector3(0, 1, 0), new Vector3(0, 0, 0));
 		btCollisionShape planeShape = new btStaticPlaneShape(plane.normal, plane.d);
 		Entity planeEntity = new Entity(false, new MinimalPositionalData());
-		planeEntity.readOnlyRead(MinimalPositionalData.class).position.set(0, -750, 0);
+		planeEntity.readOnlyRead(MinimalPositionalData.class).position.set(0, -749, 0);
 		
-		bw.add(planeShape, new Matrix4().translate(0, -750, 0), planeEntity, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
+		bw.add(planeShape, new Matrix4().translate(0, -749, 0), planeEntity, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
-		// VOXEL
+		// BUILDING
 		
-		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
-		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
-		Entity voxelEntity = new Entity(true, new PositionalData());
-		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
-		voxelEntity.addRenderable(voxelMesh, new Vector3());
+		Entity building = new Entity(false, new PositionalData());
+		VolumePartitioner vp = VolumePartitioner.load("data/grammar/test.json");
+		vp.evaluate();
+		vp.collectMeshes(building);
 		
-		voxelEntity.update(0);
+		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
+		rw.add(bentry);
 		
-		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
-		rw.add(ventry);
+		// END BUILDING
 		
-		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
-		
-		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-		
-		// END VOXELS
+//		// VOXEL
+//		
+//		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
+//		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
+//		Entity voxelEntity = new Entity(true, new PositionalData());
+//		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
+//		voxelEntity.addRenderable(voxelMesh, new Matrix4());
+//		
+//		voxelEntity.update(0);
+//		
+//		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
+//		rw.add(ventry);
+//		
+//		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
+//		
+//		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+//		
+//		// END VOXELS
 				
 		// HEIGHT MAP
 		
@@ -261,7 +274,7 @@ public class GameScreen extends AbstractScreen {
 //			sfire.setEmission(shipMesh.getVertexArray(), shipMesh);
 //		}
 		
-		ship.addRenderable(shipMesh, new Vector3());
+		ship.addRenderable(shipMesh, new Matrix4());
 
 		btCollisionShape shipShape = BulletWorld.meshToCollisionShape(shipModel);
 		
@@ -285,7 +298,7 @@ public class GameScreen extends AbstractScreen {
 		seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		//seatex.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.MipMapLinearLinear);
 		Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
-		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.8f, 0.7f), terrain);
+		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.6f, 0.7f), terrain);
 		skybox = new SkyBox(sea, weather);
 		
 		// END SKYBOX
@@ -311,7 +324,7 @@ public class GameScreen extends AbstractScreen {
 		player.setAI(btree);
 
 		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		player.addRenderable(am, new Vector3());
+		player.addRenderable(am, new Matrix4());
 		pmodel = am;
 		am.setDetailController(new DetailController());
 		
@@ -340,7 +353,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Entity spell2 = new Entity(false, new PositionalData(), new StatusData());
 		Sprite2D orb2 = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture("data/textures/orb.png", true, null, null))), 1, 1);
-		spell2.addRenderable(orb2, new Vector3());
+		spell2.addRenderable(orb2, new Matrix4());
 		spell2.readOnlyRead(PositionalData.class).octtreeEntry = rw.createEntry(spell2, new Vector3(), new Vector3(10, 10, 10), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_SPELL);
 		spell2.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
 		spell2.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));
@@ -459,7 +472,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, new Vector3(1, 1, 1), false), 1, 2500, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false), 1, 5000, 50);
 		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
 		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
@@ -481,7 +494,7 @@ public class GameScreen extends AbstractScreen {
 		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
 		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
 		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, new Vector3(1, 1, 1), true), 1, 50000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, true), 1, 50000, 50);
 		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
 		for (Entity v : veggies)
 		{
@@ -558,7 +571,7 @@ public class GameScreen extends AbstractScreen {
 		ge.readOnlyRead(StatusData.class).blocking = false;
 		
 		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
-		ge.addRenderable(gam, new Vector3());
+		ge.addRenderable(gam, new Matrix4());
 				
 		ATTACK_STAGE[] gwattacks = {
 				
@@ -814,7 +827,7 @@ public class GameScreen extends AbstractScreen {
 								Entity drop = new Entity(false, new PositionalData(), new StatusData());
 								
 								Sprite2D icon = new Sprite2D(Decal.newDecal(new TextureRegion(FileUtils.loadTexture(item.description.icon, true, null, null))), 1, 1);
-								drop.addRenderable(icon, new Vector3());
+								drop.addRenderable(icon, new Matrix4());
 								drop.readOnlyRead(PositionalData.class).octtreeEntry = GLOBALS.renderTree.createEntry(drop, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ITEM);
 								drop.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SIMPLE;
 								drop.readOnlyRead(PositionalData.class).collisionShape = new btBoxShape(new Vector3(1, 1, 1));

@@ -89,9 +89,9 @@ public class Entity {
 		return renderables.renderables.get(i).renderable;
 	}
 
-	public void addRenderable(Queueable r, Vector3 position)
+	public void addRenderable(Queueable r, Matrix4 offset)
 	{
-		renderables.add(new EntityRenderable(r, position));
+		renderables.add(new EntityRenderable(r, offset));
 	}
 
 	public void queueRenderables(Camera cam, LightManager lights, float delta, HashMap<Class, Batch> batches, boolean update)
@@ -222,7 +222,7 @@ public class Entity {
 			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
-				r.renderable.set(source, r.position);
+				r.renderable.set(source, r.offset);
 			}
 		}
 
@@ -249,7 +249,7 @@ public class Entity {
 			for (int i = 0; i < renderables.size; i++)
 			{
 				EntityRenderable r = renderables.get(i);
-				other.add(new EntityRenderable(r.renderable.copy(), r.position));
+				other.add(new EntityRenderable(r.renderable.copy(), r.offset));
 			}
 		}
 
@@ -297,12 +297,12 @@ public class Entity {
 	public static class EntityRenderable
 	{
 		public Queueable renderable;
-		public final Vector3 position = new Vector3();
+		public final Matrix4 offset = new Matrix4();
 
-		public EntityRenderable(Queueable renderable, Vector3 position)
+		public EntityRenderable(Queueable renderable, Matrix4 offset)
 		{
 			this.renderable = renderable;
-			this.position.set(position);
+			this.offset.set(offset);
 		}
 	}
 

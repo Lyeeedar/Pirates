@@ -184,7 +184,7 @@ public class Terrain extends Entity {
 			
 			v.writeData(pData);
 			
-			v.addRenderable(renderable.copy(), new Vector3());
+			v.addRenderable(renderable.copy(), new Matrix4());
 			
 			veggies.add(v);
 		}

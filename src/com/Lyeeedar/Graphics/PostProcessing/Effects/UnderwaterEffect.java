@@ -14,7 +14,7 @@ public class UnderwaterEffect extends PostProcessingEffect
 {
 	private Texture texture;
 	private final FollowCam cam;
-	private final Vector3 surface = new Vector3(0.0f, 1.0f, 0.9f);
+	private final Vector3 surface = new Vector3(0.0f, 0.6f, 0.9f);
 	private final Vector3 deep = new Vector3(0.0f, 0.0f, 0.2f);
 	private final Vector3 drawColour = new Vector3();
 	
@@ -47,8 +47,9 @@ public class UnderwaterEffect extends PostProcessingEffect
 			if (depth > 1) depth = 1;
 			depth = depth * depth;
 			depth = 0;
-			ImageUtils.lerp(surface, deep, depth, drawColour);
-			drawColour.scl(GLOBALS.LIGHTS.ambientColour);
+			//ImageUtils.lerp(surface, deep, depth, drawColour);
+			//drawColour.scl(GLOBALS.LIGHTS.ambientColour);
+			drawColour.set(surface);
 			batch.setBlendFunction(GL20.GL_ZERO, GL20.GL_SRC_COLOR);
 			batch.setColor(drawColour.x, drawColour.y, drawColour.z, 0.8f);
 			batch.draw(this.texture, 0, 0, buffer.getWidth(), buffer.getHeight());

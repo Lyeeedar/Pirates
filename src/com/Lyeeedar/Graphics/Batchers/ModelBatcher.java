@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics.Batchers;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.PriorityQueue;
@@ -16,6 +17,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.UniformBufferObject;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
@@ -27,11 +29,11 @@ import com.badlogic.gdx.utils.Pool;
 public class ModelBatcher implements Queueable {
 	
 	public static int MAX_INSTANCES;
+	public static final int BLOCK_SIZE = 16;
 		
 	private final Mesh mesh;
 	private final int primitive_type;
 	private final Texture[] textures;
-	private final Vector3 colour = new Vector3();
 	private final boolean transparent;
 	
 	private final PriorityQueue<BatchedInstance> solidInstances = new PriorityQueue<BatchedInstance>();
@@ -41,11 +43,14 @@ public class ModelBatcher implements Queueable {
 	private static ShaderProgram transparentShader;
 	private static ShaderProgram shader;
 	
-	private final float[] offsetArray;
+	private static UniformBufferObject ubo;
 		
 	private Camera cam;
 	
 	boolean queued = false;
+	
+	private final Vector3 tmpVec = new Vector3();
+	private final Matrix4 tmpMat = new Matrix4();
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
 		@Override
@@ -54,12 +59,11 @@ public class ModelBatcher implements Queueable {
 		}
 	};
 	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, boolean transparent)
+	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, boolean transparent)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
 		this.textures = textures;
-		this.colour.set(colour);
 		this.transparent = transparent;
 		
 		IntBuffer ib = BufferUtils.newIntBuffer(16);
@@ -68,12 +72,23 @@ public class ModelBatcher implements Queueable {
 		System.out.println("Uniform Block limit (bytes): " + limitBytes);
 		System.out.println("Uniform Block limit (floats): " + (limitBytes / 4));
 		System.out.println("Uniform Block limit (vec4): " + (limitBytes / 16));
-		int supportedMax = (limitBytes / 16);
-		MAX_INSTANCES = Math.min(500, supportedMax) ;
+		System.out.println("Uniform Block limit (mat4): " + (limitBytes / 64));
+		int supportedMaxFloats = (limitBytes / 4);
+		int supportedBlocks = supportedMaxFloats / Math.max(4, BLOCK_SIZE) ;
+		MAX_INSTANCES = supportedBlocks ;
 		
-		offsetArray = new float[MAX_INSTANCES * 4];
+		loadSolidShader();
+		loadTransparentShader();
+		
+		if (ubo == null) ubo = new UniformBufferObject(4 * BLOCK_SIZE * MAX_INSTANCES, 1);
+		solidShader.registerUniformBlock("InstanceBlock", 1);
+		transparentShader.registerUniformBlock("InstanceBlock", 1);
 	}
 	
+	public Mesh getMesh()
+	{
+		return mesh;
+	}
 
 	@Override
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) 
@@ -87,14 +102,14 @@ public class ModelBatcher implements Queueable {
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Matrix4 offset) {
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			add(source.readOnlyRead(PositionalData.class).position.add(offset));
+			add(tmpMat.set(source.readOnlyRead(PositionalData.class).composed).mul(offset));
 		}
 		else
 		{
-			add(source.readOnlyRead(MinimalPositionalData.class).position.add(offset));
+			add(tmpMat.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position).mul(offset));
 		}
 	}
 
@@ -111,11 +126,13 @@ public class ModelBatcher implements Queueable {
 	public void dispose() {
 	}
 	
-	public void add(Vector3 position)
+	public void add(Matrix4 transform)
 	{
 		if (cam == null) return;
-		Vector3 pos = position;
+		
+		Vector3 pos = tmpVec.set(0, 0, 0).mul(transform);
 		float d = cam.position.dst(pos);
+		if (d > GLOBALS.FOG_MAX) return;
 		
 		float cam2 = cam.far;
 		float quarter = (cam2)/4.0f;
@@ -134,8 +151,8 @@ public class ModelBatcher implements Queueable {
 			
 			if (fade > 0.0f) 
 			{
-				if (transparent || fade < 1.0f) transparentInstances.add(pool.obtain().set(position, cam.position.dst2(position), fade));
-				else solidInstances.add(pool.obtain().set(position, -cam.position.dst2(position), fade));
+				if (transparent || fade < 1.0f) transparentInstances.add(pool.obtain().set(transform, d, fade));
+				else solidInstances.add(pool.obtain().set(transform, -d, fade));
 			}
 		}
 	}
@@ -158,26 +175,21 @@ public class ModelBatcher implements Queueable {
 			shader.setUniformi("u_texture"+i, i);
 			textures[i].bind(i);
 		}
-		
-		shader.setUniformf("u_colour", colour);
-				
+						
 		int i = 0;
+		FloatBuffer floatbuffer = ubo.getDataBuffer().asFloatBuffer();
 		while (!instances.isEmpty())
 		{			
 			BatchedInstance bi = instances.poll();
-			Vector3 p = bi.position;
-			
-			offsetArray[(i)*4+0] = p.x;
-			offsetArray[(i)*4+1] = p.y;
-			offsetArray[(i)*4+2] = p.z;
-			offsetArray[(i)*4+3] = transparent ? bi.fade : 1.0f ;
+			floatbuffer.put(bi.transform.val);
 			
 			i++;
 			if (i == MAX_INSTANCES)
 			{
-				shader.setUniform4fv("instanceOffsets", offsetArray, 0, i*4);
+				ubo.bind();
 				mesh.renderInstanced(shader, primitive_type, i);
 				i = 0;
+				floatbuffer = ubo.getDataBuffer().asFloatBuffer();
 			}
 			
 			pool.free(bi);
@@ -185,7 +197,7 @@ public class ModelBatcher implements Queueable {
 		
 		if (i > 0)
 		{
-			shader.setUniform4fv("instanceOffsets", offsetArray, 0, i*4);
+			ubo.bind();
 			mesh.renderInstanced(shader, primitive_type, i);
 		}
 		
@@ -226,7 +238,7 @@ public class ModelBatcher implements Queueable {
 	
 	public static void end()
 	{
-		shader.end();
+		if (shader != null) shader.end();
 		shader = null;
 	}
 	
@@ -285,26 +297,14 @@ public class ModelBatcher implements Queueable {
 	private static class BatchedInstance implements Comparable<BatchedInstance>
 	{
 		private float dist;
-		public final Vector3 position = new Vector3();
+		public final Matrix4 transform = new Matrix4();
 		public float fade;
 		
-		public BatchedInstance set(Vector3 position, float dist, float fade)
+		public BatchedInstance set(Matrix4 transform, float dist, float fade)
 		{
-			this.position.set(position);
+			this.transform.set(transform);
 			this.fade = fade;
 			return this;
-		}
-		
-		private boolean eq(Vector3 p1, Vector3 p2)
-		{
-			return (p1.x==p2.x && p1.y==p2.y && p1.z==p2.z);
-		}
-		
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (obj == null) return false;
-			return eq(position, ((BatchedInstance)obj).position);
 		}
 
 		@Override

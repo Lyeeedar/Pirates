@@ -174,11 +174,11 @@ public class Sprite3D implements Queueable {
 	}
 	
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Matrix4 offset) {
 		source.readData(pData);
 		source.readData(aData);
 		
-		setPosition(pData.position.add(offset));
+		setPosition(pData.position.mul(offset));
 		setRotation(pData.rotation);
 		if (aData.updateAnimations){
 			playAnimationLoop(aData.anim, aData.animation, aData.useDirection);

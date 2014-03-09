@@ -50,10 +50,10 @@ public class VoxelGenerator
 	{
 		float offset = MathUtils.random(8008135);
 		
-		NoiseGenerator noise = new NoiseGenerator(offset, 2, 0.5f, 8, 0.006f, scale, x, y, z);
+		NoiseGenerator noise = new NoiseGenerator(offset, 2, 0.5f, 8, 0.002f, scale, x, y, z);
 		
-		Point[][][] pointGrid = generatePointGrid(x, y, z, scale, noise, 3);
-		smoothGrid(pointGrid); 
+		Point[][][] pointGrid = generatePointGrid(x, y, z, scale, noise, 1);
+		//smoothGrid(pointGrid); 
 		
 		for (int ix = 0; ix < x; ix++)
 		{
@@ -86,27 +86,46 @@ public class VoxelGenerator
 	
 	public static void processFaces(Face[] faces, Vertex[] vertices, NoiseGenerator noise)
 	{
-		Vector3 normal = Pools.obtain(Vector3.class);
+		for (Vertex v : vertices)
+		{
+			v.smooth(0.1f);
+		}
 		
 		for (Vertex v : vertices)
 		{
 			v.x = ((noise.x/-2)+v.x)*noise.size;
 			v.y = ((noise.y/-2)+v.y)*noise.size;
 			v.z = ((noise.z/-2)+v.z)*noise.size;
-			
-			v.tex1 = 1;
 		}
 		
+		Vector3 normal1 = Pools.obtain(Vector3.class);
+		Vector3 normal2 = Pools.obtain(Vector3.class);
+		Vector3[] normals = {normal1, normal2};
 		for (Face face : faces)
 		{
-			face.addNormal(normal);
+			face.addNormal(normals);
+			
+			normal1.add(normal2).scl(0.5f);
+			
+			for (Vertex v : face.vertices)
+			{
+				if (normal1.y > 0.8f)
+				{
+					v.tex1 += 1;
+				}
+				else
+				{
+					v.tex3 += 1;
+				}
+			}
 		}
-		Pools.free(normal);
+		Pools.free(normal1);
+		Pools.free(normal2);
 		
 		for (Vertex vertex : vertices)
 		{
 			vertex.norNormal();
-			vertex.norTex();
+			vertex.norTex();			
 		}
 	}
 	
@@ -169,7 +188,7 @@ public class VoxelGenerator
 							}
 						}
 												
-						if (neighbours.size >= 4)
+						if (neighbours.size >= 6)
 						{
 							Vector3 pos = Pools.obtain(Vector3.class).set(0, 0, 0);
 							Vector3 nor = Pools.obtain(Vector3.class).set(0, 0, 0);
@@ -365,19 +384,24 @@ public class VoxelGenerator
 			tris[index] = new int[]{v1, v2, v3};
 		}
 		
-		public void addNormal(Vector3 optionalOut)
-		{					
-			Vector3 U = Pools.obtain(Vector3.class).set(vertices[1].x-vertices[0].x, vertices[1].y-vertices[0].y, vertices[1].z-vertices[0].z);
-			Vector3 V = Pools.obtain(Vector3.class).set(vertices[2].x-vertices[0].x, vertices[2].y-vertices[0].y, vertices[2].z-vertices[0].z);
-			
-			U.crs(V).nor();
-			
-			vertices[0].addNormal(U.x, U.y, U.z);
-			vertices[1].addNormal(U.x, U.y, U.z);
-			vertices[2].addNormal(U.x, U.y, U.z);
-			
-			if (optionalOut != null) optionalOut.set(U);
-			
+		public void addNormal(Vector3[] optionalOut)
+		{
+			Vector3 U = Pools.obtain(Vector3.class);
+			Vector3 V = Pools.obtain(Vector3.class);
+			for (int i = 0; i < tris.length; i++)
+			{
+				int[] tri = tris[i];
+				U.set(vertices[tri[1]].x-vertices[tri[0]].x, vertices[tri[1]].y-vertices[tri[0]].y, vertices[tri[1]].z-vertices[tri[0]].z);
+				V.set(vertices[tri[2]].x-vertices[tri[0]].x, vertices[tri[2]].y-vertices[tri[0]].y, vertices[tri[2]].z-vertices[tri[0]].z);
+				
+				Vector3 N = U.crs(V).nor();
+				
+				vertices[tri[0]].addNormal(N.x, N.y, N.z);
+				vertices[tri[1]].addNormal(N.x, N.y, N.z);
+				vertices[tri[2]].addNormal(N.x, N.y, N.z);
+				
+				if (optionalOut != null && optionalOut[i] != null) optionalOut[i].set(N);
+			}
 			Pools.free(U);
 			Pools.free(V);
 		}
@@ -386,6 +410,7 @@ public class VoxelGenerator
 		{
 			for (Vertex v : vertices)
 			{
+				v.addFace(this);
 				if (v.index == -1)
 				{
 					v.index = (short) vertexArray.size;
@@ -401,16 +426,41 @@ public class VoxelGenerator
 		
 		float x, y, z;
 		float nx, ny, nz;
-		float tex1;
-		float tex2;
-		float tex3;
+		float tex1 = 0;
+		float tex2 = 0;
+		float tex3 = 0;
 		short index = -1;
+		
+		Array<Face> faces = new Array<Face>(false, 6);
 		
 		public Vertex(float x, float y, float z)
 		{
 			this.x = x;
 			this.y = y;
 			this.z = z;
+		}
+		
+		public void addFace(Face face)
+		{
+			faces.add(face);
+		}
+		
+		public void smooth(float scale)
+		{			
+			for (Face face : faces)
+			{
+				for (Vertex v : face.vertices)
+				{
+					float diff = v.x - x;
+					x += diff * scale;
+					
+					diff = v.y - y;
+					y += diff * scale;
+					
+					diff = v.z - z;
+					z += diff * scale;
+				}
+			}
 		}
 		
 		public void setNormal(float nx, float ny, float nz)
@@ -421,7 +471,7 @@ public class VoxelGenerator
 		}
 		
 		public void addNormal(float nx, float ny, float nz)
-		{
+		{	
 			this.nx += nx;
 			this.ny += ny;
 			this.nz += nz;
@@ -435,30 +485,33 @@ public class VoxelGenerator
 			nz /= len;
 		}
 		
-		public void setTex(float tex1, float tex2, float tex3)
-		{
-			this.tex1 = tex1;
-			this.tex2 = tex2;
-			this.tex3 = tex3;
-		}
-		
-		public void addTex(float tex1, float tex2, float tex3)
-		{
-			this.tex1 += tex1;
-			this.tex2 += tex2;
-			this.tex3 += tex3;
-		}
-		
 		public void norTex()
 		{
-			float len = Vector3.len(tex1, tex2, tex3);
-			tex1 /= len;
-			tex2 /= len;
-			tex3 /= len;
+			if (tex1 > tex2 && tex1 > tex3)
+			{
+				tex1 = 1;
+				tex2 = 0;
+				tex3 = 0;
+			}
 			
-			tex1 = 1;
-			tex2 = 0;
-			tex3 = 0;
+			if (tex2 > tex1 && tex2 > tex3)
+			{
+				tex1 = 0;
+				tex2 = 1;
+				tex3 = 0;
+			}
+			
+			if (tex3 > tex1 && tex3 > tex2)
+			{
+				tex1 = 0;
+				tex2 = 0;
+				tex3 = 1;
+			}
+			
+//			float len = Vector3.len(tex1, tex2, tex3);
+//			tex1 /= len;
+//			tex2 /= len;
+//			tex3 /= len;
 		}
 	}
 
@@ -523,11 +576,14 @@ public class VoxelGenerator
 		}
 		
 		public void buildFaces(Array<Face> faceArray, Array<Vertex> vertexArray, Cell[][][] cellGrid)
-		{			
+		{
+			if (bitmask == 0) return;
+			
 			Cell[] cells = new Cell[4];
 			cells[0] = this;
 			boolean flip_if_nonzero = false;
 			
+			outer:
 			for (int e = 0; e < 3; e++)
 			{				
 				if (e == 0 && (bitmask & (1 << 10)) != 0) 
@@ -556,6 +612,8 @@ public class VoxelGenerator
                 } 
 				else
                     continue;
+				
+				for (Cell c : cells) if (c.bitmask == 0) continue outer;
 				
 				Face face = new Face(cells[0].getFeaturePoint(), cells[1].getFeaturePoint(), cells[2].getFeaturePoint(), cells[3].getFeaturePoint());
 				face.addVertices(vertexArray);
@@ -586,8 +644,6 @@ public class VoxelGenerator
 			{
 				Array<Vector3> intersects = new Array<Vector3>(false, 16);
 				Array<Vector3> normals = new Array<Vector3>(false, 16);
-				float[] nor = new float[3];
-				float[] texa = new float[3];
 				
 				for (int i = 0; i < edges.length; i++)
 				{
@@ -601,55 +657,39 @@ public class VoxelGenerator
 					if (getPoint(edge[0]) == null)
 					{
 						p = getPoint(edge[1]);
-						axis[0] = a1[0] - a2[0];
-						axis[1] = a1[1] - a2[1];
-						axis[2] = a1[2] - a2[2];
-					}
-					else
-					{
-						p = getPoint(edge[0]);
 						axis[0] = a2[0] - a1[0];
 						axis[1] = a2[1] - a1[1];
 						axis[2] = a2[2] - a1[2];
 					}
+					else
+					{
+						p = getPoint(edge[0]);
+						axis[0] = a1[0] - a2[0];
+						axis[1] = a1[1] - a2[1];
+						axis[2] = a1[2] - a2[2];
+					}
 					
 					Vector3 intersect = Pools.obtain(Vector3.class).set(p.x, p.y, p.z);
-					intersect.add((float) axis[0] * (1.0f-p.scalar), (float) axis[1] * (1.0f-p.scalar), (float) axis[2] * (1.0f-p.scalar));
-					//System.out.println("Intersect: "+intersect);
+					intersect.add((float) axis[0] * p.scalar, (float) axis[1] * p.scalar, (float) axis[2] * p.scalar);
 					
 					Vector3 normal = Pools.obtain(Vector3.class).set(p.normal[0], p.normal[1], p.normal[2]);
-					
-					nor[0] += normal.x;
-					nor[1] += normal.y;
-					nor[2] += normal.z;
-					
-					normal.nor();
-					
-					//System.out.println("Normal: "+normal);
 					
 					intersects.add(intersect);
 					normals.add(normal);
 				}
 				Vector3 fp = Pools.obtain(Vector3.class).set(0, 0, 0);
-				computeFeaturePoint(intersects, normals, 0.001f, fp);
-				//System.out.println("Feature Point: "+fp+"\n");
-				
-				float len = Vector3.len(nor[0], nor[1], nor[2]);
-				nor[0] /= len;
-				nor[1] /= len;
-				nor[2] /= len;
-				
-				len = Vector3.len(texa[0], texa[1], texa[2]);
-				texa[0] /= len;
-				texa[1] /= len;
-				texa[2] /= len;
+				if (bitmask != 0) computeFeaturePoint(intersects, normals, 0.001f, fp);
+				else
+				{
+					throw new RuntimeException("Blegh");
+				}
 				
 				featurePoint = new Vertex(fp.x, fp.y, fp.z);
-				featurePoint.setTex(texa[0], texa[1], texa[2]);
-				//, nor[0], nor[1], nor[2], texa[0], texa[1], texa[2]};
 				
 				for (Vector3 v : intersects) Pools.free(v);
+				intersects.clear();
 				for (Vector3 v : normals) Pools.free(v);
+				normals.clear();
 				Pools.free(fp);
 			}
 						
@@ -658,6 +698,8 @@ public class VoxelGenerator
 		
 	    public static Vector3 computeFeaturePoint(Array<Vector3> intersectionPoints, Array<Vector3> intersectionNormals, float threshold, Vector3 out)
 	    {
+	    	if (intersectionPoints.size == 1) return out.set(intersectionPoints.get(0));
+	    	
 	        threshold *= threshold;
 
 	        // Center the particle on the masspoint.

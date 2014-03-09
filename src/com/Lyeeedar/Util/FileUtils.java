@@ -3,9 +3,11 @@ package com.Lyeeedar.Util;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -344,6 +346,18 @@ public class FileUtils {
 		loadedPixmaps.clear();
 	}
 	
+	private static final HashMap<String, ModelBatcher> loadedModelBatchers = new HashMap<String, ModelBatcher>();
+	public static ModelBatcher loadModelBatcher(String name)
+	{
+		if (loadedModelBatchers.containsKey(name)) return loadedModelBatchers.get(name);
+
+		return null;		
+	}
+	public static void storeModelBatcher(String name, ModelBatcher modelBatcher)
+	{
+		loadedModelBatchers.put(name, modelBatcher);
+	}
+	
 	private static final HashMap<String, Mesh> loadedMeshes = new HashMap<String, Mesh>();
 	public static Mesh loadMesh(String meshName)
 	{
@@ -425,4 +439,5 @@ public class FileUtils {
 		}
 		loadedAtlases.clear();
 	}
+	
 }

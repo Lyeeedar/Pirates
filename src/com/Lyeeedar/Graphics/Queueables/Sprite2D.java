@@ -44,15 +44,15 @@ public class Sprite2D implements Queueable {
 	}
 
 	@Override
-	public void set(Entity source, Vector3 offset) {
+	public void set(Entity source, Matrix4 offset) {
 		if (source.readOnlyRead(PositionalData.class) != null)
 		{
-			position.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).add(offset);
+			position.set(0, 0, 0).mul(source.readOnlyRead(PositionalData.class).composed).mul(offset);
 		}
 		else
 		{
 			MinimalPositionalData data = source.readOnlyRead(MinimalPositionalData.class);
-			position.set(data.position).add(offset);
+			position.set(data.position).mul(offset);
 		}
 	}
 
