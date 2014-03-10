@@ -603,6 +603,202 @@ public class Shapes {
 		return box;
 	}
 	
+	public static Mesh getPrismMesh(float x, float tx, float y, float z, boolean normals, boolean texcoords)
+	{
+		short[] indices = {
+				0, 2, 1, // bottom - 0
+				0, 3, 2,
+
+				4, 5, 6, // back - 6
+				4, 6, 7,
+
+				8, 11, 10, // front - 12
+				8, 10, 9,
+
+				12, 13, 14, // left - 18
+
+				15, 17, 16, // right - 21
+		};
+		
+		int vertSize = 3;
+		
+		if (normals) vertSize += 3;
+		if (texcoords) vertSize += 2;
+		
+		float[] cubeVerts = {
+				-x, -y, -z, // bottom - 0
+				-x, -y, +z,
+				+x, -y, +z,
+				+x, -y, -z,
+
+				-x, -y, -z, // back - 12
+				-tx, +y, 0,
+				+tx, +y, 0,
+				+x, -y, -z,
+
+				-x, -y, +z, // front - 24
+				-tx, +y, 0,
+				+tx, +y, 0,
+				+x, -y, +z,
+
+				-x, -y, -z, // left - 36
+				-x, -y, +z,
+				-tx, +y, 0,
+
+				+x, -y, -z, // right - 45
+				+x, -y, +z,
+				+tx, +y, 0,
+				};
+		
+		Vector3 nFront = Pools.obtain(Vector3.class);
+		Vector3 nBack = Pools.obtain(Vector3.class);
+		Vector3 nLeft = Pools.obtain(Vector3.class);
+		Vector3 nRight = Pools.obtain(Vector3.class);
+		
+		Vector3 U = Pools.obtain(Vector3.class);
+		Vector3 V = Pools.obtain(Vector3.class);
+		
+		// FRONT
+		int index = 12;
+		int p1 = indices[index+0]*3;
+		int p2 = indices[index+1]*3;
+		int p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		Vector3 N = U.crs(V).nor();		
+		nFront.set(N);
+		
+		// BACK
+		index = 6;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nBack.set(N);
+
+		// LEFT
+		index = 18;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nLeft.set(N);
+
+		// RIGHT
+		index = 21;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nRight.set(N);
+		
+		Pools.free(U);
+		Pools.free(V);
+		
+		float[] cubeNormals = {
+				0, -1, 0, // bottom
+				0, -1, 0,
+				0, -1, 0,
+				0, -1, 0,
+
+				nBack.x, nBack.y, nBack.z, // back
+				nBack.x, nBack.y, nBack.z,
+				nBack.x, nBack.y, nBack.z,
+				nBack.x, nBack.y, nBack.z,
+
+				nFront.x, nFront.y, nFront.z, // front
+				nFront.x, nFront.y, nFront.z,
+				nFront.x, nFront.y, nFront.z,
+				nFront.x, nFront.y, nFront.z,
+
+				nLeft.x, nLeft.y, nLeft.z, // left
+				nLeft.x, nLeft.y, nLeft.z,
+				nLeft.x, nLeft.y, nLeft.z,
+				nLeft.x, nLeft.y, nLeft.z,
+
+				nRight.x, nRight.y, nRight.z, // right
+				nRight.x, nRight.y, nRight.z,
+				nRight.x, nRight.y, nRight.z,
+				nRight.x, nRight.y, nRight.z,
+				};
+		
+		Pools.free(nFront);
+		Pools.free(nBack);
+		Pools.free(nLeft);
+		Pools.free(nRight);
+		
+		float[] cubeTex = {
+
+				0, 0, // bottom
+				0, 1,
+				1, 1,
+				1, 0,
+
+				1, 1, // back
+				1, 0,
+				0, 0,
+				0, 1,
+
+				1, 1, // front
+				1, 0,
+				0, 0,
+				0, 1,
+
+				1, 1, // left
+				0, 1,
+				0, 0.5f,
+
+				1, 1, // right
+				0, 1,
+				0, 0.5f,
+
+		};
+
+		float[] vertices = new float[18 * vertSize];
+		int pIdx = 0;
+		int nIdx = 0;
+		int tIdx = 0;
+		for (int i = 0; i < vertices.length;) {
+			vertices[i++] = cubeVerts[pIdx++];
+			vertices[i++] = cubeVerts[pIdx++];
+			vertices[i++] = cubeVerts[pIdx++];
+			
+			if (normals)
+			{
+				vertices[i++] = cubeNormals[nIdx++];
+				vertices[i++] = cubeNormals[nIdx++];
+				vertices[i++] = cubeNormals[nIdx++];
+			}
+			
+			if (texcoords)
+			{
+				vertices[i++] = cubeTex[tIdx++];
+				vertices[i++] = cubeTex[tIdx++];
+			}
+		}
+		
+		VertexAttribute[] vas = null;
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (normals) vasa.add(new VertexAttribute(Usage.Normal, 3, "a_normal"));
+		if (texcoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
+		
+		Mesh prism = new Mesh(true, 18, 24, vas);
+		
+		prism.setVertices(vertices);
+		prism.setIndices(indices);
+		
+		return prism;
+	}
+	
 	public static Mesh getFrustumMesh(Frustum frustum, int xs, int ys, float yoffset, boolean tops, boolean tope)
 	{
 		final int s = (tops) ? 3 : 0;

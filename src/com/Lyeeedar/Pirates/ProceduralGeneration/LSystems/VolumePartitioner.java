@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.Shapes;
 import com.badlogic.gdx.Gdx;
@@ -39,6 +40,7 @@ public class VolumePartitioner
 
 	public final Array<VolumePartitioner> children = new Array<VolumePartitioner>(false, 16);
 	
+	public final HashMap<String, String> defines = new HashMap<String, String>();
 	public final HashMap<String, Double> variables = new HashMap<String, Double>();
 	
 	public String coordX = "X";
@@ -56,6 +58,10 @@ public class VolumePartitioner
 		
 		if (parent != null)
 		{
+			for (Map.Entry<String, String> entry : parent.defines.entrySet())
+			{
+				defines.put(entry.getKey(), entry.getValue());
+			}
 			for (Map.Entry<String, Double> entry : parent.variables.entrySet())
 			{
 				variables.put(entry.getKey(), entry.getValue());
@@ -72,6 +78,50 @@ public class VolumePartitioner
 		for (VolumePartitioner vp : children) vp.evaluate();
 	}
 
+	public Matrix4 getLocalAxis(Matrix4 out)
+	{
+		Vector3 X = Pools.obtain(Vector3.class);
+		Vector3 Y = Pools.obtain(Vector3.class);
+		Vector3 Z = Pools.obtain(Vector3.class);
+		
+		Vector3 DX = Pools.obtain(Vector3.class).set(1, 0, 0);
+		Vector3 DY = Pools.obtain(Vector3.class).set(0, 1, 0);
+		Vector3 DZ = Pools.obtain(Vector3.class).set(0, 0, 1);
+		
+		getRotation("X", X);
+		getRotation("Y", Y);
+		getRotation("Z", X);
+		
+		out.idt().rotate(DX, X).rotate(DY, Y).rotate(DZ, Z);
+		
+		Pools.free(X);
+		Pools.free(Y);
+		Pools.free(Z);
+		Pools.free(DX);
+		Pools.free(DY);
+		Pools.free(DZ);
+		
+		return out;
+	}
+	
+	public Vector3 getRotation(String axis, Vector3 out)
+	{
+		String coord = null;
+		if (axis.equalsIgnoreCase("X")) coord = coordX;
+		else if (axis.equalsIgnoreCase("Y")) coord = coordY;
+		else if (axis.equalsIgnoreCase("Z")) coord = coordZ;
+		else throw new RuntimeException("Invalid axis: "+axis);
+		
+		out.set(0, 0, 0);
+		float val = coord.startsWith("-") ? -1 : 1 ;
+		if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("X")) out.x = val;
+		else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Y")) out.y = val;
+		else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Z")) out.z = val;
+		else throw new RuntimeException("Invalid coord: "+coord);
+		
+		return out;
+	}
+	
 	public String getCoord(String coord)
 	{
 		if (coord.equalsIgnoreCase("X")) return coordX;
@@ -80,36 +130,68 @@ public class VolumePartitioner
 		return null;
 	}
 	
+	public void setCoords(String X, String Y, String Z)
+	{
+		String oldX = coordX;
+		String oldY = coordY;
+		String oldZ = coordZ;
+		
+		for (int i = 0; i < 3; i++)
+		{
+			String coord = "";
+			if (i == 0) coord = X;
+			else if (i == 1) coord = Y;
+			else if (i == 2) coord = Z;
+			
+			String oldCoord = "";
+			if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("X")) oldCoord = oldX;
+			else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Y")) oldCoord = oldY;
+			else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Z")) oldCoord = oldZ;
+			
+			String sign = !coord.startsWith("-") && !oldCoord.startsWith("-") ? "" : "-";
+			String dir = oldCoord.substring(oldCoord.length()-1, oldCoord.length());
+			String newCoord = sign+dir;
+			
+			if (i == 0) coordX = newCoord;
+			else if (i == 1) coordY = newCoord;
+			else if (i == 2) coordZ = newCoord;
+		}
+	}
+		
 	public void setCoords(String coords)
 	{
 		int pos = 0;
+
+		String nX = "";
+		String nY = "";
+		String nZ = "";
 		String coord = "";
+		
 		for (int i = 0; i < coords.length(); i++)
 		{
 			String c = ""+coords.charAt(i);
 			coord += c;
 			if (c.equalsIgnoreCase("X") || c.equalsIgnoreCase("Y") || c.equalsIgnoreCase("Z"))
 			{
+								
 				if (pos == 0)
 				{
-					System.out.println("Setting X to "+coord);
-					coordX = coord;
+					nX = coord;
 				}
 				else if (pos == 1)
 				{
-					System.out.println("Setting Y to "+coord);
-					coordY = coord;
+					nY = coord;
 				}
 				else if (pos == 2)
 				{
-					System.out.println("Setting Z to "+coord);
-					coordZ = coord;
+					nZ = coord;
 				}
 				
 				pos++;
 				coord = "";
 			}
 		}
+		setCoords(nX, nY, nZ);
 	}
 		
 	public float getVal(String axis, Vector3 vals)
@@ -164,7 +246,7 @@ public class VolumePartitioner
 		else throw new RuntimeException("Invalid axis: "+axis);
 	}
 		
-	public void repeat(String eqn, int repeats, JsonValue ruleSub, JsonValue ruleRemainder, String axis)
+	public void repeat(String eqn, int repeats, JsonValue ruleSub, JsonValue ruleRemainder, JsonValue repeatRule, String axis)
 	{
 		float interval = getVal(axis, max) - getVal(axis, min);
 		boolean up = !axis.startsWith("-");
@@ -196,6 +278,8 @@ public class VolumePartitioner
 
 			if (up) setVal(axis, nmin, getVal(axis, nmax));
 			else setVal(axis, nmax, getVal(axis, nmin));
+			
+			if (repeatRule != null) processRule(repeatRule);
 		}
 
 		if (ruleRemainder != null)
@@ -257,14 +341,32 @@ public class VolumePartitioner
 			ruleRemainder = temp;
 		}
 		
+		JsonValue ruleRepeat = null;
+		if (repeat.hasChild("RepeatRule"))
+		{
+			ruleRepeat = repeat.get("RepeatRule").child;
+			if (ruleRepeat == null)
+			{
+				String ruleString = repeat.getString("RepeatRule");
+				ruleRepeat = methodTable.get(ruleString);
+			}
+			else
+			{
+				JsonValue temp = new JsonValue("TempRule");
+				temp.name = "TempRule";
+				temp.child = ruleRepeat;
+				ruleRepeat = temp;
+			}
+		}
+		
 		axis = getCoord(axis);
-		if (axis != null) repeat(eqn, repeats, ruleSub, ruleRemainder, axis);
+		if (axis != null) repeat(eqn, repeats, ruleSub, ruleRemainder, ruleRepeat, axis);
 		else throw new RuntimeException("Invalid Axis: "+axis);
 	}
 	
 	public void processDivide(JsonValue divide)
 	{
-		String axis = divide.getString("Axis");
+		String axis = getCoord(divide.getString("Axis"));
 		
 		float interval = getVal(axis, max) - getVal(axis, min);
 		
@@ -362,25 +464,21 @@ public class VolumePartitioner
 	
 	public void processRule(JsonValue rule)
 	{
-		System.out.println(rule.name);
 		JsonValue current = rule.child;
 	
 		while (current != null)
 		{
 			String method = current.name;
 			
-			System.out.println(method);
-
 			if (method.equalsIgnoreCase("Rule"))
 			{
 				JsonValue nrule = methodTable.get(current.asString());
+				if (nrule == null) throw new RuntimeException("Invalid rule: "+current.asString());
 				processRule(nrule);
 			}
 			else if (method.equalsIgnoreCase("CoordinateSystem"))
 			{
-				coordX = current.getString("X");
-				coordY = current.getString("Y");
-				coordZ = current.getString("Z");
+				setCoords(current.getString("X"), current.getString("Y"), current.getString("Z"));
 			}
 			else if (method.equalsIgnoreCase("Select"))
 			{
@@ -415,10 +513,15 @@ public class VolumePartitioner
 				while (definition != null)
 				{
 					String name = definition.name;
-					String eqn = definition.asString();
-					double val = parseEquation(eqn, 0, variables);
+					String value = definition.asString();
+					defines.put(name, value);
 					
-					variables.put(name, val);
+					try
+					{
+						double val = parseEquationWithException(value, 0, variables);
+						variables.put(name, val);
+					}
+					catch (Exception e) {}
 					
 					definition = definition.next;
 				}
@@ -438,23 +541,67 @@ public class VolumePartitioner
 
 	public ModelBatcher getModelBatcher()
 	{
-		String meshName = rule.get("Mesh").getString("Name");
-		String textureName = rule.get("Mesh").getString("Texture");
-		String mbname = meshName+textureName;
+		JsonValue meshValue = rule.get("Mesh");
+		String meshName = meshValue.getString("Name");
+		if (defines.containsKey(meshName)) meshName = defines.get(meshName);
+		String textureName = meshValue.getString("Texture");
+		boolean useTriplanarSampling = meshValue.getBoolean("TriplanarSample");
+		float triplanarScale = 0;
+		if (useTriplanarSampling) triplanarScale = meshValue.getFloat("TriplanarScale");
+		
+		if (defines.containsKey(textureName)) textureName = defines.get(textureName);
+		String mbname = "";
+		
+		if (meshName.equalsIgnoreCase("Sphere"))
+		{
+			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta")+"Phi"+meshValue.getString("Phi")+useTriplanarSampling+triplanarScale;
+		}
+		else if (meshName.equalsIgnoreCase("HemiSphere"))
+		{
+			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta")+"Phi"+meshValue.getString("Phi")+useTriplanarSampling+triplanarScale;
+		}
+		else if (meshName.equalsIgnoreCase("Prism"))
+		{
+			String eqn = meshValue.getString("loft");
+			mbname = meshName+textureName+"Loft"+eqn+useTriplanarSampling+triplanarScale;
+		}
+		else
+		{
+			mbname = meshName+textureName+useTriplanarSampling+triplanarScale;
+		}
+		
 		ModelBatcher mb = FileUtils.loadModelBatcher(mbname);
 		if (mb == null)
 		{
 			Mesh mesh = null;
 			if (meshName.equalsIgnoreCase("Box"))
 			{
-				mesh = Shapes.getBoxMesh(1, 1, 1, true, true);
+				mesh = Shapes.getBoxMesh(1, 1, 1, true, !useTriplanarSampling);
+			}
+			else if (meshName.equalsIgnoreCase("Sphere"))
+			{
+				int theta = meshValue.getInt("Theta");
+				int phi = meshValue.getInt("Phi");
+				mesh = Shapes.getSphereMesh(theta, phi, 1, true, !useTriplanarSampling);
+			}
+			else if (meshName.equalsIgnoreCase("HemiSphere"))
+			{
+				int theta = meshValue.getInt("Theta");
+				int phi = meshValue.getInt("Phi");
+				mesh = Shapes.getHemiSphereMesh(theta, phi, 1, true, !useTriplanarSampling);
+			}
+			else if (meshName.equalsIgnoreCase("Prism"))
+			{
+				String eqn = meshValue.getString("loft");
+				float loft = parseEquation(eqn, 1, variables);
+				mesh = Shapes.getPrismMesh(1, loft, 1, 1, true, !useTriplanarSampling);
 			}
 			else
 			{
 				mesh = FileUtils.loadMesh(meshName);
 			}
 
-			mb = new ModelBatcher(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureArray(new String[]{textureName}), false, false);
+			mb = new ModelBatcher(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureArray(new String[]{textureName}), false, false, useTriplanarSampling, triplanarScale);
 			FileUtils.storeModelBatcher(mbname, mb);
 		}
 		return mb;
@@ -462,20 +609,23 @@ public class VolumePartitioner
 
 	private void collectMeshes(Entity entity, Vector3 center)
 	{
-		if (children.size == 0 && rule.get("Mesh") != null)
+		if (rule.get("Mesh") != null)
 		{
 			ModelBatcher mb = getModelBatcher();
 			BoundingBox bb = Pools.obtain(BoundingBox.class);
 			mb.getMesh().calculateBoundingBox(bb);
-
+			
+			Matrix4 rotation = getLocalAxis(Pools.obtain(Matrix4.class));
+			bb.mul(rotation);
+			
 			Vector3 meshDim = bb.getDimensions();
 			meshDim.set(1.0f / meshDim.x, 1.0f / meshDim.y, 1.0f / meshDim.z);
 			Vector3 volumeDim = Pools.obtain(Vector3.class).set(max).sub(min);
 						
-			Vector3 translation = Pools.obtain(Vector3.class).set(volumeDim).scl(0.5f).add(min).sub(center);
+			Vector3 translation = Pools.obtain(Vector3.class).set(volumeDim).scl(0.5f).add(min).sub(bb.getCenter()).sub(center);
 			Vector3 scale = volumeDim.scl(meshDim);
 
-			Matrix4 transform = Pools.obtain(Matrix4.class).setToTranslationAndScaling(translation, scale);
+			Matrix4 transform = Pools.obtain(Matrix4.class).setToTranslationAndScaling(translation, scale).mul(rotation);
 
 			entity.addRenderable(mb, transform);
 
@@ -483,6 +633,7 @@ public class VolumePartitioner
 			Pools.free(volumeDim);
 			Pools.free(transform);
 			Pools.free(translation);
+			Pools.free(rotation);
 		}
 		else for (VolumePartitioner vp : children)
 		{
@@ -511,7 +662,6 @@ public class VolumePartitioner
 					importedFiles.add(file);
 					
 					String contents = Gdx.files.internal(file).readString();
-					System.out.println("Appending: "+contents);
 					JsonValue nroot = new JsonReader().parse(contents);
 					
 					loadImportsAndBuildMethodTable(importedFiles, nroot, methodTable);
@@ -543,7 +693,7 @@ public class VolumePartitioner
 		return new VolumePartitioner(new Vector3(), new Vector3(), main, methodTable, null);
 	}
 
-	private float parseEquation(String equation, float interval, HashMap<String, Double> variables)
+	private float parseEquationWithException(String equation, float interval, HashMap<String, Double> variables) throws UnknownFunctionException, UnparsableExpressionException
 	{
 		equation = equation.replace("%", "#");
 		
@@ -575,15 +725,27 @@ public class VolumePartitioner
 			}
 		}
 
+		ExpressionBuilder expBuilder = new ExpressionBuilder(equation);
+		expBuilder.withCustomFunction(rndFunc);
+		expBuilder.withOperation(percentOperator);
+		expBuilder.withVariables(variables);
+		expBuilder.withVariable("X", getVal(coordX, max)-getVal(coordX, min));
+		expBuilder.withVariable("Y", getVal(coordY, max)-getVal(coordY, min));
+		expBuilder.withVariable("Z", getVal(coordZ, max)-getVal(coordZ, min));
+		
+		Calculable eqn = expBuilder.build();
+		size = (float) eqn.calculate();
+
+		return size;
+	}
+	
+	private float parseEquation(String equation, float interval, HashMap<String, Double> variables)
+	{
+		float size = 0;
+
 		try
 		{
-			ExpressionBuilder expBuilder = new ExpressionBuilder(equation);
-			expBuilder.withCustomFunction(rndFunc);
-			expBuilder.withOperation(percentOperator);
-			expBuilder.withVariables(variables);
-			
-			Calculable eqn = expBuilder.build();
-			size = (float) eqn.calculate();
+			size = parseEquationWithException(equation, interval, variables);
 		}
 		catch (UnknownFunctionException e)
 		{

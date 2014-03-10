@@ -69,9 +69,9 @@ public class FileUtils {
 			{
 				int ctex = current.textures.length;
 				
-				Texture diffuse = loadTexture(textureName+"_d.png", false, null, null);
-				Texture specular = loadTexture(textureName+"_s.png", false, null, null);
-				Texture emissive = loadTexture(textureName+"_e.png", false, null, null);
+				Texture diffuse = loadTexture(textureName+"_d.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+				Texture specular = loadTexture(textureName+"_s.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+				Texture emissive = loadTexture(textureName+"_e.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 				
 				int ntex = 0;
 				if (diffuse != null) ntex++;
