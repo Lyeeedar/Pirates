@@ -35,6 +35,7 @@ public class ModelBatcher implements Queueable {
 	private final int primitive_type;
 	private final Texture[] textures;
 	private final boolean transparent;
+	private final boolean canCull;
 	
 	private final PriorityQueue<BatchedInstance> solidInstances = new PriorityQueue<BatchedInstance>();
 	private final PriorityQueue<BatchedInstance> transparentInstances = new PriorityQueue<BatchedInstance>();
@@ -59,12 +60,13 @@ public class ModelBatcher implements Queueable {
 		}
 	};
 	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, boolean transparent)
+	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, boolean transparent, boolean canCull)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
 		this.textures = textures;
 		this.transparent = transparent;
+		this.canCull = canCull;
 		
 		IntBuffer ib = BufferUtils.newIntBuffer(16);
 		Gdx.gl.glGetIntegerv(GL30.GL_MAX_UNIFORM_BLOCK_SIZE, ib);
@@ -132,7 +134,14 @@ public class ModelBatcher implements Queueable {
 		
 		Vector3 pos = tmpVec.set(0, 0, 0).mul(transform);
 		float d = cam.position.dst(pos);
-		if (d > GLOBALS.FOG_MAX) return;
+		if (d > GLOBALS.FOG_MAX || d > cam.far) return;
+		
+		if (!canCull)
+		{
+			if (transparent) transparentInstances.add(pool.obtain().set(transform, d, 1.0f));
+			else solidInstances.add(pool.obtain().set(transform, -d, 1.0f));
+			return;
+		}
 		
 		float cam2 = cam.far;
 		float quarter = (cam2)/4.0f;
@@ -274,6 +283,7 @@ public class ModelBatcher implements Queueable {
 		
 		public void renderSolid(LightManager lights, Camera cam)
 		{
+			if (ModelBatcher.solidShader == null) return;
 			ModelBatcher.beginSolid(lights, cam);
 			for (ModelBatcher mb : modelBatchers)
 			{
@@ -284,6 +294,7 @@ public class ModelBatcher implements Queueable {
 		
 		public void renderTransparent(LightManager lights, Camera cam)
 		{
+			if (ModelBatcher.transparentShader == null) return;
 			ModelBatcher.beginTransparent(lights, cam);
 			for (ModelBatcher mb : modelBatchers)
 			{

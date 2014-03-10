@@ -195,7 +195,7 @@ public class GameScreen extends AbstractScreen {
 		// BUILDING
 		
 		Entity building = new Entity(false, new PositionalData());
-		VolumePartitioner vp = VolumePartitioner.load("data/grammar/test.json");
+		VolumePartitioner vp = VolumePartitioner.load("data/grammar/building.json");
 		vp.evaluate();
 		vp.collectMeshes(building);
 		
@@ -472,7 +472,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false), 1, 5000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true), 1, 5000, 50);
 		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
 		BoundingBox bb = grassMesh.calculateBoundingBox();
 		for (Entity v : veggies)
@@ -494,7 +494,7 @@ public class GameScreen extends AbstractScreen {
 		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
 		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
 		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, true), 1, 50000, 50);
+		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, true, true), 1, 50000, 50);
 		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
 		for (Entity v : veggies)
 		{

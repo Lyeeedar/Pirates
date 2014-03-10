@@ -83,6 +83,11 @@ public class Entity {
 			d.parent = this;
 		}
 	}
+	
+	public void clearRenderables()
+	{
+		renderables.renderables.clear();
+	}
 
 	public Queueable getRenderable(int i)
 	{
