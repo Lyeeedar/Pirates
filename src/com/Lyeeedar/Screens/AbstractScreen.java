@@ -18,7 +18,7 @@ import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.ChunkedTerrainBatch;
 import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
-import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Batchers.MotionTrailBatch;
 import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
@@ -92,14 +92,14 @@ public abstract class AbstractScreen implements Screen {
 		trailBatch = new MotionTrailBatch();
 		renderer = new TexturedMeshBatch(false);
 		particleBatch = new ParticleEffectBatch();
-		terrainBatch = new ChunkedTerrainBatch();
+		terrainBatch = new ChunkedTerrainBatch(false);
 		modelBatch = new AnimatedModelBatch(12);
 		
 		batches = new HashMap<Class, Batch>();
 		batches.put(TexturedMeshBatch.class, renderer);
 		batches.put(AnimatedModelBatch.class, modelBatch);
 		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
-		batches.put(ModelBatchers.class, new ModelBatchers());
+		batches.put(ModelBatcher.class, new ModelBatcher(false));
 		batches.put(MotionTrailBatch.class, trailBatch);
 		batches.put(ParticleEffectBatch.class, particleBatch);
 		batches.put(ChunkedTerrainBatch.class, terrainBatch);
@@ -134,8 +134,6 @@ public abstract class AbstractScreen implements Screen {
 		
 		if (controls.esc()) game.switchScreen(PirateGame.Screen.MAINMENU);
 		
-		postprocessor.begin();
-		
 		GLOBALS.PROGRAM_TIME += delta;
 		
 		frameTime = System.nanoTime();
@@ -145,6 +143,9 @@ public abstract class AbstractScreen implements Screen {
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
 		
+		GLOBALS.LIGHTS.sort(cam.position);
+		GLOBALS.LIGHTS.calculateDepthMap(true);
+		
 		stage.act(delta);
 		
 		time = System.nanoTime();
@@ -152,7 +153,7 @@ public abstract class AbstractScreen implements Screen {
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
 		
-		GLOBALS.LIGHTS.sort(cam.position);
+		postprocessor.begin();
 		
 		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -170,7 +171,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		time = System.nanoTime();
 		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(GLOBALS.LIGHTS, cam);
-		((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(GLOBALS.LIGHTS, cam);
+		((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
 		((ChunkedTerrainBatch) batches.get(ChunkedTerrainBatch.class)).render(GLOBALS.LIGHTS, cam);
 		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
@@ -183,7 +184,7 @@ public abstract class AbstractScreen implements Screen {
 		Gdx.gl.glDepthMask(true);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		drawSkybox(delta);
-		((ModelBatchers) batches.get(ModelBatchers.class)).renderTransparent(GLOBALS.LIGHTS, cam);
+		((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(GLOBALS.LIGHTS, cam);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		
 		time = System.nanoTime();

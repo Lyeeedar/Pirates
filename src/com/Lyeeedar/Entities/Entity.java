@@ -1074,6 +1074,16 @@ public class Entity {
 			velocity.y = mag;
 		}
 
+		public void initialise()
+		{
+			calculateComposed();
+			lastPos2.set(position);
+			lastPos1.set(position);
+			lastRot2.set(rotation);
+			lastRot1.set(rotation);
+			lastInv.set(inverse);
+		}
+		
 		public void applyVelocity(float delta, float mass)
 		{
 			lastPos2.set(lastPos1);

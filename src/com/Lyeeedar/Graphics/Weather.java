@@ -54,13 +54,13 @@ public class Weather {
 		}
 	}
 	
-	boolean increase = true;
+	boolean increase = false;
 	public void update(float delta, FollowCam cam)
 	{
 		clouds.update(delta);
 		
-		//delta /= 5;
-		delta /= 300000.0f;
+		delta = Gdx.graphics.getDeltaTime() / 10;
+		//delta /= 300000.0f;
 		
 		if (increase) 
 		{
@@ -68,11 +68,11 @@ public class Weather {
 			
 			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
+				GLOBALS.LIGHTS.directionalLight.direction.x += delta;
 			}
 			else
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
+				GLOBALS.LIGHTS.directionalLight.direction.x -= delta;
 			}
 		}
 		else 
@@ -81,17 +81,17 @@ public class Weather {
 			
 			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.z += delta;
+				GLOBALS.LIGHTS.directionalLight.direction.x += delta;
 			}
 			else
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
+				GLOBALS.LIGHTS.directionalLight.direction.x -= delta;
 			}
 		}
-		
+				
 		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
 		if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
-		
+				
 		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 0.1f)
 		{
 			GLOBALS.LIGHTS.directionalLight.colour.set(1, 1, 0);
@@ -158,7 +158,7 @@ public class Weather {
 		
 		skyShader.setUniformf("sun_dir", lights.directionalLight.direction);
 		skyShader.setUniformf("sun_col", lights.directionalLight.colour);
-		skyShader.setUniformf("sun_size", 0.01f);
+		skyShader.setUniformf("sun_size", 0.008f);
 		
 		skyShader.setUniformf("sky_col", lights.ambientColour);
 		skyShader.setUniformf("col_shift", cs);

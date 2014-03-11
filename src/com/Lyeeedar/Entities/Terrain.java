@@ -114,7 +114,7 @@ public class Terrain extends Entity {
 		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		
-		lights.applyLights(shader);
+		lights.applyLights(shader, 5);
 		
 		for (int i = 0; i < textures.length; i++)
 		{

@@ -2,11 +2,13 @@ package com.Lyeeedar.Collision;
 
 import com.Lyeeedar.Collision.Octtree.OcttreeBox.CollisionType;
 import com.Lyeeedar.Util.Pools;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 
 public class Octtree <E> {
@@ -16,6 +18,7 @@ public class Octtree <E> {
 	public static final int MASK_ENTITY = 1 << 3;
 	public static final int MASK_SPELL = 1 << 4;
 	public static final int MASK_ITEM = 1 << 5;
+	public static final int MASK_SHADOW_CASTING = 1 << 6;
 	
 	private static final int CASCADE_THRESHOLD = 10;
 	
@@ -172,10 +175,15 @@ public class Octtree <E> {
 	
 	public void collectAll(Array<E> output, OcttreeShape shape, int bitmask)
 	{
-		internalCollectAll(output, shape, true, bitmask);
+		collectAll(output, shape, bitmask, null);
 	}
 	
-	private void internalCollectAll(Array<E> output, OcttreeShape shape, boolean check, int bitmask)
+	public void collectAll(Array<E> output, OcttreeShape shape, int bitmask, BoundingBox bb)
+	{
+		internalCollectAll(output, shape, true, bitmask, bb);
+	}
+	
+	private void internalCollectAll(Array<E> output, OcttreeShape shape, boolean check, int bitmask, BoundingBox bb)
 	{		
 		for (int i = 0; i < elements.size; i++)
 		{
@@ -187,6 +195,25 @@ public class Octtree <E> {
 			if (collision != CollisionType.OUTSIDE) 
 			{
 				output.add(oe.e);
+				
+				if (bb != null)
+				{
+					if (Float.isNaN(bb.min.x))
+					{
+						bb.min.set(oe.box.pos).sub(oe.box.extents);
+						bb.max.set(oe.box.pos).add(oe.box.extents);
+					}
+					else
+					{
+						if (oe.box.pos.x-oe.box.extents.x < min.x) min.x = oe.box.pos.x-oe.box.extents.x;
+						if (oe.box.pos.y-oe.box.extents.y < min.y) min.y = oe.box.pos.y-oe.box.extents.y;
+						if (oe.box.pos.z-oe.box.extents.z < min.z) min.z = oe.box.pos.z-oe.box.extents.z;
+						
+						if (oe.box.pos.x+oe.box.extents.x > max.x) max.x = oe.box.pos.x+oe.box.extents.x;
+						if (oe.box.pos.y+oe.box.extents.y > max.y) max.y = oe.box.pos.y+oe.box.extents.y;
+						if (oe.box.pos.z+oe.box.extents.z > max.z) max.z = oe.box.pos.z+oe.box.extents.z;
+					}
+				}
 			}
 		}
 		
@@ -194,9 +221,9 @@ public class Octtree <E> {
 		{
 			CollisionType collision = check ? shape.isIntersecting(o.box) : CollisionType.INSIDE;
 			if (collision == CollisionType.INSIDE)
-				o.internalCollectAll(output, shape, false, bitmask);
+				o.internalCollectAll(output, shape, false, bitmask, bb);
 			else if (collision == CollisionType.INTERSECT)
-				o.internalCollectAll(output, shape, true, bitmask);
+				o.internalCollectAll(output, shape, true, bitmask, bb);
 		}
 	}
 	
@@ -324,10 +351,10 @@ public class Octtree <E> {
 	
 	public static class OcttreeFrustum implements OcttreeShape
 	{
-		PerspectiveCamera frustum;
+		public Camera frustum;
 		float sizeLim;
 		
-		public OcttreeFrustum(PerspectiveCamera frustum, float sizeLim)
+		public OcttreeFrustum(Camera frustum, float sizeLim)
 		{
 			this.frustum = frustum;
 			this.sizeLim = sizeLim;

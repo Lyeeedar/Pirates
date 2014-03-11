@@ -84,7 +84,7 @@ public class AnimatedModelBatch implements Batch
 				shaders[current_shader].setUniformf("fog_max", GLOBALS.FOG_MAX);
 				shaders[current_shader].setUniformf("u_viewPos", cam.position);
 				
-				lights.applyLights(shaders[current_shader]);
+				lights.applyLights(shaders[current_shader], 7);
 			}
 			
 			if (bi.bone_num > 0)

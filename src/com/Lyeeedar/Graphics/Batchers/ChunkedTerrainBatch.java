@@ -19,11 +19,13 @@ public class ChunkedTerrainBatch implements Batch
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
+	private final boolean simpleRender;
 
 	private ShaderProgram shader;
 		
-	public ChunkedTerrainBatch()
+	public ChunkedTerrainBatch(boolean simpleRender)
 	{
+		this.simpleRender = simpleRender;
 	}
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
@@ -43,12 +45,12 @@ public class ChunkedTerrainBatch implements Batch
 		shader.begin();
 		
 		shader.setUniformMatrix("u_pv", cam.combined);
-		shader.setUniformf("fog_col", lights.ambientColour);
-		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
-		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
-		shader.setUniformf("u_viewPos", cam.position);
+		if (!simpleRender) shader.setUniformf("fog_col", lights.ambientColour);
+		if (!simpleRender) shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
+		if (!simpleRender) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		if (!simpleRender) shader.setUniformf("u_viewPos", cam.position);
 		
-		lights.applyLights(shader);
+		if (!simpleRender) lights.applyLights(shader, 4);
 
 		while (!instances.isEmpty())
 		{
@@ -57,7 +59,7 @@ public class ChunkedTerrainBatch implements Batch
 			shader.setUniformMatrix("u_mm", bi.model_matrix);
 			shader.setUniformf("u_colour", bi.colour);
 
-			if (textureHash != bi.texHash)
+			if (!simpleRender && textureHash != bi.texHash)
 			{
 				for (int i = 0; i < bi.textures.length; i++)
 				{
@@ -79,10 +81,9 @@ public class ChunkedTerrainBatch implements Batch
 	
 	public ShaderProgram createShader()
 	{
-		StringBuilder prefix = new StringBuilder();
 		
-		String vert = prefix.toString() + Gdx.files.internal("data/shaders/chunked_terrain.vertex.glsl").readString();
-		String frag = Gdx.files.internal("data/shaders/chunked_terrain.fragment.glsl").readString();
+		String vert = simpleRender ? Gdx.files.internal("data/shaders/chunked_terrain_simple.vertex.glsl").readString() : Gdx.files.internal("data/shaders/chunked_terrain.vertex.glsl").readString();
+		String frag = simpleRender ? Gdx.files.internal("data/shaders/chunked_terrain_simple.fragment.glsl").readString() : Gdx.files.internal("data/shaders/chunked_terrain.fragment.glsl").readString();
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	

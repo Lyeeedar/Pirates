@@ -194,13 +194,21 @@ public class GameScreen extends AbstractScreen {
 		
 		// BUILDING
 		
-		Entity building = new Entity(false, new PositionalData());
-		VolumePartitioner vp = VolumePartitioner.load("data/grammar/village.json");
-		vp.evaluate();
-		vp.collectMeshes(building);
+		Entity building = new Entity(true, new PositionalData());
+		building.readOnlyRead(PositionalData.class).position.y = 50;
+		building.readOnlyRead(PositionalData.class).initialise();
 		
-		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
+		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+		btTriangleMesh btm = new btTriangleMesh();
+		
+		VolumePartitioner vp = VolumePartitioner.load("data/grammar/vaults.json");
+		vp.evaluate();
+		vp.collectMeshes(building, bentry, btm);
+		
+		btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
+		
 		rw.add(bentry);
+		bw.add(bshape, new Matrix4().setToTranslation(building.readOnlyRead(PositionalData.class).position), building, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 		
 		// END BUILDING
 		
@@ -214,7 +222,7 @@ public class GameScreen extends AbstractScreen {
 //		
 //		voxelEntity.update(0);
 //		
-//		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER);
+//		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 //		rw.add(ventry);
 //		
 //		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
@@ -222,7 +230,7 @@ public class GameScreen extends AbstractScreen {
 //		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 //		
 //		// END VOXELS
-				
+//				
 		// HEIGHT MAP
 		
 		ArrayList<Entity> ae = new ArrayList<Entity>();
@@ -279,11 +287,11 @@ public class GameScreen extends AbstractScreen {
 		btCollisionShape shipShape = BulletWorld.meshToCollisionShape(shipModel);
 		
 		BoundingBox sbb = shipModel.calculateBoundingBox();
-		OcttreeEntry<Entity> entry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		OcttreeEntry<Entity> sentry = rw.createEntry(ship, ship.readOnlyRead(PositionalData.class).position, sbb.getDimensions(), Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY | Octtree.MASK_SHADOW_CASTING);
 		ship.readOnlyRead(PositionalData.class).collisionType = COLLISION_TYPE.SHIP;
-		ship.readOnlyRead(PositionalData.class).octtreeEntry = entry;
+		ship.readOnlyRead(PositionalData.class).octtreeEntry = sentry;
 		ship.readOnlyRead(PositionalData.class).collisionShape = shipShape;
-		rw.add(entry);
+		rw.add(sentry);
 		bw.add(shipShape, new Matrix4().setToTranslation(ship.readOnlyRead(PositionalData.class).position), ship, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_WALKABLE), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_AI | BulletWorld.FILTER_GHOST | BulletWorld.FILTER_WALKABLE));
 		
 		//cam.lockOn(ship);
@@ -399,7 +407,7 @@ public class GameScreen extends AbstractScreen {
 		
 		Vector3 dimensions = new Vector3(1, 2, 1);
 		
-		entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		OcttreeEntry<Entity> entry = rw.createEntry(player, player.readOnlyRead(PositionalData.class).position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY | Octtree.MASK_SHADOW_CASTING);
 		player.readOnlyRead(PositionalData.class).octtreeEntry = entry;
 		player.readOnlyRead(PositionalData.class).collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
@@ -411,99 +419,99 @@ public class GameScreen extends AbstractScreen {
 		
 		System.out.println("player done");
 		
-		// MAKE NPC 1
-		
-		Entity npc = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
-		//npc.setAI(new AI_Simple());
-		Object[] actionTree = {
-			DialogueAction.TEXT3D, "Test dialogue 123 This is Action 0. Text 3D. Advancing.", 1 ,
-			new Object[]{ DialogueAction.WAIT, 5, 
-			new Object[]{ DialogueAction.TEXT3D, "Waited 5 seconds. New dialogue shown.", 1 ,
-			new Object[]{ DialogueAction.WAIT, 5,
-			new Object[]{ DialogueAction.TEXT2D, "Now then, what do you want to do? 1: Stuff, 2: other stuff. Choose.", 
-			new Object[]{ DialogueAction.INPUT, 
-					Keys.NUM_1, 
-						new Object[]{ DialogueAction.TEXT3D, "You chose 1.", 1 ,
-						new Object[]{ DialogueAction.INPUT, Keys.E, null
-						}
-						},
-					Keys.NUM_2,
-						new Object[]{ DialogueAction.TEXT3D, "You chose 2.", 1 ,
-						new Object[]{ DialogueAction.INPUT, Keys.E, null
-						}
-						},
-			}
-			}
-			}
-			}
-			}
-		};
-
-		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
-		npc.readOnlyRead(StatusData.class).factions.add("Player");
-		npc.readData(eData);
-		//eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
-		//eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
-		npc.writeData(eData);
-		
-		// END NPC 1
+//		// MAKE NPC 1
+//		
+//		Entity npc = new Entity(false, new PositionalData(), new AnimationData(), new StatusData(), new EquipmentData());
+//		//npc.setAI(new AI_Simple());
+//		Object[] actionTree = {
+//			DialogueAction.TEXT3D, "Test dialogue 123 This is Action 0. Text 3D. Advancing.", 1 ,
+//			new Object[]{ DialogueAction.WAIT, 5, 
+//			new Object[]{ DialogueAction.TEXT3D, "Waited 5 seconds. New dialogue shown.", 1 ,
+//			new Object[]{ DialogueAction.WAIT, 5,
+//			new Object[]{ DialogueAction.TEXT2D, "Now then, what do you want to do? 1: Stuff, 2: other stuff. Choose.", 
+//			new Object[]{ DialogueAction.INPUT, 
+//					Keys.NUM_1, 
+//						new Object[]{ DialogueAction.TEXT3D, "You chose 1.", 1 ,
+//						new Object[]{ DialogueAction.INPUT, Keys.E, null
+//						}
+//						},
+//					Keys.NUM_2,
+//						new Object[]{ DialogueAction.TEXT3D, "You chose 2.", 1 ,
+//						new Object[]{ DialogueAction.INPUT, Keys.E, null
+//						}
+//						},
+//			}
+//			}
+//			}
+//			}
+//			}
+//		};
+//
+//		npc.readOnlyRead(PositionalData.class).position.set(-4, 12, 0);
+//		npc.readOnlyRead(StatusData.class).factions.add("Player");
+//		npc.readData(eData);
+//		//eData.equip(Equipment_Slot.BODY, new Armour(new SPRITESHEET("Human", Color.WHITE, 0, SpriteLayer.BODY), null));
+//		//eData.equip(Equipment_Slot.HEAD, new Armour(new SPRITESHEET("Hair1", new Color(0.9f, 0.5f, 0.7f, 1.0f), 0, SpriteLayer.HEAD), null));
+//		npc.writeData(eData);
+//		
+//		// END NPC 1
 		
 		System.out.println("npc1 done");
 		
-		// MAKE ENEMIES
-		
-		for (int i = 0; i < 50; i++)
-		{
-			
-			Entity leader = makeEntity(null, rw, bw);
-			
-			for (int ii = 0; ii < 5; ii++)
-			{
-				makeEntity(leader, rw, bw);
-			}
-			
-		}
-		
-		// END ENEMIES
+//		// MAKE ENEMIES
+//		
+//		for (int i = 0; i < 50; i++)
+//		{
+//			
+//			Entity leader = makeEntity(null, rw, bw);
+//			
+//			for (int ii = 0; ii < 5; ii++)
+//			{
+//				makeEntity(leader, rw, bw);
+//			}
+//			
+//		}
+//		
+//		// END ENEMIES
 		
 		System.out.println("enemies done");
 		
-		// MAKE TREES
-		
-		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
-		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true, false, 0), 1, 5000, 50);
-		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
-		BoundingBox bb = grassMesh.calculateBoundingBox();
-		for (Entity v : veggies)
-		{
-			v.update(0);
-			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER);
-			rw.add(entry);
-			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-		}
-		veggies.clear();
-		
-		// END TREES
-		
-		System.out.println("trees done");
-		
-		// MAKE GRASS
-		
-		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
-		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
-		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
-		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
-		terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, true, true, false, 0), 1, 50000, 50);
-		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
-		for (Entity v : veggies)
-		{
-			v.update(0);
-			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER);
-			veggieTree.add(oe);
-		}
-		veggies.clear();
-		
+//		// MAKE TREES
+//		
+//		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
+//		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
+//		//terrain.vegetate(veggies, new ModelBatchInstance(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true, false, 0), 1, 5000, 50);
+//		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
+//		BoundingBox bb = grassMesh.calculateBoundingBox();
+//		for (Entity v : veggies)
+//		{
+//			v.update(0);
+//			entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER);
+//			rw.add(entry);
+//			bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+//		}
+//		veggies.clear();
+//		
+//		// END TREES
+//		
+//		System.out.println("trees done");
+//		
+//		// MAKE GRASS
+//		
+//		grassMesh = FileUtils.loadMesh("data/models/shr2.obj");
+//		Texture shrd = FileUtils.loadTexture("data/textures/shr2_d.png", true, TextureFilter.MipMapLinearLinear, null);
+//		Texture shrs = FileUtils.loadTexture("data/textures/shr2_s.png", true, TextureFilter.MipMapLinearLinear, null);
+//		Texture shre = FileUtils.loadTexture("data/textures/shr2_e.png", true, TextureFilter.MipMapLinearLinear, null);
+//		//terrain.vegetate(veggies, new ModelBatcher(grassMesh, GL20.GL_TRIANGLES, new Texture[]{shrd, shrs, shre}, true, true, false, 0), 1, 50000, 50);
+//		btBoxShape box = new btBoxShape(new Vector3(1, 1, 1));
+//		for (Entity v : veggies)
+//		{
+//			v.update(0);
+//			OcttreeEntry<Entity> oe = veggieTree.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+//			veggieTree.add(oe);
+//		}
+//		veggies.clear();
+//		
 		// END GRASS
 		
 		System.out.println("grass done");
@@ -593,7 +601,7 @@ public class GameScreen extends AbstractScreen {
 		eData.addItem(item);
 		
 		Vector3 dimensions = new Vector3(1, 2, 1);
-		OcttreeEntry<Entity> entry = rw.createEntry(ge, pData.position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY);
+		OcttreeEntry<Entity> entry = rw.createEntry(ge, pData.position, dimensions, Octtree.MASK_AI | Octtree.MASK_RENDER | Octtree.MASK_ENTITY | Octtree.MASK_SHADOW_CASTING);
 		pData.octtreeEntry = entry;
 		pData.collisionShape = new btCapsuleShape(1, 2);
 		rw.add(entry);
@@ -936,7 +944,7 @@ public class GameScreen extends AbstractScreen {
 			lockOn = false;
 		}
 		
-		GLOBALS.LIGHTS.lights.get(0).position.set(player.getPosition()).add(0, 1, 0);
+		//GLOBALS.LIGHTS.lights.get(0).position.set(player.getPosition()).add(0, 1, 0);
 	}
 
 	@Override

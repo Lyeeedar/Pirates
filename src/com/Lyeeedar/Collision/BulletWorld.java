@@ -200,6 +200,44 @@ public class BulletWorld {
 			return new btBvhTriangleMeshShape(tm, true);
 		}
 	}
+	
+	public static void addTriangles(Mesh mesh, Matrix4 transform, btTriangleMesh triangleMesh)
+	{
+		final int nverts = mesh.getNumVertices();
+		final int vsize = mesh.getVertexSize() / 4;
+		float[] vertices = mesh.getVertices(new float[nverts*vsize]);
+		int poff = mesh.getVertexAttributes().getOffset(Usage.Position);
+		
+		for (int i = 0; i < nverts;)
+		{
+			Vector3 v1 = new Vector3();
+			Vector3 v2 = new Vector3();
+			Vector3 v3 = new Vector3();
+			
+			v1.set(
+					vertices[poff+(i*vsize)+0],
+					vertices[poff+(i*vsize)+1],
+					vertices[poff+(i*vsize)+2]
+							).mul(transform);
+			i++;
+			
+			v2.set(
+					vertices[poff+(i*vsize)+0],
+					vertices[poff+(i*vsize)+1],
+					vertices[poff+(i*vsize)+2]
+							).mul(transform);
+			i++;
+			
+			v3.set(
+					vertices[poff+(i*vsize)+0],
+					vertices[poff+(i*vsize)+1],
+					vertices[poff+(i*vsize)+2]
+							).mul(transform);
+			i++;
+
+			triangleMesh.addTriangle(v1, v2, v3);
+		}
+	}
 
 	public static class ClosestRayResultSkippingCallback extends ClosestRayResultCallback
 	{

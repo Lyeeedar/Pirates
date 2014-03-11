@@ -108,7 +108,7 @@ public class Sea {
 		seaShader.setUniformi("u_texture", index);
 		seaTexture.bind(index);
 		
-		lights.applyLights(seaShader);
+		lights.applyLights(seaShader, 2);
 		
 		for (Mesh mesh : sea) mesh.render(seaShader, GL20.GL_TRIANGLES);
 		

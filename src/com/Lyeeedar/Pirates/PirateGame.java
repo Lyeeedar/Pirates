@@ -44,9 +44,11 @@ public class PirateGame extends Game {
 		
 		GLOBALS.LIGHTS.ambientColour.set(0.8f, 0.9f, 0.7f);
 		GLOBALS.LIGHTS.directionalLight.colour.set(0.01f, 0.01f, 0.01f);
-		GLOBALS.LIGHTS.directionalLight.direction.set(0.0f, 1.0f, 0.0f);
+		GLOBALS.LIGHTS.directionalLight.direction.set(-0.5f, 0.5f, 0.0f);
 		
 		Light l = new Light(new Vector3(), new Vector3(0.7f, 0.7f, 0.7f), 0.1f);
+		
+		GLOBALS.LIGHTS.enableShadowMapping();
 		
 		GLOBALS.LIGHTS.add(l);
 		

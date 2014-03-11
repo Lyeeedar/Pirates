@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
@@ -346,16 +347,16 @@ public class FileUtils {
 		loadedPixmaps.clear();
 	}
 	
-	private static final HashMap<String, ModelBatcher> loadedModelBatchers = new HashMap<String, ModelBatcher>();
-	public static ModelBatcher loadModelBatcher(String name)
+	private static final HashMap<String, ModelBatchData> loadedModelBatchData = new HashMap<String, ModelBatchData>();
+	public static ModelBatchData loadModelBatchData(String name)
 	{
-		if (loadedModelBatchers.containsKey(name)) return loadedModelBatchers.get(name);
+		if (loadedModelBatchData.containsKey(name)) return loadedModelBatchData.get(name);
 
 		return null;		
 	}
-	public static void storeModelBatcher(String name, ModelBatcher modelBatcher)
+	public static void storeModelBatchData(String name, ModelBatchData modelBatchData)
 	{
-		loadedModelBatchers.put(name, modelBatcher);
+		loadedModelBatchData.put(name, modelBatchData);
 	}
 	
 	private static final HashMap<String, Mesh> loadedMeshes = new HashMap<String, Mesh>();

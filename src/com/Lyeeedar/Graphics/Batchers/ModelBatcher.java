@@ -2,77 +2,45 @@ package com.Lyeeedar.Graphics.Batchers;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.PriorityQueue;
 
-import com.Lyeeedar.Entities.Entity;
-import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
-import com.Lyeeedar.Entities.Entity.PositionalData;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Queueables.Queueable;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData.BatchedInstance;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.UniformBufferObject;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.BufferUtils;
-import com.badlogic.gdx.utils.Pool;
 
-public class ModelBatcher implements Queueable {
-	
+public class ModelBatcher implements Batch
+{
 	public static int MAX_INSTANCES;
 	public static final int BLOCK_SIZE = 16;
-		
-	private final Mesh mesh;
-	private final int primitive_type;
-	private final Texture[] textures;
-	private final boolean useTriplanarSampling;
-	private final float triplanarScaling;
-	private final boolean transparent;
-	private final boolean canCull;
-	
-	private final PriorityQueue<BatchedInstance> solidInstances = new PriorityQueue<BatchedInstance>();
-	private final PriorityQueue<BatchedInstance> transparentInstances = new PriorityQueue<BatchedInstance>();
 		
 	private static ShaderProgram solidShaderSampling;
 	private static ShaderProgram transparentShaderSampling;
 	private static ShaderProgram solidShaderNoSampling;
 	private static ShaderProgram transparentShaderNoSampling;
+	private static ShaderProgram simpleShader;
 	private static ShaderProgram shader;
 	
 	private static UniformBufferObject ubo;
-		
-	private Camera cam;
 	
-	boolean queued = false;
+	private final HashSet<ModelBatchData> lookupTable;
+	private final Array<ModelBatchData> queued;
+	private final boolean simpleRender;
 	
-	private final Vector3 tmpVec = new Vector3();
-	private final Matrix4 tmpMat = new Matrix4();
-	
-	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
-		@Override
-		protected BatchedInstance newObject() {
-			return new BatchedInstance();
-		}
-	};
-	
-	public ModelBatcher(Mesh mesh, int primitive_type, Texture[] textures, boolean transparent, boolean canCull, boolean useTriplanarSampling, float triplanarScaling)
+	public ModelBatcher(boolean simpleRender)
 	{
-		this.mesh = mesh;
-		this.primitive_type = primitive_type;
-		this.textures = textures;
-		this.transparent = transparent;
-		this.canCull = canCull;
-		this.useTriplanarSampling = useTriplanarSampling;
-		this.triplanarScaling = triplanarScaling;
+		this.simpleRender = simpleRender;
+		this.queued = new Array<ModelBatchData>(false, 16);
+		this.lookupTable = new HashSet<ModelBatchData>();
 		
 		IntBuffer ib = BufferUtils.newIntBuffer(16);
 		Gdx.gl.glGetIntegerv(GL30.GL_MAX_UNIFORM_BLOCK_SIZE, ib);
@@ -81,121 +49,82 @@ public class ModelBatcher implements Queueable {
 		int supportedBlocks = supportedMaxFloats / Math.max(4, BLOCK_SIZE) ;
 		MAX_INSTANCES = supportedBlocks ;
 		
+		if (ubo == null) ubo = new UniformBufferObject(4 * BLOCK_SIZE * MAX_INSTANCES, 1);
+		
 		loadSolidShader();
 		loadTransparentShader();
-		
-		if (ubo == null) ubo = new UniformBufferObject(4 * BLOCK_SIZE * MAX_INSTANCES, 1);
-		solidShaderSampling.registerUniformBlock("InstanceBlock", 1);
-		transparentShaderSampling.registerUniformBlock("InstanceBlock", 1);
-		solidShaderNoSampling.registerUniformBlock("InstanceBlock", 1);
-		transparentShaderNoSampling.registerUniformBlock("InstanceBlock", 1);
+		loadSimpleShader();
 	}
 	
-	public Mesh getMesh()
+	public void add(ModelBatchData data)
 	{
-		return mesh;
-	}
-
-	@Override
-	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches) 
-	{
-		if (!queued) 
+		if (!lookupTable.contains(data))
 		{
-			((ModelBatchers) batches.get(ModelBatchers.class)).add(this);
-			queued = true;
-			this.cam = cam;
+			lookupTable.add(data);
+			queued.add(data);
 		}
-	}
-
-	@Override
-	public void set(Entity source, Matrix4 offset) {
-		if (source.readOnlyRead(PositionalData.class) != null)
-		{
-			add(tmpMat.set(source.readOnlyRead(PositionalData.class).composed).mul(offset));
-		}
-		else
-		{
-			add(tmpMat.setToTranslation(source.readOnlyRead(MinimalPositionalData.class).position).mul(offset));
-		}
-	}
-
-	@Override
-	public void update(float delta, Camera cam, LightManager lights) {
-	}
-
-	@Override
-	public Queueable copy() {
-		return this;
-	}
-
-	@Override
-	public void dispose() {
 	}
 	
-	public void add(Matrix4 transform)
+	public void renderSolid(LightManager lights, Camera cam)
 	{
-		if (cam == null) return;
-		
-		Vector3 pos = tmpVec.set(0, 0, 0).mul(transform);
-		float d = cam.position.dst(pos);
-		if (d > GLOBALS.FOG_MAX || d > cam.far) return;
-		
-		if (!canCull)
+		for (ModelBatchData mb : queued)
 		{
-			if (transparent) transparentInstances.add(pool.obtain().set(transform, d, 1.0f));
-			else solidInstances.add(pool.obtain().set(transform, -d, 1.0f));
-			return;
+			if (simpleRender) renderSimpleSolid(mb, mb.solidInstances, cam);
+			else renderSolid(mb, lights, mb.solidInstances, cam);
 		}
-		
-		float cam2 = cam.far;
-		float quarter = (cam2)/4.0f;
-		float ncam = cam2-quarter;
-		
-		float dd = Math.max(d-quarter, 0.0f);
-		
-		float threshold = 1.0f - (dd / (ncam));
-		float a = Math.abs(pos.x);
-		float dst = a-MathUtils.floor(a);
-				
-		if (dst <= threshold) 
+		ModelBatcher.end();
+	}
+	
+	public void renderTransparent(LightManager lights, Camera cam)
+	{
+		for (ModelBatchData mb : queued)
 		{
-			float fadestart = (1.0f-dst)*(ncam)+quarter;
-			float fade = Math.min((fadestart-d)/(quarter/2.0f), 1.0f);
+			if (simpleRender) renderSimpleTransparent(mb, mb.transparentInstances, cam);
+			else renderTransparent(mb, lights, mb.transparentInstances, cam);
+		}
+		ModelBatcher.end();
+		clear();
+	}
+	
+	public void renderSolid(ModelBatchData data, LightManager lights, PriorityQueue<BatchedInstance> instances, Camera cam)
+	{
+		if (data.useTriplanarSampling) begin(solidShaderSampling, lights, cam, false);
+		else begin(solidShaderNoSampling, lights, cam, false);
+		
+		flush(data, instances, cam);
+	}
+	public void renderTransparent(ModelBatchData data, LightManager lights, PriorityQueue<BatchedInstance> instances, Camera cam)
+	{
+		if (data.useTriplanarSampling) begin(transparentShaderSampling, lights, cam, false);
+		else begin(transparentShaderNoSampling, lights, cam, false);
+		
+		flush(data, instances, cam);
+	}
+	public void renderSimpleSolid(ModelBatchData data, PriorityQueue<BatchedInstance> instances, Camera cam)
+	{
+		begin(simpleShader, null, cam, true);
+		flush(data, instances, cam);
+	}
+	public void renderSimpleTransparent(ModelBatchData data, PriorityQueue<BatchedInstance> instances, Camera cam)
+	{
+		begin(simpleShader, null, cam, true);
+		flush(data, instances, cam);
+	}
+	
+	private void flush(ModelBatchData data, PriorityQueue<BatchedInstance> instances, Camera cam)
+	{
+		if (!simpleRender)
+		{	
+			shader.setUniformi("u_texNum", data.textures.length);
+			if (data.useTriplanarSampling) shader.setUniformf("u_triplanarScaling", data.triplanarScaling);
 			
-			if (fade > 0.0f) 
+			for (int i = 0; i < data.textures.length; i++)
 			{
-				if (transparent || fade < 1.0f) transparentInstances.add(pool.obtain().set(transform, d, fade));
-				else solidInstances.add(pool.obtain().set(transform, -d, fade));
-			}
+				shader.setUniformi("u_texture"+i, i);
+				data.textures[i].bind(i);
+			}		
 		}
-	}
-	
-	public void renderSolid(LightManager lights)
-	{
-		if (useTriplanarSampling) begin(solidShaderSampling, lights, cam);
-		else begin(solidShaderNoSampling, lights, cam);
 		
-		flush(solidInstances, false);
-	}
-	public void renderTransparent(LightManager lights)
-	{
-		if (useTriplanarSampling) begin(transparentShaderSampling, lights, cam);
-		else begin(transparentShaderNoSampling, lights, cam);
-		
-		flush(transparentInstances, true);
-	}
-	
-	private void flush(PriorityQueue<BatchedInstance> instances, boolean transparent)
-	{
-		shader.setUniformi("u_texNum", textures.length);
-		if (useTriplanarSampling) shader.setUniformf("u_triplanarScaling", triplanarScaling);
-		
-		for (int i = 0; i < textures.length; i++)
-		{
-			shader.setUniformi("u_texture"+i, i);
-			textures[i].bind(i);
-		}
-						
 		int i = 0;
 		FloatBuffer floatbuffer = ubo.getDataBuffer().asFloatBuffer();
 		while (!instances.isEmpty())
@@ -207,40 +136,51 @@ public class ModelBatcher implements Queueable {
 			if (i == MAX_INSTANCES)
 			{
 				ubo.bind();
-				mesh.renderInstanced(shader, primitive_type, i);
+				data.mesh.renderInstanced(shader, data.primitive_type, i);
 				i = 0;
 				floatbuffer = ubo.getDataBuffer().asFloatBuffer();
 			}
 			
-			pool.free(bi);
+			data.pool.free(bi);
 		}
 		
 		if (i > 0)
 		{
 			ubo.bind();
-			mesh.renderInstanced(shader, primitive_type, i);
+			data.mesh.renderInstanced(shader, data.primitive_type, i);
 		}
-		
-		queued = false;
 	}
 	
-	public static void begin(ShaderProgram shader, LightManager lights, Camera cam)
+	public void clear()
+	{
+		for (ModelBatchData data : queued)
+		{
+			data.clear();
+		}
+		
+		queued.clear();
+		lookupTable.clear();
+	}
+	
+	public static void begin(ShaderProgram shader, LightManager lights, Camera cam, boolean simpleRender)
 	{
 		if (ModelBatcher.shader == shader) return;
 		
 		if (ModelBatcher.shader != null) ModelBatcher.shader.end();
 		
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		
 		ModelBatcher.shader = shader;
 		shader.begin();
 		
-		lights.applyLights(shader);
-		shader.setUniformf("fog_col", lights.ambientColour);
-		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
-		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		shader.setUniformMatrix("u_pv", cam.combined);
-		shader.setUniformf("u_viewPos", cam.position);
+		if (!simpleRender)
+		{
+			lights.applyLights(shader, 4);
+			shader.setUniformf("fog_col", lights.ambientColour);
+			shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
+			shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+			shader.setUniformf("u_viewPos", cam.position);
+			Gdx.gl.glEnable(GL20.GL_BLEND);
+		}
 	}
 	
 	public static void end()
@@ -261,6 +201,9 @@ public class ModelBatcher implements Queueable {
 		
 		solidShaderSampling = new ShaderProgram("#define USE_TRIPLANAR_SAMPLING\n"+vert, "#define USE_TRIPLANAR_SAMPLING\n"+frag);
 		if (!solidShaderSampling.isCompiled()) System.err.println(solidShaderSampling.getLog());
+		
+		solidShaderSampling.registerUniformBlock("InstanceBlock", 1);
+		solidShaderNoSampling.registerUniformBlock("InstanceBlock", 1);
 	}
 	
 	public static void loadTransparentShader()
@@ -275,94 +218,23 @@ public class ModelBatcher implements Queueable {
 		
 		transparentShaderSampling = new ShaderProgram("#define USE_TRIPLANAR_SAMPLING\n"+vert, "#define USE_TRIPLANAR_SAMPLING\n"+frag);
 		if (!transparentShaderSampling.isCompiled()) System.err.println(transparentShaderSampling.getLog());
+		
+		transparentShaderSampling.registerUniformBlock("InstanceBlock", 1);
+		transparentShaderNoSampling.registerUniformBlock("InstanceBlock", 1);
 	}
 	
-	public static class ModelBatchers implements Batch
+	public void loadSimpleShader()
 	{
-		Array<ModelBatcher> modelBatchers;
 		
-		public ModelBatchers()
-		{
-			this.modelBatchers = new Array<ModelBatcher>();
-		}
+		String vert = "#define MAX_INSTANCES " + MAX_INSTANCES + "\n" + Gdx.files.internal("data/shaders/modelBatcher_simple.vertex.glsl").readString();
+		String frag = Gdx.files.internal("data/shaders/modelBatcher_simple.fragment.glsl").readString();
 		
-		public void add(ModelBatcher mb)
-		{
-			modelBatchers.add(mb);
-		}
+		simpleShader = new ShaderProgram(vert, frag);
+	
+		if (!simpleShader.isCompiled()) System.err.println(simpleShader.getLog());
 		
-		public void renderSolid(LightManager lights, Camera cam)
-		{
-			for (ModelBatcher mb : modelBatchers)
-			{
-				mb.renderSolid(lights);
-			}
-			ModelBatcher.end();
-		}
-		
-		public void renderTransparent(LightManager lights, Camera cam)
-		{
-			for (ModelBatcher mb : modelBatchers)
-			{
-				mb.renderTransparent(lights);
-			}
-			ModelBatcher.end();
-			modelBatchers.clear();
-		}
+		simpleShader.registerUniformBlock("InstanceBlock", 1);
 	}
 	
-	private static class BatchedInstance implements Comparable<BatchedInstance>
-	{
-		private float dist;
-		public final Matrix4 transform = new Matrix4();
-		public float fade;
-		
-		public BatchedInstance set(Matrix4 transform, float dist, float fade)
-		{
-			this.transform.set(transform);
-			this.fade = fade;
-			return this;
-		}
-
-		@Override
-		public int compareTo(BatchedInstance bi) {
-			if (equals(bi)) return 0;
-			return (int) ((bi.dist - dist)*100);
-		}	
-	}
-
-	@Override
-	public void set(Matrix4 transform)
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-
-	@Override
-	public void transform(Matrix4 mat)
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-
-	@Override
-	public Matrix4 getTransform()
-	{
-		return null;
-	}
-
-
-	@Override
-	public float[][] getVertexArray()
-	{
-		return new float[][]{new float[]{0}};
-	}
-
-	@Override
-	public Vector3 getTransformedVertex(float[] values, Vector3 out)
-	{
-		return out.set(0, 0, 0);
-	}
+	
 }

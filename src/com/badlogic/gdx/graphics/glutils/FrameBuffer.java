@@ -25,7 +25,7 @@ import java.util.Map;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -79,6 +79,7 @@ public class FrameBuffer implements Disposable {
 
 	/** depth **/
 	protected final boolean hasDepth;
+	protected final boolean hasColour;
 
 	/** format **/
 	protected final Pixmap.Format format;
@@ -96,6 +97,18 @@ public class FrameBuffer implements Disposable {
 		this.height = height;
 		this.format = format;
 		this.hasDepth = hasDepth;
+		this.hasColour = true;
+		build();
+
+		addManagedFrameBuffer(Gdx.app, this);
+	}
+	
+	public FrameBuffer (Pixmap.Format format, int width, int height, boolean hasColour, boolean hasDepth) {
+		this.width = width;
+		this.height = height;
+		this.format = format;
+		this.hasDepth = hasDepth;
+		this.hasColour = hasColour;
 		build();
 
 		addManagedFrameBuffer(Gdx.app, this);
@@ -105,9 +118,13 @@ public class FrameBuffer implements Disposable {
 	 * Override this method in a derived class to set up the backing texture as you like.
 	 */
 	protected void setupTexture() {
-		colorTexture = new Texture(width, height, format);
-		colorTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		colorTexture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+		
+		if (hasColour)
+		{
+			colorTexture = new Texture(width, height, format);
+			colorTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+			colorTexture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+		}
 		
 		if (hasDepth)
 		{
@@ -120,14 +137,14 @@ public class FrameBuffer implements Disposable {
 	private void build () {
 		//if (!Gdx.graphics.isGL30Available()) throw new GdxRuntimeException("GL3 is required.");
 
-		GL20 gl = Gdx.graphics.getGL20();
+		GL30 gl = Gdx.graphics.getGL30();
 
 		// iOS uses a different framebuffer handle! (not necessarily 0)
 		if (!defaultFramebufferHandleInitialized) {
 			defaultFramebufferHandleInitialized = true;
 		   if (Gdx.app.getType() == ApplicationType.iOS) {
 		     IntBuffer intbuf = ByteBuffer.allocateDirect(16 * Integer.SIZE / 8).order(ByteOrder.nativeOrder()).asIntBuffer();
-		     gl.glGetIntegerv(GL20.GL_FRAMEBUFFER_BINDING, intbuf);
+		     gl.glGetIntegerv(GL30.GL_FRAMEBUFFER_BINDING, intbuf);
 		     defaultFramebufferHandle = intbuf.get(0);
 		   }
 		   else {
@@ -141,38 +158,39 @@ public class FrameBuffer implements Disposable {
 		gl.glGenFramebuffers(1, handle);
 		framebufferHandle = handle.get(0);
 		
-		gl.glBindFramebuffer(GL20.GL_FRAMEBUFFER, framebufferHandle);
-		gl.glFramebufferTexture2D(GL20.GL_FRAMEBUFFER, GL20.GL_COLOR_ATTACHMENT0, GL20.GL_TEXTURE_2D,
+		gl.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferHandle);
+		if (hasColour) {
+			gl.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL30.GL_TEXTURE_2D,
 			colorTexture.getTextureObjectHandle(), 0);
+		}
 		if (hasDepth) {
-			gl.glFramebufferTexture2D(GL20.GL_FRAMEBUFFER, GL20.GL_DEPTH_ATTACHMENT, GL20.GL_TEXTURE_2D, 
+			gl.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_TEXTURE_2D, 
 					depthTexture.getTextureObjectHandle(), 0);
 		}
-		int result = gl.glCheckFramebufferStatus(GL20.GL_FRAMEBUFFER);
+		int result = gl.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
 
-		gl.glBindRenderbuffer(GL20.GL_RENDERBUFFER, 0);
-		gl.glBindTexture(GL20.GL_TEXTURE_2D, 0);
-		gl.glBindFramebuffer(GL20.GL_FRAMEBUFFER, defaultFramebufferHandle);
+		gl.glBindRenderbuffer(GL30.GL_RENDERBUFFER, 0);
+		gl.glBindTexture(GL30.GL_TEXTURE_2D, 0);
+		gl.glBindFramebuffer(GL30.GL_FRAMEBUFFER, defaultFramebufferHandle);
 
-		if (result != GL20.GL_FRAMEBUFFER_COMPLETE) {
-			colorTexture.dispose();
+		if (result != GL30.GL_FRAMEBUFFER_COMPLETE) {
+			if (hasColour) colorTexture.dispose();
 			if (hasDepth) {
 				depthTexture.dispose();
 			}
 
-			colorTexture.dispose();
 			handle.clear();
 			handle.put(framebufferHandle);
 			handle.flip();
 			gl.glDeleteFramebuffers(1, handle);
 
-			if (result == GL20.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+			if (result == GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
 				throw new IllegalStateException("frame buffer couldn't be constructed: incomplete attachment");
-			if (result == GL20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
+			if (result == GL30.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
 				throw new IllegalStateException("frame buffer couldn't be constructed: incomplete dimensions");
-			if (result == GL20.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+			if (result == GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
 				throw new IllegalStateException("frame buffer couldn't be constructed: missing attachment");
-			if (result == GL20.GL_FRAMEBUFFER_UNSUPPORTED)
+			if (result == GL30.GL_FRAMEBUFFER_UNSUPPORTED)
 				throw new IllegalStateException("frame buffer couldn't be constructed: unsupported combination of formats");
 			throw new IllegalStateException("frame buffer couldn't be constructed: unknown error " + result);
 		}
@@ -180,11 +198,11 @@ public class FrameBuffer implements Disposable {
 
 	/** Releases all resources associated with the FrameBuffer. */
 	public void dispose () {
-		GL20 gl = Gdx.graphics.getGL20();
+		GL30 gl = Gdx.graphics.getGL30();
 
 		IntBuffer handle = BufferUtils.newIntBuffer(1);
 
-		colorTexture.dispose();
+		if (hasColour) colorTexture.dispose();
 		if (hasDepth) {
 			depthTexture.dispose();
 		}
@@ -199,14 +217,14 @@ public class FrameBuffer implements Disposable {
 
 	/** Makes the frame buffer current so everything gets drawn to it. */
 	public void begin () {
-		Gdx.graphics.getGL20().glViewport(0, 0, colorTexture.getWidth(), colorTexture.getHeight());
-		Gdx.graphics.getGL20().glBindFramebuffer(GL20.GL_FRAMEBUFFER, framebufferHandle);
+		Gdx.graphics.getGL30().glViewport(0, 0, width, height);
+		Gdx.graphics.getGL30().glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferHandle);
 	}
 
 	/** Unbinds the framebuffer, all drawing will be performed to the normal framebuffer from here on. */
 	public void end () {
-		Gdx.graphics.getGL20().glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		Gdx.graphics.getGL20().glBindFramebuffer(GL20.GL_FRAMEBUFFER, defaultFramebufferHandle);
+		Gdx.graphics.getGL30().glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.graphics.getGL30().glBindFramebuffer(GL30.GL_FRAMEBUFFER, defaultFramebufferHandle);
 	}
 
 	/** @return the color buffer texture */
@@ -222,12 +240,12 @@ public class FrameBuffer implements Disposable {
 
 	/** @return the height of the framebuffer in pixels */
 	public int getHeight () {
-		return colorTexture.getHeight();
+		return height;
 	}
 
 	/** @return the width of the framebuffer in pixels */
 	public int getWidth () {
-		return colorTexture.getWidth();
+		return width;
 	}
 
 	private static void addManagedFrameBuffer (Application app, FrameBuffer frameBuffer) {
@@ -240,7 +258,7 @@ public class FrameBuffer implements Disposable {
 	/** Invalidates all frame buffers. This can be used when the OpenGL context is lost to rebuild all managed frame buffers. This
 	 * assumes that the texture attached to this buffer has already been rebuild! Use with care. */
 	public static void invalidateAllFrameBuffers (Application app) {
-		if (Gdx.graphics.getGL20() == null) return;
+		if (Gdx.graphics.getGL30() == null) return;
 
 		Array<FrameBuffer> bufferArray = buffers.get(app);
 		if (bufferArray == null) return;

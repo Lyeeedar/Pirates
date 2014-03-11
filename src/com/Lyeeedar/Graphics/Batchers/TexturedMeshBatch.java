@@ -50,7 +50,7 @@ public class TexturedMeshBatch implements Batch
 		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		shader.setUniformf("u_viewPos", cam.position);
 		
-		lights.applyLights(shader);
+		lights.applyLights(shader, 4);
 
 		while (!instances.isEmpty())
 		{

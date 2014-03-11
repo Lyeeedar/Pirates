@@ -3,8 +3,12 @@ package com.Lyeeedar.Pirates.ProceduralGeneration.LSystems;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.Lyeeedar.Collision.BulletWorld;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.Shapes;
@@ -15,6 +19,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.physics.bullet.collision.btTriangleMesh;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
@@ -34,6 +39,8 @@ public class VolumePartitioner
 	public final HashMap<String, JsonValue> methodTable;
 
 	public final JsonValue rule;
+	
+	public JsonValue Mesh;
 
 	public final Vector3 min = new Vector3();
 	public final Vector3 max = new Vector3();
@@ -46,6 +53,8 @@ public class VolumePartitioner
 	public String coordX = "X";
 	public String coordY = "Y";
 	public String coordZ = "Z";
+	
+	public Vector3 snap = new Vector3();
 
 	public VolumePartitioner(Vector3 min, Vector3 max, JsonValue rule, HashMap<String, JsonValue> methodTable, VolumePartitioner parent)
 	{
@@ -69,6 +78,7 @@ public class VolumePartitioner
 			this.coordX = parent.coordX;
 			this.coordY = parent.coordY;
 			this.coordZ = parent.coordZ;
+			this.snap.set(parent.snap);
 		}
 	}
 
@@ -148,7 +158,7 @@ public class VolumePartitioner
 			else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Y")) oldCoord = oldY;
 			else if (coord.substring(coord.length()-1, coord.length()).equalsIgnoreCase("Z")) oldCoord = oldZ;
 			
-			String sign = !coord.startsWith("-") && !oldCoord.startsWith("-") ? "" : "-";
+			String sign = coord.startsWith("-") == oldCoord.startsWith("-") ? "" : "-";
 			String dir = oldCoord.substring(oldCoord.length()-1, oldCoord.length());
 			String newCoord = sign+dir;
 			
@@ -246,13 +256,24 @@ public class VolumePartitioner
 		else throw new RuntimeException("Invalid axis: "+axis);
 	}
 		
-	public void repeat(String eqn, int repeats, JsonValue ruleSub, JsonValue ruleRemainder, JsonValue repeatRule, String axis)
+	public void repeat(String eqn, int repeats, float offset, JsonValue ruleOffset, JsonValue ruleSub, JsonValue ruleRemainder, JsonValue repeatRule, String axis)
 	{
 		float interval = getVal(axis, max) - getVal(axis, min);
 		boolean up = !axis.startsWith("-");
 		
 		Vector3 nmin = Pools.obtain(Vector3.class).set(min);
 		Vector3 nmax = Pools.obtain(Vector3.class).set(max);
+		
+		if (up) setVal(axis, nmax, getVal(axis, nmin)+offset);
+		else setVal(axis, nmin, getVal(axis, nmax)-offset);
+		
+		if (ruleOffset != null)
+		{
+			children.add(new VolumePartitioner(nmin, nmax, ruleOffset, methodTable, this));
+		}
+		
+		if (up) setVal(axis, nmin, getVal(axis, nmax));
+		else setVal(axis, nmax, getVal(axis, nmin));
 		
 		int rep = 0;
 		while (true)
@@ -311,7 +332,8 @@ public class VolumePartitioner
 	{
 		String axis = repeat.getString("Axis");
 		String eqn = repeat.getString("Size");
-		int repeats = repeat.getInt("Repeats");
+		int repeats = repeat.has("Repeats") ? repeat.getInt("Repeats") : -1 ;
+		float offset = repeat.has("Offset") ? parseEquation(repeat.getString("Offset"), getVal(axis, max)-getVal(axis, min), variables) : 0 ;
 		
 		JsonValue ruleSub = repeat.get("Rule").child;
 		if (ruleSub == null)
@@ -327,22 +349,44 @@ public class VolumePartitioner
 			ruleSub = temp;
 		}
 		
-		JsonValue ruleRemainder = repeat.get("RemainderRule").child;
-		if (ruleRemainder == null)
+		JsonValue ruleOffset = null;
+		if (repeat.has("OffsetRule"))
 		{
-			String ruleString = repeat.getString("RemainderRule");
-			ruleRemainder = methodTable.get(ruleString);
-		}
-		else
+			ruleOffset = repeat.get("OffsetRule").child;
+			if (ruleOffset == null)
+			{
+				String ruleString = repeat.getString("OffsetRule");
+				ruleOffset = methodTable.get(ruleString);
+			}
+			else
+			{
+				JsonValue temp = new JsonValue("TempRule");
+				temp.name = "TempRule";
+				temp.child = ruleOffset;
+				ruleOffset = temp;
+			}
+		}		
+		
+		JsonValue ruleRemainder = null;
+		if (repeat.has("RemainderRule"))
 		{
-			JsonValue temp = new JsonValue("TempRule");
-			temp.name = "TempRule";
-			temp.child = ruleRemainder;
-			ruleRemainder = temp;
+			ruleRemainder = repeat.get("RemainderRule").child;
+			if (ruleRemainder == null)
+			{
+				String ruleString = repeat.getString("RemainderRule");
+				ruleRemainder = methodTable.get(ruleString);
+			}
+			else
+			{
+				JsonValue temp = new JsonValue("TempRule");
+				temp.name = "TempRule";
+				temp.child = ruleRemainder;
+				ruleRemainder = temp;
+			}
 		}
 		
 		JsonValue ruleRepeat = null;
-		if (repeat.hasChild("RepeatRule"))
+		if (repeat.has("RepeatRule"))
 		{
 			ruleRepeat = repeat.get("RepeatRule").child;
 			if (ruleRepeat == null)
@@ -360,7 +404,7 @@ public class VolumePartitioner
 		}
 		
 		axis = getCoord(axis);
-		if (axis != null) repeat(eqn, repeats, ruleSub, ruleRemainder, ruleRepeat, axis);
+		if (axis != null) repeat(eqn, repeats, offset, ruleOffset, ruleSub, ruleRemainder, ruleRepeat, axis);
 		else throw new RuntimeException("Invalid Axis: "+axis);
 	}
 	
@@ -391,26 +435,14 @@ public class VolumePartitioner
 	}
 
 	public void processSelect(JsonValue select)
-	{		
-		JsonValue rule = select.get("Rule").child;
-		if (rule == null)
-		{
-			String ruleString = select.getString("Rule");
-			rule = methodTable.get(ruleString);
-		}
-		else
-		{
-			JsonValue temp = new JsonValue("TempRule");
-			temp.name = "TempRule";
-			temp.child = rule;
-			rule = temp;
-		}
-			
+	{					
 		Vector3 nmin = Pools.obtain(Vector3.class);
 		Vector3 nmax = Pools.obtain(Vector3.class);
 		
 		String[] coords = select.get("Coords").asStringArray();
 		String[] sides = select.get("Sides").asStringArray();
+		String[] sizes = select.get("Sizes").asStringArray();
+		String[] rules = select.get("Rules").asStringArray();
 		
 		for (int i = 0; i < sides.length; i++)
 		{
@@ -422,7 +454,7 @@ public class VolumePartitioner
 			else throw new RuntimeException("Invalid side: "+side);
 			
 			float interval = getVal(axis, max) - getVal(axis, min);
-			String eqn = select.getString("Size");
+			String eqn = sizes[i];
 			float size = parseEquation(eqn, interval, variables);
 
 			nmin.set(min);
@@ -446,13 +478,14 @@ public class VolumePartitioner
 			}
 			else if (side.equalsIgnoreCase("front"))
 			{
-				nmax.z = nmin.z + size;
+				nmin.z = nmax.z - size;
 			}
 			else if (side.equalsIgnoreCase("back"))
 			{
-				nmin.z = nmax.z - size;
+				nmax.z = nmin.z + size;
 			}
 			
+			JsonValue rule = methodTable.get(rules[i]);
 			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, rule, methodTable, this);
 			vp.setCoords(coords[i]);
 			children.add(vp);
@@ -478,7 +511,7 @@ public class VolumePartitioner
 			}
 			else if (method.equalsIgnoreCase("CoordinateSystem"))
 			{
-				setCoords(current.getString("X"), current.getString("Y"), current.getString("Z"));
+				setCoords(current.asString());
 			}
 			else if (method.equalsIgnoreCase("Select"))
 			{
@@ -492,6 +525,10 @@ public class VolumePartitioner
 			{
 				processDivide(current);
 			}
+			else if (method.equalsIgnoreCase("Snap"))
+			{
+				snap.set(current.getFloat("X"), current.getFloat("Y"), current.getFloat("Z"));
+			}
 			else if (method.equalsIgnoreCase("X") || method.equalsIgnoreCase("Y") || method.equalsIgnoreCase("Z"))
 			{
 				String axis = getCoord(method);
@@ -501,11 +538,25 @@ public class VolumePartitioner
 				float val = parseEquation(eqnString, interval, variables) ;
 				val /= 2.0f;
 				
-				setVal(axis, min, interval / 2.0f + getVal(axis, min));
-				setVal(axis, max, getVal(axis, min));
+				int snapVal = MathUtils.round(getVal(axis, snap));
+				if (snapVal == 1)
+				{
+					setVal(axis, min, getVal(axis, max)-(val*2));
+				}
+				else if (snapVal == 0)
+				{
+					setVal(axis, min, interval / 2.0f + getVal(axis, min));
+					setVal(axis, max, getVal(axis, min));
 
-				modVal(axis, min, -val);
-				modVal(axis, max, val);
+					modVal(axis, min, -val);
+					modVal(axis, max, val);
+				}
+				else if (snapVal == -1)
+				{
+					setVal(axis, max, getVal(axis, min)+(val*2));
+				}
+				else throw new RuntimeException("Invalid snap val: "+snap+" for axis: "+axis);
+				
 			}
 			else if (method.equalsIgnoreCase("Define"))
 			{
@@ -528,7 +579,7 @@ public class VolumePartitioner
 			}
 			else if (method.equalsIgnoreCase("Mesh"))
 			{
-
+				Mesh = current;
 			}
 			else
 			{
@@ -539,9 +590,9 @@ public class VolumePartitioner
 		}
 	}
 
-	public ModelBatcher getModelBatcher()
+	public ModelBatchData getModelBatchData()
 	{
-		JsonValue meshValue = rule.get("Mesh");
+		JsonValue meshValue = Mesh;
 		String meshName = meshValue.getString("Name");
 		if (defines.containsKey(meshName)) meshName = defines.get(meshName);
 		String textureName = meshValue.getString("Texture");
@@ -570,8 +621,8 @@ public class VolumePartitioner
 			mbname = meshName+textureName+useTriplanarSampling+triplanarScale;
 		}
 		
-		ModelBatcher mb = FileUtils.loadModelBatcher(mbname);
-		if (mb == null)
+		ModelBatchData data = FileUtils.loadModelBatchData(mbname);
+		if (data == null)
 		{
 			Mesh mesh = null;
 			if (meshName.equalsIgnoreCase("Box"))
@@ -601,17 +652,18 @@ public class VolumePartitioner
 				mesh = FileUtils.loadMesh(meshName);
 			}
 
-			mb = new ModelBatcher(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureArray(new String[]{textureName}), false, false, useTriplanarSampling, triplanarScale);
-			FileUtils.storeModelBatcher(mbname, mb);
+			data = new ModelBatchData(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureArray(new String[]{textureName}), false, false, useTriplanarSampling, triplanarScale);
+			FileUtils.storeModelBatchData(mbname, data);
 		}
-		return mb;
+		return data;
 	}
 
-	private void collectMeshes(Entity entity, Vector3 center)
+	private void collectMeshes(Entity entity, Vector3 center, OcttreeEntry<Entity> entry, btTriangleMesh triangleMesh)
 	{
-		if (rule.get("Mesh") != null)
+		if (Mesh != null)
 		{
-			ModelBatcher mb = getModelBatcher();
+			ModelBatchData data = getModelBatchData();
+			ModelBatchInstance mb = new ModelBatchInstance(data);
 			BoundingBox bb = Pools.obtain(BoundingBox.class);
 			mb.getMesh().calculateBoundingBox(bb);
 			
@@ -622,7 +674,7 @@ public class VolumePartitioner
 			meshDim.set(1.0f / meshDim.x, 1.0f / meshDim.y, 1.0f / meshDim.z);
 			Vector3 volumeDim = Pools.obtain(Vector3.class).set(max).sub(min);
 						
-			Vector3 translation = Pools.obtain(Vector3.class).set(volumeDim).scl(0.5f).add(min).sub(bb.getCenter()).sub(center);
+			Vector3 translation = Pools.obtain(Vector3.class).set(volumeDim).scl(0.5f).add(min).sub(center);
 			Vector3 scale = volumeDim.scl(meshDim);
 
 			Matrix4 transform = Pools.obtain(Matrix4.class).setToTranslationAndScaling(translation, scale).mul(rotation);
@@ -634,18 +686,33 @@ public class VolumePartitioner
 			Pools.free(transform);
 			Pools.free(translation);
 			Pools.free(rotation);
+			
+			if (entry != null)
+			{
+				if (entry.box.pos.x-entry.box.extents.x > min.x) entry.box.extents.x = entry.box.pos.x-min.x;
+				if (entry.box.pos.y-entry.box.extents.y > min.y) entry.box.extents.y = entry.box.pos.y-min.y;
+				if (entry.box.pos.z-entry.box.extents.z > min.z) entry.box.extents.z = entry.box.pos.z-min.z;
+				
+				if (entry.box.pos.x+entry.box.extents.x < max.x) entry.box.extents.x = max.x-entry.box.pos.x;
+				if (entry.box.pos.y+entry.box.extents.y < max.y) entry.box.extents.y = max.y-entry.box.pos.y;
+				if (entry.box.pos.z+entry.box.extents.z < max.z) entry.box.extents.z = max.z-entry.box.pos.z;	
+			}
+			if (triangleMesh != null)
+			{
+				BulletWorld.addTriangles(mb.getMesh(), transform, triangleMesh);
+			}
 		}
 		else for (VolumePartitioner vp : children)
 		{
-			vp.collectMeshes(entity, center);
+			vp.collectMeshes(entity, center, entry, triangleMesh);
 		}
 	}
 
-	public void collectMeshes(Entity entity)
+	public void collectMeshes(Entity entity, OcttreeEntry<Entity> entry, btTriangleMesh triangleMesh)
 	{
 		Vector3 center = Pools.obtain(Vector3.class);
 		center.set(min).add(max).scl(0.5f);
-		collectMeshes(entity, center);
+		collectMeshes(entity, center, entry, triangleMesh);
 		Pools.free(center);
 	}
 
