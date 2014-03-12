@@ -212,24 +212,24 @@ public class GameScreen extends AbstractScreen {
 		
 		// END BUILDING
 		
-//		// VOXEL
-//		
-//		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
-//		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
-//		Entity voxelEntity = new Entity(true, new PositionalData());
-//		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
-//		voxelEntity.addRenderable(voxelMesh, new Matrix4());
-//		
-//		voxelEntity.update(0);
-//		
-//		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
-//		rw.add(ventry);
-//		
-//		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
-//		
-//		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-//		
-//		// END VOXELS
+		// VOXEL
+		
+		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
+		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
+		Entity voxelEntity = new Entity(true, new PositionalData());
+		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
+		voxelEntity.addRenderable(voxelMesh, new Matrix4());
+		
+		voxelEntity.update(0);
+		
+		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+		rw.add(ventry);
+		
+		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
+		
+		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		
+		// END VOXELS
 //				
 		// HEIGHT MAP
 		

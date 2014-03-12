@@ -57,7 +57,7 @@ public class ChunkedTerrainBatch implements Batch
 			BatchedInstance bi = instances.poll();
 			
 			shader.setUniformMatrix("u_mm", bi.model_matrix);
-			shader.setUniformf("u_colour", bi.colour);
+			if (!simpleRender) shader.setUniformf("u_colour", bi.colour);
 
 			if (!simpleRender && textureHash != bi.texHash)
 			{

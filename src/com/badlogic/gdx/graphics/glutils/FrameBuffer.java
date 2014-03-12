@@ -93,14 +93,7 @@ public class FrameBuffer implements Disposable {
 	 * @param hasDepth whether to attach a depth buffer
 	 * @throws GdxRuntimeException in case the FrameBuffer could not be created */
 	public FrameBuffer (Pixmap.Format format, int width, int height, boolean hasDepth) {
-		this.width = width;
-		this.height = height;
-		this.format = format;
-		this.hasDepth = hasDepth;
-		this.hasColour = true;
-		build();
-
-		addManagedFrameBuffer(Gdx.app, this);
+		this(format, width, height, true, hasDepth);
 	}
 	
 	public FrameBuffer (Pixmap.Format format, int width, int height, boolean hasColour, boolean hasDepth) {

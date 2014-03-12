@@ -59,8 +59,8 @@ public class Weather {
 	{
 		clouds.update(delta);
 		
-		delta = Gdx.graphics.getDeltaTime() / 10;
-		//delta /= 300000.0f;
+		//delta /= 10;
+		delta /= 300000.0f;
 		
 		if (increase) 
 		{

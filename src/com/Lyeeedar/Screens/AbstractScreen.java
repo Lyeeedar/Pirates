@@ -30,6 +30,7 @@ import com.Lyeeedar.Util.Controls;
 import com.Lyeeedar.Util.DiscardCameraGroupStrategy;
 import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -39,6 +40,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
  
 
 public abstract class AbstractScreen implements Screen {
@@ -109,17 +111,19 @@ public abstract class AbstractScreen implements Screen {
 		
 		if (GLOBALS.lineRenderer == null) GLOBALS.lineRenderer = new LineRenderer();
 		
-		postprocessor.addEffect(Effect.BLOOM);
+		postprocessor.addEffect(Effect.SSAO);
+		//postprocessor.addEffect(Effect.BLOOM);
 		//postprocessor.addEffect(Effect.SILHOUETTE);
 		postprocessor.addEffect(Effect.UNDERWATER);
 		
-		//postprocessor.addEffect(Effect.BLUR);
+		//postprocessor.addEffect(Effect.DOF);
 		//postprocessor.addEffect(Effect.BLUR);
 		//postprocessor.addEffect(Effect.EDGE_DETECT);
 		
 	}
 
 	float[] deltas = new float[10];
+	boolean ssaoToggle = false;
 	
 	@Override
 	public void render(float delta) 
@@ -250,6 +254,27 @@ public abstract class AbstractScreen implements Screen {
         
         averageFrame += System.nanoTime()-frameTime;
 		averageFrame /= 2;
+		
+		if (Gdx.input.isKeyPressed(Keys.NUM_1))
+		{
+			if (!ssaoToggle)
+			{
+				ssaoToggle = true;
+				Array<Effect> effects = postprocessor.getEffectChain();
+				if (effects.contains(Effect.SSAO, true))
+				{
+					effects.removeValue(Effect.SSAO, true);
+				}
+				else
+				{
+					effects.insert(0, Effect.SSAO);
+				}
+			}
+		}
+		else
+		{
+			ssaoToggle = false;
+		}
 	}
 
 	@Override

@@ -19,6 +19,7 @@ import com.Lyeeedar.Graphics.PostProcessing.Effects.BlurEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.DepthOfFieldEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.EdgeDetectionEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.PostProcessingEffect;
+import com.Lyeeedar.Graphics.PostProcessing.Effects.SSAOEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.SilhouetteEffect;
 import com.Lyeeedar.Graphics.PostProcessing.Effects.UnderwaterEffect;
 import com.Lyeeedar.Pirates.GLOBALS;
@@ -32,6 +33,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.utils.Array;
 
 public class PostProcessor {
 	
@@ -41,10 +43,10 @@ public class PostProcessor {
 		EDGE_DETECT,
 		DOF,
 		SILHOUETTE,
-		UNDERWATER
+		UNDERWATER,
+		SSAO
 	}
 	
-	public static boolean ON = true;
 	
 	private Format format;
 	private int width;
@@ -54,13 +56,11 @@ public class PostProcessor {
 	
 	private final SpriteBatch batch = new SpriteBatch();
 	
-	private final ArrayList<Effect> effectChain = new ArrayList<Effect>();
+	private final Array<Effect> effectChain = new Array<Effect>();
 	private final HashMap<Effect, PostProcessingEffect> effects = new HashMap<Effect, PostProcessingEffect>();
 	
 	private final BufferChain bufferChain;
-	
-	private final ShaderProgram shader;
-	
+		
 	private final FollowCam cam;
 
 	public PostProcessor(Format format, int width, int height, FollowCam cam) {
@@ -73,12 +73,11 @@ public class PostProcessor {
 		bufferChain = new BufferChain(format, width, height);
 		
 		setupEffects();
-		
-		shader = new ShaderProgram(
-				Gdx.files.internal("data/shaders/postprocessing/default.vertex.glsl"),
-				Gdx.files.internal("data/shaders/postprocessing/depth.fragment.glsl")
-				);
-		if (!shader.isCompiled()) Gdx.app.log("Problem loading shader:", shader.getLog());
+	}
+	
+	public Array<Effect> getEffectChain()
+	{
+		return effectChain;
 	}
 	
 	public void setEffectChain(Effect... effects)
@@ -104,6 +103,7 @@ public class PostProcessor {
 		effects.clear();
 		effects.put(Effect.BLUR, new BlurEffect(1.0f, 2.0f, 800, 600));
 		effects.put(Effect.BLOOM, new BloomEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
+		effects.put(Effect.SSAO, new SSAOEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.EDGE_DETECT, new EdgeDetectionEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.DOF, new DepthOfFieldEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1]));
 		effects.put(Effect.SILHOUETTE, new SilhouetteEffect(GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam));
@@ -139,7 +139,7 @@ public class PostProcessor {
 		Texture texture = applyEffectChain();
 
 		batch.begin();
-		batch.draw(texture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+		batch.draw(texture, 0, 0, width, height,
 				0, 0, texture.getWidth(), texture.getHeight(),
 				false, true);
 		batch.end();
@@ -147,7 +147,6 @@ public class PostProcessor {
 	
 	private Texture applyEffectChain()
 	{
-		captureBuffer.getDepthBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		bufferChain.begin(captureBuffer.getColorBufferTexture(), captureBuffer.getDepthBufferTexture());
 		
 		for (Effect effect : effectChain)
