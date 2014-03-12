@@ -201,7 +201,7 @@ public class GameScreen extends AbstractScreen {
 		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 		btTriangleMesh btm = new btTriangleMesh();
 		
-		VolumePartitioner vp = VolumePartitioner.load("data/grammar/vaults.json");
+		VolumePartitioner vp = VolumePartitioner.load("data/grammar/romanesque_church.json");
 		vp.evaluate();
 		vp.collectMeshes(building, bentry, btm);
 		

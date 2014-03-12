@@ -148,7 +148,7 @@ public abstract class AbstractScreen implements Screen {
 		averageUpdate /= 2;
 		
 		GLOBALS.LIGHTS.sort(cam.position);
-		GLOBALS.LIGHTS.calculateDepthMap(true);
+		GLOBALS.LIGHTS.calculateDepthMap(true, cam);
 		
 		stage.act(delta);
 		

@@ -105,7 +105,7 @@ public class LightManager {
 		shadowMap = true;
 	}
 	
-	public void calculateDepthMap(boolean update)
+	public void calculateDepthMap(boolean update, Camera cam)
 	{
 		if (update) 
 		{
@@ -117,17 +117,16 @@ public class LightManager {
 			bb.set(bb.min, bb.max);
 			
 			Vector3 dimensions = bb.getDimensions();
-			
-			orthoCam.far = dimensions.x;
-			if (dimensions.y > orthoCam.far) orthoCam.far = dimensions.y;
-			if (dimensions.z > orthoCam.far) orthoCam.far = dimensions.z;
-			orthoCam.far *= 2.0f;
+			Vector3 center = cam.position;//bb.getCenter();
 			
 			float radius = dimensions.x;
 			radius = Math.max(radius, dimensions.y);
 			radius = Math.max(radius, dimensions.z);
+			radius = 500;
+			
+			orthoCam.far = radius*2.0f;
 									
-			orthoCam.position.set(directionalLight.position).sub(bb.getCenter()).nor().scl(radius).add(bb.getCenter());
+			orthoCam.position.set(directionalLight.position).sub(center).nor().scl(radius).add(center);
 			orthoCam.direction.set(directionalLight.direction).scl(-1);
 			orthoCam.up.set(orthoCam.direction).crs(GLOBALS.DEFAULT_UP).crs(orthoCam.direction);
 			orthoCam.near = 0;
