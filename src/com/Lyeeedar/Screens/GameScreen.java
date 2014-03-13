@@ -85,14 +85,18 @@ import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
 import com.Lyeeedar.Graphics.Queueables.AnimatedModel;
 import com.Lyeeedar.Graphics.Queueables.ChunkedTerrain;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
 import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Graphics.Queueables.Sprite2D;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
+import com.Lyeeedar.Pirates.ProceduralGeneration.Landmark;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator;
-import com.Lyeeedar.Pirates.ProceduralGeneration.LSystems.VolumePartitioner;
+import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator.Chunk;
 import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
 import com.Lyeeedar.Util.Dialogue.DialogueAction;
@@ -117,6 +121,7 @@ import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer;
 import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
@@ -184,6 +189,8 @@ public class GameScreen extends AbstractScreen {
 		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
 		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		Texture stone01 = FileUtils.loadTexture("data/textures/stone/stone01.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		Texture stone03 = FileUtils.loadTexture("data/textures/stone/stone03.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		
 		Plane plane = new Plane(new Vector3(0, 1, 0), new Vector3(0, 0, 0));
 		btCollisionShape planeShape = new btStaticPlaneShape(plane.normal, plane.d);
@@ -212,22 +219,77 @@ public class GameScreen extends AbstractScreen {
 		
 		// END BUILDING
 		
+		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
+		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
+		btBoxShape tBox = new btBoxShape(new Vector3(10, 50, 10));
+		BoundingBox bb = grassMesh.calculateBoundingBox();
+		
 		// VOXEL
+		Array<Landmark> landmarks = new Array<Landmark>();
+		for (int i = 0; i < 5; i++)
+		{
+			Landmark l = new Landmark(0, 0, 500, 500, Float.NaN);
+			for (int rep = 0; rep < 20; rep++)
+			{
+				float x = ran.nextFloat()*20*28*10;
+				float z = ran.nextFloat()*20*28*10;
+				
+				l.x = x;
+				l.y = z;
+				
+				boolean valid = true;
+				for (Landmark landmark : landmarks)
+				{
+					if (landmark.intersects(l)) 
+					{
+						valid = false;
+						break;
+					}
+				}
+				
+				if (valid)
+				{
+					landmarks.add(l);
+					break;
+				}
+			}
+		}
 		
-		Mesh voxels = VoxelGenerator.generateTerrain(100, 100, 100, 10);
-		ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock}, new Vector3(1, 1, 1), 1);
-		Entity voxelEntity = new Entity(true, new PositionalData());
-		//voxelEntity.readOnlyRead(PositionalData.class).position.set(0, 0, -500);
-		voxelEntity.addRenderable(voxelMesh, new Matrix4());
-		
-		voxelEntity.update(0);
-		
-		OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(6000, 3000, 6000), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
-		rw.add(ventry);
-		
-		btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
-		
-		bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		float voxelseed = MathUtils.random(8008135);
+		for (int x = 0; x < 20; x ++)
+		{
+			for (int z = 0; z < 20; z++)
+			{
+				Chunk chunk = VoxelGenerator.generateTerrain(32, 100, 32, x*28, z*28, 10, voxelseed, landmarks);
+				Mesh voxels = chunk.mesh;
+				ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock, dirt, stone01, stone03}, new Vector3(1, 1, 1), 1);
+				Entity voxelEntity = new Entity(true, new PositionalData());
+				voxelEntity.readOnlyRead(PositionalData.class).position.set(x*28*10, 0, z*28*10);
+				voxelEntity.addRenderable(voxelMesh, new Matrix4());
+				
+				voxelEntity.readOnlyRead(PositionalData.class).initialise();
+				
+				OcttreeEntry<Entity> ventry = rw.createEntry(voxelEntity, voxelEntity.readOnlyRead(PositionalData.class).position, new Vector3(320, 1000, 320), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+				rw.add(ventry);
+				
+				btCollisionShape voxelShape = BulletWorld.meshToCollisionShape(voxels);
+				
+				bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+				
+				
+				chunk.vegetate(veggies, new ModelBatchInstance(new ModelBatchData(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true, false, 0)), 0, 3, 50, 0.5f);
+				for (Entity v : veggies)
+				{
+					v.readOnlyRead(MinimalPositionalData.class).position.add(x*28*10, -3, z*28*10);
+					
+					v.update(0);
+					OcttreeEntry<Entity> entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+					rw.add(entry);
+					bw.add(tBox, new Matrix4().setToTranslation(v.readOnlyRead(MinimalPositionalData.class).position).translate(0, entry.box.extents.y, 0), v, (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short)(BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+				}
+				veggies.clear();
+			}
+		}
 		
 		// END VOXELS
 //				

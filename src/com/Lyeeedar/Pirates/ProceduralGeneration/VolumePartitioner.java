@@ -1,4 +1,4 @@
-package com.Lyeeedar.Pirates.ProceduralGeneration.LSystems;
+package com.Lyeeedar.Pirates.ProceduralGeneration;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -50,7 +50,7 @@ public class ChunkedTerrainBatch implements Batch
 		if (!simpleRender) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		if (!simpleRender) shader.setUniformf("u_viewPos", cam.position);
 		
-		if (!simpleRender) lights.applyLights(shader, 4);
+		if (!simpleRender) lights.applyLights(shader, 7);
 
 		while (!instances.isEmpty())
 		{

@@ -58,7 +58,7 @@ public class ModelBatchInstance implements Queueable {
 
 	@Override
 	public Queueable copy() {
-		return this;
+		return new ModelBatchInstance(data);
 	}
 
 	@Override
@@ -158,7 +158,7 @@ public class ModelBatchInstance implements Queueable {
 				
 				if (fade > 0.0f) 
 				{
-					if (transparent || fade < 1.0f) transparentInstances.add(pool.obtain().set(transform, d, fade));
+					if (transparent) transparentInstances.add(pool.obtain().set(transform, d, fade));
 					else solidInstances.add(pool.obtain().set(transform, -d, fade));
 				}
 			}

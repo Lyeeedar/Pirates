@@ -99,7 +99,7 @@ public class SerkGenerator implements AbstractGenerator{
 			{
 				for (int y = 0; y < lgrid[0].length; y++)
 				{
-					tiles[x+landmark.x][y+landmark.y].ground = (lgrid[x][y] != 0) ? 1.0f : 0.0f;
+					tiles[(int) (x+landmark.x)][(int) (y+landmark.y)].ground = (lgrid[x][y] != 0) ? 1.0f : 0.0f;
 				}
 			}
 		}

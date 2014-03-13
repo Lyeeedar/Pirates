@@ -2,7 +2,12 @@ package com.Lyeeedar.Pirates.ProceduralGeneration;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Random;
 
+import com.Lyeeedar.Entities.Entity;
+import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
+import com.Lyeeedar.Entities.Terrain.HeightMap;
+import com.Lyeeedar.Graphics.Queueables.Queueable;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.FastSimplexNoise;
 import com.Lyeeedar.Util.Pools;
 import com.Lyeeedar.Util.Shapes;
@@ -10,11 +15,109 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
 public class VoxelGenerator
 {
+	public static class Chunk
+	{
+		public final NoiseGenerator noise;
+		public final Face[] faces;
+		public final Vertex[] vertices;
+		public final Mesh mesh;
+		
+		public Chunk(NoiseGenerator noise, Face[] faces, Vertex[] vertices, Mesh mesh)
+		{
+			this.noise = noise;
+			this.faces = faces;
+			this.vertices = vertices;
+			this.mesh = mesh;
+		}
+		
+		public void vegetate(Array<Entity> veggies, Queueable renderable, int texval, int num, int maxTries, float minval)
+		{
+			MinimalPositionalData pData = Pools.obtain(MinimalPositionalData.class);
+			Random ran = new Random();
+			Entity v = new Entity(false, new MinimalPositionalData());
+			for (int i = 0; i < num; i++)
+			{
+				v.readData(pData);
+				
+				boolean placed = false;
+				for (int rep = 0; rep < maxTries; rep++)
+				{
+					Face face = faces[ran.nextInt(faces.length)];
+					
+					for (int tri = 0; tri < 2; tri++)
+					{
+						if (face.vertices[face.tris[tri][0]].texArray[texval] < minval)
+						{
+							continue;
+						}
+						if (face.vertices[face.tris[tri][1]].texArray[texval] < minval)
+						{
+							continue;
+						}
+						if (face.vertices[face.tris[tri][2]].texArray[texval] < minval)
+						{
+							continue;
+						}
+						
+						// PLACED!
+						placed = true;
+						
+						Vector3 AB = Pools.obtain(Vector3.class);
+						Vector3 AC = Pools.obtain(Vector3.class);
+						
+						AB.set(face.vertices[face.tris[tri][1]].x, face.vertices[face.tris[tri][1]].y, face.vertices[face.tris[tri][1]].z);
+						AB.sub(face.vertices[face.tris[tri][0]].x, face.vertices[face.tris[tri][0]].y, face.vertices[face.tris[tri][0]].z);
+						
+						AC.set(face.vertices[face.tris[tri][2]].x, face.vertices[face.tris[tri][2]].y, face.vertices[face.tris[tri][2]].z);
+						AC.sub(face.vertices[face.tris[tri][0]].x, face.vertices[face.tris[tri][0]].y, face.vertices[face.tris[tri][0]].z);
+						
+						float R = ran.nextFloat();
+						float S = ran.nextFloat();
+						
+						if(R + S >= 1.0f)
+						{
+							R = 1.0f - R;
+							S = 1.0f - S;
+						}
+						
+						Vector3 pos = Pools.obtain(Vector3.class).set(face.vertices[face.tris[tri][0]].x, face.vertices[face.tris[tri][0]].y, face.vertices[face.tris[tri][0]].z);
+						AB.scl(R);
+						AC.scl(S);
+						
+						pos.add(AB).add(AC);
+						
+						pData.position.set(pos);
+						System.out.println(pos);
+
+						Pools.free(AB);
+						Pools.free(AC);
+						Pools.free(pos);
+						
+					}
+					
+					if (placed) break;
+				}
+				
+				if (!placed) continue;
+				
+				v.writeData(pData);
+				
+				v.addRenderable(renderable.copy(), new Matrix4());
+				
+				veggies.add(v);
+				
+				v = new Entity(false, new MinimalPositionalData());
+			}
+			Pools.free(pData);
+		}
+	}
+	
 	private static final class NoiseGenerator
 	{
 		float offset;
@@ -46,30 +149,45 @@ public class VoxelGenerator
 		}
 	}
 	
-	public static Mesh generateTerrain(int x, int y, int z, float scale)
+	public static Chunk generateTerrain(int x, int y, int z, int offsetx, int offsetz, float scale, float seed, Array<Landmark> landmarks)
 	{
-		float offset = MathUtils.random(8008135);
+		NoiseGenerator noise = new NoiseGenerator(seed, 2, 0.5f, 8, 0.002f, scale, x, y, z);
 		
-		NoiseGenerator noise = new NoiseGenerator(offset, 2, 0.5f, 8, 0.002f, scale, x, y, z);
-		
-		Point[][][] pointGrid = generatePointGrid(x, y, z, scale, noise, 1);
+		Point[][][] pointGrid = generatePointGrid(x, y, z, offsetx, offsetz, scale, noise);
 		//smoothGrid(pointGrid); 
 		
 		for (int ix = 0; ix < x; ix++)
 		{
-			for (int iy = 0; iy < y; iy++)
+			for (int iz = 0; iz < z; iz++)
 			{
-				for (int iz = 0; iz < z; iz++)
+				for (Landmark landmark : landmarks)
 				{
-					if (pointGrid[ix][iy][iz] == null) continue;
-					
-					pointGrid[ix][iy][iz].scalar -= ((float) iy / (float) y); 
-					
-					// Gradient 
-					if (pointGrid[ix][iy][iz].scalar < 0) 
+					if (landmark.inBounds(((float)ix+(float)offsetx)*scale, ((float)iz+(float)offsetz)*scale))
 					{
-						pointGrid[ix][iy][iz] = null;
-						continue;
+						if (Float.isNaN(landmark.elevation))
+						{
+							landmark.elevation = (pointGrid[ix][0][iz].scalar*((float)y))*scale;
+						}
+						else
+						{
+							float scalar = ( landmark.elevation / scale ) / ((float) y);
+							for (int iy = 0; iy < y; iy++)
+							{
+								if ((float)iy/(float)y > scalar) pointGrid[ix][iy][iz] = null;
+								else if (pointGrid[ix][iy][iz] == null)
+								{
+									pointGrid[ix][iy][iz] = new Point(ix, iy, iz, scalar, pointGrid[ix][0][iz].normal);
+								}
+								else 
+								{
+									pointGrid[ix][iy][iz].scalar = scalar;
+									pointGrid[ix][iy][iz].normal[0] = 0;
+									pointGrid[ix][iy][iz].normal[1] = -1;
+									pointGrid[ix][iy][iz].normal[2] = 0;
+								}
+							}
+						}
+						break;
 					}
 				}
 			}
@@ -80,8 +198,9 @@ public class VoxelGenerator
 		Vertex[] vertices = (Vertex[]) data[1];
 		
 		processFaces(faces, vertices, noise);
+		Mesh mesh = facesToMesh(faces, vertices);
 		
-		return facesToMesh(faces, vertices);
+		return new Chunk(noise, faces, vertices, mesh);
 	}
 	
 	public static void processFaces(Face[] faces, Vertex[] vertices, NoiseGenerator noise)
@@ -111,11 +230,11 @@ public class VoxelGenerator
 			{
 				if (normal1.y > 0.8f)
 				{
-					v.tex1 += 1;
+					v.texArray[0] += 1;
 				}
 				else
 				{
-					v.tex3 += 1;
+					v.texArray[1] += 1;
 				}
 			}
 		}
@@ -125,28 +244,27 @@ public class VoxelGenerator
 		for (Vertex vertex : vertices)
 		{
 			vertex.norNormal();
-			vertex.norTex();			
+			vertex.norTex();
 		}
 	}
 	
-	public static Point[][][] generatePointGrid(int x, int y, int z, float scale, NoiseGenerator noise, int step)
+	public static Point[][][] generatePointGrid(int x, int y, int z, int offsetx, int offsetz, float scale, NoiseGenerator noise)
 	{		
 		Point[][][] pointGrid = new Point[x][y][z];
-		boolean skip = false;
 		
 		for (int ix = 0; ix < x; ix++)
 		{
-			skip = !skip;
-			for (int iy = 0; iy < y; iy++)
+			for (int iz = 0; iz < z; iz++)
 			{
-				skip = !skip;
-				int iz = skip ? step / 2 : 0 ;
-				for (; iz < z; iz += step)
+				float[] normal = new float[3];
+				float scalar = ( noise.generate(ix+offsetx, y, iz+offsetz, normal) + 1.0f ) / 2.0f;
+				normal[0] *= -1;
+				normal[1] *= -1;
+				normal[2] *= -1;
+				for (int iy = 0; iy < y; iy++)
 				{
-					float[] normal = new float[3];
-					float scalar = noise.generate(ix, iy, iz, normal);
-					if (scalar >= 0) pointGrid[ix][iy][iz] = new Point(ix, iy, iz, scalar, normal);
-					
+					if ((float)iy/(float)y > scalar) break;
+					pointGrid[ix][iy][iz] = new Point(ix, iy, iz, scalar, normal);
 				}
 			}
 		}
@@ -154,7 +272,7 @@ public class VoxelGenerator
 		return pointGrid;
 	}
 	
-	public static void smoothGrid(Point[][][] pointGrid)
+	public static void interpolateGrid(Point[][][] pointGrid)
 	{
 		int x = pointGrid.length;
 		int y = pointGrid[0].length;
@@ -289,9 +407,7 @@ public class VoxelGenerator
 				vertexArray[i++] = v.ny;
 				vertexArray[i++] = v.nz;
 				
-				vertexArray[i++] = v.tex1;
-				vertexArray[i++] = v.tex2;
-				vertexArray[i++] = v.tex3;
+				for (float t : v.texArray) vertexArray[i++] = t;
 			}
 			
 			indices = new short[numIndices];
@@ -326,9 +442,7 @@ public class VoxelGenerator
 						vertexArray[i++] = v.ny;
 						vertexArray[i++] = v.nz;
 						
-						vertexArray[i++] = v.tex1;
-						vertexArray[i++] = v.tex2;
-						vertexArray[i++] = v.tex3;
+						for (float t : v.texArray) vertexArray[i++] = t;
 					}
 				}
 			}
@@ -341,7 +455,10 @@ public class VoxelGenerator
 				new VertexAttribute(Usage.Normal, 3, "a_normal"), 
 				new VertexAttribute(Usage.Generic, 1, "a_texA0"),
 				new VertexAttribute(Usage.Generic, 1, "a_texA1"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA2")
+				new VertexAttribute(Usage.Generic, 1, "a_texA2"),
+				new VertexAttribute(Usage.Generic, 1, "a_texA3"),
+				new VertexAttribute(Usage.Generic, 1, "a_texA4"),
+				new VertexAttribute(Usage.Generic, 1, "a_texA5")
 		);
 		
 		mesh.setVertices(vertexArray);
@@ -422,13 +539,11 @@ public class VoxelGenerator
 	
 	private static class Vertex
 	{
-		public static final int VERTEX_SIZE = 9;
+		public static final int VERTEX_SIZE = 12;
 		
 		float x, y, z;
 		float nx, ny, nz;
-		float tex1 = 0;
-		float tex2 = 0;
-		float tex3 = 0;
+		float[] texArray = new float[6];
 		short index = -1;
 		
 		Array<Face> faces = new Array<Face>(false, 6);
@@ -487,31 +602,10 @@ public class VoxelGenerator
 		
 		public void norTex()
 		{
-			if (tex1 > tex2 && tex1 > tex3)
-			{
-				tex1 = 1;
-				tex2 = 0;
-				tex3 = 0;
-			}
-			
-			if (tex2 > tex1 && tex2 > tex3)
-			{
-				tex1 = 0;
-				tex2 = 1;
-				tex3 = 0;
-			}
-			
-			if (tex3 > tex1 && tex3 > tex2)
-			{
-				tex1 = 0;
-				tex2 = 0;
-				tex3 = 1;
-			}
-			
-//			float len = Vector3.len(tex1, tex2, tex3);
-//			tex1 /= len;
-//			tex2 /= len;
-//			tex3 /= len;
+			float len = 0;
+			for (float t : texArray) len += t*t;
+			len = (float) Math.sqrt(len);
+			for (int i = 0; i < texArray.length; i++) texArray[i] /= len;
 		}
 	}
 

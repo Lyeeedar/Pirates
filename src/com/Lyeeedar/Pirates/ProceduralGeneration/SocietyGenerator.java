@@ -53,8 +53,8 @@ public class SocietyGenerator {
 		
 		for (int[] entrance : landmark.entrances)
 		{
-			int ex = MathUtils.clamp(entrance[0]-landmark.x, 0, grid.length-1);
-			int ey = MathUtils.clamp(entrance[1]-landmark.y, 0, grid[0].length-1);
+			int ex = MathUtils.clamp(entrance[0]-(int)landmark.x, 0, grid.length-1);
+			int ey = MathUtils.clamp(entrance[1]-(int)landmark.y, 0, grid[0].length-1);
 			AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, ex, ey, landmark.width/2, landmark.height/2, new ByteHeuristic());
 			int[][] path = pathFind.getPath();
 			
