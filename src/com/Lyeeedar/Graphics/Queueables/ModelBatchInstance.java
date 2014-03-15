@@ -12,6 +12,7 @@ import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
@@ -134,7 +135,7 @@ public class ModelBatchInstance implements Queueable {
 			float d = cam.position.dst(pos);
 			if (d > cam.far) return;
 			
-			if (!canCull)
+			if (!canCull || cam instanceof OrthographicCamera)
 			{
 				if (transparent) transparentInstances.add(pool.obtain().set(transform, d, 1.0f));
 				else solidInstances.add(pool.obtain().set(transform, -d, 1.0f));

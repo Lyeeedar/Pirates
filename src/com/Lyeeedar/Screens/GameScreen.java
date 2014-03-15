@@ -92,10 +92,13 @@ import com.Lyeeedar.Graphics.Queueables.Sprite2D;
 import com.Lyeeedar.Graphics.Queueables.TexturedMesh;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
+import com.Lyeeedar.Pirates.ProceduralGeneration.Building;
 import com.Lyeeedar.Pirates.ProceduralGeneration.Landmark;
 import com.Lyeeedar.Pirates.ProceduralGeneration.SerkGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.SocietyGenerator;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayMinimalGrapher;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VoxelGenerator.Chunk;
 import com.Lyeeedar.Util.DetailController;
 import com.Lyeeedar.Util.Dialogue;
@@ -199,25 +202,25 @@ public class GameScreen extends AbstractScreen {
 		
 		bw.add(planeShape, new Matrix4().translate(0, -749, 0), planeEntity, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
-		// BUILDING
-		
-		Entity building = new Entity(true, new PositionalData());
-		building.readOnlyRead(PositionalData.class).position.y = 50;
-		building.readOnlyRead(PositionalData.class).initialise();
-		
-		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
-		btTriangleMesh btm = new btTriangleMesh();
-		
-		VolumePartitioner vp = VolumePartitioner.load("data/grammar/romanesque_church.json");
-		vp.evaluate();
-		vp.collectMeshes(building, bentry, btm);
-		
-		btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
-		
-		rw.add(bentry);
-		bw.add(bshape, new Matrix4().setToTranslation(building.readOnlyRead(PositionalData.class).position), building, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-		
-		// END BUILDING
+//		// BUILDING
+//		
+//		Entity building = new Entity(true, new PositionalData());
+//		building.readOnlyRead(PositionalData.class).position.y = 50;
+//		building.readOnlyRead(PositionalData.class).initialise();
+//		
+//		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+//		btTriangleMesh btm = new btTriangleMesh();
+//		
+//		VolumePartitioner vp = VolumePartitioner.load("data/grammar/house.json");
+//		vp.evaluate();
+//		vp.collectMeshes(building, bentry, btm, new Matrix4());
+//		
+//		btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
+//		
+//		rw.add(bentry);
+//		bw.add(bshape, new Matrix4().setToTranslation(building.readOnlyRead(PositionalData.class).position), building, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+//		
+//		// END BUILDING
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
@@ -225,17 +228,22 @@ public class GameScreen extends AbstractScreen {
 		BoundingBox bb = grassMesh.calculateBoundingBox();
 		
 		// VOXEL
+		float scale = 10;
+		int chunkSize = 32;
+		int chunkHeight = 100;
+		int chuckSpacing = 29;
+		
 		Array<Landmark> landmarks = new Array<Landmark>();
 		for (int i = 0; i < 5; i++)
 		{
-			Landmark l = new Landmark(0, 0, 500, 500, Float.NaN);
+			Landmark l = new Landmark(0, 0, 30, 30, Float.NaN);
 			for (int rep = 0; rep < 20; rep++)
 			{
-				float x = ran.nextFloat()*20*28*10;
-				float z = ran.nextFloat()*20*28*10;
+				float x = ran.nextFloat()*20*chuckSpacing;
+				float z = ran.nextFloat()*20*chuckSpacing;
 				
-				l.x = x;
-				l.y = z;
+				l.x = (int) x;
+				l.y = (int) z;
 				
 				boolean valid = true;
 				for (Landmark landmark : landmarks)
@@ -255,16 +263,63 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
+		Array<float[]> points = new Array<float[]>(false, landmarks.size);
+		
+		for (Landmark l : landmarks)
+		{
+			points.add(new float[]{l.x+(l.width/2), l.y+(l.height/2)});
+		}
+		
+		DelaunayMinimalGrapher dmg = new DelaunayMinimalGrapher();
+		
+		Array<int[][]> paths = new Array<int[][]>(false, 16);
+		dmg.connectPoints(points, paths);
+		
+		for (int[][] path : paths)
+		{
+			for (Landmark landmark : landmarks)
+			{
+				if (landmark.inBounds(path[0][0], path[0][1]))
+				{
+					landmark.findEntrance(path[0][0]-landmark.x, path[0][1]-landmark.y, path[1][0]-landmark.x, path[1][1]-landmark.y);
+				}
+				else if (landmark.inBounds(path[1][0], path[1][1]))
+				{
+					landmark.findEntrance(path[1][0]-landmark.x, path[1][1]-landmark.y, path[0][0]-landmark.x, path[0][1]-landmark.y);
+				} 
+			}
+		}
+		
+		Building[] buildings = {new Building(5, 5, "data/grammar/house.json", (byte) 4), new Building(1, 5, "data/grammar/house.json", (byte) 4), new Building(2, 4, "data/grammar/house.json", (byte) 4), new Building(3, 3, "data/grammar/house.json", (byte) 5), new Building(7, 7, "data/grammar/house.json", (byte) 5), new Building(4, 2, "data/grammar/house.json", (byte) 5)};
+		for (Landmark landmark : landmarks)
+		{			
+			SocietyGenerator.fillVillage(landmark, buildings, 1337, (byte) 3, (byte) 0);
+			
+			Byte[][] grid = landmark.grid;
+			for (int x = 0; x < grid.length; x++)
+			{
+				for (int y = 0; y < grid[0].length; y++)
+				{
+					System.out.print(grid[x][y]+" ");
+				}
+				System.out.print("\n");
+			}
+			System.out.println("\n");
+		}
+		
 		float voxelseed = MathUtils.random(8008135);
 		for (int x = 0; x < 20; x ++)
 		{
 			for (int z = 0; z < 20; z++)
 			{
-				Chunk chunk = VoxelGenerator.generateTerrain(32, 100, 32, x*28, z*28, 10, voxelseed, landmarks);
-				Mesh voxels = chunk.mesh;
+				Chunk chunk = VoxelGenerator.generateTerrain(chunkSize, chunkHeight, chunkSize, x*chuckSpacing, z*chuckSpacing, scale, voxelseed, landmarks);
+				
+				chunk.processFaces(landmarks, x*chuckSpacing, z*chuckSpacing);
+				
+				Mesh voxels = chunk.toMesh();
 				ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock, dirt, stone01, stone03}, new Vector3(1, 1, 1), 1);
 				Entity voxelEntity = new Entity(true, new PositionalData());
-				voxelEntity.readOnlyRead(PositionalData.class).position.set(x*28*10, 0, z*28*10);
+				voxelEntity.readOnlyRead(PositionalData.class).position.set(x*chuckSpacing*scale, 0, z*chuckSpacing*scale);
 				voxelEntity.addRenderable(voxelMesh, new Matrix4());
 				
 				voxelEntity.readOnlyRead(PositionalData.class).initialise();
@@ -277,10 +332,10 @@ public class GameScreen extends AbstractScreen {
 				bw.add(voxelShape, new Matrix4().setToTranslation(voxelEntity.readOnlyRead(PositionalData.class).position), voxelEntity, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
 				
 				
-				chunk.vegetate(veggies, new ModelBatchInstance(new ModelBatchData(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true, false, 0)), 0, 3, 50, 0.5f);
+				chunk.vegetate(veggies, new ModelBatchInstance(new ModelBatchData(grassMesh, GL20.GL_TRIANGLES, new Texture[]{pinetex}, false, true, false, 0)), 0, 3, 10, 0.5f);
 				for (Entity v : veggies)
 				{
-					v.readOnlyRead(MinimalPositionalData.class).position.add(x*28*10, -3, z*28*10);
+					v.readOnlyRead(MinimalPositionalData.class).position.add(x*chuckSpacing*scale, -3, z*chuckSpacing*scale);
 					
 					v.update(0);
 					OcttreeEntry<Entity> entry = rw.createEntry(v, v.readOnlyRead(MinimalPositionalData.class).position, bb.getDimensions(), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
@@ -291,6 +346,28 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
+		for (Landmark landmark : landmarks)
+		{
+			for (Building b : landmark.buildings)
+			{
+				Entity building = new Entity(true, new PositionalData());
+				building.readOnlyRead(PositionalData.class).position.set(((chunkSize/-2)+landmark.x+b.x)*scale, ((chunkHeight/-2)+landmark.elevation)*scale, ((chunkSize/-2)+landmark.y+b.y)*scale);
+				building.readOnlyRead(PositionalData.class).initialise();
+				
+				OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+				btTriangleMesh btm = new btTriangleMesh();
+				
+				VolumePartitioner vp = VolumePartitioner.load(b.grammarName);
+				vp.evaluate(b.width*scale, 10, b.height*scale);
+				vp.collectMeshes(building, bentry, btm, b.rot);
+				
+				btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
+				
+				rw.add(bentry);
+				bw.add(bshape, new Matrix4().setToTranslation(building.readOnlyRead(PositionalData.class).position), building, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+				
+			}
+		}
 		// END VOXELS
 //				
 		// HEIGHT MAP

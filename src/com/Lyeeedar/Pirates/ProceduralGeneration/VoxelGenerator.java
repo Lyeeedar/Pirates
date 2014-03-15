@@ -26,14 +26,157 @@ public class VoxelGenerator
 		public final NoiseGenerator noise;
 		public final Face[] faces;
 		public final Vertex[] vertices;
-		public final Mesh mesh;
 		
-		public Chunk(NoiseGenerator noise, Face[] faces, Vertex[] vertices, Mesh mesh)
+		public Chunk(NoiseGenerator noise, Face[] faces, Vertex[] vertices)
 		{
 			this.noise = noise;
 			this.faces = faces;
 			this.vertices = vertices;
-			this.mesh = mesh;
+		}
+		
+		public void markLandmarks(Array<Landmark> landmarks, int offsetx, int offsetz)
+		{
+			for (Vertex v : vertices)
+			{
+				for (Landmark landmark : landmarks)
+				{
+					byte texval = landmark.getGridValue(MathUtils.round(v.x+offsetx), MathUtils.round(v.z+offsetz));
+					
+					if (texval >= 0)
+					{
+						v.texArray[texval] = 100;
+					}
+				}
+			}
+		}
+		
+		public void processFaces(Array<Landmark> landmarks, int offsetx, int offsetz)
+		{
+			for (Vertex v : vertices)
+			{
+				v.smooth(0.1f);
+			}
+			
+			markLandmarks(landmarks, offsetx, offsetz);
+			
+			for (Vertex v : vertices)
+			{
+				v.x = ((noise.x/-2)+v.x)*noise.size;
+				v.y = ((noise.y/-2)+v.y)*noise.size;
+				v.z = ((noise.z/-2)+v.z)*noise.size;
+			}
+			
+			Vector3 normal1 = Pools.obtain(Vector3.class);
+			Vector3 normal2 = Pools.obtain(Vector3.class);
+			Vector3[] normals = {normal1, normal2};
+			for (Face face : faces)
+			{
+				face.addNormal(normals);
+				
+				normal1.add(normal2).scl(0.5f);
+				
+				for (Vertex v : face.vertices)
+				{
+					if (normal1.y > 0.8f)
+					{
+						v.texArray[0] += 1;
+					}
+					else
+					{
+						v.texArray[1] += 1;
+					}
+				}
+			}
+			Pools.free(normal1);
+			Pools.free(normal2);
+			
+			for (Vertex vertex : vertices)
+			{
+				vertex.norNormal();
+				vertex.norTex();
+			}
+		}
+		
+		public Mesh toMesh()
+		{
+			boolean useIndices = vertices.length < (int) Short.MAX_VALUE;
+			int numVertices = useIndices ? vertices.length : faces.length * 6 ;
+			int numIndices = useIndices ? faces.length * 6 : 0 ;
+			
+			float[] vertexArray = new float[numVertices * Vertex.VERTEX_SIZE];
+			short[] indices = null;
+			
+			if (useIndices)
+			{
+				int i = 0;
+				for (Vertex v : vertices)
+				{
+					vertexArray[i++] = v.x;
+					vertexArray[i++] = v.y;
+					vertexArray[i++] = v.z;
+					
+					vertexArray[i++] = v.nx;
+					vertexArray[i++] = v.ny;
+					vertexArray[i++] = v.nz;
+					
+					for (float t : v.texArray) vertexArray[i++] = t;
+				}
+				
+				indices = new short[numIndices];
+				i = 0;
+				for (Face face : faces)
+				{
+					for (int[] tri : face.tris)
+					{
+						for (int vi : tri)
+						{
+							Vertex v = face.vertices[vi];
+							indices[i++] = v.index;
+						}
+					}
+				}
+			}
+			else
+			{
+				int i = 0;
+				for (Face face : faces)
+				{
+					for (int[] tri : face.tris)
+					{
+						for (int vi : tri)
+						{
+							Vertex v = face.vertices[vi];
+							vertexArray[i++] = v.x;
+							vertexArray[i++] = v.y;
+							vertexArray[i++] = v.z;
+							
+							vertexArray[i++] = v.nx;
+							vertexArray[i++] = v.ny;
+							vertexArray[i++] = v.nz;
+							
+							for (float t : v.texArray) vertexArray[i++] = t;
+						}
+					}
+				}
+			}
+			
+			//System.out.println("Mesh made! Num Vertices: "+numVertices+" Num Indices: "+numIndices);
+			
+			Mesh mesh = new Mesh(true, numVertices, numIndices, 
+					new VertexAttribute(Usage.Position, 3, "a_position"), 
+					new VertexAttribute(Usage.Normal, 3, "a_normal"), 
+					new VertexAttribute(Usage.Generic, 1, "a_texA0"),
+					new VertexAttribute(Usage.Generic, 1, "a_texA1"),
+					new VertexAttribute(Usage.Generic, 1, "a_texA2"),
+					new VertexAttribute(Usage.Generic, 1, "a_texA3"),
+					new VertexAttribute(Usage.Generic, 1, "a_texA4"),
+					new VertexAttribute(Usage.Generic, 1, "a_texA5")
+			);
+			
+			mesh.setVertices(vertexArray);
+			if (useIndices) mesh.setIndices(indices);
+			
+			return mesh;
 		}
 		
 		public void vegetate(Array<Entity> veggies, Queueable renderable, int texval, int num, int maxTries, float minval)
@@ -93,7 +236,6 @@ public class VoxelGenerator
 						pos.add(AB).add(AC);
 						
 						pData.position.set(pos);
-						System.out.println(pos);
 
 						Pools.free(AB);
 						Pools.free(AC);
@@ -162,15 +304,15 @@ public class VoxelGenerator
 			{
 				for (Landmark landmark : landmarks)
 				{
-					if (landmark.inBounds(((float)ix+(float)offsetx)*scale, ((float)iz+(float)offsetz)*scale))
+					if (landmark.inBounds(ix+offsetx, iz+offsetz))
 					{
 						if (Float.isNaN(landmark.elevation))
 						{
-							landmark.elevation = (pointGrid[ix][0][iz].scalar*((float)y))*scale;
+							landmark.elevation = (pointGrid[ix][0][iz].scalar*((float)y));
 						}
 						else
 						{
-							float scalar = ( landmark.elevation / scale ) / ((float) y);
+							float scalar = ( landmark.elevation ) / ((float) y);
 							for (int iy = 0; iy < y; iy++)
 							{
 								if ((float)iy/(float)y > scalar) pointGrid[ix][iy][iz] = null;
@@ -178,7 +320,7 @@ public class VoxelGenerator
 								{
 									pointGrid[ix][iy][iz] = new Point(ix, iy, iz, scalar, pointGrid[ix][0][iz].normal);
 								}
-								else 
+								else
 								{
 									pointGrid[ix][iy][iz].scalar = scalar;
 									pointGrid[ix][iy][iz].normal[0] = 0;
@@ -196,56 +338,8 @@ public class VoxelGenerator
 		Object[] data = generateFaces(pointGrid);
 		Face[] faces = (Face[]) data[0];
 		Vertex[] vertices = (Vertex[]) data[1];
-		
-		processFaces(faces, vertices, noise);
-		Mesh mesh = facesToMesh(faces, vertices);
-		
-		return new Chunk(noise, faces, vertices, mesh);
-	}
-	
-	public static void processFaces(Face[] faces, Vertex[] vertices, NoiseGenerator noise)
-	{
-		for (Vertex v : vertices)
-		{
-			v.smooth(0.1f);
-		}
-		
-		for (Vertex v : vertices)
-		{
-			v.x = ((noise.x/-2)+v.x)*noise.size;
-			v.y = ((noise.y/-2)+v.y)*noise.size;
-			v.z = ((noise.z/-2)+v.z)*noise.size;
-		}
-		
-		Vector3 normal1 = Pools.obtain(Vector3.class);
-		Vector3 normal2 = Pools.obtain(Vector3.class);
-		Vector3[] normals = {normal1, normal2};
-		for (Face face : faces)
-		{
-			face.addNormal(normals);
-			
-			normal1.add(normal2).scl(0.5f);
-			
-			for (Vertex v : face.vertices)
-			{
-				if (normal1.y > 0.8f)
-				{
-					v.texArray[0] += 1;
-				}
-				else
-				{
-					v.texArray[1] += 1;
-				}
-			}
-		}
-		Pools.free(normal1);
-		Pools.free(normal2);
-		
-		for (Vertex vertex : vertices)
-		{
-			vertex.norNormal();
-			vertex.norTex();
-		}
+				
+		return new Chunk(noise, faces, vertices);
 	}
 	
 	public static Point[][][] generatePointGrid(int x, int y, int z, int offsetx, int offsetz, float scale, NoiseGenerator noise)
@@ -367,7 +461,7 @@ public class VoxelGenerator
 			}
 		}
 		
-		System.out.println("Intersecting cells: "+intersectList.size);
+		//System.out.println("Intersecting cells: "+intersectList.size);
 		
 		Array<Face> faceArray = new Array<Face>(false, intersectList.size*6);
 		Array<Vertex> vertexArray = new Array<Vertex>(false, intersectList.size);
@@ -383,88 +477,6 @@ public class VoxelGenerator
 		Vertex[] vertices = new Vertex[vertexArray.size];
 		for (int i = 0; i < vertices.length; i++) vertices[i] = vertexArray.get(i);
 		return new Object[]{faces, vertices};
-	}
-	
-	public static Mesh facesToMesh(Face[] faces, Vertex[] vertices)
-	{
-		boolean useIndices = vertices.length < (int) Short.MAX_VALUE;
-		int numVertices = useIndices ? vertices.length : faces.length * 6 ;
-		int numIndices = useIndices ? faces.length * 6 : 0 ;
-		
-		float[] vertexArray = new float[numVertices * Vertex.VERTEX_SIZE];
-		short[] indices = null;
-		
-		if (useIndices)
-		{
-			int i = 0;
-			for (Vertex v : vertices)
-			{
-				vertexArray[i++] = v.x;
-				vertexArray[i++] = v.y;
-				vertexArray[i++] = v.z;
-				
-				vertexArray[i++] = v.nx;
-				vertexArray[i++] = v.ny;
-				vertexArray[i++] = v.nz;
-				
-				for (float t : v.texArray) vertexArray[i++] = t;
-			}
-			
-			indices = new short[numIndices];
-			i = 0;
-			for (Face face : faces)
-			{
-				for (int[] tri : face.tris)
-				{
-					for (int vi : tri)
-					{
-						Vertex v = face.vertices[vi];
-						indices[i++] = v.index;
-					}
-				}
-			}
-		}
-		else
-		{
-			int i = 0;
-			for (Face face : faces)
-			{
-				for (int[] tri : face.tris)
-				{
-					for (int vi : tri)
-					{
-						Vertex v = face.vertices[vi];
-						vertexArray[i++] = v.x;
-						vertexArray[i++] = v.y;
-						vertexArray[i++] = v.z;
-						
-						vertexArray[i++] = v.nx;
-						vertexArray[i++] = v.ny;
-						vertexArray[i++] = v.nz;
-						
-						for (float t : v.texArray) vertexArray[i++] = t;
-					}
-				}
-			}
-		}
-		
-		System.out.println("Mesh made! Num Vertices: "+numVertices+" Num Indices: "+numIndices);
-		
-		Mesh mesh = new Mesh(true, numVertices, numIndices, 
-				new VertexAttribute(Usage.Position, 3, "a_position"), 
-				new VertexAttribute(Usage.Normal, 3, "a_normal"), 
-				new VertexAttribute(Usage.Generic, 1, "a_texA0"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA1"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA2"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA3"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA4"),
-				new VertexAttribute(Usage.Generic, 1, "a_texA5")
-		);
-		
-		mesh.setVertices(vertexArray);
-		if (useIndices) mesh.setIndices(indices);
-		
-		return mesh;
 	}
 	
 	private static class Point

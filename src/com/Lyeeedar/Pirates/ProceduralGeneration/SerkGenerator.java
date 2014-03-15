@@ -21,6 +21,7 @@ import javax.imageio.ImageIO;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.PositionalData;
+import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayMinimalGrapher;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayPoint;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.DelaunayTriangle;
 import com.Lyeeedar.Pirates.ProceduralGeneration.DelaunayTriangulation.Triangulation;
@@ -44,7 +45,7 @@ public class SerkGenerator implements AbstractGenerator{
 	protected static final int LANDMARK_PLACE_ATTEMPTS = 150;
 
 	final Array<Landmark> landmarks = new Array<Landmark>();
-	final Building[] buildings = {new Building(15, 15), new Building(5, 5), new Building(10, 10), new Building(10, 5)};
+	final Building[] buildings = {new Building(15, 15, "", (byte) 1), new Building(5, 5, "", (byte) 1), new Building(10, 10, "", (byte) 1), new Building(10, 5, "", (byte) 1)};
 	AbstractTile[][] tiles;
 	final Random ran;
 	final long seed;
@@ -83,18 +84,9 @@ public class SerkGenerator implements AbstractGenerator{
 		
 		for (Landmark landmark : landmarks)
 		{
-			Byte[][] lgrid = new Byte[landmark.width][landmark.height];
-			List<Entity> houses = SocietyGenerator.fillVillage(lgrid, landmark, buildings, seed);
-			for (Entity e : houses)
-			{
-				PositionalData pData = e.readOnlyRead(PositionalData.class);
-				pData.position.x /= (float)size; pData.position.x *= (float)scale;
-				pData.position.z /= (float)size; pData.position.z *= (float)scale;
-				pData.position.y -= 4;
-				pData.calculateComposed();
-				e.update(0);
-			}
-			entities.addAll(houses);
+			SocietyGenerator.fillVillage(landmark, buildings, seed, (byte) 1, (byte) 0);
+			Byte[][] lgrid = landmark.grid;
+
 			for (int x = 0; x < lgrid.length; x++)
 			{
 				for (int y = 0; y < lgrid[0].length; y++)
@@ -151,35 +143,21 @@ public class SerkGenerator implements AbstractGenerator{
 	
 	protected void connectLandmarks()
 	{
-		ArrayList<DelaunayPoint> landmarkPnts = new ArrayList<DelaunayPoint>();
+		Array<float[]> points = new Array<float[]>(false, landmarks.size);
 		
 		for (Landmark l : landmarks)
 		{
-			DelaunayPoint p = new DelaunayPoint(l.x+(l.width/2), l.y+(l.height/2));
-			landmarkPnts.add(p);
+			points.add(new float[]{l.x+(l.width/2), l.y+(l.height/2)});
 		}
 
-		DelaunayTriangle initialTriangle = new DelaunayTriangle(
-				new DelaunayPoint(-10000, -10000),
-				new DelaunayPoint(10000, -10000),
-				new DelaunayPoint(0, 10000));
-		Triangulation dt = new Triangulation(initialTriangle);
+		DelaunayMinimalGrapher dmg = new DelaunayMinimalGrapher();
 		
-		for (DelaunayPoint p : landmarkPnts)
-		{
-			dt.delaunayPlace(p);
-		}
-		
-		ArrayList<DelaunayPoint[]> paths = new ArrayList<DelaunayPoint[]>();
-		
-		for (DelaunayTriangle tri : dt)
-		{
-			calculatePaths(paths, tri);
-		}
+		Array<int[][]> paths = new Array<int[][]>(false, 16);
+		dmg.connectPoints(points, paths);
 
-		for (DelaunayPoint[] p : paths)
+		for (int[][] p : paths)
 		{
-			AStarPathfind<AbstractTile> pathFind = new AStarPathfind<AbstractTile>(tiles, (int)p[0].coord(0), (int)p[0].coord(1), (int)p[1].coord(0), (int)p[1].coord(1), new AbstractTile.AbstractTileHeuristic());
+			AStarPathfind<AbstractTile> pathFind = new AStarPathfind<AbstractTile>(tiles, p[0][0], p[0][1], p[1][0], p[1][1], new AbstractTile.AbstractTileHeuristic());
 			markPath(pathFind.getPath(), 2);
 		}
 	}
@@ -241,116 +219,7 @@ public class SerkGenerator implements AbstractGenerator{
 			}
 		}
 	}
-	
-	protected void calculatePaths(ArrayList<DelaunayPoint[]> paths, DelaunayTriangle triangle)
-	{
-		DelaunayPoint[] vertices = triangle.toArray(new DelaunayPoint[0]);
-		
-		int ignore = 0;
-        double dist = 0;
-        
-        dist = Math.pow(2, vertices[0].coord(0)-vertices[1].coord(0))+Math.pow(2, vertices[0].coord(1)-vertices[1].coord(1));
-        
-        double temp = Math.pow(2, vertices[0].coord(0)-vertices[2].coord(0))+Math.pow(2, vertices[0].coord(1)-vertices[2].coord(1));
-        if (dist < temp)
-        {
-        	dist = temp;
-        	ignore = 1;		
-        }
-        
-        temp = Math.pow(2, vertices[1].coord(0)-vertices[2].coord(0))+Math.pow(2, vertices[1].coord(1)-vertices[2].coord(1));
-        if (dist < temp)
-        {
-        	dist = temp;
-        	ignore = 2;		
-        }
-        
-        if (ignore != 0 && checkIgnored(vertices[0], vertices[1]) && !checkAdded(vertices[0], vertices[1]))
-        {
-        	addPath(vertices[0], vertices[1], paths);
-        }
-        else
-        {
-        	ignorePnts.add(new DelaunayPoint[]{vertices[0], vertices[1]});
-        }
-        if (ignore != 1 && checkIgnored(vertices[0], vertices[2]) && !checkAdded(vertices[0], vertices[2]))
-        {
-        	addPath(vertices[0], vertices[2], paths);
-        }
-        else
-        {
-        	ignorePnts.add(new DelaunayPoint[]{vertices[0], vertices[2]});
-        }
-        if (ignore != 2 && checkIgnored(vertices[1], vertices[2]) && !checkAdded(vertices[1], vertices[2]))
-        {
-        	addPath(vertices[1], vertices[2], paths);
-        }
-        else
-        {
-        	ignorePnts.add(new DelaunayPoint[]{vertices[1], vertices[2]});
-        }
-	}
-	
-    protected void addPath(DelaunayPoint p1, DelaunayPoint p2, ArrayList<DelaunayPoint[]> paths)
-    {
-    	if (p1.coord(0) < 0 || p2.coord(0) < 0)
-    	{
-    		ignorePnts.add(new DelaunayPoint[]{p1, p2});
-    	}
-    	else if (p1.coord(1) < 0 || p2.coord(1) < 0)
-    	{
-    		ignorePnts.add(new DelaunayPoint[]{p1, p2});
-    	}
-    	else if (p1.coord(0) > 1000 || p2.coord(0) > 1000)
-    	{
-    		ignorePnts.add(new DelaunayPoint[]{p1, p2});
-    	}
-    	else if (p1.coord(1) > 1000 || p2.coord(1) > 1000)
-    	{
-    		ignorePnts.add(new DelaunayPoint[]{p1, p2});
-    	}
-    	else
-    	{
-        	addedPnts.add(new DelaunayPoint[]{p1, p2});
-        	paths.add(new DelaunayPoint[]{p1, p2});
-    	}
-    }
-	
-	ArrayList<DelaunayPoint[]> ignorePnts = new ArrayList<DelaunayPoint[]>();
-	ArrayList<DelaunayPoint[]> addedPnts = new ArrayList<DelaunayPoint[]>();
-    
-    protected boolean checkIgnored(DelaunayPoint p1, DelaunayPoint p2)
-    {
-    	for (DelaunayPoint[] p : ignorePnts)
-    	{
-    		if (p[0].equals(p1) && p[1].equals(p2))
-    		{
-    			return false;
-    		}
-    		else if (p[0].equals(p2) && p[1].equals(p1))
-    		{
-    			return false;
-    		}
-    	}
-    	return true;
-    }
-    
-    protected boolean checkAdded(DelaunayPoint p1, DelaunayPoint p2)
-    {
-    	for (DelaunayPoint[] p : addedPnts)
-    	{
-    		if (p[0].equals(p1) && p[1].equals(p2))
-    		{
-    			return true;
-    		}
-    		else if (p[0].equals(p2) && p[1].equals(p1))
-    		{
-    			return true;
-    		}
-    	}
-    	return false;
-    }
-  
+	  
 	protected void setHeight()
 	{
 		SimplexOctaveGenerator noise = new SimplexOctaveGenerator(seed, NOISE_OCTAVES);

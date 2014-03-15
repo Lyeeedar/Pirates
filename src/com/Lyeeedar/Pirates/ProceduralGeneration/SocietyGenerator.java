@@ -34,78 +34,69 @@ public class SocietyGenerator {
 		{1, -1, 45}
 	};
 	
-	public static List<Entity> fillVillage(Byte[][] grid, Landmark landmark, Building[] buildings, long seed)
+	public static void fillVillage(Landmark landmark, Building[] buildings, long seed, byte pathval, byte emptyval)
 	{
+		Byte[][] grid = landmark.grid;
+		
 		final Random ran = new Random(seed);
 		for (int x = 0; x < grid.length; x++)
 		{
 			for (int y = 0; y < grid[0].length; y++)
 			{
-				grid[x][y] = 0;
+				grid[x][y] = emptyval;
 			}
 		}
-		grid[landmark.width/2][landmark.height/2] = 1;
+		grid[landmark.width/2][landmark.height/2] = pathval;
 		
-		grid[landmark.width/2+1][landmark.height/2] = 1;
-		grid[landmark.width/2-1][landmark.height/2] = 1;
-		grid[landmark.width/2][landmark.height/2+1] = 1;
-		grid[landmark.width/2][landmark.height/2-1] = 1;
+		grid[landmark.width/2+1][landmark.height/2] = pathval;
+		grid[landmark.width/2-1][landmark.height/2] = pathval;
+		grid[landmark.width/2][landmark.height/2+1] = pathval;
+		grid[landmark.width/2][landmark.height/2-1] = pathval;
 		
 		for (int[] entrance : landmark.entrances)
 		{
-			int ex = MathUtils.clamp(entrance[0]-(int)landmark.x, 0, grid.length-1);
-			int ey = MathUtils.clamp(entrance[1]-(int)landmark.y, 0, grid[0].length-1);
+			int ex = MathUtils.clamp(entrance[0], 0, grid.length-1);
+			int ey = MathUtils.clamp(entrance[1], 0, grid[0].length-1);
 			AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, ex, ey, landmark.width/2, landmark.height/2, new ByteHeuristic());
 			int[][] path = pathFind.getPath();
 			
 			for (int[] pos : path)
 			{
-				grid[pos[0]][pos[1]] = 1;
+				grid[pos[0]][pos[1]] = pathval;
 				for (int[] o : offsets)
 				{
 					if (pos[0]+o[0] < 0 || pos[0]+o[0] >= grid.length || pos[1]+o[1] < 0 || pos[1]+o[1] >= grid[0].length) continue;
-					grid[pos[0]+o[0]][pos[1]+o[1]] = 1;
+					grid[pos[0]+o[0]][pos[1]+o[1]] = pathval;
 				}
 			}
 		}
 		
-		ArrayList<int[]> paths = flood(grid, (byte)1, landmark.width/2, landmark.height/2);
-		ArrayList<Entity> entities = new ArrayList<Entity>();
+		ArrayList<int[]> paths = flood(grid, pathval, landmark.width/2, landmark.height/2);
 		
-		int i = 2;
 		for (int[] p : paths)
 		{
-			final Building building = buildings[ran.nextInt(buildings.length)];
-			if (i > 9) i = 2;
 			for (int[] o : offsets)
 			{
-				if (i > 9) break;
+				final Building building = buildings[ran.nextInt(buildings.length)].copy();
 				int px = p[0] + o[0]*(building.width/2 + 1);
 				int py = p[1] + o[1]*(building.height/2 + 1);
 				building.rot.setToRotation(0, 1, 0, o[2]);
+				building.x = px;
+				building.y = py;
 				if (check(grid, px, py, building))
 				{
-					fill(grid, (byte) i, px, py, building);
-					i++;
+					fill(grid, (byte) building.lotVal, px, py, building);
 					AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, px, py, p[0], p[1], new ByteHeuristic());
 					int[][] path = pathFind.getPath();
 					for (int[] pp : path)
 					{
-						if (grid[pp[0]][pp[1]] == 0) grid[pp[0]][pp[1]] = 1;
+						if (grid[pp[0]][pp[1]] == emptyval) grid[pp[0]][pp[1]] = pathval;
 					}
 					
-					PositionalData pData = new PositionalData();
-					pData.position.set(px+landmark.x, landmark.elevation, py+landmark.y);
-					pData.rotation.mul(building.rot);
-					pData.calculateComposed();
-					Entity house = new Entity(false, pData);
-					//house.addRenderable(new TexturedMesh(FileUtils.loadMesh("data/models/house.obj"), GL20.GL_TRIANGLES, new Texture[]{FileUtils.loadTexture("data/textures/house.png"}, true, null, null), null, 1), new Vector3());
-					entities.add(house);
+					landmark.buildings.add(building);
 				}
 			}	
 		}
-		
-		return entities;
 	}
 	
 	public static ArrayList<int[]> flood(Byte[][] grid, byte num, int sx, int sy)
@@ -173,11 +164,11 @@ public class SocietyGenerator {
 		l.addEntrance(29, 0);
 		l.addEntrance(0,  0);
 		l.addEntrance(29,  29);
-		Building[] b = {new Building(5, 5), new Building(1, 5), new Building(2, 4), new Building(3, 3), new Building(7, 7), new Building(4, 2)};
+		Building[] b = {new Building(5, 5, "", (byte) 1), new Building(1, 5, "", (byte) 1), new Building(2, 4, "", (byte) 1), new Building(3, 3, "", (byte) 1), new Building(7, 7, "", (byte) 1), new Building(4, 2, "", (byte) 1)};
 		
-		Byte[][] grid = new Byte[30][30];
-		fillVillage(grid, l, b, 1337);
+		fillVillage(l, b, 1337, (byte) 1, (byte) 0);
 		
+		Byte[][] grid = l.grid;
 		for (int x = 0; x < grid.length; x++)
 		{
 			for (int y = 0; y < grid[0].length; y++)
