@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
+import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.TextureArray;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -22,6 +24,8 @@ import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.UBJsonReader;
 
 public class FileUtils {
@@ -59,10 +63,10 @@ public class FileUtils {
 		
 	}
 	
-	private static final TextureTree cachedTextures = new TextureTree("", new Texture[]{});
-	public static Texture[] getTextureArray(String[] textureNames)
+	private static final TextureTree cachedTextureGroups = new TextureTree("", new Texture[]{});
+	public static Texture[] getTextureGroup(String[] textureNames)
 	{
-		TextureTree current = cachedTextures;
+		TextureTree current = cachedTextureGroups;
 		for (String textureName : textureNames)
 		{
 			TextureTree tree = current.get(textureName);
@@ -103,9 +107,9 @@ public class FileUtils {
 		}
 		return current.textures;
 	}
-	public static Texture[] getTextureArray(Array<String> textureNames)
+	public static Texture[] getTextureGroup(Array<String> textureNames)
 	{
-		TextureTree current = cachedTextures;
+		TextureTree current = cachedTextureGroups;
 		for (String textureName : textureNames)
 		{
 			TextureTree tree = current.get(textureName);
@@ -116,7 +120,6 @@ public class FileUtils {
 				Texture diffuse = loadTexture(textureName+"_d.png", false, null, null);
 				Texture specular = loadTexture(textureName+"_s.png", false, null, null);
 				Texture emissive = loadTexture(textureName+"_e.png", false, null, null);
-				Texture blank = loadTexture("data/textures/blank.png", true, null, null);
 				
 				int ntex = 0;
 				if (diffuse != null) ntex++;
@@ -147,7 +150,46 @@ public class FileUtils {
 		}
 		return current.textures;
 	}
+	
+	private static final HashMap<String, TextureArray> loadedTextureArrays = new HashMap<String, TextureArray>();
+	public static TextureArray loadTextureArray(String[] textures, TextureFilter filter, TextureWrap wrap)
+	{
+		String textureName = "";
+		for (String s : textures) textureName += s;
+		
+		if (loadedTextureArrays.containsKey(textureName)) return loadedTextureArrays.get(textureName);
+		
+		Pixmap[] pixmaps = new Pixmap[textures.length];
+		for (int i = 0; i < textures.length; i++)
+		{
+			pixmaps[i] = new Pixmap(Gdx.files.internal(textures[i]));
+		}
+		
+		TextureArray texArr = new TextureArray(pixmaps);
+		
+		if (filter != null) texArr.setFilter(filter, filter);
+		if (wrap != null) texArr.setWrap(wrap, wrap);
+		
+		loadedTextureArrays.put(textureName, texArr);
+		
+		return texArr;
+	}
 
+	private static final HashMap<String, HashMap<String, JsonValue>> loadedGrammars = new HashMap<String, HashMap<String, JsonValue>>();
+	public static HashMap<String, JsonValue> loadGrammar(String file)
+	{
+		if (loadedGrammars.containsKey(file)) return loadedGrammars.get(file);
+		
+		String contents = Gdx.files.internal(file).readString();
+		JsonValue root = new JsonReader().parse(contents);
+		HashMap<String, JsonValue> methodTable = new HashMap<String, JsonValue>();
+		
+		VolumePartitioner.loadImportsAndBuildMethodTable(new Array<String>(false, 16), root, methodTable, "", new HashMap<String, String>(), true);
+		
+		loadedGrammars.put(file, methodTable);
+		
+		return methodTable;
+	}
 	
 	private static final HashMap<String, float[][]> cachedVertexArrays = new HashMap<String, float[][]>();
 	public static float[][] getVertexArray(String name)

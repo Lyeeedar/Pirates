@@ -13,6 +13,7 @@ import com.Lyeeedar.Util.FileUtils;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureArray;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -21,13 +22,13 @@ public class ChunkedTerrain implements Queueable
 {
 	public final Mesh mesh;
 	public final int primitive_type;
-	public final Texture[] textures;
+	public final TextureArray[] textures;
 	public final Vector3 colour;
 	public final int type;
 	public final Matrix4 model_matrix = new Matrix4();
 	public final String name;
 	
-	public ChunkedTerrain(String name, Mesh mesh, int primitive_type, Texture[] textures, Vector3 colour, int type)
+	public ChunkedTerrain(String name, Mesh mesh, int primitive_type, TextureArray[] textures, Vector3 colour, int type)
 	{
 		this.mesh = mesh;
 		this.primitive_type = primitive_type;
@@ -66,7 +67,7 @@ public class ChunkedTerrain implements Queueable
 
 	@Override
 	public Queueable copy() {
-		return new TexturedMesh(name, mesh, primitive_type, textures, colour, type);
+		return new ChunkedTerrain(name, mesh, primitive_type, textures, colour, type);
 	}
 
 	@Override

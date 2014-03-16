@@ -4,11 +4,13 @@ import java.util.PriorityQueue;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
+import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureArray;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -16,16 +18,36 @@ import com.badlogic.gdx.utils.Pool;
 
 public class ChunkedTerrainBatch implements Batch 
 {	
+	public final Texture[] noise;
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
 	private final boolean simpleRender;
 
 	private ShaderProgram shader;
-		
+	
 	public ChunkedTerrainBatch(boolean simpleRender)
 	{
 		this.simpleRender = simpleRender;
+		if (!simpleRender)
+		{
+			noise = new Texture[2];
+			
+			for (int i = 0; i < 2; i++)
+			{
+				noise[i] = ImageUtils.simplexNoiseTexture(64*(2*(i+1)), i, ("Texture Noise!"+i).hashCode());
+			}
+		}
+		else
+		{
+			noise = null;
+		}
+	}
+	
+	public ChunkedTerrainBatch(boolean simpleRender, Texture[] noise)
+	{
+		this.simpleRender = simpleRender;
+		this.noise = noise;
 	}
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
@@ -49,8 +71,14 @@ public class ChunkedTerrainBatch implements Batch
 		if (!simpleRender) shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
 		if (!simpleRender) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
 		if (!simpleRender) shader.setUniformf("u_viewPos", cam.position);
+		if (!simpleRender) shader.setUniformf("u_triplanarScaling", 10);
+		if (!simpleRender) for (int i = 0; i < noise.length; i++)
+		{
+			noise[i].bind(i);
+			shader.setUniformi("u_noise"+i, i);
+		}
 		
-		if (!simpleRender) lights.applyLights(shader, 7);
+		if (!simpleRender) lights.applyLights(shader, 10);
 
 		while (!instances.isEmpty())
 		{
@@ -63,8 +91,9 @@ public class ChunkedTerrainBatch implements Batch
 			{
 				for (int i = 0; i < bi.textures.length; i++)
 				{
-					bi.textures[i].bind(i);
-					shader.setUniformi("u_texture"+i, i);
+					bi.textures[i].bind(i+noise.length);
+					shader.setUniformi("u_texture"+i, i+noise.length);
+					//shader.setUniformi("u_texture"+i+"Levels", bi.textures[i].layers);
 				}
 				textureHash = bi.texHash;
 			}
@@ -92,7 +121,7 @@ public class ChunkedTerrainBatch implements Batch
 		return shader;
 	}
 	
-	public void add(Mesh mesh, int primitiveType, Texture[] textures, Vector3 colour, Matrix4 model_matrix)
+	public void add(Mesh mesh, int primitiveType, TextureArray[] textures, Vector3 colour, Matrix4 model_matrix)
 	{
 		if (cam == null) return;
 		
@@ -105,18 +134,19 @@ public class ChunkedTerrainBatch implements Batch
 		private static final float tolerance = 0.01f;
 		public Mesh mesh;
 		private float dist;
-		public Texture[] textures;
+		public TextureArray[] textures;
 		public Vector3 colour = new Vector3();
 		public Matrix4 model_matrix = new Matrix4();
 		public int primitiveType;
 		public int texHash;
 		
-		public BatchedInstance set(Mesh mesh, int primitiveType, Texture[] textures, Vector3 colour, Matrix4 model_matrix, float dist)
+		public BatchedInstance set(Mesh mesh, int primitiveType, TextureArray[] textures, Vector3 colour, Matrix4 model_matrix, float dist)
 		{			
 			this.mesh = mesh;
 			this.primitiveType = primitiveType;
 			this.textures = textures;
-			this.texHash = textures[0].hashCode();
+			this.texHash = 0;
+			for (TextureArray ta : textures) texHash += ta.hashCode();
 			if (colour != null) this.colour.set(colour);
 			else this.colour.set(1.0f, 1.0f, 1.0f);
 			this.model_matrix.set(model_matrix);

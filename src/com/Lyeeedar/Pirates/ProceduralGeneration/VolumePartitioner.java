@@ -686,7 +686,7 @@ public class VolumePartitioner
 				mesh = FileUtils.loadMesh(meshName);
 			}
 
-			data = new ModelBatchData(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureArray(new String[]{textureName}), false, false, useTriplanarSampling, triplanarScale);
+			data = new ModelBatchData(mesh, GL20.GL_TRIANGLES, FileUtils.getTextureGroup(new String[]{textureName}), false, false, useTriplanarSampling, triplanarScale);
 			FileUtils.storeModelBatchData(mbname, data);
 		}
 		return data;
@@ -760,7 +760,7 @@ public class VolumePartitioner
 		Pools.free(temp);
 	}
 
-	private static void loadImportsAndBuildMethodTable(Array<String> importedFiles, JsonValue root, HashMap<String, JsonValue> methodTable, String fileName, HashMap<String, String> renameTable)
+	public static void loadImportsAndBuildMethodTable(Array<String> importedFiles, JsonValue root, HashMap<String, JsonValue> methodTable, String fileName, HashMap<String, String> renameTable, boolean addMain)
 	{
 		JsonValue imports = root.get("Imports");
 		if (imports != null)
@@ -778,7 +778,7 @@ public class VolumePartitioner
 					String contents = Gdx.files.internal(file).readString();
 					JsonValue nroot = new JsonReader().parse(contents);
 					
-					loadImportsAndBuildMethodTable(importedFiles, nroot, methodTable, nfileName, renameTable);
+					loadImportsAndBuildMethodTable(importedFiles, nroot, methodTable, nfileName, renameTable, false);
 				}
 			}
 		}
@@ -786,7 +786,14 @@ public class VolumePartitioner
 		JsonValue current = root.child;
 		while(current != null)
 		{
-			if (current.name.equalsIgnoreCase("Main") || current.name.equalsIgnoreCase("Imports"))
+			if (current.name.equalsIgnoreCase("Main"))
+			{
+				if (addMain)
+				{
+					methodTable.put(current.name, current);
+				}
+			}
+			else if (current.name.equalsIgnoreCase("Imports"))
 			{
 				
 			}
@@ -822,12 +829,8 @@ public class VolumePartitioner
 	
 	public static VolumePartitioner load(String file)
 	{
-		String contents = Gdx.files.internal(file).readString();
-		JsonValue root = new JsonReader().parse(contents);
-		JsonValue main = root.get("Main");
-		HashMap<String, JsonValue> methodTable = new HashMap<String, JsonValue>();
-		
-		loadImportsAndBuildMethodTable(new Array<String>(false, 16), root, methodTable, "", new HashMap<String, String>());
+		HashMap<String, JsonValue> methodTable = FileUtils.loadGrammar(file);
+		JsonValue main = methodTable.get("Main");
 
 		return new VolumePartitioner(new Vector3(), new Vector3(), main, methodTable, null);
 	}

@@ -32,7 +32,7 @@ public class Clouds {
 		this.cloudTex = new Texture[4];
 		for (int i = 0; i < 4; i++)
 		{
-			cloudTex[i] = getCloudTex(64*(2*(i+1)), i);
+			cloudTex[i] = ImageUtils.simplexNoiseTexture(64*(2*(i+1)), i, ("CloudsAreAwesome!"+i).hashCode());
 		}
 		
 		this.mesh = Shapes.getCurvedPlaneMesh((int) GLOBALS.FOG_MAX+2000, 100, 0, 1, false);
@@ -44,29 +44,6 @@ public class Clouds {
 		if (!shader.isCompiled()) {
 			System.err.println(shader.getLog());
 		}
-	}
-	
-	public Texture getCloudTex(int size, float layer)
-	{
-		OctaveGenerator noise = new SimplexOctaveGenerator(("CloudsAreAwesome!"+layer).hashCode(), 1);
-		noise.setScale(0.1f);
-		
-		Color[][] grid = new Color[size][size];
-		for (int x = 0; x < size; x++)
-		{
-			for (int y = 0; y < size; y++)
-			{
-				float col = (float) ((noise.noise(x, layer, y, 2, 0.5f, true)+1.0f)/2.0f);
-				grid[x][y] = new Color(1, 1, 1, col);
-			}
-		}
-		
-		Pixmap pixmap = ImageUtils.arrayToPixmap(grid);
-		Texture tex = ImageUtils.PixmapToTexture(pixmap);
-		tex.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
-		tex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		
-		return tex;
 	}
 	
 	public float cloudCover = 0.5f;

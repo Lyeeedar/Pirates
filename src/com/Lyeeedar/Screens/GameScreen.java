@@ -117,6 +117,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.TextureArray;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -189,11 +190,18 @@ public class GameScreen extends AbstractScreen {
 		//rw.add(veggieCam.renderObject, BulletWorld.FILTER_GHOST, BulletWorld.FILTER_RENDER);
 		
 		Texture sand = FileUtils.loadTexture("data/textures/sand.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
-		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		Texture grass = FileUtils.loadTexture("data/textures/grass.png", true, TextureFilter.Nearest, TextureWrap.Repeat);	
 		Texture dirt = FileUtils.loadTexture("data/textures/road.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
 		Texture rock = FileUtils.loadTexture("data/textures/rock.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		Texture stone01 = FileUtils.loadTexture("data/textures/stone/stone01.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
 		Texture stone03 = FileUtils.loadTexture("data/textures/stone/stone03.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		
+		TextureArray sandArr = FileUtils.loadTextureArray(new String[]{"data/textures/sand.png", "data/textures/sand.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		TextureArray grassArr = FileUtils.loadTextureArray(new String[]{"data/textures/grass01.png", "data/textures/grass03.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		TextureArray roadArr = FileUtils.loadTextureArray(new String[]{"data/textures/road.png", "data/textures/road.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+		TextureArray rockArr = FileUtils.loadTextureArray(new String[]{"data/textures/rock.png", "data/textures/rock.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		TextureArray stone01Arr = FileUtils.loadTextureArray(new String[]{"data/textures/stone/stone01.png", "data/textures/stone/stone01.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
+		TextureArray stone03Arr = FileUtils.loadTextureArray(new String[]{"data/textures/stone/stone03.png", "data/textures/stone/stone03.png"}, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);	
 		
 		Plane plane = new Plane(new Vector3(0, 1, 0), new Vector3(0, 0, 0));
 		btCollisionShape planeShape = new btStaticPlaneShape(plane.normal, plane.d);
@@ -293,7 +301,7 @@ public class GameScreen extends AbstractScreen {
 		Building[] buildings = {new Building(5, 5, "data/grammar/house.json", (byte) 4), new Building(1, 5, "data/grammar/house.json", (byte) 4), new Building(2, 4, "data/grammar/house.json", (byte) 4), new Building(3, 3, "data/grammar/house.json", (byte) 5), new Building(7, 7, "data/grammar/house.json", (byte) 5), new Building(4, 2, "data/grammar/house.json", (byte) 5)};
 		for (Landmark landmark : landmarks)
 		{			
-			SocietyGenerator.fillVillage(landmark, buildings, 1337, (byte) 3, (byte) 0);
+			SocietyGenerator.fillVillage(landmark, buildings, 1337, (byte) 3, (byte) -1);
 			
 			Byte[][] grid = landmark.grid;
 			for (int x = 0; x < grid.length; x++)
@@ -317,7 +325,7 @@ public class GameScreen extends AbstractScreen {
 				chunk.processFaces(landmarks, x*chuckSpacing, z*chuckSpacing);
 				
 				Mesh voxels = chunk.toMesh();
-				ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new Texture[]{grass, sand, rock, dirt, stone01, stone03}, new Vector3(1, 1, 1), 1);
+				ChunkedTerrain voxelMesh = new ChunkedTerrain("voxels", voxels, GL20.GL_TRIANGLES, new TextureArray[]{grassArr, sandArr, rockArr, roadArr, stone01Arr, stone03Arr}, new Vector3(1, 1, 1), 1);
 				Entity voxelEntity = new Entity(true, new PositionalData());
 				voxelEntity.readOnlyRead(PositionalData.class).position.set(x*chuckSpacing*scale, 0, z*chuckSpacing*scale);
 				voxelEntity.addRenderable(voxelMesh, new Matrix4());
@@ -470,7 +478,7 @@ public class GameScreen extends AbstractScreen {
 		
 		player.setAI(btree);
 
-		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		player.addRenderable(am, new Matrix4());
 		pmodel = am;
 		am.setDetailController(new DetailController());
@@ -717,7 +725,7 @@ public class GameScreen extends AbstractScreen {
 		ge.readOnlyRead(StatusData.class).currentHealth = 100;
 		ge.readOnlyRead(StatusData.class).blocking = false;
 		
-		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureArray(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		ge.addRenderable(gam, new Matrix4());
 				
 		ATTACK_STAGE[] gwattacks = {

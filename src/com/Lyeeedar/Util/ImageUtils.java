@@ -5,11 +5,15 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.OctaveGenerator;
+import com.Lyeeedar.Pirates.ProceduralGeneration.Noise.SimplexOctaveGenerator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
@@ -26,6 +30,29 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.BufferUtils;
 
 public final class ImageUtils {
+	
+	public static Texture simplexNoiseTexture(int size, float height, long seed)
+	{
+		OctaveGenerator noise = new SimplexOctaveGenerator(seed, 1);
+		noise.setScale(0.1f);
+		
+		Color[][] grid = new Color[size][size];
+		for (int x = 0; x < size; x++)
+		{
+			for (int y = 0; y < size; y++)
+			{
+				float col = (float) ((noise.noise(x, height, y, 2, 0.5f, true)+1.0f)/2.0f);
+				grid[x][y] = new Color(1, 1, 1, col);
+			}
+		}
+		
+		Pixmap pixmap = ImageUtils.arrayToPixmap(grid);
+		Texture tex = ImageUtils.PixmapToTexture(pixmap);
+		tex.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
+		tex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		
+		return tex;
+	}
 	
 	public static ArrayList<BufferedImage> splitImage(BufferedImage image, int numx, int numy)
 	{

@@ -78,14 +78,15 @@ public class SocietyGenerator {
 			for (int[] o : offsets)
 			{
 				final Building building = buildings[ran.nextInt(buildings.length)].copy();
-				int px = p[0] + o[0]*(building.width/2 + 1);
-				int py = p[1] + o[1]*(building.height/2 + 1);
+				int px = p[0] + o[0]*(building.w2 + 1);
+				int py = p[1] + o[1]*(building.h2 + 1);
 				building.rot.setToRotation(0, 1, 0, o[2]);
+				building.resetGrid();
 				building.x = px;
 				building.y = py;
-				if (check(grid, px, py, building))
+				if (check(grid, building, emptyval))
 				{
-					fill(grid, (byte) building.lotVal, px, py, building);
+					fill(grid, (byte) building.lotVal, building);
 					AStarPathfind<Byte> pathFind = new AStarPathfind<Byte>(grid, px, py, p[0], p[1], new ByteHeuristic());
 					int[][] path = pathFind.getPath();
 					for (int[] pp : path)
@@ -132,28 +133,35 @@ public class SocietyGenerator {
 		return array;
 	}
 	
-	public static boolean check(Byte[][] grid, final int x, final int y, final Building building)
+	public static boolean check(Byte[][] grid, final Building building, final byte emptyval)
 	{
-		building.reset();
-		Vector3 pos;
-		while ((pos = building.nextPos()) != null)
+		for (int ix = 0; ix < building.len; ix++)
 		{
-			pos.add(x, 0, y);
-			if (pos.x < 0 || pos.x >= grid.length) return false;
-			if (pos.z < 0 || pos.z >= grid[0].length) return false;
-			if (grid[(int) pos.x][(int) pos.z] != 0) return false;
+			for (int iy = 0; iy < building.len; iy++)
+			{
+				int x = building.x-building.len/2+ix;
+				int y = building.y-building.len/2+iy;
+				
+				if (x < 0 || x >= grid.length || y < 0 || y >= grid[0].length) return false;
+				
+				if (building.grid[ix][ix] && grid[x][y] != emptyval) return false;
+			}
 		}
+		
 		return true;
 	}
 	
-	public static void fill(Byte[][] grid, final byte num, final int x, final int y, final Building building)
+	public static void fill(Byte[][] grid, final byte num, final Building building)
 	{
-		building.reset();
-		Vector3 pos;
-		while ((pos = building.nextPos()) != null)
+		for (int ix = 0; ix < building.len; ix++)
 		{
-			pos.add(x, 0, y);
-			grid[(int) pos.x][(int) pos.z] = num;
+			for (int iy = 0; iy < building.len; iy++)
+			{
+				int x = building.x-building.len/2+ix;
+				int y = building.y-building.len/2+iy;
+				
+				if (building.grid[ix][ix]) grid[x][y] = building.lotVal;
+			}
 		}
 	}
 	
@@ -164,7 +172,9 @@ public class SocietyGenerator {
 		l.addEntrance(29, 0);
 		l.addEntrance(0,  0);
 		l.addEntrance(29,  29);
-		Building[] b = {new Building(5, 5, "", (byte) 1), new Building(1, 5, "", (byte) 1), new Building(2, 4, "", (byte) 1), new Building(3, 3, "", (byte) 1), new Building(7, 7, "", (byte) 1), new Building(4, 2, "", (byte) 1)};
+		//Building[] b = {new Building(50, 50, "", (byte) 1), new Building(10, 50, "", (byte) 1), new Building(20, 40, "", (byte) 1), new Building(30, 30, "", (byte) 1), new Building(70, 70, "", (byte) 1), new Building(40, 20, "", (byte) 1)};
+		
+		Building[] b = {new Building(5, 5, "", (byte) 1)};
 		
 		fillVillage(l, b, 1337, (byte) 1, (byte) 0);
 		

@@ -1705,13 +1705,13 @@ public class Entity {
 						textures.addAll(equip.equipmentGraphics.textureNames);
 					}
 				}
-				am.textures = FileUtils.getTextureArray(textures);
+				am.textures = FileUtils.getTextureGroup(textures);
 				textures.clear();
 				Pools.free(textures);
 
 				if (e.equipmentGraphics != null) for (EquipmentModel em : e.equipmentGraphics.models)
 				{
-					AnimatedModel nam = new AnimatedModel(em.modelName, FileUtils.loadModel(em.modelName), FileUtils.getTextureArray(em.textureNames), em.colour, em.defaultAnim);
+					AnimatedModel nam = new AnimatedModel(em.modelName, FileUtils.loadModel(em.modelName), FileUtils.getTextureGroup(em.textureNames), em.colour, em.defaultAnim);
 					am.attach(em.nodeName, nam, em.transform, em.modelName+em.nodeName);
 					e.addRequiredQueueables(nam);
 				}
@@ -1746,7 +1746,7 @@ public class Entity {
 						textures.addAll(equip.equipmentGraphics.textureNames);
 					}
 				}
-				am.textures = FileUtils.getTextureArray(textures);
+				am.textures = FileUtils.getTextureGroup(textures);
 				textures.clear();
 				Pools.free(textures);
 
