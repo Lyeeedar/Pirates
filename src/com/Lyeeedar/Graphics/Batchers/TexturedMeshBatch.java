@@ -3,6 +3,7 @@ package com.Lyeeedar.Graphics.Batchers;
 import java.util.PriorityQueue;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -16,16 +17,16 @@ import com.badlogic.gdx.utils.Pool;
 
 public class TexturedMeshBatch implements Batch 
 {	
-	private final boolean simpleRender;
+	private final RenderType renderType;
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
 
 	private ShaderProgram shader;
 		
-	public TexturedMeshBatch(boolean simpleRender)
+	public TexturedMeshBatch(RenderType renderType)
 	{
-		this.simpleRender = simpleRender;
+		this.renderType = renderType;
 	}
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
@@ -45,22 +46,22 @@ public class TexturedMeshBatch implements Batch
 		shader.begin();
 		
 		shader.setUniformMatrix("u_pv", cam.combined);
-		shader.setUniformf("fog_col", lights.ambientColour);
-		shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
-		shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
-		shader.setUniformf("u_viewPos", cam.position);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_col", lights.ambientColour);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("u_viewPos", cam.position);
 		
-		lights.applyLights(shader, 4);
+		if (renderType == RenderType.FORWARD) lights.applyLights(shader, 4);
 
 		while (!instances.isEmpty())
 		{
 			BatchedInstance bi = instances.poll();
 			
 			shader.setUniformMatrix("u_mm", bi.model_matrix);
-			shader.setUniformi("u_texNum", bi.textures.length);
+			if (renderType != RenderType.SIMPLE) shader.setUniformi("u_texNum", bi.textures.length);
 			shader.setUniformf("u_colour", bi.colour);
 
-			if (textureHash != bi.texHash)
+			if (renderType != RenderType.SIMPLE && textureHash != bi.texHash)
 			{
 				for (int i = 0; i < bi.textures.length; i++)
 				{
@@ -107,10 +108,24 @@ public class TexturedMeshBatch implements Batch
 	
 	public ShaderProgram createShader()
 	{
-		StringBuilder prefix = new StringBuilder();
+		String vert = "";
+		String frag = "";
 		
-		String vert = prefix.toString() + Gdx.files.internal("data/shaders/textured_mesh.vertex.glsl").readString();
-		String frag = simpleRender ? Gdx.files.internal("data/shaders/textured_mesh_simple.fragment.glsl").readString() : Gdx.files.internal("data/shaders/textured_mesh.fragment.glsl").readString();
+		if (renderType == RenderType.SIMPLE)
+		{
+			vert = Gdx.files.internal("data/shaders/forward/textured_mesh.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/textured_mesh_simple.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.FORWARD)
+		{
+			vert = Gdx.files.internal("data/shaders/forward/textured_mesh.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/textured_mesh.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.DEFERRED)
+		{
+			vert = Gdx.files.internal("data/shaders/deferred/textured_mesh.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/deferred/textured_mesh.fragment.glsl").readString();
+		}
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	

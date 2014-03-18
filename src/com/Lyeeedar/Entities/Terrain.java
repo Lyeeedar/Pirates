@@ -62,8 +62,8 @@ public class Terrain extends Entity {
 		this.terrain = Shapes.getArea(255, scale);
 		
 		this.shader = new ShaderProgram(
-				Gdx.files.internal("data/shaders/terrain.vertex.glsl"),
-				Gdx.files.internal("data/shaders/terrain.fragment.glsl")
+				Gdx.files.internal("data/shaders/forward/terrain.vertex.glsl"),
+				Gdx.files.internal("data/shaders/forward/terrain.fragment.glsl")
 				);
 		if (!shader.isCompiled()) {
 			System.err.println(shader.getLog());

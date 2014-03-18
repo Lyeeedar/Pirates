@@ -6,6 +6,7 @@ import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -104,8 +105,8 @@ public class SilhouetteEffect extends PostProcessingEffect {
 	@Override
 	public void create() 
 	{
-		TexturedMeshBatch renderer = new TexturedMeshBatch(true);
-		AnimatedModelBatch modelBatch = new AnimatedModelBatch(12, true);
+		TexturedMeshBatch renderer = new TexturedMeshBatch(RenderType.SIMPLE);
+		AnimatedModelBatch modelBatch = new AnimatedModelBatch(12, RenderType.SIMPLE);
 		
 		batches = new HashMap<Class, Batch>();
 		batches.put(TexturedMeshBatch.class, renderer);

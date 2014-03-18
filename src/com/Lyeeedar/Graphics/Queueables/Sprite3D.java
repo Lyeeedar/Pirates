@@ -443,8 +443,6 @@ public class Sprite3D implements Queueable {
 			region.setRegion(frame*spriteWidth, (animation+direction)*spriteHeight, spriteWidth, spriteHeight);
 			decal.setTextureRegion(region);
 		}
-
-		lights.getLight(position, finalColour).scl(colour);
 	}
 
 	public static final class SPRITESHEET implements Comparable<SPRITESHEET>

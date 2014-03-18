@@ -57,8 +57,9 @@ public class FrameBuffer implements Disposable {
 	/** the frame buffers **/
 	private final static Map<Application, Array<FrameBuffer>> buffers = new HashMap<Application, Array<FrameBuffer>>();
 
-	/** the color buffer texture **/
-	protected Texture colorTexture;
+	/** the color buffer textures **/
+	protected Texture[] colorTextures;
+	private final IntBuffer colorDrawBuffers;
 	
 	/** the depth buffer texture **/
 	protected Texture depthTexture;
@@ -93,18 +94,24 @@ public class FrameBuffer implements Disposable {
 	 * @param hasDepth whether to attach a depth buffer
 	 * @throws GdxRuntimeException in case the FrameBuffer could not be created */
 	public FrameBuffer (Pixmap.Format format, int width, int height, boolean hasDepth) {
-		this(format, width, height, true, hasDepth);
+		this(format, width, height, 1, hasDepth);
 	}
 	
-	public FrameBuffer (Pixmap.Format format, int width, int height, boolean hasColour, boolean hasDepth) {
+	public FrameBuffer (Pixmap.Format format, int width, int height, int numColour, boolean hasDepth) {
 		this.width = width;
 		this.height = height;
 		this.format = format;
 		this.hasDepth = hasDepth;
-		this.hasColour = hasColour;
+		this.colorTextures = new Texture[numColour];
+		this.hasColour = numColour > 0;
 		build();
 
 		addManagedFrameBuffer(Gdx.app, this);
+		
+		colorDrawBuffers = BufferUtils.newIntBuffer(numColour);
+		for (int i = 0; i < numColour; ++i)
+			colorDrawBuffers.put(getColorAttachmentVal(i));
+		colorDrawBuffers.position(0);
 	}
 	
 	/**
@@ -114,9 +121,12 @@ public class FrameBuffer implements Disposable {
 		
 		if (hasColour)
 		{
-			colorTexture = new Texture(width, height, format);
-			colorTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-			colorTexture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+			for (int i = 0; i < colorTextures.length; i++)
+			{
+				colorTextures[i] = new Texture(width, height, format);
+				colorTextures[i].setFilter(TextureFilter.Linear, TextureFilter.Linear);
+				colorTextures[i].setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+			}
 		}
 		
 		if (hasDepth)
@@ -125,6 +135,27 @@ public class FrameBuffer implements Disposable {
 			depthTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 			depthTexture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
 		}
+	}
+	
+	private int getColorAttachmentVal(int i)
+	{
+		if (i == 0) return GL30.GL_COLOR_ATTACHMENT0;
+		else if (i == 1) return GL30.GL_COLOR_ATTACHMENT1;
+		else if (i == 2) return GL30.GL_COLOR_ATTACHMENT2;
+		else if (i == 3) return GL30.GL_COLOR_ATTACHMENT3;
+		else if (i == 4) return GL30.GL_COLOR_ATTACHMENT4;
+		else if (i == 5) return GL30.GL_COLOR_ATTACHMENT5;
+		else if (i == 6) return GL30.GL_COLOR_ATTACHMENT6;
+		else if (i == 7) return GL30.GL_COLOR_ATTACHMENT7;
+		else if (i == 8) return GL30.GL_COLOR_ATTACHMENT8;
+		else if (i == 9) return GL30.GL_COLOR_ATTACHMENT9;
+		else if (i == 10) return GL30.GL_COLOR_ATTACHMENT10;
+		else if (i == 11) return GL30.GL_COLOR_ATTACHMENT11;
+		else if (i == 12) return GL30.GL_COLOR_ATTACHMENT12;
+		else if (i == 13) return GL30.GL_COLOR_ATTACHMENT13;
+		else if (i == 14) return GL30.GL_COLOR_ATTACHMENT14;
+		else if (i == 15) return GL30.GL_COLOR_ATTACHMENT15;
+		else throw new RuntimeException("Too many color attachments to Frame Buffer!");
 	}
 
 	private void build () {
@@ -153,8 +184,11 @@ public class FrameBuffer implements Disposable {
 		
 		gl.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferHandle);
 		if (hasColour) {
-			gl.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL30.GL_TEXTURE_2D,
-			colorTexture.getTextureObjectHandle(), 0);
+			for (int i = 0; i < colorTextures.length; i++)
+			{
+				gl.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, getColorAttachmentVal(i), GL30.GL_TEXTURE_2D,
+						colorTextures[i].getTextureObjectHandle(), 0);
+			}
 		}
 		if (hasDepth) {
 			gl.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_TEXTURE_2D, 
@@ -167,7 +201,10 @@ public class FrameBuffer implements Disposable {
 		gl.glBindFramebuffer(GL30.GL_FRAMEBUFFER, defaultFramebufferHandle);
 
 		if (result != GL30.GL_FRAMEBUFFER_COMPLETE) {
-			if (hasColour) colorTexture.dispose();
+			if (hasColour) 
+			{
+				for (int i = 0; i < colorTextures.length; i++) colorTextures[i].dispose();
+			}
 			if (hasDepth) {
 				depthTexture.dispose();
 			}
@@ -195,7 +232,7 @@ public class FrameBuffer implements Disposable {
 
 		IntBuffer handle = BufferUtils.newIntBuffer(1);
 
-		if (hasColour) colorTexture.dispose();
+		if (hasColour) for (int i = 0; i < colorTextures.length; i++) colorTextures[i].dispose();
 		if (hasDepth) {
 			depthTexture.dispose();
 		}
@@ -212,6 +249,7 @@ public class FrameBuffer implements Disposable {
 	public void begin () {
 		Gdx.graphics.getGL30().glViewport(0, 0, width, height);
 		Gdx.graphics.getGL30().glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferHandle);
+		Gdx.gl30.glDrawBuffers(colorDrawBuffers.capacity(), colorDrawBuffers);
 	}
 
 	/** Unbinds the framebuffer, all drawing will be performed to the normal framebuffer from here on. */
@@ -219,11 +257,17 @@ public class FrameBuffer implements Disposable {
 		Gdx.graphics.getGL30().glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.graphics.getGL30().glBindFramebuffer(GL30.GL_FRAMEBUFFER, defaultFramebufferHandle);
 	}
-
+	
 	/** @return the color buffer texture */
 	public Texture getColorBufferTexture () 
 	{
-		return colorTexture;
+		return getColorBufferTexture(0);
+	}
+
+	/** @return the color buffer texture */
+	public Texture getColorBufferTexture (int index) 
+	{
+		return colorTextures[index];
 	}
 	
 	public Texture getDepthBufferTexture()

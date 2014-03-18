@@ -1,5 +1,6 @@
 package com.Lyeeedar.Graphics;
 
+import com.Lyeeedar.Graphics.Lights.DirectionalLight;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.FollowCam;
@@ -35,6 +36,8 @@ public class Weather {
 	private final Vector3 surface = new Vector3(0.0f, 1.0f, 0.9f);
 	private final Vector3 deep = new Vector3(0.0f, 0.0f, 0.2f);
 	
+	public final DirectionalLight sun;
+	
 	public Weather(Vector3 colDay, Vector3 shiftDay, Vector3 colNight, Vector3 shiftNight, Clouds clouds)
 	{
 		this.clouds = clouds;
@@ -46,12 +49,14 @@ public class Weather {
 		box = Shapes.getBoxMesh(1, 1, 1, false, false);
 		
 		skyShader = new ShaderProgram(
-				Gdx.files.internal("data/shaders/sky.vertex.glsl"),
-				Gdx.files.internal("data/shaders/sky.fragment.glsl")
+				Gdx.files.internal("data/shaders/forward/sky.vertex.glsl"),
+				Gdx.files.internal("data/shaders/forward/sky.fragment.glsl")
 				);
 		if (!skyShader.isCompiled()) {
 			System.err.println(skyShader.getLog());
 		}
+		
+		sun = new DirectionalLight(new Vector3(-0.5f, 0.5f, 0.0f), new Vector3());
 	}
 	
 	boolean increase = false;
@@ -64,52 +69,52 @@ public class Weather {
 		
 		if (increase) 
 		{
-			GLOBALS.LIGHTS.directionalLight.direction.y += delta;
+			sun.direction.y += delta;
 			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
+			if (sun.direction.y < 0.0f) 
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.x += delta;
+				sun.direction.x += delta;
 			}
 			else
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.x -= delta;
+				sun.direction.x -= delta;
 			}
 		}
 		else 
 		{
-			GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
+			sun.direction.y -= delta;
 			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
+			if (sun.direction.y < 0.0f) 
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.x += delta;
+				sun.direction.x += delta;
 			}
 			else
 			{
-				GLOBALS.LIGHTS.directionalLight.direction.x -= delta;
+				sun.direction.x -= delta;
 			}
 		}
 				
-		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
-		if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
+		if (sun.direction.y >= 1.0f) increase = false;
+		if (sun.direction.y < -1) increase = true;
 				
-		if (GLOBALS.LIGHTS.directionalLight.direction.y >= 0.1f)
+		if (sun.direction.y >= 0.1f)
 		{
-			GLOBALS.LIGHTS.directionalLight.colour.set(1, 1, 0);
+			sun.colour.set(1, 1, 0);
 			GLOBALS.LIGHTS.ambientColour.set(colDay);
 			cs.set(shiftDay);
 		}
-		else if (GLOBALS.LIGHTS.directionalLight.direction.y <= -0.5f)
+		else if (sun.direction.y <= -0.5f)
 		{
-			GLOBALS.LIGHTS.directionalLight.colour.set(0, 0, 0);
+			sun.colour.set(0, 0, 0);
 			GLOBALS.LIGHTS.ambientColour.set(colNight);
 			cs.set(shiftNight);
 		}
 		else
 		{
-			float alpha = 1.0f - (GLOBALS.LIGHTS.directionalLight.direction.y+0.5f) / 0.6f;
+			float alpha = 1.0f - (sun.direction.y+0.5f) / 0.6f;
 			ImageUtils.lerp(colDay, colNight, alpha, GLOBALS.LIGHTS.ambientColour);
 			ImageUtils.lerp(shiftDay, shiftNight, alpha, cs);
-			GLOBALS.LIGHTS.directionalLight.colour.set(1.0f-alpha, 1.0f-alpha, 0);
+			sun.colour.set(1.0f-alpha, 1.0f-alpha, 0);
 		}
 		
 		if (cam.underwater)
@@ -119,7 +124,7 @@ public class Weather {
 			depth = depth * depth;
 			ImageUtils.lerp(surface, deep, depth, tmpVec);
 			GLOBALS.LIGHTS.ambientColour.scl(tmpVec);
-			GLOBALS.LIGHTS.directionalLight.colour.scl(1.0f - depth);
+			sun.colour.scl(1.0f - depth);
 		}
 		
 //		
@@ -156,8 +161,8 @@ public class Weather {
 		mat41.set(cam.combined).mul(mat42.setToTranslation(cam.position));
 		skyShader.setUniformMatrix("u_mvp", mat41);
 		
-		skyShader.setUniformf("sun_dir", lights.directionalLight.direction);
-		skyShader.setUniformf("sun_col", lights.directionalLight.colour);
+		skyShader.setUniformf("sun_dir", sun.direction);
+		skyShader.setUniformf("sun_col", sun.colour);
 		skyShader.setUniformf("sun_size", 0.008f);
 		
 		skyShader.setUniformf("sky_col", lights.ambientColour);

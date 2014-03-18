@@ -451,13 +451,6 @@ public class CharacterScreen extends AbstractScreen
 
 		return image;
 	}
-	
-	@Override
-	public void drawSkybox(float delta)
-	{
-		// TODO Auto-generated method stub
-		
-	}
 
 	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches)

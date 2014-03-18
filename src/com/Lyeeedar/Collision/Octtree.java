@@ -11,14 +11,20 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 
-public class Octtree <E> {
+public class Octtree <E> 
+{
+	public static final int MASK_SHADOW_CASTING = 1 << 1;
 	
-	public static final int MASK_RENDER = 1 << 1;
+	// Entity bitmasks
 	public static final int MASK_AI = 1 << 2;
 	public static final int MASK_ENTITY = 1 << 3;
 	public static final int MASK_SPELL = 1 << 4;
 	public static final int MASK_ITEM = 1 << 5;
-	public static final int MASK_SHADOW_CASTING = 1 << 6;
+	public static final int MASK_RENDER = 1 << 6;
+	
+	// Light bitmasks
+	public static final int MASK_DIRECTION_LIGHT = 1 << 2;
+	public static final int MASK_POINT_LIGHT = 1 << 3;
 	
 	private static final int CASCADE_THRESHOLD = 10;
 	
@@ -290,6 +296,7 @@ public class Octtree <E> {
 		public CollisionType isIntersecting(OcttreeBox box);
 		public void setPosition(Vector3 pos);
 		public void setRotation(Vector3 rot);
+		public Vector3 getPosition();
 	}
 	
 	public static class OcttreeBox implements OcttreeShape
@@ -346,6 +353,12 @@ public class Octtree <E> {
 		public void setRotation(Vector3 rot)
 		{
 
+		}
+
+		@Override
+		public Vector3 getPosition()
+		{
+			return pos;
 		}
 	}
 	
@@ -416,6 +429,12 @@ public class Octtree <E> {
 		{
 			frustum.direction.set(rot);
 			frustum.update();
+		}
+
+		@Override
+		public Vector3 getPosition()
+		{
+			return frustum.position;
 		}
 	}
 	

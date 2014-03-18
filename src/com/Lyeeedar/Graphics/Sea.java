@@ -68,8 +68,8 @@ public class Sea {
 		sea = Shapes.getArea(255, scale);
 		
 		seaShader = new ShaderProgram(
-				Gdx.files.internal("data/shaders/sea.vertex.glsl"),
-				Gdx.files.internal("data/shaders/sea.fragment.glsl")
+				Gdx.files.internal("data/shaders/forward/sea.vertex.glsl"),
+				Gdx.files.internal("data/shaders/forward/sea.fragment.glsl")
 				);
 		if (!seaShader.isCompiled()) {
 			System.err.println(seaShader.getLog());

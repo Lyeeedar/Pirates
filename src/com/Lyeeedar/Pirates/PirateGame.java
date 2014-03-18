@@ -41,17 +41,7 @@ public class PirateGame extends Game {
 		
 		GLOBALS.RESOLUTION[0] = Gdx.graphics.getWidth();
 		GLOBALS.RESOLUTION[1] = Gdx.graphics.getHeight();
-		
-		GLOBALS.LIGHTS.ambientColour.set(0.8f, 0.9f, 0.7f);
-		GLOBALS.LIGHTS.directionalLight.colour.set(0.01f, 0.01f, 0.01f);
-		GLOBALS.LIGHTS.directionalLight.direction.set(-0.5f, 0.5f, 0.0f);
-		
-		Light l = new Light(new Vector3(), new Vector3(0.7f, 0.7f, 0.7f), 0.1f);
-		
-		GLOBALS.LIGHTS.enableShadowMapping();
-		
-		GLOBALS.LIGHTS.add(l);
-		
+				
 		screens.put(Screen.GAME, new GameScreen(this));
 		screens.put(Screen.MAINMENU, new MainMenuScreen(this));
 		screens.put(Screen.INVENTORY, new InventoryScreen(this));

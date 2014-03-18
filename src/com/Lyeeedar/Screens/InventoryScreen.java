@@ -517,12 +517,6 @@ public class InventoryScreen extends AbstractScreen {
 	}
 
 	@Override
-	public void drawSkybox(float delta) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void queueRenderables(float delta, HashMap<Class, Batch> batches) {		
 		//GLOBALS.player.queueRenderables(cam, GLOBALS.LIGHTS, delta, modelBatch, decalBatch, trailBatch);
 	}

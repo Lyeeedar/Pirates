@@ -13,6 +13,7 @@ package com.Lyeeedar.Screens;
 import java.util.HashMap;
 
 import com.Lyeeedar.Collision.Octtree.OcttreeBox;
+import com.Lyeeedar.Collision.Octtree.OcttreeFrustum;
 import com.Lyeeedar.Graphics.LineRenderer;
 import com.Lyeeedar.Graphics.Batchers.AnimatedModelBatch;
 import com.Lyeeedar.Graphics.Batchers.Batch;
@@ -24,6 +25,9 @@ import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
+import com.Lyeeedar.Graphics.Renderers.DeferredRenderer;
+import com.Lyeeedar.Graphics.Renderers.ForwardRenderer;
+import com.Lyeeedar.Graphics.Renderers.Renderer;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Util.Controls;
@@ -51,17 +55,10 @@ public abstract class AbstractScreen implements Screen {
 	protected int screen_height;
 
 	protected final SpriteBatch spriteBatch;
-	protected final DecalBatch decalBatch;
-	protected final MotionTrailBatch trailBatch;
-	protected final TexturedMeshBatch renderer;
-	protected final AnimatedModelBatch modelBatch;
-	protected final ParticleEffectBatch particleBatch;
-	protected final ChunkedTerrainBatch terrainBatch;
 	protected final BitmapFont font;
 	protected final Stage stage;
-	protected final PostProcessor postprocessor;
 	
-	protected final HashMap<Class, Batch> batches;
+	protected Renderer renderer;
 	
 	protected final FollowCam cam;
 	protected final Controls controls;
@@ -72,13 +69,8 @@ public abstract class AbstractScreen implements Screen {
 	private long averageFrame;
 	private long averageUpdate;
 	private long averageQueue;
-	private long averageModel;
-	//private long averageTrail;
-	private long averageDecal;
-	private long averageOrthogonal;
-	private long averageParticles;
-	private long averagePost;
-	protected int particleNum;
+	
+	private final OcttreeFrustum octtreeFrustum;
 	
 	public AbstractScreen(PirateGame game)
 	{
@@ -87,43 +79,20 @@ public abstract class AbstractScreen implements Screen {
 		
 		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null), 50);
 		
+		renderer = new DeferredRenderer(cam);
+		
 		font = new BitmapFont();
 		
 		spriteBatch = new SpriteBatch();
-		decalBatch = new DecalBatch(new DiscardCameraGroupStrategy(cam));
-		trailBatch = new MotionTrailBatch();
-		renderer = new TexturedMeshBatch(false);
-		particleBatch = new ParticleEffectBatch();
-		terrainBatch = new ChunkedTerrainBatch(false);
-		modelBatch = new AnimatedModelBatch(12);
-		
-		batches = new HashMap<Class, Batch>();
-		batches.put(TexturedMeshBatch.class, renderer);
-		batches.put(AnimatedModelBatch.class, modelBatch);
-		batches.put(DecalBatcher.class, new DecalBatcher(decalBatch));
-		batches.put(ModelBatcher.class, new ModelBatcher(false));
-		batches.put(MotionTrailBatch.class, trailBatch);
-		batches.put(ParticleEffectBatch.class, particleBatch);
-		batches.put(ChunkedTerrainBatch.class, terrainBatch);
 		
 		stage = new Stage(0, 0, true, spriteBatch);
-		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam);
 		
 		if (GLOBALS.lineRenderer == null) GLOBALS.lineRenderer = new LineRenderer();
 		
-		postprocessor.addEffect(Effect.SSAO);
-		//postprocessor.addEffect(Effect.BLOOM);
-		//postprocessor.addEffect(Effect.SILHOUETTE);
-		postprocessor.addEffect(Effect.UNDERWATER);
-		
-		//postprocessor.addEffect(Effect.DOF);
-		//postprocessor.addEffect(Effect.BLUR);
-		//postprocessor.addEffect(Effect.EDGE_DETECT);
-		
+		octtreeFrustum = new OcttreeFrustum(cam, -1);
 	}
 
 	float[] deltas = new float[10];
-	boolean ssaoToggle = false;
 	
 	@Override
 	public void render(float delta) 
@@ -147,79 +116,17 @@ public abstract class AbstractScreen implements Screen {
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
 		
-		GLOBALS.LIGHTS.sort(cam.position);
-		GLOBALS.LIGHTS.calculateDepthMap(true, cam);
+		GLOBALS.LIGHTS.sort(octtreeFrustum);
 		
 		stage.act(delta);
 		
 		time = System.nanoTime();
-		queueRenderables(delta, batches);
+		queueRenderables(delta, renderer.getBatches());
 		averageQueue += System.nanoTime()-time;
 		averageQueue /= 2;
 		
-		postprocessor.begin();
+		renderer.render();
 		
-		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-		Gdx.gl.glCullFace(GL20.GL_BACK);
-		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		
-		//Gdx.gl.glEnable(GL20.GL_BLEND);
-		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-		
-		time = System.nanoTime();
-		((TexturedMeshBatch) batches.get(TexturedMeshBatch.class)).render(GLOBALS.LIGHTS, cam);
-		((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(GLOBALS.LIGHTS, cam);
-		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
-		((ChunkedTerrainBatch) batches.get(ChunkedTerrainBatch.class)).render(GLOBALS.LIGHTS, cam);
-		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
-		GLOBALS.lineRenderer.render(cam);
-		averageModel += System.nanoTime()-time;
-		averageModel /= 2;
-		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		drawSkybox(delta);
-		((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(GLOBALS.LIGHTS, cam);
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		
-		time = System.nanoTime();
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-		Gdx.gl.glDepthMask(false);
-		((DecalBatcher) batches.get(DecalBatcher.class)).flush();
-		averageDecal += System.nanoTime()-time;
-		averageDecal /= 2;
-		
-		time = System.nanoTime();
-		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(false);
-		((MotionTrailBatch) batches.get(MotionTrailBatch.class)).flush(cam);
-		((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).render(cam);
-		this.particleNum = ((ParticleEffectBatch) batches.get(ParticleEffectBatch.class)).particleNum;
-		averageParticles += System.nanoTime()-time;
-		averageParticles /= 2;
-		
-		Gdx.gl20.glBlendEquation(GL20.GL_FUNC_ADD);
-		
-		time = System.nanoTime();
-		postprocessor.end();
-		averagePost += System.nanoTime()-time;
-		averagePost /= 2;
-		
-		time = System.nanoTime();
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
@@ -227,8 +134,6 @@ public abstract class AbstractScreen implements Screen {
 		drawOrthogonals(delta, spriteBatch);
 		spriteBatch.end();
 		stage.draw();
-		averageOrthogonal += System.nanoTime()-time;
-		averageOrthogonal /= 2;
 
         if (System.currentTimeMillis() - startTime > 1000) {
         	Gdx.app.log("Update", "");
@@ -238,13 +143,13 @@ public abstract class AbstractScreen implements Screen {
 	        Gdx.app.log("	Memory Usage", ""+(Gdx.app.getJavaHeap()/1000000)+" mb");
 	        Gdx.app.log("	Update      ", ""+averageUpdate);
 	        Gdx.app.log("	Queue       ", ""+averageQueue);
-	        Gdx.app.log("	Model       ", ""+averageModel);
-	        Gdx.app.log("	Decal       ", ""+averageDecal);
-	        //Gdx.app.log("	Trail       ", ""+averageTrail);
-	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
-	        Gdx.app.log("	Particles   ", ""+averageParticles);
-	        Gdx.app.log("	No Particles", ""+particleNum);
-	        Gdx.app.log("	PostProcess ", ""+averagePost);
+//	        Gdx.app.log("	Model       ", ""+averageModel);
+//	        Gdx.app.log("	Decal       ", ""+averageDecal);
+//	        Gdx.app.log("	Trail       ", ""+averageTrail);
+//	        Gdx.app.log("	Orthogonal  ", ""+averageOrthogonal);
+//	        Gdx.app.log("	Particles   ", ""+averageParticles);
+//	        Gdx.app.log("	No Particles", ""+particleNum);
+//	        Gdx.app.log("	PostProcess ", ""+averagePost);
 			startTime = System.currentTimeMillis();
 		}
 		
@@ -254,27 +159,6 @@ public abstract class AbstractScreen implements Screen {
         
         averageFrame += System.nanoTime()-frameTime;
 		averageFrame /= 2;
-		
-		if (Gdx.input.isKeyPressed(Keys.NUM_1))
-		{
-			if (!ssaoToggle)
-			{
-				ssaoToggle = true;
-				Array<Effect> effects = postprocessor.getEffectChain();
-				if (effects.contains(Effect.SSAO, true))
-				{
-					effects.removeValue(Effect.SSAO, true);
-				}
-				else
-				{
-					effects.insert(0, Effect.SSAO);
-				}
-			}
-		}
-		else
-		{
-			ssaoToggle = false;
-		}
 	}
 
 	@Override
@@ -297,7 +181,7 @@ public abstract class AbstractScreen implements Screen {
         
 		stage.setViewport(width, height, false);
 		
-		postprocessor.updateBufferSettings(Format.RGBA8888, width, height);
+		renderer.resize(width, height);
 		
 		resized(width, height);
 	}
@@ -307,8 +191,6 @@ public abstract class AbstractScreen implements Screen {
 		spriteBatch.dispose();
 		font.dispose();
 		stage.dispose();
-		trailBatch.dispose();
-		decalBatch.dispose();
 		
 		superDispose();
 	}
@@ -317,8 +199,6 @@ public abstract class AbstractScreen implements Screen {
 	 * Put all the creation of the objects used by the screen in here to avoid reloading everything on a screenswap
 	 */
 	public abstract void create();
-
-	public abstract void drawSkybox(float delta);
 	
 	public abstract void queueRenderables(float delta, HashMap<Class, Batch> batches);
 	

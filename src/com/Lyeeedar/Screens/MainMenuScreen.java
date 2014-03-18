@@ -9,6 +9,7 @@ import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.PirateGame;
 import com.Lyeeedar.Pirates.PirateGame.Screen;
@@ -36,6 +37,7 @@ public class MainMenuScreen extends AbstractScreen {
 	private Table table;
 	private PositionalData pData = new PositionalData();
 	private SkyBox skybox;
+	LightManager lightManager;
 	
 	public MainMenuScreen(PirateGame game)
 	{
@@ -46,6 +48,7 @@ public class MainMenuScreen extends AbstractScreen {
 	public void show() {
 		Gdx.input.setInputProcessor(stage);
 		GLOBALS.SKYBOX = skybox;
+		GLOBALS.LIGHTS = lightManager;
 	}
 
 	@Override
@@ -191,20 +194,12 @@ public class MainMenuScreen extends AbstractScreen {
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.3f, 0.5f), new Terrain(new Texture[]{}, -100.0f, new Terrain.HeightMap[]{}));
 		skybox = new SkyBox(sea, weather);
 		
+		lightManager = new LightManager();
+		lightManager.addLight(weather.sun);
+		
 		pData.position.set(0, 10, 0);
 		((FollowCam)cam).setYAngle(0);
 		
-	}
-	@Override
-	public void drawSkybox(float delta) {
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
-		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
 	}
 
 	@Override

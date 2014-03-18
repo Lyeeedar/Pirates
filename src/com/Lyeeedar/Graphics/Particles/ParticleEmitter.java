@@ -76,15 +76,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 	public String atlasName;
 	// ----- End Emitter parameters ----- //
 
-	// ----- Light ----- //
-	private float lightAttenuation;
-	private float lightPower;
-	private boolean isLightStatic;
-	private Color lightColour;
-	private boolean lightFlicker;
-	private float lightx, lighty, lightz;
-	// ----- End Light ----- //
-
 	// ----- Transient Variables ----- //
 	public transient float distance = 0;
 	private transient static ShaderProgram shader;
@@ -166,8 +157,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-
-		if (light != null) light.position.set(x+lightx, y+lighty, z+lightz);
 	}
 
 	public TimelineValue[] getTimeline(ParticleAttribute pa)
@@ -237,18 +226,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		timelines.put(ParticleAttribute.ROTATIONTYPE, new TimelineValue[]{new TimelineValue(0, 0)});
 	}
 
-	public void addLight(boolean isStatic, float attenuation, float power, Color colour, boolean flicker, float x, float y, float z)
-	{
-		this.lightAttenuation = attenuation;
-		this.lightPower = power;
-		this.isLightStatic = isStatic;
-		this.lightColour = colour;
-		this.lightFlicker = flicker;
-		this.lightx = x;
-		this.lighty = y;
-		this.lightz = z;
-	}
-
 	public void create() 
 	{
 		if (shader == null)
@@ -288,8 +265,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		tmpVec2 = null;
 		if (mesh != null) mesh.dispose();
 		mesh = null;
-		if (light != null) light.delete();
-		light = null;
 		time = 0;
 		if (active != null) Pools.freeAll(active);
 		active = null;
@@ -302,21 +277,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		atlasTexture = null;
 		homeTarget = null;
 		created = false;
-	}
-
-	public void getLight(LightManager lightManager)
-	{
-		if (lightColour == null) return;
-
-		if (light != null)
-		{
-			lightManager.remove(light);
-			light = null;
-		}
-
-		light = new Light(new Vector3(x+lightx, y+lighty, z+lightz), lightColour.cpy(), lightAttenuation);
-
-		lightManager.add(light);
 	}
 
 	public void calculateParticles()
@@ -643,13 +603,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 			}
 			active.add(p);
 		}
-				
-		if (light != null)
-		{
-			light.position.set(x+lightx, y+lighty, z+lightz);
-			if (lightFlicker) light.attenuation = (float) (lightAttenuation *
-					(1-((1-((float)inactive.size / (float)active.size)))/2));
-		}
 
 		radius = 0;
 		
@@ -866,9 +819,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		
 		copy.timelines = timelines;
 
-		if (light != null)
-			copy.addLight(isLightStatic, lightAttenuation, lightPower, lightColour, lightFlicker, lightx, lighty, lightz);
-
 		return copy;
 	}
 
@@ -1050,18 +1000,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 		json.writeValue("blend equation", blendEquation);
 		json.writeValue("atlas name", atlasName);
 
-		if (light != null)
-		{
-			json.writeValue("light attenuation", lightAttenuation);
-			json.writeValue("light power", lightPower);
-			json.writeValue("light static", isLightStatic);
-			json.writeValue("light flicker", lightFlicker);
-			json.writeValue("light colour", lightColour);
-			json.writeValue("light offset x", lightx);
-			json.writeValue("light offset y", lighty);
-			json.writeValue("light offset z", lightz);
-		}
-
 		json.writeObjectEnd();
 	}
 
@@ -1094,15 +1032,6 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 				String atlasName = null;
 				// ----- End Emitter parameters ----- //
 
-				// ----- Light ----- //
-				float lightAttenuation = 0;
-				float lightPower = 0;
-				boolean isLightStatic = false;
-				Color lightColour = null;
-				boolean lightFlicker = false;
-				float lightx = 0, lighty = 0, lightz = 0;
-				// ----- End Light ----- //
-
 				JsonValue tdata = jsonData.get("timelines");
 				for (ParticleAttribute pa : ParticleAttribute.values())
 				{
@@ -1122,27 +1051,12 @@ public class ParticleEmitter implements Comparable<ParticleEmitter> {
 
 				atlasName = jsonData.getString("atlas name");
 
-				JsonValue lc = jsonData.get("light colour");
-				if (lc != null)
-				{
-					lightColour = json.readValue(Color.class, lc);
-					lightAttenuation = jsonData.getFloat("light attenuation");
-					lightPower = jsonData.getFloat("light power");
-					isLightStatic = jsonData.getBoolean("light static");
-					lightFlicker = jsonData.getBoolean("light flicker");
-					lightx = jsonData.getFloat("light offset x");
-					lighty = jsonData.getFloat("light offset y");
-					lightz = jsonData.getFloat("light offset z");
-				}
-
 				ParticleEmitter emitter = new ParticleEmitter(particleLifetime, duration,
 						blendFuncSRC, blendFuncDST, blendEquation,
 						atlasName, name);
 				emitter.maxParticles = maxParticles;
 
 				emitter.timelines = timelines;
-
-				if (lightColour != null) emitter.addLight(isLightStatic, lightAttenuation, lightPower, lightColour, lightFlicker, lightx, lighty, lightz);
 
 				return emitter;
 			}

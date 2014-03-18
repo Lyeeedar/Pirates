@@ -174,14 +174,6 @@ public class ParticleEffect implements Queueable {
 		}
 	}
 	
-	public void getLight(LightManager lightManager)
-	{
-		for (Emitter e : emitters)
-		{
-			e.emitter.getLight(lightManager);
-		}
-	}
-	
 	public void create()
 	{
 		for (Emitter e : emitters)

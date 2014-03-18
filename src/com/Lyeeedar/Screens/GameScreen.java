@@ -79,7 +79,9 @@ import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Batchers.Batch;
+import com.Lyeeedar.Graphics.Batchers.DecalBatcher;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.Particles.ParticleEffect;
 import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Graphics.Particles.TextParticle;
@@ -148,6 +150,7 @@ public class GameScreen extends AbstractScreen {
 	Entity ship;
 	MessageList message = new MessageList(30, 10);
 	Weapon weapon;
+	LightManager lightManager;
 	
 	private AnimatedModel pmodel;
 	
@@ -172,7 +175,8 @@ public class GameScreen extends AbstractScreen {
 	@Override
 	public void create()
 	{
-
+		lightManager = new LightManager();
+		
 		GLOBALS.picker = new Picker();
 		
 		BulletWorld bw = new BulletWorld(new Vector3(-100000, -100000, -100000), new Vector3(100000, 100000, 100000));
@@ -240,6 +244,7 @@ public class GameScreen extends AbstractScreen {
 		int chunkSize = 32;
 		int chunkHeight = 100;
 		int chuckSpacing = 29;
+		int numChunks = 1;
 		
 		Array<Landmark> landmarks = new Array<Landmark>();
 		for (int i = 0; i < 5; i++)
@@ -247,8 +252,8 @@ public class GameScreen extends AbstractScreen {
 			Landmark l = new Landmark(0, 0, 30, 30, Float.NaN);
 			for (int rep = 0; rep < 20; rep++)
 			{
-				float x = ran.nextFloat()*20*chuckSpacing;
-				float z = ran.nextFloat()*20*chuckSpacing;
+				float x = ran.nextFloat()*numChunks*chuckSpacing;
+				float z = ran.nextFloat()*numChunks*chuckSpacing;
 				
 				l.x = (int) x;
 				l.y = (int) z;
@@ -316,9 +321,9 @@ public class GameScreen extends AbstractScreen {
 		}
 		
 		float voxelseed = MathUtils.random(8008135);
-		for (int x = 0; x < 20; x ++)
+		for (int x = 0; x < numChunks; x ++)
 		{
-			for (int z = 0; z < 20; z++)
+			for (int z = 0; z < numChunks; z++)
 			{
 				Chunk chunk = VoxelGenerator.generateTerrain(chunkSize, chunkHeight, chunkSize, x*chuckSpacing, z*chuckSpacing, scale, voxelseed, landmarks);
 				
@@ -455,6 +460,7 @@ public class GameScreen extends AbstractScreen {
 		Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
 		Sea sea = new Sea(seatex, new Vector3(0.0f, 0.6f, 0.7f), terrain);
 		skybox = new SkyBox(sea, weather);
+		lightManager.addLight(weather.sun);
 		
 		// END SKYBOX
 		
@@ -780,23 +786,7 @@ public class GameScreen extends AbstractScreen {
 	}
 	
 	ImmediateModeRenderer imr = new ImmediateModeRenderer20(false, false, 0);
-	@Override
-	public void drawSkybox(float delta)
-	{		
-		
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
-		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-		Gdx.gl.glCullFace(GL20.GL_BACK);
-		if (terrain != null) terrain.render(cam, cam.position, GLOBALS.LIGHTS);
-		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
-	}
-	@Override
+
 	public void hide() {
 		Gdx.input.setCursorCatched(false);
 
@@ -837,7 +827,7 @@ public class GameScreen extends AbstractScreen {
 			else
 			{
 				tp.update(delta, cam);
-				tp.render(decalBatch);
+				tp.render(((DecalBatcher) batches.get(DecalBatcher.class)).batch);
 			}
 		}
 		
@@ -853,7 +843,7 @@ public class GameScreen extends AbstractScreen {
 		
 		for (Dialogue d : GLOBALS.DIALOGUES)
 		{
-			d.queue3D(decalBatch);
+			d.queue3D(((DecalBatcher) batches.get(DecalBatcher.class)).batch);
 		}
 		
 		Iterator<ParticleEffect> peItr = GLOBALS.unanchoredEffects.iterator();
@@ -885,6 +875,7 @@ public class GameScreen extends AbstractScreen {
 		Gdx.input.setInputProcessor(controls.ip);
 		GLOBALS.SKYBOX = skybox;
 		GLOBALS.player = player;
+		GLOBALS.LIGHTS = lightManager;
 	}
 
 	@Override

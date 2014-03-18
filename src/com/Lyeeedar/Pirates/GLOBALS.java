@@ -83,7 +83,7 @@ public final class GLOBALS {
 	public static Picker picker;
 	
 	public static SkyBox SKYBOX;
-	public static LightManager LIGHTS = new LightManager();
+	public static LightManager LIGHTS;
 	public static Entity player;
 	public static LinkedList<Dialogue> DIALOGUES = new LinkedList<Dialogue>();
 	public static Mixer mixer;

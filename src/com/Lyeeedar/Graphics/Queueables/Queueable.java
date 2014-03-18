@@ -11,6 +11,12 @@ import com.badlogic.gdx.math.Vector3;
 
 public interface Queueable {
 
+	public enum RenderType {
+		SIMPLE,
+		FORWARD,
+		DEFERRED
+	}
+	
 	public void queue(float delta, Camera cam, HashMap<Class, Batch> batches);
 	
 	public Matrix4 getTransform();

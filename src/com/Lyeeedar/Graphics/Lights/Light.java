@@ -1,48 +1,22 @@
 package com.Lyeeedar.Graphics.Lights;
 
+import com.Lyeeedar.Collision.Octtree;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.math.Vector3;
 
-public class Light implements Comparable<Light> {
+public abstract class Light {
 	
-	public final Vector3 position = new Vector3();
-	public final Vector3 direction = new Vector3();
 	public final Vector3 colour = new Vector3();
-	public float attenuation;
+		
+	public OcttreeEntry<Light> entry;
 	
-	public int distance = 0;
-	
-	public LightManager manager;
-	
-	public Light(Vector3 position, Vector3 colour, float attenuation)
+	public Light(Vector3 colour)
 	{
-		this.position.set(position);
-		this.colour.set(colour);
-		this.attenuation = attenuation;
-	}
-	
-	public Light(Vector3 position, Color colour, float attenuation)
-	{
-		this.position.set(position);
-		this.colour.set(colour.r, colour.g, colour.b);
-		this.attenuation = attenuation;
-	}
-	
-	public Light(Vector3 position, Vector3 direction, Vector3 colour)
-	{
-		this.position.set(position);
-		this.direction.set(direction);
 		this.colour.set(colour);
 	}
 	
-	public void delete()
-	{
-		manager.remove(this);
-	}
-
-	@Override
-	public int compareTo(Light other) {
-		return distance - other.distance;
-	}
-
+	public abstract void createEntry(Octtree<Light> octtree);
+	public abstract void render();
 }

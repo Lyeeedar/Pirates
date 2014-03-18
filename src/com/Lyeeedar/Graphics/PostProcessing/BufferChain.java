@@ -51,7 +51,7 @@ public class BufferChain {
 	{
 		nextBuffer();
 		effect.render(texture, buffers[currentBuffer], depthTexture);
-		texture = buffers[currentBuffer].getColorBufferTexture();
+		texture = buffers[currentBuffer].getColorBufferTexture(0);
 	}
 	
 	public Texture getFinalImage()

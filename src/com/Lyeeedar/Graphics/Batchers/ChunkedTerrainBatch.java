@@ -3,6 +3,7 @@ package com.Lyeeedar.Graphics.Batchers;
 import java.util.PriorityQueue;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.Gdx;
@@ -22,14 +23,14 @@ public class ChunkedTerrainBatch implements Batch
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
-	private final boolean simpleRender;
+	private final RenderType renderType;
 
 	private ShaderProgram shader;
 	
-	public ChunkedTerrainBatch(boolean simpleRender)
+	public ChunkedTerrainBatch(RenderType renderType)
 	{
-		this.simpleRender = simpleRender;
-		if (!simpleRender)
+		this.renderType = renderType;
+		if (renderType != RenderType.SIMPLE)
 		{
 			noise = new Texture[2];
 			
@@ -44,9 +45,9 @@ public class ChunkedTerrainBatch implements Batch
 		}
 	}
 	
-	public ChunkedTerrainBatch(boolean simpleRender, Texture[] noise)
+	public ChunkedTerrainBatch(RenderType renderType, Texture[] noise)
 	{
-		this.simpleRender = simpleRender;
+		this.renderType = renderType;
 		this.noise = noise;
 	}
 	
@@ -67,27 +68,27 @@ public class ChunkedTerrainBatch implements Batch
 		shader.begin();
 		
 		shader.setUniformMatrix("u_pv", cam.combined);
-		if (!simpleRender) shader.setUniformf("fog_col", lights.ambientColour);
-		if (!simpleRender) shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
-		if (!simpleRender) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
-		if (!simpleRender) shader.setUniformf("u_viewPos", cam.position);
-		if (!simpleRender) shader.setUniformf("u_triplanarScaling", 10);
-		if (!simpleRender) for (int i = 0; i < noise.length; i++)
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_col", lights.ambientColour);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_min", GLOBALS.FOG_MIN);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("fog_max", GLOBALS.FOG_MAX);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("u_viewPos", cam.position);
+		if (renderType != RenderType.SIMPLE) shader.setUniformf("u_triplanarScaling", 10);
+		if (renderType != RenderType.SIMPLE) for (int i = 0; i < noise.length; i++)
 		{
 			noise[i].bind(i);
 			shader.setUniformi("u_noise"+i, i);
 		}
 		
-		if (!simpleRender) lights.applyLights(shader, 10);
+		if (renderType == RenderType.FORWARD) lights.applyLights(shader, 10);
 
 		while (!instances.isEmpty())
 		{
 			BatchedInstance bi = instances.poll();
 			
 			shader.setUniformMatrix("u_mm", bi.model_matrix);
-			if (!simpleRender) shader.setUniformf("u_colour", bi.colour);
+			if (renderType != RenderType.SIMPLE) shader.setUniformf("u_colour", bi.colour);
 
-			if (!simpleRender && textureHash != bi.texHash)
+			if (renderType != RenderType.SIMPLE && textureHash != bi.texHash)
 			{
 				for (int i = 0; i < bi.textures.length; i++)
 				{
@@ -110,10 +111,25 @@ public class ChunkedTerrainBatch implements Batch
 	
 	public ShaderProgram createShader()
 	{
+		String vert = "";
+		String frag = "";
 		
-		String vert = simpleRender ? Gdx.files.internal("data/shaders/chunked_terrain_simple.vertex.glsl").readString() : Gdx.files.internal("data/shaders/chunked_terrain.vertex.glsl").readString();
-		String frag = simpleRender ? Gdx.files.internal("data/shaders/chunked_terrain_simple.fragment.glsl").readString() : Gdx.files.internal("data/shaders/chunked_terrain.fragment.glsl").readString();
-		
+		if (renderType == RenderType.SIMPLE)
+		{
+			vert = Gdx.files.internal("data/shaders/forward/chunked_terrain_simple.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/chunked_terrain_simple.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.FORWARD)
+		{
+			vert = Gdx.files.internal("data/shaders/forward/chunked_terrain.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/chunked_terrain.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.DEFERRED)
+		{
+			vert = Gdx.files.internal("data/shaders/deferred/chunked_terrain.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/deferred/chunked_terrain.fragment.glsl").readString();
+		}
+
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	
 		if (!shader.isCompiled()) System.err.println(shader.getLog());

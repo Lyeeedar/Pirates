@@ -3,6 +3,7 @@ package com.Lyeeedar.Graphics.Batchers;
 import java.util.PriorityQueue;
 
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -23,7 +24,7 @@ import com.badlogic.gdx.utils.Pools;
 
 public class AnimatedModelBatch implements Batch 
 {	
-	private final boolean simpleRender;
+	private final RenderType renderType;
 	private final Vector3 tmp = new Vector3();
 	private final PriorityQueue<BatchedInstance> instances = new PriorityQueue<BatchedInstance>();
 	private Camera cam;
@@ -35,13 +36,13 @@ public class AnimatedModelBatch implements Batch
 	
 	public AnimatedModelBatch(int num_bones)
 	{
-		this(num_bones, false);
+		this(num_bones, RenderType.FORWARD);
 	}
 	
-	public AnimatedModelBatch(int num_bones, boolean simpleRender)
+	public AnimatedModelBatch(int num_bones, RenderType renderType)
 	{
 		this.bones = new float[num_bones * 16];
-		this.simpleRender = simpleRender;
+		this.renderType = renderType;
 	}
 	
 	public Pool<BatchedInstance> pool = new Pool<BatchedInstance>(){
@@ -84,7 +85,7 @@ public class AnimatedModelBatch implements Batch
 				shaders[current_shader].setUniformf("fog_max", GLOBALS.FOG_MAX);
 				shaders[current_shader].setUniformf("u_viewPos", cam.position);
 				
-				lights.applyLights(shaders[current_shader], 7);
+				if (renderType == RenderType.FORWARD) lights.applyLights(shaders[current_shader], 7);
 			}
 			
 			if (bi.bone_num > 0)
@@ -202,8 +203,24 @@ public class AnimatedModelBatch implements Batch
 			prefix.append("#define numBones ").append(bones.length/16).append("\n"); 
 		}
 		
-		String vert = prefix.toString() + Gdx.files.internal("data/shaders/skinned_model.vertex.glsl").readString();
-		String frag = simpleRender ? Gdx.files.internal("data/shaders/skinned_model_simple.fragment.glsl").readString() : Gdx.files.internal("data/shaders/skinned_model.fragment.glsl").readString();
+		String vert = "";
+		String frag = "";
+		
+		if (renderType == RenderType.SIMPLE)
+		{
+			vert = prefix.toString() + Gdx.files.internal("data/shaders/forward/skinned_model.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/skinned_model_simple.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.FORWARD)
+		{
+			vert = prefix.toString() + Gdx.files.internal("data/shaders/forward/skinned_model.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/forward/skinned_model.fragment.glsl").readString();
+		}
+		else if (renderType == RenderType.DEFERRED)
+		{
+			vert = prefix.toString() + Gdx.files.internal("data/shaders/deferred/skinned_model.vertex.glsl").readString();
+			frag = Gdx.files.internal("data/shaders/deferred/skinned_model.fragment.glsl").readString();
+		}
 		
 		ShaderProgram shader = new ShaderProgram(vert, frag);
 	

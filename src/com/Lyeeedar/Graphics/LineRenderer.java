@@ -24,7 +24,7 @@ public class LineRenderer
 		mesh = new Mesh(false, MAX_VERTICES, 0, new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Color, 3, "a_colour"));
 		vertices = new float[MAX_VERTICES*6];
 		
-		shader = new ShaderProgram(Gdx.files.internal("data/shaders/simple.vertex.glsl"), Gdx.files.internal("data/shaders/simple.fragment.glsl"));
+		shader = new ShaderProgram(Gdx.files.internal("data/shaders/forward/simple.vertex.glsl"), Gdx.files.internal("data/shaders/forward/simple.fragment.glsl"));
 		
 		if (!shader.isCompiled()) System.err.println(shader.getLog());
 	}

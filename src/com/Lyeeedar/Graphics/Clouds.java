@@ -38,8 +38,8 @@ public class Clouds {
 		this.mesh = Shapes.getCurvedPlaneMesh((int) GLOBALS.FOG_MAX+2000, 100, 0, 1, false);
 		
 		this.shader = new ShaderProgram(
-				Gdx.files.internal("data/shaders/clouds.vertex.glsl"),
-				Gdx.files.internal("data/shaders/clouds.fragment.glsl")
+				Gdx.files.internal("data/shaders/forward/clouds.vertex.glsl"),
+				Gdx.files.internal("data/shaders/forward/clouds.fragment.glsl")
 				);
 		if (!shader.isCompiled()) {
 			System.err.println(shader.getLog());
