@@ -25,6 +25,7 @@ import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
 import com.Lyeeedar.Graphics.Batchers.TexturedMeshBatch;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Graphics.Renderers.DeferredRenderer;
 import com.Lyeeedar.Graphics.Renderers.ForwardRenderer;
 import com.Lyeeedar.Graphics.Renderers.Renderer;
@@ -79,6 +80,7 @@ public abstract class AbstractScreen implements Screen {
 		
 		cam = new FollowCam(controls, new OcttreeBox(new Vector3(), new Vector3(GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2, GLOBALS.FOG_MAX/2), null), 50);
 		
+		//renderer = new ForwardRenderer(cam);
 		renderer = new DeferredRenderer(cam);
 		
 		font = new BitmapFont();
@@ -116,7 +118,8 @@ public abstract class AbstractScreen implements Screen {
 		averageUpdate += System.nanoTime()-time;
 		averageUpdate /= 2;
 		
-		GLOBALS.LIGHTS.sort(octtreeFrustum);
+		RenderType renderType = renderer instanceof DeferredRenderer ? RenderType.DEFERRED : RenderType.FORWARD;
+		GLOBALS.LIGHTS.sort(octtreeFrustum, cam, renderType);
 		
 		stage.act(delta);
 		

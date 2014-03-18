@@ -367,6 +367,11 @@ public class Octtree <E>
 		public Camera frustum;
 		float sizeLim;
 		
+		public OcttreeFrustum()
+		{
+			sizeLim = -1;
+		}
+		
 		public OcttreeFrustum(Camera frustum, float sizeLim)
 		{
 			this.frustum = frustum;

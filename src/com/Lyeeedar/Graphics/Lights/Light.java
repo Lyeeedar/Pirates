@@ -2,6 +2,7 @@ package com.Lyeeedar.Graphics.Lights;
 
 import com.Lyeeedar.Collision.Octtree;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.math.Vector3;
@@ -18,5 +19,5 @@ public abstract class Light {
 	}
 	
 	public abstract void createEntry(Octtree<Light> octtree);
-	public abstract void render();
+	public abstract void computeShadowMap(Camera cam);
 }

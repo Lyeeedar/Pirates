@@ -1,6 +1,7 @@
 package com.Lyeeedar.Graphics.Lights;
 
 import com.Lyeeedar.Collision.Octtree;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector3;
 
 public class PointLight extends Light
@@ -28,10 +29,9 @@ public class PointLight extends Light
 	}
 
 	@Override
-	public void render()
+	public void computeShadowMap(Camera cam)
 	{
 		// TODO Auto-generated method stub
 		
 	}
-
 }

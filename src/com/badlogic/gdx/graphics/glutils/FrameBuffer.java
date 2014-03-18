@@ -63,6 +63,7 @@ public class FrameBuffer implements Disposable {
 	
 	/** the depth buffer texture **/
 	protected Texture depthTexture;
+	protected boolean ownsDepth;
 
 	/** the default framebuffer handle, a.k.a screen. */
 	private static int defaultFramebufferHandle;
@@ -98,10 +99,25 @@ public class FrameBuffer implements Disposable {
 	}
 	
 	public FrameBuffer (Pixmap.Format format, int width, int height, int numColour, boolean hasDepth) {
+		this(format, width, height, numColour, hasDepth, null);
+	}
+	
+	public FrameBuffer (Pixmap.Format format, int width, int height, int numColour, boolean hasDepth, Texture depthTexture) {
 		this.width = width;
 		this.height = height;
 		this.format = format;
 		this.hasDepth = hasDepth;
+		
+		if (hasDepth)
+		{
+			if (depthTexture == null) ownsDepth = true;
+			else 
+			{
+				ownsDepth = false;
+				this.depthTexture = depthTexture;
+			}
+		}
+		
 		this.colorTextures = new Texture[numColour];
 		this.hasColour = numColour > 0;
 		build();
@@ -129,7 +145,7 @@ public class FrameBuffer implements Disposable {
 			}
 		}
 		
-		if (hasDepth)
+		if (hasDepth && ownsDepth)
 		{
 			depthTexture = new Texture(width, height, Format.DEPTH);
 			depthTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -205,7 +221,7 @@ public class FrameBuffer implements Disposable {
 			{
 				for (int i = 0; i < colorTextures.length; i++) colorTextures[i].dispose();
 			}
-			if (hasDepth) {
+			if (hasDepth && ownsDepth) {
 				depthTexture.dispose();
 			}
 
@@ -233,7 +249,7 @@ public class FrameBuffer implements Disposable {
 		IntBuffer handle = BufferUtils.newIntBuffer(1);
 
 		if (hasColour) for (int i = 0; i < colorTextures.length; i++) colorTextures[i].dispose();
-		if (hasDepth) {
+		if (hasDepth && ownsDepth) {
 			depthTexture.dispose();
 		}
 
