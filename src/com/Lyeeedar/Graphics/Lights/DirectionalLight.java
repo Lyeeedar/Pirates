@@ -16,6 +16,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
@@ -82,6 +83,7 @@ public class DirectionalLight extends Light
 	public void enableShadowMapping()
 	{
 		frameBuffer = new FrameBuffer(Format.DEPTH, GLOBALS.RESOLUTION[0]*8, GLOBALS.RESOLUTION[1]*8, 0, true);
+		shadowMap = frameBuffer.getDepthBufferTexture();
 		orthoCam = new OrthographicCamera();
 		orthoCam.viewportWidth = GLOBALS.RESOLUTION[0];
 		orthoCam.viewportHeight = GLOBALS.RESOLUTION[1];
@@ -98,6 +100,10 @@ public class DirectionalLight extends Light
 		biasMatrix = new Matrix4().scl(0.5f).translate(1, 1, 1);
 
 		depthBiasMVP = new Matrix4();		
+		
+		shadowMap.bind(0);
+		//Gdx.gl30.glTexParameteri(shadowMap.glTarget, GL30.GL_TEXTURE_COMPARE_MODE, GL30.GL_COMPARE_REF_TO_TEXTURE);
+		//Gdx.gl30.glTexParameteri(shadowMap.glTarget, GL30.GL_TEXTURE_COMPARE_FUNC, GL30.GL_LESS);
 	}
 	
 	@Override

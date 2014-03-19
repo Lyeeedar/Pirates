@@ -25,6 +25,7 @@ import java.util.Map;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -150,6 +151,7 @@ public class FrameBuffer implements Disposable {
 			depthTexture = new Texture(width, height, Format.DEPTH);
 			depthTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 			depthTexture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+			//Gdx.gl.glTexParameteri(depthTexture.glTarget, GL30.GL_DEPTH_TEXTURE_MODE, GL30.GL_LUMINANCE);
 		}
 	}
 	

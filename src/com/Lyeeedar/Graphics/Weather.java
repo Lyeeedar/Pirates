@@ -56,7 +56,7 @@ public class Weather {
 			System.err.println(skyShader.getLog());
 		}
 		
-		sun = new DirectionalLight(new Vector3(-0.5f, 0.5f, 0.0f), new Vector3(), false);
+		sun = new DirectionalLight(new Vector3(-0.5f, 0.5f, 0.0f), new Vector3(), true);
 	}
 	
 	boolean increase = false;
