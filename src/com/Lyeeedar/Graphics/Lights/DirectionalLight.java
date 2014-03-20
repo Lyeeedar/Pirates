@@ -82,11 +82,9 @@ public class DirectionalLight extends Light
 	public BoundingBox bb;
 	public void enableShadowMapping()
 	{
-		frameBuffer = new FrameBuffer(Format.DEPTH, GLOBALS.RESOLUTION[0]*8, GLOBALS.RESOLUTION[1]*8, 0, true);
+		frameBuffer = new FrameBuffer(Format.DEPTH, GLOBALS.RESOLUTION[0]*2, GLOBALS.RESOLUTION[1]*2, 0, true);
 		shadowMap = frameBuffer.getDepthBufferTexture();
 		orthoCam = new OrthographicCamera();
-		orthoCam.viewportWidth = GLOBALS.RESOLUTION[0];
-		orthoCam.viewportHeight = GLOBALS.RESOLUTION[1];
 		oFrustum = new OcttreeFrustum(orthoCam, -1);
 		shadowEntities = new Array<Entity>(false, 16);
 		batches = new HashMap<Class, Batch>();
@@ -122,14 +120,16 @@ public class DirectionalLight extends Light
 		float radius = dimensions.x;
 		radius = Math.max(radius, dimensions.y);
 		radius = Math.max(radius, dimensions.z);
-		radius = 500;
+		radius = 300;
 		
 		orthoCam.far = radius*2.0f;
+		orthoCam.viewportWidth = radius;
+		orthoCam.viewportHeight = radius;
 								
 		orthoCam.direction.set(direction).scl(-1);
 		orthoCam.position.set(direction).scl(GLOBALS.FOG_MAX).add(cam.position).sub(center).nor().scl(radius).add(center);
 		orthoCam.up.set(orthoCam.direction).crs(GLOBALS.DEFAULT_UP).crs(orthoCam.direction);
-		orthoCam.near = 0;
+		orthoCam.near = 1;
 		orthoCam.update();
 		
 		for (Entity e : shadowEntities)

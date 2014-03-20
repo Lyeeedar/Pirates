@@ -52,6 +52,8 @@ public class DeferredRenderer implements Renderer
 	protected final FrameBuffer gbuffer;
 	protected final FrameBuffer lbuffer;
 	protected final FrameBuffer fbuffer;
+	protected int bufferWidth;
+	protected int bufferHeight;
 	
 	protected ShaderProgram ssaoShader;
 	
@@ -60,7 +62,7 @@ public class DeferredRenderer implements Renderer
 	
 	protected final Array<Light> lightArray = new Array<Light>(false, 16);
 	protected final OcttreeFrustum octtreeShape = new OcttreeFrustum();
-
+	
 	public DeferredRenderer(FollowCam cam)
 	{
 		this.cam = cam;
@@ -74,12 +76,15 @@ public class DeferredRenderer implements Renderer
 		batches.put(ParticleEffectBatch.class, new ParticleEffectBatch());
 		batches.put(ChunkedTerrainBatch.class, new ChunkedTerrainBatch(RenderType.DEFERRED));
 		
-		gbuffer = new FrameBuffer(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], 4, true);
-		lbuffer = new FrameBuffer(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], 1, true);
-		fbuffer = new FrameBuffer(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], 1, true, gbuffer.getDepthBufferTexture());
+		bufferWidth = GLOBALS.RESOLUTION[0];
+		bufferHeight = GLOBALS.RESOLUTION[1];
+		
+		gbuffer = new FrameBuffer(Format.RGBA8888, bufferWidth, bufferHeight, 4, true);
+		lbuffer = new FrameBuffer(Format.RGBA8888, bufferWidth, bufferHeight, 1, true);
+		fbuffer = new FrameBuffer(Format.RGBA8888, bufferWidth, bufferHeight, 1, true, gbuffer.getDepthBufferTexture());
 		
 		sbatch = new SpriteBatch();
-		
+				
 		setupSSAO();
 		
 		blank = FileUtils.loadTexture("data/textures/blank.png", true, null, null);
@@ -88,6 +93,7 @@ public class DeferredRenderer implements Renderer
 	@Override
 	public void render()
 	{
+		sbatch.getProjectionMatrix().setToOrtho2D(0, 0, bufferWidth, bufferHeight);
 		// Draw G Buffers
 		gbuffer.begin();
 		
@@ -146,7 +152,7 @@ public class DeferredRenderer implements Renderer
 		sbatch.draw(blank, 0, 0, lbuffer.getWidth(), lbuffer.getHeight(), 0, 0, blank.getWidth(), blank.getHeight(), false, true);
 		sbatch.end();
 		
-		// Do Lightting
+		// Do Lighting
 		
 		DirectionalLight sdl = null;
 		
@@ -211,12 +217,12 @@ public class DeferredRenderer implements Renderer
 			sbatch.disableBlending();
 			sbatch.begin();
 			
-			sbatch.draw(albedo, 0, 0, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0, 0, albedo.getWidth(), albedo.getHeight(), false, true);
-			sbatch.draw(depth, Gdx.graphics.getWidth()/2, 0, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0, 0, depth.getWidth(), depth.getHeight(), false, true);
-			sbatch.draw(normals, 0, Gdx.graphics.getHeight()/2, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0, 0, normals.getWidth(), normals.getHeight(), false, true);
-			sbatch.draw(lighting, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0, 0, lighting.getWidth(), lighting.getHeight(), false, true);
+			sbatch.draw(albedo, 0, 0, fbuffer.getWidth()/2, fbuffer.getHeight()/2, 0, 0, albedo.getWidth(), albedo.getHeight(), false, true);
+			sbatch.draw(depth, fbuffer.getWidth()/2, 0, fbuffer.getWidth()/2, fbuffer.getHeight()/2, 0, 0, depth.getWidth(), depth.getHeight(), false, true);
+			sbatch.draw(normals, 0, fbuffer.getHeight()/2, fbuffer.getWidth()/2, fbuffer.getHeight()/2, 0, 0, normals.getWidth(), normals.getHeight(), false, true);
+			sbatch.draw(lighting, fbuffer.getWidth()/2, fbuffer.getHeight()/2, fbuffer.getWidth()/2, fbuffer.getHeight()/2, 0, 0, lighting.getWidth(), lighting.getHeight(), false, true);
 			
-			sbatch.draw(sdl.shadowMap, Gdx.graphics.getWidth()/2, 0, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0, 0, sdl.shadowMap.getWidth(), sdl.shadowMap.getHeight(), false, true);
+			sbatch.draw(sdl.shadowMap, fbuffer.getWidth()/2, 0, fbuffer.getWidth()/2, fbuffer.getHeight()/2, 0, 0, sdl.shadowMap.getWidth(), sdl.shadowMap.getHeight(), false, true);
 			
 			sbatch.end();
 		}
@@ -246,12 +252,15 @@ public class DeferredRenderer implements Renderer
 			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
 			
-			Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-			Gdx.gl.glDepthFunc(GL20.GL_LESS);
-			Gdx.gl.glDepthMask(true);
-			Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-			Gdx.gl.glCullFace(GL20.GL_BACK);
-			GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
+			if (GLOBALS.SKYBOX.sea != null)
+			{
+				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+				Gdx.gl.glDepthFunc(GL20.GL_LESS);
+				Gdx.gl.glDepthMask(true);
+				Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+				Gdx.gl.glCullFace(GL20.GL_BACK);
+				GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
+			}
 			
 			((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(GLOBALS.LIGHTS, cam);
 			Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
@@ -273,18 +282,15 @@ public class DeferredRenderer implements Renderer
 		
 		fbuffer.end();
 		
-		Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT | GL30.GL_DEPTH_BUFFER_BIT);
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		Gdx.gl.glDepthMask(false);
 		
+		sbatch.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		sbatch.begin();
-		
 		sbatch.disableBlending();
 		sbatch.draw(fbuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, fbuffer.getColorBufferTexture().getWidth(), fbuffer.getColorBufferTexture().getHeight(), false, true);
-
 		sbatch.end();
 	}
 	
@@ -305,7 +311,6 @@ public class DeferredRenderer implements Renderer
 	@Override
 	public void resize(int width, int height)
 	{
-		// TODO Auto-generated method stub
 		
 	}
 

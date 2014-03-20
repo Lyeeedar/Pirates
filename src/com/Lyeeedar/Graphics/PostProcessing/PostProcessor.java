@@ -119,6 +119,8 @@ public class PostProcessor {
 		captureBuffer = new FrameBuffer(format, f, g, true);
 		bufferChain.updateBuffers(format, f, g);
 		setupEffects();
+		
+		batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	}
 	
 	public void begin()
@@ -139,7 +141,7 @@ public class PostProcessor {
 		Texture texture = applyEffectChain();
 
 		batch.begin();
-		batch.draw(texture, 0, 0, width, height,
+		batch.draw(texture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
 				0, 0, texture.getWidth(), texture.getHeight(),
 				false, true);
 		batch.end();

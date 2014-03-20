@@ -21,6 +21,8 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 
 public class ForwardRenderer implements Renderer
@@ -44,6 +46,9 @@ public class ForwardRenderer implements Renderer
 	private long averagePost;
 	protected int particleNum;
 	
+	private SpriteBatch batch;
+	Texture testTex;
+	
 	public ForwardRenderer(FollowCam cam)
 	{
 		this.cam = cam;
@@ -59,6 +64,9 @@ public class ForwardRenderer implements Renderer
 		
 		postprocessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], cam);
 		postprocessor.addEffect(Effect.SSAO);
+		
+		batch = new SpriteBatch();
+		testTex = new Texture(Gdx.files.internal("data/textures/water.png"));
 	}
 	
 	@Override
@@ -85,8 +93,8 @@ public class ForwardRenderer implements Renderer
 		((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(GLOBALS.LIGHTS, cam);
 		((AnimatedModelBatch) batches.get(AnimatedModelBatch.class)).render(GLOBALS.LIGHTS, cam);
 		((ChunkedTerrainBatch) batches.get(ChunkedTerrainBatch.class)).render(GLOBALS.LIGHTS, cam);
-		GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
-		GLOBALS.lineRenderer.render(cam);
+		if ( GLOBALS.physicsWorld != null) GLOBALS.physicsWorld.render((PerspectiveCamera) cam);
+		if (GLOBALS.lineRenderer != null) GLOBALS.lineRenderer.render(cam);
 		averageModel += System.nanoTime()-time;
 		averageModel /= 2;
 		
@@ -98,12 +106,15 @@ public class ForwardRenderer implements Renderer
 		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		GLOBALS.SKYBOX.weather.render(cam, GLOBALS.LIGHTS);
 		
-		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-		Gdx.gl.glDepthFunc(GL20.GL_LESS);
-		Gdx.gl.glDepthMask(true);
-		Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-		Gdx.gl.glCullFace(GL20.GL_BACK);
-		GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
+		if ( GLOBALS.SKYBOX.sea != null)
+		{
+			Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+			Gdx.gl.glDepthFunc(GL20.GL_LESS);
+			Gdx.gl.glDepthMask(true);
+			Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+			Gdx.gl.glCullFace(GL20.GL_BACK);
+			GLOBALS.SKYBOX.sea.render(cam, cam.position, GLOBALS.LIGHTS);
+		}
 		
 		((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(GLOBALS.LIGHTS, cam);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);

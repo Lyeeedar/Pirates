@@ -35,7 +35,7 @@ public class FollowCam extends PerspectiveCamera {
 	private final Vector3 tmpVec = new Vector3();
 	private final Vector3 tmpVec2 = new Vector3();
 	
-	public final ClosestRayResultSkippingCallback ray = new ClosestRayResultSkippingCallback();
+	public ClosestRayResultSkippingCallback ray;
 	
 	private Entity lockOn;
 	
@@ -104,6 +104,8 @@ public class FollowCam extends PerspectiveCamera {
 	
 	public void update(Entity entity, float delta)
 	{
+		if (ray == null) ray = new ClosestRayResultSkippingCallback();
+		
 		followDist += controls.scrolled();
 		followDist = MathUtils.clamp(followDist, 5, 50);
 		
