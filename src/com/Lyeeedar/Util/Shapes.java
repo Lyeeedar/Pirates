@@ -434,74 +434,84 @@ public class Shapes {
 		return mesh;
 	}
 	
-	public static float[] getBoxVertices(float px, float py, float pz, float x, float y, float z, boolean normals, boolean texcoords)
+	public static float[] getBoxVertices(float x, float tx, int snapx, float y, float z, float tz, int snapz, boolean normals, boolean texcoords)
 	{
 		int vertSize = 3;
 		
 		if (normals) vertSize += 3;
 		if (texcoords) vertSize += 2;
 		
-		float[] cubeVerts = {
-				px-x, py-y, pz-z, // bottom
-				px-x, py-y, pz+z,
-				px+x, py-y, pz+z,
-				px+x, py-y, pz-z,
-
-				px-x, py+y, pz-z, // top
-				px-x, py+y, pz+z,
-				px+x, py+y, pz+z,
-				px+x, py+y, pz-z,
-
-				px-x, py-y, pz-z, // back
-				px-x, py+y, pz-z,
-				px+x, py+y, pz-z,
-				px+x, py-y, pz-z,
-
-				px-x, py-y, pz+z, // front
-				px-x, py+y, pz+z,
-				px+x, py+y, pz+z,
-				px+x, py-y, pz+z,
-
-				px-x, py-y, pz-z, // left
-				px-x, py-y, pz+z,
-				px-x, py+y, pz+z,
-				px-x, py+y, pz-z,
-
-				px+x, py-y, pz-z, // right
-				px+x, py-y, pz+z,
-				px+x, py+y, pz+z,
-				px+x, py+y, pz-z};
+		float tminx = -tx;
+		float tmaxx = +tx;
 		
-		float[] cubeNormals = {
-				0, -1, 0, // bottom
-				0, -1, 0,
-				0, -1, 0,
-				0, -1, 0,
+		if (snapx == 1)
+		{
+			tmaxx = +x;
+			tminx = x - (tx*2);
+		}
+		else if (snapx == -1)
+		{
+			tminx = -x;
+			tmaxx = (-x) + (tx*2);
+		}
+		
+		float tminz = -tz;
+		float tmaxz = +tz;
+		
+		if (snapz == 1)
+		{
+			tmaxz = +z;
+			tminz = z - (tz*2);
+		}
+		else if (snapz == -1)
+		{
+			tminz = -z;
+			tmaxz = (-z) + (tz*2);
+		}
+		
+		float[] points = {
+				-x, -y, -z, // bottom
+				-x, -y, +z,
+				+x, -y, +z,
+				+x, -y, -z,
 
-				0, 1, 0, // top
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
+				tminx, +y, tminz, // top
+				tminx, +y, tmaxz,
+				tmaxx, +y, tmaxz,
+				tmaxx, +y, tminz,
+		};
 
-				0, 0, -1, // back
-				0, 0, -1,
-				0, 0, -1,
-				0, 0, -1,
+		float[] cubeVerts = {
+				points[0], points[1], points[2], // bottom
+				points[3], points[4], points[5],
+				points[6], points[7], points[8],
+				points[9], points[10], points[11],
 
-				0, 0, 1, // front
-				0, 0, 1,
-				0, 0, 1,
-				0, 0, 1,
+				points[12], points[13], points[14], // top
+				points[15], points[16], points[17],
+				points[18], points[19], points[20],
+				points[21], points[22], points[23],
 
-				-1, 0, 0, // left
-				-1, 0, 0,
-				-1, 0, 0,
-				-1, 0, 0,
+				points[0], points[1], points[2], // back
+				points[12], points[13], points[14],
+				points[21], points[22], points[23],
+				points[9], points[10], points[11],
 
-				1, 0, 0, // right
-				1, 0, 0,
-				1, 0, 0,
-				1, 0, 0};
+				points[3], points[4], points[5], // front
+				points[15], points[16], points[17],
+				points[18], points[19], points[20],
+				points[6], points[7], points[8],
+
+				points[0], points[1], points[2], // left
+				points[3], points[4], points[5],
+				points[15], points[16], points[17],
+				points[12], points[13], points[14],
+
+				points[9], points[10], points[11], // right
+				points[6], points[7], points[8],
+				points[18], points[19], points[20],
+				points[21], points[22], points[23]
+		};
 		
 		float[] cubeTex = {
 
@@ -534,7 +544,109 @@ public class Shapes {
 				0, 1,
 				0, 0,
 				1, 0
+		};
+		
+		short[] indices = {
+				0, 2, 1, // bottom
+				0, 3, 2,
 
+				4, 5, 6, // top
+				4, 6, 7,
+
+				8, 9, 10, // back
+				8, 10, 11,
+
+				12, 15, 14, // front
+				12, 14, 13,
+
+				16, 17, 18, // left
+				16, 18, 19,
+
+				20, 23, 22, // right
+				20, 22, 21
+		};
+		
+		Vector3 nFront = Pools.obtain(Vector3.class);
+		Vector3 nBack = Pools.obtain(Vector3.class);
+		Vector3 nLeft = Pools.obtain(Vector3.class);
+		Vector3 nRight = Pools.obtain(Vector3.class);
+		
+		Vector3 U = Pools.obtain(Vector3.class);
+		Vector3 V = Pools.obtain(Vector3.class);
+		
+		// FRONT
+		int index = 18;
+		int p1 = indices[index+0]*3;
+		int p2 = indices[index+1]*3;
+		int p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		Vector3 N = U.crs(V).nor();		
+		nFront.set(N);
+		
+		// BACK
+		index = 12;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nBack.set(N);
+
+		// LEFT
+		index = 24;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nLeft.set(N);
+
+		// RIGHT
+		index = 30;
+		p1 = indices[index+0]*3;
+		p2 = indices[index+1]*3;
+		p3 = indices[index+2]*3;
+		U.set(cubeVerts[p2+0]-cubeVerts[p1+0], cubeVerts[p2+1]-cubeVerts[p1+1], cubeVerts[p2+2]-cubeVerts[p1+2]);
+		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
+		N = U.crs(V).nor();		
+		nRight.set(N);
+		
+		Pools.free(U);
+		Pools.free(V);
+		
+		float[] cubeNormals = {
+				0, -1, 0, // bottom
+				0, -1, 0,
+				0, -1, 0,
+				0, -1, 0,
+
+				0, 1, 0, // top
+				0, 1, 0,
+				0, 1, 0,
+				0, 1, 0,
+
+				nBack.x, nBack.y, nBack.z, // back
+				nBack.x, nBack.y, nBack.z,
+				nBack.x, nBack.y, nBack.z,
+				nBack.x, nBack.y, nBack.z,
+
+				nFront.x, nFront.y, nFront.z, // front
+				nFront.x, nFront.y, nFront.z,
+				nFront.x, nFront.y, nFront.z,
+				nFront.x, nFront.y, nFront.z,
+
+				nLeft.x, nLeft.y, nLeft.z, // left
+				nLeft.x, nLeft.y, nLeft.z,
+				nLeft.x, nLeft.y, nLeft.z,
+				nLeft.x, nLeft.y, nLeft.z,
+
+				nRight.x, nRight.y, nRight.z, // right
+				nRight.x, nRight.y, nRight.z,
+				nRight.x, nRight.y, nRight.z,
+				nRight.x, nRight.y, nRight.z
 		};
 
 		float[] vertices = new float[24 * vertSize];
@@ -563,9 +675,9 @@ public class Shapes {
 		return vertices;
 	}
 	
-	public static Mesh getBoxMesh(float x, float y, float z, boolean normals, boolean texcoords)
+	public static Mesh getBoxMesh(float x, float tx, int snapx, float y, float z, float tz, int snapz, boolean normals, boolean texcoords)
 	{
-		float[] vertices = getBoxVertices(0, 0, 0, x, y, z, normals, texcoords);
+		float[] vertices = getBoxVertices(x, tx, snapx, y, z, tz, snapz, normals, texcoords);
 
 		short[] indices = {
 				0, 2, 1, // bottom
@@ -601,6 +713,11 @@ public class Shapes {
 		box.setIndices(indices);
 		
 		return box;
+	}
+	
+	public static Mesh getBoxMesh(float x, float y, float z, boolean normals, boolean texcoords)
+	{
+		return getBoxMesh(x, x, 0, y, z, z, 0, normals, texcoords);
 	}
 	
 	public static Mesh getPrismMesh(float x, float tx, float y, float z, boolean normals, boolean texcoords)

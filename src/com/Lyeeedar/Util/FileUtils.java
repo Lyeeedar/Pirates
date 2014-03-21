@@ -64,7 +64,7 @@ public class FileUtils {
 	}
 	
 	private static final TextureTree cachedTextureGroups = new TextureTree("", new Texture[]{});
-	public static Texture[] getTextureGroup(String[] textureNames)
+	public static Texture[] getTextureGroup(String[] textureNames, TextureWrap wrap)
 	{
 		TextureTree current = cachedTextureGroups;
 		for (String textureName : textureNames)
@@ -74,9 +74,9 @@ public class FileUtils {
 			{
 				int ctex = current.textures.length;
 				
-				Texture diffuse = loadTexture(textureName+"_d.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
-				Texture specular = loadTexture(textureName+"_s.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
-				Texture emissive = loadTexture(textureName+"_e.png", false, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat);
+				Texture diffuse = loadTexture(textureName+"_d.png", false, TextureFilter.MipMapLinearLinear, wrap);
+				Texture specular = loadTexture(textureName+"_s.png", false, TextureFilter.MipMapLinearLinear, wrap);
+				Texture emissive = loadTexture(textureName+"_e.png", false, TextureFilter.MipMapLinearLinear, wrap);
 				
 				int ntex = 0;
 				if (diffuse != null) ntex++;
@@ -189,6 +189,10 @@ public class FileUtils {
 		loadedGrammars.put(file, methodTable);
 		
 		return methodTable;
+	}
+	public static void clearGrammars()
+	{
+		loadedGrammars.clear();
 	}
 	
 	private static final HashMap<String, float[][]> cachedVertexArrays = new HashMap<String, float[][]>();
@@ -328,20 +332,20 @@ public class FileUtils {
 	 */
 	public static Texture loadTexture(String textureName, boolean urgent, TextureFilter filter, TextureWrap wrap)
 	{
-		String textureLocation = textureName;
+		String storeName = textureName+filter+wrap;
 		
-		if (loadedTextures.containsKey(textureLocation)) return loadedTextures.get(textureLocation);
+		if (loadedTextures.containsKey(storeName)) return loadedTextures.get(storeName);
 		
-		if (!Gdx.files.internal(textureLocation).exists()) {
-			if (urgent) throw new RuntimeException("Texture "+textureLocation+" does not exist!");
+		if (!Gdx.files.internal(textureName).exists()) {
+			if (urgent) throw new RuntimeException("Texture "+textureName+" does not exist!");
 			else return null;
 		}
 		
-		Texture texture = new Texture(Gdx.files.internal(textureLocation), true);
+		Texture texture = new Texture(Gdx.files.internal(textureName), true);
 		if (filter != null) texture.setFilter(filter, filter);
 		if (wrap != null) texture.setWrap(wrap, wrap);
 		
-		loadedTextures.put(textureLocation, texture);
+		loadedTextures.put(storeName, texture);
 		
 		return texture;
 	}

@@ -1711,7 +1711,7 @@ public class Entity {
 
 				if (e.equipmentGraphics != null) for (EquipmentModel em : e.equipmentGraphics.models)
 				{
-					AnimatedModel nam = new AnimatedModel(em.modelName, FileUtils.loadModel(em.modelName), FileUtils.getTextureGroup(em.textureNames), em.colour, em.defaultAnim);
+					AnimatedModel nam = new AnimatedModel(em.modelName, FileUtils.loadModel(em.modelName), FileUtils.getTextureGroup(em.textureNames, null), em.colour, em.defaultAnim);
 					am.attach(em.nodeName, nam, em.transform, em.modelName+em.nodeName);
 					e.addRequiredQueueables(nam);
 				}

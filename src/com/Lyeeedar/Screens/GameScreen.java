@@ -365,6 +365,7 @@ public class GameScreen extends AbstractScreen {
 			{
 				Entity building = new Entity(true, new PositionalData());
 				building.readOnlyRead(PositionalData.class).position.set(((chunkSize/-2)+landmark.x+b.x)*scale, ((chunkHeight/-2)+landmark.elevation)*scale, ((chunkSize/-2)+landmark.y+b.y)*scale);
+				building.readOnlyRead(PositionalData.class).rotation.mul(b.rot);
 				building.readOnlyRead(PositionalData.class).initialise();
 				
 				OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
@@ -372,7 +373,7 @@ public class GameScreen extends AbstractScreen {
 				
 				VolumePartitioner vp = VolumePartitioner.load(b.grammarName);
 				vp.evaluate(b.width*scale, 10, b.height*scale);
-				vp.collectMeshes(building, bentry, btm, b.rot);
+				vp.collectMeshes(building, bentry, btm);
 				
 				btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
 				
@@ -484,7 +485,7 @@ public class GameScreen extends AbstractScreen {
 		
 		player.setAI(btree);
 
-		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel am = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}, null), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		player.addRenderable(am, new Matrix4());
 		pmodel = am;
 		am.setDetailController(new DetailController());
@@ -731,7 +732,7 @@ public class GameScreen extends AbstractScreen {
 		ge.readOnlyRead(StatusData.class).currentHealth = 100;
 		ge.readOnlyRead(StatusData.class).blocking = false;
 		
-		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
+		AnimatedModel gam = new AnimatedModel("data/models/man2.g3db", FileUtils.loadModel("data/models/man2.g3db"), FileUtils.getTextureGroup(new String[]{"data/textures/skin"}, null), new Vector3(0.7f, 0.7f, 0.7f), "idle_ground");
 		ge.addRenderable(gam, new Matrix4());
 				
 		ATTACK_STAGE[] gwattacks = {
