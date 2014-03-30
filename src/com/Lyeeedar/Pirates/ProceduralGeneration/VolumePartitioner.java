@@ -115,6 +115,13 @@ public class VolumePartitioner
 		}
 	}
 	
+	public void transform(Matrix4 transform)
+	{
+		this.localTransform.mul(transform);
+		composedTransform.set(parentTransform).mul(localTransform);
+		invComposedTransform.set(composedTransform).inv();
+	}
+	
 	public void transformVolume(Matrix4 transform)
 	{
 		this.localTransform.mul(transform);
@@ -1199,21 +1206,63 @@ public class VolumePartitioner
 			if (nrule == null) throw new RuntimeException("Invalid rule: "+current.asString());
 			ruleStack.addFirst(nrule.child);
 		}
+		else if (method.equalsIgnoreCase("Child"))
+		{
+			JsonValue rule = current.child;
+			if (rule == null)
+			{
+				String ruleString = current.asString();
+				rule = methodTable.get(ruleString);
+				if (rule == null) rule = tempMethodTable.get(ruleString);
+			}
+			else
+			{
+				JsonValue temp = new JsonValue("TempRule");
+				temp.name = "TempRule";
+				temp.child = rule;
+				rule = temp;
+			}
+			
+			VolumePartitioner vp = new VolumePartitioner(min, max, rule, methodTable, this, occluders);
+			children.add(vp);
+		}
 		else if (method.equalsIgnoreCase("CoordinateSystem"))
 		{
 			applyCoords(current.asString());
+		}
+		else if (method.equalsIgnoreCase("Move"))
+		{
+			String xstring = current.getString("X", "0");
+			String ystring = current.getString("Y", "0");
+			String zstring = current.getString("Z", "0");
+			
+			float x = parseEquation(xstring, max.x-min.x, variables);
+			float y = parseEquation(ystring, max.y-min.y, variables);
+			float z = parseEquation(zstring, max.z-min.z, variables);
+			
+			Matrix4 trans = Pools.obtain(Matrix4.class).setToTranslation(x, y, z);
+			
+			transformVolume(trans);
+			
+			Pools.free(trans);
 		}
 		else if (method.equalsIgnoreCase("Rotate"))
 		{
 			if (current.child != null)
 			{
-				float axisx = current.getFloat("X", 0);
-				float axisy = current.getFloat("Y", 1);
-				float axisz = current.getFloat("Z", 0);
-				float angle = current.getFloat("Angle");
-				Matrix4 rotation = Pools.obtain(Matrix4.class).setToRotation(axisx, axisy, axisz, angle);
+				String xstring = current.getString("X", "0");
+				String ystring = current.getString("Y", "1");
+				String zstring = current.getString("Z", "0");
+				String astring = current.getString("Angle", "0");
 				
-				transformVolume(rotation);
+				float x = parseEquation(xstring, 0, variables);
+				float y = parseEquation(ystring, 0, variables);
+				float z = parseEquation(zstring, 0, variables);
+				float a = parseEquation(astring, 0, variables);				
+				
+				Matrix4 rotation = Pools.obtain(Matrix4.class).setToRotation(x, y, z, a);
+				
+				transform(rotation);
 				
 				Pools.free(rotation);
 			}
@@ -1342,17 +1391,21 @@ public class VolumePartitioner
 		
 		if (meshName.equalsIgnoreCase("Sphere"))
 		{
-			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta")+"Phi"+meshValue.getString("Phi")+useTriplanarSampling+triplanarScale+seamless;
+			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta", "8")+"Phi"+meshValue.getString("Phi", "8")+useTriplanarSampling+triplanarScale+seamless;
 		}
 		else if (meshName.equalsIgnoreCase("HemiSphere"))
 		{
-			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta")+"Phi"+meshValue.getString("Phi")+useTriplanarSampling+triplanarScale+seamless;
+			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta", "8")+"Phi"+meshValue.getString("Phi", "8")+useTriplanarSampling+triplanarScale+seamless;
 		}
 		else if (meshName.equalsIgnoreCase("Prism"))
 		{	
 			String eqn = meshValue.getString("loft", "100%");
 			mbname = meshName+textureName+"Loft"+eqn+useTriplanarSampling+triplanarScale+seamless;
 		}
+		else if (meshName.equalsIgnoreCase("Cylinder"))
+		{	
+			mbname = meshName+textureName+"Phi"+meshValue.getString("Phi", "8")+"HollowScale"+meshValue.getString("HollowScale", "0")+useTriplanarSampling+triplanarScale+seamless;
+		} 
 		else if (meshName.equalsIgnoreCase("Box"))
 		{	
 			String eqnx = meshValue.getString("loftX", "100%");
@@ -1383,16 +1436,25 @@ public class VolumePartitioner
 				
 				mesh = Shapes.getBoxMesh(1, loftx, snapx, 1, 1, loftz, snapz, true, !useTriplanarSampling);
 			}
+			else if (meshName.equalsIgnoreCase("Cylinder"))
+			{
+				int phi = meshValue.getInt("Phi", 8);
+				
+				String eqns = meshValue.getString("HollowScale", "0");
+				float scale = eqns.equalsIgnoreCase("0") ? 0 : parseEquation(eqns, 1, variables); 
+				
+				mesh = Shapes.getCylinderMesh(phi, scale>0, scale, true, !useTriplanarSampling);
+			}
 			else if (meshName.equalsIgnoreCase("Sphere"))
 			{
-				int theta = meshValue.getInt("Theta");
-				int phi = meshValue.getInt("Phi");
+				int theta = meshValue.getInt("Theta", 8);
+				int phi = meshValue.getInt("Phi", 8);
 				mesh = Shapes.getSphereMesh(theta, phi, 1, true, !useTriplanarSampling);
 			}
 			else if (meshName.equalsIgnoreCase("HemiSphere"))
 			{
-				int theta = meshValue.getInt("Theta");
-				int phi = meshValue.getInt("Phi");
+				int theta = meshValue.getInt("Theta", 8);
+				int phi = meshValue.getInt("Phi", 8);
 				mesh = Shapes.getHemiSphereMesh(theta, phi, 1, true, !useTriplanarSampling);
 			}
 			else if (meshName.equalsIgnoreCase("Prism"))

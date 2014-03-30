@@ -12,6 +12,390 @@ import com.badlogic.gdx.math.Vector3;
 
 public class Shapes {
 	
+	private static short[] linkDisks(int s1, int s2, int phi)
+	{
+		short[] indices = new short[phi*6];
+		int i = 0;
+		for (short s = 0; s < phi; s++)
+		{
+			indices[i++] = (short) (s1+s+0);
+			indices[i++] = (short) (s2+s+0);
+			indices[i++] = (short) (s2+((s+1) % phi));
+			
+			indices[i++] = (short) (s1+s+0);
+			indices[i++] = (short) (s2+((s+1) % phi));
+			indices[i++] = (short) (s1+((s+1) % phi));
+		}
+		
+		return indices;
+	}
+	
+	public static Mesh getCylinderMesh(int phi, boolean hollow, float innerScale, boolean normals, boolean texCoords)
+	{
+		int vertSize = 3;
+		if (normals) vertSize += 3;
+		if (texCoords) vertSize += 2;
+		
+		int numVertices = hollow ? phi*8 : phi*6 ;
+		int numIndices = hollow ? phi*6*4 : phi*6*3 ;
+		
+		double d_theta = Math.PI / 3.0;
+		double d_phi = (2.0*Math.PI) / (double)phi;
+
+		float[][] disk = new float[phi][3];
+
+		double c_phi = 0;
+
+		for (int p = 0; p < phi; p++)
+		{
+			c_phi += d_phi;
+			float x = (float) (Math.sin(d_theta) * Math.cos(c_phi));
+			float y = 0;
+			float z = (float) (Math.sin(d_theta) * Math.sin(c_phi));
+
+			disk[p][0] = x;
+			disk[p][1] = y;
+			disk[p][2] = z;
+		}
+		
+		float[] vertices = new float[numVertices*vertSize];
+		
+		int i = 0;
+		
+		// TopCap
+		
+		// Top outer
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0];
+			vertices[i++] = 1;
+			vertices[i++] = d[2];
+			
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+			
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+
+		// Top Inner
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0]*innerScale;
+			vertices[i++] = 1;
+			vertices[i++] = d[2]*innerScale;
+
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+		
+		// End TopCap
+		
+		// OuterSurface
+		
+		// Top outer
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0];
+			vertices[i++] = 1;
+			vertices[i++] = d[2];
+
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+
+		// Bot outer
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0];
+			vertices[i++] = -1;
+			vertices[i++] = d[2];
+
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+		
+		// End OuterSurface
+		
+		// BotCap
+		
+		// Bot outer
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0];
+			vertices[i++] = -1;
+			vertices[i++] = d[2];
+
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+
+		// Bot Inner
+		for (float[] d : disk)
+		{
+			vertices[i++] = d[0]*innerScale;
+			vertices[i++] = -1;
+			vertices[i++] = d[2]*innerScale;
+
+			if (normals)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+
+			if (texCoords)
+			{
+				vertices[i++] = 0;
+				vertices[i++] = 0;
+			}
+		}
+		
+		// End BotCap
+		
+		// InnerSurface
+		
+		if (hollow)
+		{
+			// Top Inner
+			for (float[] d : disk)
+			{
+				vertices[i++] = d[0]*innerScale;
+				vertices[i++] = 1;
+				vertices[i++] = d[2]*innerScale;
+
+				if (normals)
+				{
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+				}
+
+				if (texCoords)
+				{
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+				}
+			}
+			
+			// Bot Inner
+			for (float[] d : disk)
+			{
+				vertices[i++] = d[0]*innerScale;
+				vertices[i++] = -1;
+				vertices[i++] = d[2]*innerScale;
+
+				if (normals)
+				{
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+				}
+
+				if (texCoords)
+				{
+					vertices[i++] = 0;
+					vertices[i++] = 0;
+				}
+			}
+		}
+		
+		// End InnerSurface
+		
+		short[] indices = new short[numIndices];
+		i = 0;
+		// Top
+		System.arraycopy(linkDisks(0, phi, phi), 0, indices, i, phi*6);
+		i += phi*6;
+		// Outer
+		System.arraycopy(linkDisks(phi*3, phi*2, phi), 0, indices, i, phi*6);
+		i += phi*6;
+		// Bot
+		System.arraycopy(linkDisks(phi*5, phi*4, phi), 0, indices, i, phi*6);
+		i += phi*6;
+		// Inner
+		if (hollow)
+		{
+			System.arraycopy(linkDisks(phi*6, phi*7, phi), 0, indices, i, phi*6);
+			i += phi*6;
+		}
+		
+		if (normals)
+		{	
+			Vector3 U = Pools.obtain(Vector3.class);
+			Vector3 V = Pools.obtain(Vector3.class);
+			Vector3 N = Pools.obtain(Vector3.class);
+			
+			for (int tri = 0; tri < numIndices/3; tri++)
+			{
+				short i1 = indices[tri*3+0];
+				short i2 = indices[tri*3+1];
+				short i3 = indices[tri*3+2];
+				
+				float v1x = vertices[i1*vertSize+0];
+				float v1y = vertices[i1*vertSize+1];
+				float v1z = vertices[i1*vertSize+2];
+				
+				float v2x = vertices[i2*vertSize+0];
+				float v2y = vertices[i2*vertSize+1];
+				float v2z = vertices[i2*vertSize+2];
+				
+				float v3x = vertices[i3*vertSize+0];
+				float v3y = vertices[i3*vertSize+1];
+				float v3z = vertices[i3*vertSize+2];
+				
+				U.set(v2x, v2y, v2z).sub(v1x, v1y, v1z);
+				V.set(v3x, v3y, v3z).sub(v1x, v1y, v1z);
+				
+				N.x = U.y*V.z - U.z*V.y;
+				N.y = U.z*V.x - U.x*V.z;
+				N.z = U.x*V.y - U.y*V.x;
+				
+				float n1x = vertices[i1*vertSize+3];
+				float n1y = vertices[i1*vertSize+4];
+				float n1z = vertices[i1*vertSize+5];
+				
+				float n2x = vertices[i2*vertSize+3];
+				float n2y = vertices[i2*vertSize+4];
+				float n2z = vertices[i2*vertSize+5];
+				
+				float n3x = vertices[i3*vertSize+3];
+				float n3y = vertices[i3*vertSize+4];
+				float n3z = vertices[i3*vertSize+5];
+				
+				if (n1x == 0 && n1y == 0 && n1z == 0)
+				{
+					vertices[i1*vertSize+3] = N.x;
+					vertices[i1*vertSize+4] = N.y;
+					vertices[i1*vertSize+5] = N.z;
+				}
+				else
+				{
+					vertices[i1*vertSize+3] += N.x;
+					vertices[i1*vertSize+4] += N.y;
+					vertices[i1*vertSize+5] += N.z;
+					
+					vertices[i1*vertSize+3] /= 2.0f;
+					vertices[i1*vertSize+4] /= 2.0f;
+					vertices[i1*vertSize+5] /= 2.0f;
+				}
+				
+				if (n2x == 0 && n2y == 0 && n2z == 0)
+				{
+					vertices[i2*vertSize+3] = N.x;
+					vertices[i2*vertSize+4] = N.y;
+					vertices[i2*vertSize+5] = N.z;
+				}
+				else
+				{
+					vertices[i2*vertSize+3] += N.x;
+					vertices[i2*vertSize+4] += N.y;
+					vertices[i2*vertSize+5] += N.z;
+					
+					vertices[i2*vertSize+3] /= 2.0f;
+					vertices[i2*vertSize+4] /= 2.0f;
+					vertices[i2*vertSize+5] /= 2.0f;
+				}
+				
+				if (n3x == 0 && n3y == 0 && n3z == 0)
+				{
+					vertices[i3*vertSize+3] = N.x;
+					vertices[i3*vertSize+4] = N.y;
+					vertices[i3*vertSize+5] = N.z;
+				}
+				else
+				{
+					vertices[i3*vertSize+3] += N.x;
+					vertices[i3*vertSize+4] += N.y;
+					vertices[i3*vertSize+5] += N.z;
+					
+					vertices[i3*vertSize+3] /= 2.0f;
+					vertices[i3*vertSize+4] /= 2.0f;
+					vertices[i3*vertSize+5] /= 2.0f;
+				}
+			}
+			
+			for (int v = 0; v < numVertices; v++)
+			{
+				N.set(
+					vertices[v*vertSize+3],
+					vertices[v*vertSize+4],
+					vertices[v*vertSize+5]
+				).nor();
+				
+				vertices[v*vertSize+3] = N.x;
+				vertices[v*vertSize+4] = N.y;
+				vertices[v*vertSize+5] = N.z;
+			}
+			
+			Pools.free(U);
+			Pools.free(V);
+			Pools.free(N);
+		}
+		
+		VertexAttribute[] vas = null;
+		ArrayList<VertexAttribute> vasa = new ArrayList<VertexAttribute>();
+		vasa.add(new VertexAttribute(Usage.Position, 3, "a_position"));
+		if (normals) vasa.add(new VertexAttribute(Usage.Normal, 3, "a_normal"));
+		if (texCoords) vasa.add(new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0"));
+		vas = new VertexAttribute[vasa.size()];
+		vasa.toArray(vas);
+		
+		Mesh mesh = new Mesh(true, numVertices, numIndices, vas);
+
+		mesh.setVertices(vertices);
+		mesh.setIndices(indices);
+
+		return mesh;
+	}
+
 	public static Mesh getHemiSphereMesh(int theta, int phi, float scale, boolean normals, boolean texCoords)
 	{
 		int vertexSize = 3;
