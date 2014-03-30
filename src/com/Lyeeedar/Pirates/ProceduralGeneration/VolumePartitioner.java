@@ -1,5 +1,7 @@
 package com.Lyeeedar.Pirates.ProceduralGeneration;
 
+import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,9 +25,11 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.btTriangleMesh;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ArrayMap;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.Pools;
 
 import de.congrace.exp4j.Calculable;
@@ -40,9 +44,10 @@ public class VolumePartitioner
 {
 	public final VolumePartitioner parent;
 	public final HashMap<String, JsonValue> methodTable;
-	public final Array<BoundingBox> occluders;
+	public final ArrayMap<String, JsonValue> tempMethodTable = new ArrayMap<String, JsonValue>();
+	public final Array<OcclusionArea> occluders;
 
-	public final JsonValue rule;
+	public final ArrayDeque<JsonValue> ruleStack = new ArrayDeque<JsonValue>();
 	
 	public JsonValue Mesh;
 
@@ -58,10 +63,11 @@ public class VolumePartitioner
 	public Vector3 parentPos = new Vector3();
 	public Matrix4 localTransform = new Matrix4();
 	public Matrix4 composedTransform = new Matrix4();
+	public Matrix4 invComposedTransform = new Matrix4();
 	
 	public Vector3 snap = new Vector3();
 
-	public VolumePartitioner(Vector3 min, Vector3 max, JsonValue rule, HashMap<String, JsonValue> methodTable, VolumePartitioner parent, Array<BoundingBox> occluders)
+	public VolumePartitioner(Vector3 min, Vector3 max, JsonValue rule, HashMap<String, JsonValue> methodTable, VolumePartitioner parent, Array<OcclusionArea> occluders)
 	{
 		this.min.set(min);
 		this.max.set(max);
@@ -80,11 +86,17 @@ public class VolumePartitioner
 			this.localTransform.setToTranslation(diff);
 			
 			Pools.free(mc);
+			
+			for (ObjectMap.Entry<String, JsonValue> entry : parent.tempMethodTable.entries())
+			{
+				tempMethodTable.put(entry.key, entry.value);
+			}
 		}
 		
 		composedTransform.set(parentTransform).mul(localTransform);
+		invComposedTransform.set(composedTransform).inv();
 				
-		this.rule = rule;
+		if (rule.child != null) this.ruleStack.addFirst(rule.child);
 		this.methodTable = methodTable;
 		this.parent = parent;
 		
@@ -107,6 +119,7 @@ public class VolumePartitioner
 	{
 		this.localTransform.mul(transform);
 		composedTransform.set(parentTransform).mul(localTransform);
+		invComposedTransform.set(composedTransform).inv();
 				
 		Vector3 center = Pools.obtain(Vector3.class);
 		
@@ -203,13 +216,35 @@ public class VolumePartitioner
 		processResize("X", x);
 		processResize("Y", y);
 		processResize("Z", z);
-		evaluateInternal();
+		evaluateInternal(this);
 	}
 	
-	private void evaluateInternal()
+	private static void evaluateInternal(VolumePartitioner root)
 	{
-		processRule(rule);
-		for (VolumePartitioner vp : children) vp.evaluateInternal();
+		ArrayDeque<VolumePartitioner> processQueue = new ArrayDeque<VolumePartitioner>();
+		ArrayDeque<VolumePartitioner> deferQueue = new ArrayDeque<VolumePartitioner>();
+		
+		processQueue.add(root);
+		
+		while (processQueue.size() != 0)
+		{
+			VolumePartitioner current = processQueue.poll();
+			while (current != null)
+			{
+				if (!current.processRuleStack())
+				{
+					deferQueue.add(current);
+				}
+				
+				for (VolumePartitioner child : current.children) processQueue.add(child); // Possible performance issue
+				
+				current = processQueue.poll();
+			}
+			
+			ArrayDeque<VolumePartitioner> temp = processQueue;
+			processQueue = deferQueue;
+			deferQueue = temp;
+		}
 	}
 							
 	public float getVal(String axis, Vector3 vals)
@@ -267,13 +302,11 @@ public class VolumePartitioner
 	public void repeat(String eqn, int repeats, float offset, JsonValue ruleOffset, String offsetCoord, JsonValue ruleSub, String ruleCoord, JsonValue ruleRemainder, String remainderCoord, JsonValue repeatRule, String axis)
 	{
 		float interval = getVal(axis, max) - getVal(axis, min);
-		boolean up = !axis.startsWith("-");
 		
 		Vector3 nmin = Pools.obtain(Vector3.class).set(min);
 		Vector3 nmax = Pools.obtain(Vector3.class).set(max);
 		
-		if (up) setVal(axis, nmax, getVal(axis, nmin)+offset);
-		else setVal(axis, nmin, getVal(axis, nmax)-offset);
+		setVal(axis, nmax, getVal(axis, nmin)+offset);
 		
 		if (ruleOffset != null)
 		{
@@ -282,26 +315,17 @@ public class VolumePartitioner
 			vp.applyCoords(offsetCoord);
 		}
 		
-		if (up) setVal(axis, nmin, getVal(axis, nmax));
-		else setVal(axis, nmax, getVal(axis, nmin));
+		setVal(axis, nmin, getVal(axis, nmax));
 		
 		int rep = 0;
 		while (true)
 		{
-			if (up) setVal(axis, nmax, getVal(axis, nmin) + parseEquation(eqn, interval, variables));
-			else setVal(axis, nmin, getVal(axis, nmax) - parseEquation(eqn, interval, variables));
+			setVal(axis, nmax, getVal(axis, nmin) + parseEquation(eqn, interval, variables));
 			
 			if (rep == repeats) break;
 			else if (repeats < 0)
 			{
-				if (up) 
-				{ 
-					if (getVal(axis, nmax) > getVal(axis, max)) break; 
-				}
-				else 
-				{
-					if (getVal(axis, nmin) < getVal(axis, min)) break;
-				}
+				if (getVal(axis, nmax) > getVal(axis, max)) break; 
 			}
 			
 			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, ruleSub, methodTable, this, occluders);
@@ -310,32 +334,22 @@ public class VolumePartitioner
 			
 			rep++;
 
-			if (up) setVal(axis, nmin, getVal(axis, nmax));
-			else setVal(axis, nmax, getVal(axis, nmin));
+			setVal(axis, nmin, getVal(axis, nmax));
 			
-			if (repeatRule != null) processRule(repeatRule);
+			if (repeatRule != null) processRuleBlock(repeatRule);
 		}
 
 		if (ruleRemainder != null)
 		{
-			if (up) 
+			if (getVal(axis, nmin) < getVal(axis, max))
 			{
-				if (getVal(axis, nmin) < getVal(axis, max))
-				{
-					setVal(axis, nmax, getVal(axis, max));					
-				}
-			}
-			else
-			{
-				if (getVal(axis, nmax) > getVal(axis, min))
-				{
-					setVal(axis, nmin, getVal(axis, min));
-				}
+				setVal(axis, nmax, getVal(axis, max));
+				
+				VolumePartitioner vp = new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders);
+				children.add(vp);
+				vp.applyCoords(remainderCoord);
 			}
 			
-			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders);
-			children.add(vp);
-			vp.applyCoords(remainderCoord);
 		}
 
 		Pools.free(nmin);
@@ -346,7 +360,7 @@ public class VolumePartitioner
 	{
 		axis = axis == null ? repeat.getString("Axis") : axis ;
 		String eqn = repeat.getString("Size");
-		int repeats = repeat.has("Repeats") ? repeat.getInt("Repeats") : -1 ;
+		int repeats = repeat.getInt("Repeats", -1);
 		float offset = repeat.has("Offset") ? parseEquation(repeat.getString("Offset"), getVal(axis, max)-getVal(axis, min), variables) : 0 ;
 		
 		JsonValue ruleSub = repeat.get("Rule").child;
@@ -354,6 +368,7 @@ public class VolumePartitioner
 		{
 			String ruleString = repeat.getString("Rule");
 			ruleSub = methodTable.get(ruleString);
+			if (ruleSub == null) ruleSub = tempMethodTable.get(ruleString);
 		}
 		else
 		{
@@ -378,6 +393,7 @@ public class VolumePartitioner
 			{
 				String ruleString = repeat.getString("OffsetRule");
 				ruleOffset = methodTable.get(ruleString);
+				if (ruleOffset == null) ruleOffset = tempMethodTable.get(ruleString);
 			}
 			else
 			{
@@ -402,6 +418,7 @@ public class VolumePartitioner
 			{
 				String ruleString = repeat.getString("RemainderRule");
 				ruleRemainder = methodTable.get(ruleString);
+				if (ruleRemainder == null) ruleRemainder = tempMethodTable.get(ruleString);
 			}
 			else
 			{
@@ -425,6 +442,7 @@ public class VolumePartitioner
 			{
 				String ruleString = repeat.getString("RepeatRule");
 				ruleRepeat = methodTable.get(ruleString);
+				if (ruleRepeat == null) ruleRepeat = tempMethodTable.get(ruleString);
 			}
 			else
 			{
@@ -460,6 +478,8 @@ public class VolumePartitioner
 			setVal(axis, nmax, getVal(axis, nmin) + size);
 			
 			JsonValue rule = methodTable.get(rules[i]);
+			if (rule == null) rule = tempMethodTable.get(rules[i]);
+			if (rule == null) rule = tempMethodTable.get(rules[i]);
 			
 			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, rule, methodTable, this, occluders);
 			if (coords != null) vp.applyCoords(coords[i]);
@@ -472,14 +492,242 @@ public class VolumePartitioner
 		Pools.free(nmax);
 	}
 	
+	private static final char[][] csvDelimiters = {
+		{'(', ')'}
+	};
 	public static String[] parseCSV(String csv)
 	{
-		String[] values = csv.split(",");
+		Array<String> store = new Array<String>(false, 16);
+		StringBuilder builder = new StringBuilder();
+		int delimiter = -1;
+		
+		for (int i = 0; i < csv.length(); i++)
+		{
+			char c = csv.charAt(i);
+			if (delimiter == -1)
+			{
+				if (c == ',')
+				{
+					store.add(builder.toString());
+					builder.delete(0, builder.length());
+				}
+				else
+				{
+					builder.append(c);
+					
+					for (int d = 0; d < csvDelimiters.length; d++)
+					{
+						if (csvDelimiters[d][0] == c)
+						{
+							delimiter = d;
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				builder.append(c);
+				
+				if (csvDelimiters[delimiter][1] == c)
+				{
+					delimiter = -1;
+				}
+			}
+		}
+		
+		if (builder.length() > 0)
+		{
+			store.add(builder.toString());
+		}
+		
+		String[] values = new String[store.size];
+		for (int i = 0; i < store.size; i++) values[i] = store.get(i);
+		
 		for (int i = 0; i < values.length; i++)
 		{
 			values[i] = values[i].trim();
 		}
 		return values;
+	}
+	
+	public void processSplit(JsonValue split)
+	{
+		String[] csvs = split.asStringArray();
+		String[][] splits = new String[csvs.length][];
+		
+		JsonValue ruleRemainder = null;
+		
+		for (int i = 0; i < csvs.length; i++)
+		{
+			splits[i] = parseCSV(csvs[i]);
+			
+			if (splits[i][0].equalsIgnoreCase("Remainder")) 
+			{
+				ruleRemainder = methodTable.get(splits[i][1]);
+				if (ruleRemainder == null) ruleRemainder = tempMethodTable.get(splits[i][1]);
+			}
+		}
+		
+		BoundingBox bb = Pools.obtain(BoundingBox.class);
+		
+		float x = (max.x-min.x) / 2.0f ;
+		float y = (max.y-min.y) / 2.0f ;
+		float z = (max.z-min.z) / 2.0f ;
+		
+		Vector3 nmin = Pools.obtain(Vector3.class);
+		Vector3 nmax = Pools.obtain(Vector3.class);
+		Vector3 center = Pools.obtain(Vector3.class).set(min).add(max).scl(0.5f);
+		
+		nmin.set(x, y, z).scl(-1);
+		nmax.set(x, y, z);
+		bb.set(nmin, nmax);
+		
+		bb.mul(composedTransform);
+		
+		Array<BoundingBox> usedVolumes = new Array<BoundingBox>(false, 16);
+		
+		for (OcclusionArea area : occluders)
+		{
+			JsonValue rule = null;
+			for (String[] values : splits)
+			{
+				if (values[0].equalsIgnoreCase(area.name)) 
+				{
+					rule = methodTable.get(values[1]);
+					if (rule == null) rule = tempMethodTable.get(values[1]);
+					break;
+				}
+			}
+			if (rule == null) continue;
+			
+			BoundingBox intersection = area.intersection(bb);
+			
+			if (intersection != null)
+			{
+				intersection.mul(invComposedTransform);
+				
+				nmin.set(intersection.min).add(center);
+				nmax.set(intersection.max).add(center);
+				intersection.set(nmin, nmax);
+								
+				children.add(new VolumePartitioner(intersection.min, intersection.max, rule, methodTable, this, occluders));
+				
+				usedVolumes.add(intersection);
+			}
+		}
+		
+		usedVolumes.sort(new Comparator<BoundingBox>()
+				{
+					@Override
+					public int compare(BoundingBox bb0, BoundingBox bb1)
+					{
+						if (bb0.min.x < bb1.min.x) return -1;
+						if (bb1.min.x < bb0.min.x) return 1;
+						if (bb0.min.y < bb1.min.y) return -1;
+						if (bb1.min.y < bb0.min.y) return 1;
+						if (bb0.min.z < bb1.min.z) return -1;
+						if (bb1.min.z < bb0.min.z) return 1;
+						
+						return 0;
+					}
+				});
+		
+		// fill X volumes
+		
+		nmin.set(min);
+		nmax.set(max);
+		
+		if (usedVolumes.size == 0)
+		{
+			children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+		}
+		
+		for (BoundingBox uv : usedVolumes)
+		{
+			nmax.x = uv.min.x;
+			
+			if (nmin.x < nmax.x)
+			{
+				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+			}
+			
+			nmin.x = uv.max.x;
+		}
+		
+		nmax.x = max.x;
+		
+		if (nmin.x < nmax.x)
+		{
+			children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+		}
+		
+		// Fill Y volumes
+		
+		for (BoundingBox uv : usedVolumes)
+		{	
+			nmin.set(min);
+			nmax.set(max);
+			
+			// Constrain to X bounds
+			nmin.x = uv.min.x;
+			nmax.x = uv.max.x;
+			
+			nmax.y = uv.min.y;
+			
+			// Place below
+			if (nmin.y < nmax.y)
+			{
+				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+			}
+			
+			nmin.y = uv.max.y;
+			nmax.y = max.y;
+			
+			// Place above
+			if (nmin.y < nmax.y)
+			{
+				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+			}
+		}
+		
+		// Fill Z volumes
+		
+		for (BoundingBox uv : usedVolumes)
+		{	
+			nmin.set(min);
+			nmax.set(max);
+			
+			// Constrain to XY bounds
+			nmin.x = uv.min.x;
+			nmax.x = uv.max.x;
+			
+			nmin.y = uv.min.y;
+			nmax.y = uv.max.y;
+			
+			nmax.z = uv.min.z;
+			
+			// Place front
+			if (nmin.z < nmax.z)
+			{
+				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+			}
+			
+			nmin.z = uv.max.z;
+			nmax.z = max.z;
+			
+			// Place behind
+			if (nmin.z < nmax.z)
+			{
+				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+			}
+		}
+		
+		Pools.free(bb);
+		Pools.free(nmin);
+		Pools.free(nmax);
+		
+		for (BoundingBox uv : usedVolumes) Pools.free(uv);
 	}
 	
 	public void processDivide(JsonValue divide, String axis)
@@ -504,6 +752,8 @@ public class VolumePartitioner
 			setVal(axis, nmax, getVal(axis, nmin) + size);
 			
 			JsonValue rule = methodTable.get(ruleString);
+			if (rule == null) rule = tempMethodTable.get(ruleString);
+			if (rule == null) throw new RuntimeException("Rule: "+ruleString+" does not exist!");
 			
 			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, rule, methodTable, this, occluders);
 			if (coords != null) vp.applyCoords(coords);
@@ -590,6 +840,7 @@ public class VolumePartitioner
 			}
 			
 			JsonValue rule = methodTable.get(ruleString);
+			if (rule == null) rule = tempMethodTable.get(ruleString);
 			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, rule, methodTable, this, occluders);
 			if (coords != null) vp.applyCoords(coords);
 			children.add(vp);
@@ -603,6 +854,7 @@ public class VolumePartitioner
 			String coords = values.length > 2 ? values[2] : null ; 
 			
 			JsonValue rule = methodTable.get(ruleString);
+			if (rule == null) rule = tempMethodTable.get(ruleString);
 			VolumePartitioner vp = new VolumePartitioner(rmin, rmax, rule, methodTable, this, occluders);
 			if (coords != null) vp.applyCoords(coords);
 			children.add(vp);
@@ -648,9 +900,10 @@ public class VolumePartitioner
 		Pools.free(lastPos);
 		Pools.free(newPos);
 		composedTransform.set(parentTransform).mul(localTransform);
+		invComposedTransform.set(composedTransform).inv();
 	}
 	
-	public void processConditional(JsonValue conditional)
+	public void processConditional(JsonValue conditional, boolean canInterrupt)
 	{
 		String[] values = parseCSV(conditional.asString());
 		
@@ -660,24 +913,29 @@ public class VolumePartitioner
 		String chosenRule = evaluateConditional(condition) ? ruleSucceed : ruleFail ;
 		
 		JsonValue rule = methodTable.get(chosenRule);
+		if (rule == null) rule = tempMethodTable.get(chosenRule);
 		
-		processRule(rule);
+		if (rule.child != null) 
+		{
+			if (canInterrupt) ruleStack.addFirst(rule.child);
+			else processRuleBlock(rule);
+		}
 	}
 	
-	public void processMultiConditional(JsonValue conditional)
+	public void processMultiConditional(JsonValue conditional, boolean canInterrupt)
 	{
 		JsonValue current = conditional.child;
 		while (current != null)
 		{
-			System.out.println("\n"+current.name);
+			System.out.println("\nBlock: "+current.name);
 			String[] conditions = parseCSV(current.name);
 			boolean pass = true;
 			
-			if (!current.name.equalsIgnoreCase("") && conditions.length > 0) 
+			if (!current.name.equalsIgnoreCase("else") && conditions.length > 0) 
 			{
 				for (String condition : conditions)
 				{
-					System.out.println(condition);
+					System.out.println("Condition: "+condition);
 					if (!evaluateConditional(condition))
 					{
 						pass = false;
@@ -693,6 +951,7 @@ public class VolumePartitioner
 				{
 					String ruleString = current.asString();
 					rule = methodTable.get(ruleString);
+					if (rule == null) rule = tempMethodTable.get(ruleString);
 				}
 				else
 				{
@@ -702,12 +961,17 @@ public class VolumePartitioner
 					rule = temp;
 				}
 				
-				processRule(rule);
+				if (rule.child != null) 
+				{
+					if (canInterrupt) ruleStack.addFirst(rule.child);
+					else processRuleBlock(rule);
+				}
 				break;
 			}
 			
 			current = current.next;
 		}
+		
 	}
 	
 	private static final String[] validComparisons = {"<=", ">=", "==", "<", ">"};
@@ -717,8 +981,10 @@ public class VolumePartitioner
 		
 		boolean succeed = false;
 		
-		if (condition.equalsIgnoreCase("occluded"))
+		if (condition.startsWith("occluded("))
 		{
+			String name = condition.substring(8, condition.length()-1);
+			
 			float x = (max.x-min.x) / 2.0f ;
 			float y = (max.y-min.y) / 2.0f ;
 			float z = (max.z-min.z) / 2.0f ;
@@ -733,9 +999,9 @@ public class VolumePartitioner
 			bb.mul(composedTransform);
 						
 			succeed = false;
-			for (BoundingBox obb : occluders)
+			for (OcclusionArea oa : occluders)
 			{
-				if (bb.intersects(obb)) 
+				if (oa.name.equalsIgnoreCase(name) && bb.intersects(oa.box)) 
 				{
 					succeed = true;
 					break;
@@ -745,6 +1011,14 @@ public class VolumePartitioner
 			Pools.free(bb);
 			Pools.free(tmin);
 			Pools.free(tmax);
+		}
+		else if (condition.startsWith("defined("))
+		{
+			String name = condition.substring(8, condition.length()-1);
+			if (variables.containsKey(name) || defines.containsKey(name))
+			{
+				succeed = true;
+			}
 		}
 		else
 		{
@@ -797,152 +1071,259 @@ public class VolumePartitioner
 	
 	public void processOcclude(JsonValue occlude)
 	{
-		String xeqn = occlude.getString("X");
-		String yeqn = occlude.getString("Y");
-		String zeqn = occlude.getString("Z");
+		String xeqn = occlude.getString("X", "100%");
+		String yeqn = occlude.getString("Y", "100%");
+		String zeqn = occlude.getString("Z", "100%");
 		
-		float x = parseEquation(xeqn, max.x-min.x, variables) / 2.0f ;
-		float y = parseEquation(yeqn, max.y-min.y, variables) / 2.0f ;
-		float z = parseEquation(zeqn, max.z-min.z, variables) / 2.0f ;
+		String oxeqn = occlude.getString("OX", "0");
+		String oyeqn = occlude.getString("OY", "0");
+		String ozeqn = occlude.getString("OZ", "0");
 		
+		float dx = max.x-min.x;
+		float dy = max.y-min.y;
+		float dz = max.z-min.z;
+		
+		float x = parseEquation(xeqn, dx, variables) / 2.0f ;
+		float y = parseEquation(yeqn, dy, variables) / 2.0f ;
+		float z = parseEquation(zeqn, dz, variables) / 2.0f ;
+		
+		float ox = parseEquation(oxeqn, dx, variables) / 2.0f ;
+		float oy = parseEquation(oyeqn, dy, variables) / 2.0f ;
+		float oz = parseEquation(ozeqn, dz, variables) / 2.0f ;
 		
 		BoundingBox bb = Pools.obtain(BoundingBox.class);
 		Vector3 tmin = Pools.obtain(Vector3.class);
 		Vector3 tmax = Pools.obtain(Vector3.class);
+		
+		dx /= 2;
+		dy /= 2;
+		dz /= 2;
+		
+		if (snap.x == -1)
+		{
+			tmin.x = -dx+ox;
+			tmax.x = -dx+x*2+ox;
+		}
+		else if (snap.x == 1)
+		{
+			tmin.x = dx-x*2+ox;
+			tmax.x = dx+ox;
+		}
+		else
+		{
+			tmin.x = -x+ox;
+			tmax.x = x+ox;
+		}
+		
+		if (snap.y == -1)
+		{
+			tmin.y = -dy+oy;
+			tmax.y = -dy+y*2+oy;
+		}
+		else if (snap.y == 1)
+		{
+			tmin.y = dy-y*2+oy;
+			tmax.y = dy+oy;
+		}
+		else
+		{
+			tmin.y = -y+oy;
+			tmax.y = y+oy;
+		}
+		
+		if (snap.z == -1)
+		{
+			tmin.z = -dz+oz;
+			tmax.z = -dz+z*2+oz;
+		}
+		else if (snap.z == 1)
+		{
+			tmin.z = dz-z*2+oz;
+			tmax.z = dz+oz;
+		}
+		else
+		{
+			tmin.z = -z+oz;
+			tmax.z = z+oz;
+		}
 				
-		tmin.set(x, y, z).scl(-1);
-		tmax.set(x, y, z);
 		bb.set(tmin, tmax);
 		bb.mul(composedTransform);
+		
+		String name = occlude.getString("Name", "");
 				
-		occluders.add(bb);
+		occluders.add(new OcclusionArea(bb, name, this));
 		
 		Pools.free(tmin);
 		Pools.free(tmax);
 	}
 	
-	public void processRule(JsonValue rule)
+	public boolean processRuleStack()
+	{
+		while (true)
+		{
+			JsonValue current = ruleStack.pollFirst();
+			
+			if (current == null)
+			{
+				break;
+			}
+			
+			if (current.next != null) ruleStack.addFirst(current.next);
+			
+			if (!processRule(current, true)) 
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public void processRuleBlock(JsonValue rule)
 	{
 		JsonValue current = rule.child;
-	
 		while (current != null)
 		{
-			String method = current.name;
-			
-			if (method.equalsIgnoreCase("Rule"))
+			processRule(current, false);
+			current = current.next;
+		}
+	}
+	
+	public boolean processRule(JsonValue current, boolean canInterrupt)
+	{	
+		String method = current.name;
+		
+		if (method.equalsIgnoreCase("Rule"))
+		{
+			JsonValue nrule = methodTable.get(current.asString());
+			if (nrule == null) throw new RuntimeException("Invalid rule: "+current.asString());
+			ruleStack.addFirst(nrule.child);
+		}
+		else if (method.equalsIgnoreCase("CoordinateSystem"))
+		{
+			applyCoords(current.asString());
+		}
+		else if (method.equalsIgnoreCase("Rotate"))
+		{
+			if (current.child != null)
 			{
-				JsonValue nrule = methodTable.get(current.asString());
-				if (nrule == null) throw new RuntimeException("Invalid rule: "+current.asString());
-				processRule(nrule);
-			}
-			else if (method.equalsIgnoreCase("CoordinateSystem"))
-			{
-				applyCoords(current.asString());
-			}
-			else if (method.equalsIgnoreCase("Rotate"))
-			{
-				float axisx = current.getFloat("X");
-				float axisy = current.getFloat("Y");
-				float axisz = current.getFloat("Z");
+				float axisx = current.getFloat("X", 0);
+				float axisy = current.getFloat("Y", 1);
+				float axisz = current.getFloat("Z", 0);
 				float angle = current.getFloat("Angle");
 				Matrix4 rotation = Pools.obtain(Matrix4.class).setToRotation(axisx, axisy, axisz, angle);
 				
 				transformVolume(rotation);
 				
 				Pools.free(rotation);
-				
-			}
-			else if (method.equalsIgnoreCase("Conditional"))
-			{
-				processConditional(current);
-			}
-			else if (method.equalsIgnoreCase("MultiConditional"))
-			{
-				processMultiConditional(current);
-			}
-			else if (method.equalsIgnoreCase("Select"))
-			{
-				processSelect(current);
-			}
-			else if (method.equalsIgnoreCase("Repeat"))
-			{
-				processRepeat(current, null);
-			}
-			else if (method.equalsIgnoreCase("RepeatX"))
-			{
-				processRepeat(current, "X");
-			}
-			else if (method.equalsIgnoreCase("RepeatY"))
-			{
-				processRepeat(current, "Y");
-			}
-			else if (method.equalsIgnoreCase("RepeatZ"))
-			{
-				processRepeat(current, "Z");
-			}
-			else if (method.equalsIgnoreCase("Divide"))
-			{
-				processDivide(current);
-			}
-			else if (method.equalsIgnoreCase("DivideX"))
-			{
-				processDivide(current, "X");
-			}
-			else if (method.equalsIgnoreCase("DivideY"))
-			{
-				processDivide(current, "Y");
-			}
-			else if (method.equalsIgnoreCase("DivideZ"))
-			{
-				processDivide(current, "Z");
-			}
-			else if (method.equalsIgnoreCase("Snap"))
-			{
-				snap.set(current.getFloat("X", snap.x), current.getFloat("Y", snap.y), current.getFloat("Z", snap.z));
-			}
-			else if (method.equalsIgnoreCase("X") || method.equalsIgnoreCase("Y") || method.equalsIgnoreCase("Z"))
-			{
-				String axis = method;
-				String eqnString = current.asString();
-				float interval = getVal(axis, max) - getVal(axis, min) ;
-				
-				float val = parseEquation(eqnString, interval, variables) ;
-				
-				processResize(axis, val);
-			}
-			else if (method.equalsIgnoreCase("Define"))
-			{
-				JsonValue definition = current.child;
-				while (definition != null)
-				{
-					String name = definition.name;
-					String value = definition.asString();
-					defines.put(name, value);
-					try
-					{
-						double val = parseEquationWithException(value, 0, variables);
-						variables.put(name, val);
-					}
-					catch (Exception e) {}
-					
-					definition = definition.next;
-				}
-			}
-			else if (method.equalsIgnoreCase("Occludes"))
-			{
-				processOcclude(current);
-			}
-			else if (method.equalsIgnoreCase("Mesh"))
-			{
-				Mesh = current;
 			}
 			else
 			{
-				throw new RuntimeException("Unrecognised Rule: "+method);
+				applyCoords(current.asString());
 			}
-
-			current = current.next;
+			
 		}
+		else if (method.equalsIgnoreCase("Conditional"))
+		{
+			processConditional(current, canInterrupt);
+		}
+		else if (method.equalsIgnoreCase("MultiConditional"))
+		{
+			processMultiConditional(current, canInterrupt);
+		}
+		else if (method.equalsIgnoreCase("Split"))
+		{
+			processSplit(current);
+		}
+		else if (method.equalsIgnoreCase("Select"))
+		{
+			processSelect(current);
+		}
+		else if (method.equalsIgnoreCase("Repeat"))
+		{
+			processRepeat(current, null);
+		}
+		else if (method.equalsIgnoreCase("RepeatX"))
+		{
+			processRepeat(current, "X");
+		}
+		else if (method.equalsIgnoreCase("RepeatY"))
+		{
+			processRepeat(current, "Y");
+		}
+		else if (method.equalsIgnoreCase("RepeatZ"))
+		{
+			processRepeat(current, "Z");
+		}
+		else if (method.equalsIgnoreCase("Divide"))
+		{
+			processDivide(current);
+		}
+		else if (method.equalsIgnoreCase("DivideX"))
+		{
+			processDivide(current, "X");
+		}
+		else if (method.equalsIgnoreCase("DivideY"))
+		{
+			processDivide(current, "Y");
+		}
+		else if (method.equalsIgnoreCase("DivideZ"))
+		{
+			processDivide(current, "Z");
+		}
+		else if (method.equalsIgnoreCase("Snap"))
+		{
+			snap.set(current.getFloat("X", snap.x), current.getFloat("Y", snap.y), current.getFloat("Z", snap.z));
+		}
+		else if (method.equalsIgnoreCase("X") || method.equalsIgnoreCase("Y") || method.equalsIgnoreCase("Z"))
+		{
+			String axis = method;
+			String eqnString = current.asString();
+			float interval = getVal(axis, max) - getVal(axis, min) ;
+			
+			float val = parseEquation(eqnString, interval, variables) ;
+			
+			processResize(axis, val);
+		}
+		else if (method.equalsIgnoreCase("Define"))
+		{
+			JsonValue definition = current.child;
+			while (definition != null)
+			{
+				String name = definition.name;
+				String value = definition.asString();
+				defines.put(name, value);
+				try
+				{
+					double val = parseEquationWithException(value, 0, variables);
+					variables.put(name, val);
+				}
+				catch (Exception e) {}
+				
+				definition = definition.next;
+			}
+		}
+		else if (method.equalsIgnoreCase("Occlude"))
+		{
+			processOcclude(current);
+		}
+		else if (method.equalsIgnoreCase("Mesh"))
+		{
+			Mesh = current;
+		}
+		else if (method.equalsIgnoreCase("Defer"))
+		{
+			return false;
+		}
+		else if (method.startsWith("TempRule"))
+		{
+			tempMethodTable.put(method, current);
+		}
+		else
+		{
+			throw new RuntimeException("Unrecognised Rule: "+method);
+		}
+		return true;
 	}
 
 	public ModelBatchData getModelBatchData()
@@ -1156,7 +1537,7 @@ public class VolumePartitioner
 		HashMap<String, JsonValue> methodTable = FileUtils.loadGrammar(file);
 		JsonValue main = methodTable.get("Main");
 
-		return new VolumePartitioner(new Vector3(), new Vector3(), main, methodTable, null, new Array<BoundingBox>(false, 16));
+		return new VolumePartitioner(new Vector3(), new Vector3(), main, methodTable, null, new Array<OcclusionArea>(false, 16));
 	}
 
 	private float parseEquationWithException(String equation, float interval, HashMap<String, Double> variables) throws UnknownFunctionException, UnparsableExpressionException
@@ -1190,9 +1571,28 @@ public class VolumePartitioner
 				e.printStackTrace();
 			}
 		}
+		
+		if (modFunc == null)
+		{
+			try
+			{
+				modFunc = new CustomFunction("mod", 2) {
+					public double applyFunction(double... value) 
+					{
+						return value[0] % value[1] ;
+					}
+
+				};
+			}
+			catch (InvalidCustomFunctionException e)
+			{
+				e.printStackTrace();
+			}
+		}
 
 		ExpressionBuilder expBuilder = new ExpressionBuilder(equation);
 		expBuilder.withCustomFunction(rndFunc);
+		expBuilder.withCustomFunction(modFunc);
 		expBuilder.withOperation(percentOperator);
 		expBuilder.withVariables(variables);
 		
@@ -1218,19 +1618,17 @@ public class VolumePartitioner
 		{
 			size = parseEquationWithException(equation, interval, variables);
 		}
-		catch (UnknownFunctionException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
-		}
-		catch (UnparsableExpressionException e)
-		{
-			e.printStackTrace();
+			throw new RuntimeException("Error parsing equation: "+equation);
 		}
 
 		return size;
 	}
 
 	private static CustomFunction rndFunc;
+	private static CustomFunction modFunc;
 	private static PercentOperator percentOperator;
 	
 	private static class PercentOperator extends CustomOperator
@@ -1247,5 +1645,43 @@ public class VolumePartitioner
 			return ( arg0[0] / 100.0 ) * interval;
 		}
 		
+	}
+
+	private static class OcclusionArea
+	{
+		BoundingBox box;
+		String name;
+		VolumePartitioner parent;
+		
+		public OcclusionArea(BoundingBox bb, String name, VolumePartitioner parent)
+		{
+			this.box = bb;
+			this.name = name;
+			this.parent = parent;
+		}
+		
+		public BoundingBox intersection(BoundingBox other)
+		{
+			if (!other.intersects(box)) return null;
+			
+			BoundingBox bb = Pools.obtain(BoundingBox.class);
+			Vector3 min = Pools.obtain(Vector3.class);
+			Vector3 max = Pools.obtain(Vector3.class);
+			
+			min.x = other.min.x > box.min.x ? other.min.x : box.min.x;
+			min.y = other.min.y > box.min.y ? other.min.y : box.min.y;
+			min.z = other.min.z > box.min.z ? other.min.z : box.min.z;
+			
+			max.x = other.max.x < box.max.x ? other.max.x : box.max.x;
+			max.y = other.max.y < box.max.y ? other.max.y : box.max.y;
+			max.z = other.max.z < box.max.z ? other.max.z : box.max.z;
+			
+			bb.set(min, max);
+			
+			Pools.free(min);
+			Pools.free(max);
+			
+			return bb;
+		}
 	}
 }
