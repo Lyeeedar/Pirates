@@ -214,25 +214,25 @@ public class GameScreen extends AbstractScreen {
 		
 		bw.add(planeShape, new Matrix4().translate(0, -749, 0), planeEntity, BulletWorld.FILTER_COLLISION, BulletWorld.FILTER_COLLISION);
 		
-//		// BUILDING
-//		
-//		Entity building = new Entity(true, new PositionalData());
-//		building.readOnlyRead(PositionalData.class).position.y = 50;
-//		building.readOnlyRead(PositionalData.class).initialise();
-//		
-//		OcttreeEntry<Entity> bentry = rw.createEntry(building, building.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
-//		btTriangleMesh btm = new btTriangleMesh();
-//		
-//		VolumePartitioner vp = VolumePartitioner.load("data/grammar/house.json");
-//		vp.evaluate();
-//		vp.collectMeshes(building, bentry, btm, new Matrix4());
-//		
-//		btCollisionShape bshape = new btBvhTriangleMeshShape(btm, true);
-//		
-//		rw.add(bentry);
-//		bw.add(bshape, new Matrix4().setToTranslation(building.readOnlyRead(PositionalData.class).position), building, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
-//		
-//		// END BUILDING
+		// BUILDING
+		
+		Entity bbuilding = new Entity(true, new PositionalData());
+		bbuilding.readOnlyRead(PositionalData.class).position.y = 300;
+		bbuilding.readOnlyRead(PositionalData.class).initialise();
+		
+		OcttreeEntry<Entity> bbentry = rw.createEntry(bbuilding, bbuilding.readOnlyRead(PositionalData.class).position, new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+		btTriangleMesh bbtm = new btTriangleMesh();
+		
+		VolumePartitioner bvp = VolumePartitioner.load("data/grammar/castle.json");
+		bvp.evaluate(200, 300, 200);
+		bvp.collectMeshes(bbuilding, bbentry, bbtm);
+		
+		btCollisionShape bbshape = new btBvhTriangleMeshShape(bbtm, true);
+		
+		rw.add(bbentry);
+		bw.add(bbshape, new Matrix4().setToTranslation(bbuilding.readOnlyRead(PositionalData.class).position), bbuilding, (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER), (short) (BulletWorld.FILTER_COLLISION | BulletWorld.FILTER_RENDER | BulletWorld.FILTER_GHOST));
+		
+		// END BUILDING
 		
 		Mesh grassMesh = FileUtils.loadMesh("data/models/pinet.obj");
 		Texture pinetex = FileUtils.loadTexture("data/textures/pinet.png", true, TextureFilter.MipMapLinearLinear, null);
@@ -247,9 +247,9 @@ public class GameScreen extends AbstractScreen {
 		int numChunks = 1;
 		
 		Array<Landmark> landmarks = new Array<Landmark>();
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 1; i++)
 		{
-			Landmark l = new Landmark(0, 0, 30, 30, Float.NaN);
+			Landmark l = new Landmark(0, 0, 15, 15, Float.NaN);
 			for (int rep = 0; rep < 20; rep++)
 			{
 				float x = ran.nextFloat()*numChunks*chuckSpacing;
@@ -303,7 +303,7 @@ public class GameScreen extends AbstractScreen {
 			}
 		}
 		
-		Building[] buildings = {new Building(5, 5, "data/grammar/house.json", (byte) 4), new Building(1, 5, "data/grammar/house.json", (byte) 4), new Building(2, 4, "data/grammar/house.json", (byte) 4), new Building(3, 3, "data/grammar/house.json", (byte) 5), new Building(7, 7, "data/grammar/house.json", (byte) 5), new Building(4, 2, "data/grammar/house.json", (byte) 5)};
+		Building[] buildings = {new Building(10, 10, "data/grammar/steps.json", (byte) 4)};
 		for (Landmark landmark : landmarks)
 		{			
 			SocietyGenerator.fillVillage(landmark, buildings, 1337, (byte) 3, (byte) -1);

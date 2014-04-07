@@ -502,7 +502,7 @@ public class VolumePartitioner
 	private static final char[][] csvDelimiters = {
 		{'(', ')'}
 	};
-	public static String[] parseCSV(String csv)
+	private static String[] parseCSV(String csv)
 	{
 		Array<String> store = new Array<String>(false, 16);
 		StringBuilder builder = new StringBuilder();
@@ -629,18 +629,9 @@ public class VolumePartitioner
 					@Override
 					public int compare(BoundingBox bb0, BoundingBox bb1)
 					{
-						if (bb0.min.x < bb1.min.x) return -1;
-						if (bb1.min.x < bb0.min.x) return 1;
-						if (bb0.min.y < bb1.min.y) return -1;
-						if (bb1.min.y < bb0.min.y) return 1;
-						if (bb0.min.z < bb1.min.z) return -1;
-						if (bb1.min.z < bb0.min.z) return 1;
-						
-						return 0;
+						return (int) ((bb0.min.x - bb1.min.x)*100.0f);
 					}
 				});
-		
-		// fill X volumes
 		
 		nmin.set(min);
 		nmax.set(max);
@@ -649,84 +640,190 @@ public class VolumePartitioner
 		{
 			children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
 		}
-		
-		for (BoundingBox uv : usedVolumes)
+		else
 		{
-			nmax.x = uv.min.x;
+			// fill X volumes
+			
+			Array<OcclusionGroup> groupedx = new Array<OcclusionGroup>();
+			
+			// Group X's
+			for (BoundingBox uv : usedVolumes)
+			{
+				OcclusionGroup og = groupedx.size > 0 ? groupedx.peek() : null;
+				if (og != null && uv.max.x >= og.bb.min.x && uv.min.x <= og.bb.max.x)
+				{
+					og.addVolume(uv);
+				}
+				else
+				{
+					og = Pools.obtain(OcclusionGroup.class).clear();
+					og.addVolume(uv);
+					groupedx.add(og);
+				}
+			}
+			
+			nmin.set(min);
+			nmax.set(max);
+			
+			for (OcclusionGroup og : groupedx)
+			{
+				og.sortY();
+				
+				nmax.x = og.bb.min.x;
+				
+				if (nmin.x < nmax.x)
+				{
+					children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+				}
+				
+				nmin.x = og.bb.max.x;
+			}
+			
+			nmax.x = max.x;
 			
 			if (nmin.x < nmax.x)
 			{
 				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
 			}
 			
-			nmin.x = uv.max.x;
-		}
-		
-		nmax.x = max.x;
-		
-		if (nmin.x < nmax.x)
-		{
-			children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
-		}
-		
-		// Fill Y volumes
-		
-		for (BoundingBox uv : usedVolumes)
-		{	
-			nmin.set(min);
-			nmax.set(max);
+			// Fill Y volumes
 			
-			// Constrain to X bounds
-			nmin.x = uv.min.x;
-			nmax.x = uv.max.x;
-			
-			nmax.y = uv.min.y;
-			
-			// Place below
-			if (nmin.y < nmax.y)
+			Array<Array<OcclusionGroup>> groupedy = new Array<Array<OcclusionGroup>>();
+						
+			// Group Y's
+			for (OcclusionGroup ogx : groupedx)
 			{
-				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+				groupedy.add(new Array<OcclusionGroup>(false, 16));
+				for (BoundingBox uv : ogx.volumes)
+				{
+					OcclusionGroup og = groupedy.peek().size > 0 ? groupedy.peek().peek() : null ;
+					if (og != null && uv.max.y >= og.bb.min.y && uv.min.y <= og.bb.max.y)
+					{
+						og.addVolume(uv);
+					}
+					else
+					{
+						og = Pools.obtain(OcclusionGroup.class).clear();
+						og.addVolume(uv);
+						groupedy.peek().add(og);
+					}
+				}
 			}
 			
-			nmin.y = uv.max.y;
-			nmax.y = max.y;
-			
-			// Place above
-			if (nmin.y < nmax.y)
+			for (Array<OcclusionGroup> group : groupedy)
 			{
-				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
-			}
-		}
-		
-		// Fill Z volumes
-		
-		for (BoundingBox uv : usedVolumes)
-		{	
-			nmin.set(min);
-			nmax.set(max);
-			
-			// Constrain to XY bounds
-			nmin.x = uv.min.x;
-			nmax.x = uv.max.x;
-			
-			nmin.y = uv.min.y;
-			nmax.y = uv.max.y;
-			
-			nmax.z = uv.min.z;
-			
-			// Place front
-			if (nmin.z < nmax.z)
-			{
-				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+				nmin.set(min);
+				nmax.set(max);
+				
+				for (OcclusionGroup og : group)
+				{
+					og.sortZ();
+					nmin.x = og.bb.min.x;
+					nmax.x = og.bb.max.x;
+					
+					nmax.y = og.bb.min.y;
+					
+					if (nmin.y < nmax.y)
+					{
+						children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+					}
+					
+					nmin.y = og.bb.max.y;
+				}
+				
+				nmax.y = max.y;
+				
+				if (nmin.y < nmax.y)
+				{
+					children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+				}
 			}
 			
-			nmin.z = uv.max.z;
-			nmax.z = max.z;
+			// Fill Z volumes
 			
-			// Place behind
-			if (nmin.z < nmax.z)
+			Array<Array<Array<OcclusionGroup>>> groupedz = new Array<Array<Array<OcclusionGroup>>>();
+						
+			// Group Z's
+			for (Array<OcclusionGroup> groupy : groupedy)
 			{
-				children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+				groupedz.add(new Array<Array<OcclusionGroup>>(false, 16));
+				for (OcclusionGroup ogy : groupy)
+				{
+					groupedz.peek().add(new Array<OcclusionGroup>(false, 16));
+					for (BoundingBox uv : ogy.volumes)
+					{
+						OcclusionGroup og = groupedz.peek().peek().size > 0 ? groupedz.peek().peek().peek() : null ;
+						if (og != null && uv.max.z >= og.bb.min.z && uv.min.z <= og.bb.max.z)
+						{
+							og.addVolume(uv);
+						}
+						else
+						{
+							og = Pools.obtain(OcclusionGroup.class).clear();
+							og.addVolume(uv);
+							groupedz.peek().peek().add(og);
+						}
+					}
+				}
+			}
+			
+			for (Array<Array<OcclusionGroup>> groupx : groupedz)
+			{
+				for (Array<OcclusionGroup> groupy : groupx)
+				{
+					nmin.set(min);
+					nmax.set(max);
+					
+					for (OcclusionGroup og : groupy)
+					{
+						og.sortZ();
+						nmin.x = og.bb.min.x;
+						nmax.x = og.bb.max.x;
+						
+						nmax.z = og.bb.min.z;
+						
+						if (nmin.z < nmax.z)
+						{
+							children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+						}
+						
+						nmin.z = og.bb.max.z;
+					}
+					
+					nmax.z = max.z;
+					
+					if (nmin.z < nmax.z)
+					{
+						children.add(new VolumePartitioner(nmin, nmax, ruleRemainder, methodTable, this, occluders));
+					}
+				}
+			}
+			
+			for (OcclusionGroup og : groupedx)
+			{
+				og.clear();
+				Pools.free(og);
+			}
+			
+			for (Array<OcclusionGroup> groupy : groupedy)
+			{
+				for (OcclusionGroup og : groupy)
+				{
+					og.clear();
+					Pools.free(og);
+				}
+			}
+			
+			for (Array<Array<OcclusionGroup>> groupx : groupedz)
+			{
+				for (Array<OcclusionGroup> groupy : groupx)
+				{
+					for (OcclusionGroup og : groupy)
+					{
+						og.clear();
+						Pools.free(og);
+					}
+				}
 			}
 		}
 		
@@ -934,7 +1031,6 @@ public class VolumePartitioner
 		JsonValue current = conditional.child;
 		while (current != null)
 		{
-			System.out.println("\nBlock: "+current.name);
 			String[] conditions = parseCSV(current.name);
 			boolean pass = true;
 			
@@ -942,7 +1038,6 @@ public class VolumePartitioner
 			{
 				for (String condition : conditions)
 				{
-					System.out.println("Condition: "+condition);
 					if (!evaluateConditional(condition))
 					{
 						pass = false;
@@ -1204,7 +1299,7 @@ public class VolumePartitioner
 		{
 			JsonValue nrule = methodTable.get(current.asString());
 			if (nrule == null) throw new RuntimeException("Invalid rule: "+current.asString());
-			ruleStack.addFirst(nrule.child);
+			if (nrule.child != null) ruleStack.addFirst(nrule.child);
 		}
 		else if (method.equalsIgnoreCase("Child"))
 		{
@@ -1381,7 +1476,7 @@ public class VolumePartitioner
 		String meshName = meshValue.getString("Name");
 		if (defines.containsKey(meshName)) meshName = defines.get(meshName);
 		String textureName = meshValue.getString("Texture");
-		boolean useTriplanarSampling = meshValue.getBoolean("TriplanarSample", false);
+		boolean useTriplanarSampling = meshValue.has("TriplanarScale");
 		float triplanarScale = 0;
 		if (useTriplanarSampling) triplanarScale = meshValue.getFloat("TriplanarScale");
 		boolean seamless = meshValue.getBoolean("IsSeamless", true);
@@ -1588,6 +1683,29 @@ public class VolumePartitioner
 				{
 					current.set(renameTable.get(cString));
 				}
+				else
+				{
+					String[] split = parseCSV(cString);
+					boolean change = false;
+					for (int i = 0; i < split.length; i++)
+					{
+						if (renameTable.containsKey(split[i]))
+						{
+							split[i] = renameTable.get(split[i]);
+							change = true;
+						}
+					}
+					
+					if (change)
+					{
+						String combined = split[0];
+						for (int i = 1; i < split.length; i++)
+						{
+							combined += ","+split[i];
+						}
+						current.set(combined);
+					}
+				}
 			}
 		}
 		if (current.child != null) correctRenames(current.child, renameTable);
@@ -1709,7 +1827,64 @@ public class VolumePartitioner
 		
 	}
 
-	private static class OcclusionArea
+	public static class OcclusionGroup
+	{
+		BoundingBox bb = new BoundingBox();
+		Array<BoundingBox> volumes = new Array<BoundingBox>(false, 16);
+		
+		public OcclusionGroup()
+		{
+			
+		}
+		
+		public void addVolume(BoundingBox bb)
+		{
+			if (volumes.size == 0)
+			{
+				this.bb.set(bb);
+			}
+			else
+			{
+				this.bb.ext(bb);
+			}
+			
+			volumes.add(bb);
+		}
+		
+		public OcclusionGroup clear()
+		{
+			bb.min.set(0, 0, 0);
+			bb.max.set(0, 0, 0);
+			volumes.clear();
+			
+			return this;
+		}
+		
+		public void sortY()
+		{
+			volumes.sort(new Comparator<BoundingBox>()
+					{
+						@Override
+						public int compare(BoundingBox bb0, BoundingBox bb1)
+						{
+							return (int) ((bb0.min.y - bb1.min.y)*100.0f);
+						}
+					});
+		}
+		
+		public void sortZ()
+		{
+			volumes.sort(new Comparator<BoundingBox>()
+					{
+						@Override
+						public int compare(BoundingBox bb0, BoundingBox bb1)
+						{
+							return (int) ((bb0.min.z - bb1.min.z)*100.0f);
+						}
+					});
+		}
+	}
+	public static class OcclusionArea
 	{
 		BoundingBox box;
 		String name;

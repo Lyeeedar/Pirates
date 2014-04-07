@@ -248,8 +248,8 @@ public class ModelBatcher implements Batch
 	
 	public void loadSimpleShader()
 	{	
-		String vert = "#define MAX_INSTANCES " + MAX_INSTANCES + "\n" + Gdx.files.internal("data/shaders/forward/modelBatcher_simple.vertex.glsl").readString();
-		String frag = Gdx.files.internal("data/shaders/forward/modelBatcher_simple.fragment.glsl").readString();
+		String vert = "#define MAX_INSTANCES " + MAX_INSTANCES + "\n" + Gdx.files.internal("data/shaders/forward/modelbatcher_simple.vertex.glsl").readString();
+		String frag = Gdx.files.internal("data/shaders/forward/modelbatcher_simple.fragment.glsl").readString();
 		
 		simpleShader = new ShaderProgram(vert, frag);
 	
