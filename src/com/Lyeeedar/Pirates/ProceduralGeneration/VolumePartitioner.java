@@ -365,7 +365,6 @@ public class VolumePartitioner
 
 	public void processRepeat(JsonValue repeat, String axis)
 	{
-		axis = axis == null ? repeat.getString("Axis") : axis ;
 		String eqn = repeat.getString("Size");
 		int repeats = repeat.getInt("Repeats", -1);
 		float offset = repeat.has("Offset") ? parseEquation(repeat.getString("Offset"), getVal(axis, max)-getVal(axis, min), variables) : 0 ;
@@ -464,45 +463,10 @@ public class VolumePartitioner
 		else throw new RuntimeException("Invalid Axis: "+axis);
 	}
 	
-	public void processDivide(JsonValue divide)
-	{
-		String axis = divide.getString("Axis");
-		
-		float interval = getVal(axis, max) - getVal(axis, min);
-		
-		Vector3 nmin = Pools.obtain(Vector3.class).set(min);
-		Vector3 nmax = Pools.obtain(Vector3.class).set(max);
-		
-		String[] sizes = divide.get("Sizes").asStringArray();
-		String[] rules = divide.get("Rules").asStringArray();
-		String[] coords = divide.has("Coords") ? divide.get("Coords").asStringArray() : null;
-		
-		for (int i = 0; i < sizes.length; i++)
-		{
-			String eqn = sizes[i];
-			float size = parseEquation(eqn, interval, variables);
-			
-			setVal(axis, nmax, getVal(axis, nmin) + size);
-			
-			JsonValue rule = methodTable.get(rules[i]);
-			if (rule == null) rule = tempMethodTable.get(rules[i]);
-			if (rule == null) rule = tempMethodTable.get(rules[i]);
-			
-			VolumePartitioner vp = new VolumePartitioner(nmin, nmax, rule, methodTable, this, occluders);
-			if (coords != null) vp.applyCoords(coords[i]);
-			children.add(vp);
-			
-			setVal(axis, nmin, getVal(axis, nmax));
-		}
-		
-		Pools.free(nmin);
-		Pools.free(nmax);
-	}
-	
 	private static final char[][] csvDelimiters = {
 		{'(', ')'}
 	};
-	private static String[] parseCSV(String csv)
+	public static String[] parseCSV(String csv)
 	{
 		Array<String> store = new Array<String>(false, 16);
 		StringBuilder builder = new StringBuilder();
@@ -1006,26 +970,7 @@ public class VolumePartitioner
 		composedTransform.set(parentTransform).mul(localTransform);
 		invComposedTransform.set(composedTransform).inv();
 	}
-	
-	public void processConditional(JsonValue conditional, boolean canInterrupt)
-	{
-		String[] values = parseCSV(conditional.asString());
 		
-		String condition = values[0];
-		String ruleSucceed = values[1];
-		String ruleFail = values[2];
-		String chosenRule = evaluateConditional(condition) ? ruleSucceed : ruleFail ;
-		
-		JsonValue rule = methodTable.get(chosenRule);
-		if (rule == null) rule = tempMethodTable.get(chosenRule);
-		
-		if (rule.child != null) 
-		{
-			if (canInterrupt) ruleStack.addFirst(rule.child);
-			else processRuleBlock(rule);
-		}
-	}
-	
 	public void processMultiConditional(JsonValue conditional, boolean canInterrupt)
 	{
 		JsonValue current = conditional.child;
@@ -1343,33 +1288,22 @@ public class VolumePartitioner
 		}
 		else if (method.equalsIgnoreCase("Rotate"))
 		{
-			if (current.child != null)
-			{
-				String xstring = current.getString("X", "0");
-				String ystring = current.getString("Y", "1");
-				String zstring = current.getString("Z", "0");
-				String astring = current.getString("Angle", "0");
-				
-				float x = parseEquation(xstring, 0, variables);
-				float y = parseEquation(ystring, 0, variables);
-				float z = parseEquation(zstring, 0, variables);
-				float a = parseEquation(astring, 0, variables);				
-				
-				Matrix4 rotation = Pools.obtain(Matrix4.class).setToRotation(x, y, z, a);
-				
-				transform(rotation);
-				
-				Pools.free(rotation);
-			}
-			else
-			{
-				applyCoords(current.asString());
-			}
+			String xstring = current.getString("X", "0");
+			String ystring = current.getString("Y", "1");
+			String zstring = current.getString("Z", "0");
+			String astring = current.getString("Angle", "0");
 			
-		}
-		else if (method.equalsIgnoreCase("Conditional"))
-		{
-			processConditional(current, canInterrupt);
+			float x = parseEquation(xstring, 0, variables);
+			float y = parseEquation(ystring, 0, variables);
+			float z = parseEquation(zstring, 0, variables);
+			float a = parseEquation(astring, 0, variables);				
+			
+			Matrix4 rotation = Pools.obtain(Matrix4.class).setToRotation(x, y, z, a);
+			
+			transform(rotation);
+			
+			Pools.free(rotation);
+			
 		}
 		else if (method.equalsIgnoreCase("MultiConditional"))
 		{
@@ -1383,10 +1317,6 @@ public class VolumePartitioner
 		{
 			processSelect(current);
 		}
-		else if (method.equalsIgnoreCase("Repeat"))
-		{
-			processRepeat(current, null);
-		}
 		else if (method.equalsIgnoreCase("RepeatX"))
 		{
 			processRepeat(current, "X");
@@ -1398,10 +1328,6 @@ public class VolumePartitioner
 		else if (method.equalsIgnoreCase("RepeatZ"))
 		{
 			processRepeat(current, "Z");
-		}
-		else if (method.equalsIgnoreCase("Divide"))
-		{
-			processDivide(current);
 		}
 		else if (method.equalsIgnoreCase("DivideX"))
 		{
@@ -1419,13 +1345,29 @@ public class VolumePartitioner
 		{
 			snap.set(current.getFloat("X", snap.x), current.getFloat("Y", snap.y), current.getFloat("Z", snap.z));
 		}
-		else if (method.equalsIgnoreCase("X") || method.equalsIgnoreCase("Y") || method.equalsIgnoreCase("Z"))
+		else if (method.equalsIgnoreCase("Resize"))
 		{
-			String axis = method;
-			String eqnString = current.asString();
+			String axis = "X";
+			String eqnString = current.getString("X", "100%");
 			float interval = getVal(axis, max) - getVal(axis, min) ;
 			
 			float val = parseEquation(eqnString, interval, variables) ;
+			
+			processResize(axis, val);
+			
+			axis = "Y";
+			eqnString = current.getString("Y", "100%");
+			interval = getVal(axis, max) - getVal(axis, min) ;
+			
+			val = parseEquation(eqnString, interval, variables) ;
+			
+			processResize(axis, val);
+			
+			axis = "Z";
+			eqnString = current.getString("Z", "100%");
+			interval = getVal(axis, max) - getVal(axis, min) ;
+			
+			val = parseEquation(eqnString, interval, variables) ;
 			
 			processResize(axis, val);
 		}
@@ -1463,6 +1405,10 @@ public class VolumePartitioner
 		{
 			tempMethodTable.put(method, current);
 		}
+		else if (method.equalsIgnoreCase("GraphData"))
+		{
+			
+		}
 		else
 		{
 			throw new RuntimeException("Unrecognised Rule: "+method);
@@ -1479,7 +1425,7 @@ public class VolumePartitioner
 		boolean useTriplanarSampling = meshValue.has("TriplanarScale");
 		float triplanarScale = 0;
 		if (useTriplanarSampling) triplanarScale = meshValue.getFloat("TriplanarScale");
-		boolean seamless = meshValue.getBoolean("IsSeamless", true);
+		boolean seamless = meshValue.getBoolean("Seamless", true);
 		
 		if (defines.containsKey(textureName)) textureName = defines.get(textureName);
 		String mbname = "";
@@ -1491,11 +1437,6 @@ public class VolumePartitioner
 		else if (meshName.equalsIgnoreCase("HemiSphere"))
 		{
 			mbname = meshName+textureName+"Theta"+meshValue.getString("Theta", "8")+"Phi"+meshValue.getString("Phi", "8")+useTriplanarSampling+triplanarScale+seamless;
-		}
-		else if (meshName.equalsIgnoreCase("Prism"))
-		{	
-			String eqn = meshValue.getString("loft", "100%");
-			mbname = meshName+textureName+"Loft"+eqn+useTriplanarSampling+triplanarScale+seamless;
 		}
 		else if (meshName.equalsIgnoreCase("Cylinder"))
 		{	
@@ -1551,12 +1492,6 @@ public class VolumePartitioner
 				int theta = meshValue.getInt("Theta", 8);
 				int phi = meshValue.getInt("Phi", 8);
 				mesh = Shapes.getHemiSphereMesh(theta, phi, 1, true, !useTriplanarSampling);
-			}
-			else if (meshName.equalsIgnoreCase("Prism"))
-			{
-				String eqn = meshValue.getString("loft", "100%");
-				float loft = eqn.equalsIgnoreCase("100%") ? 1 : parseEquation(eqn, 1, variables);
-				mesh = Shapes.getPrismMesh(1, loft, 1, 1, true, !useTriplanarSampling);
 			}
 			else
 			{
