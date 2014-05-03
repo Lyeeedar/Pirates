@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 
 public class Shapes {
@@ -969,7 +970,7 @@ public class Shapes {
 		nFront.set(N);
 		
 		// BACK
-		index = 12;
+		index = 15;
 		p1 = indices[index+0]*3;
 		p2 = indices[index+1]*3;
 		p3 = indices[index+2]*3;
@@ -989,7 +990,7 @@ public class Shapes {
 		nLeft.set(N);
 
 		// RIGHT
-		index = 30;
+		index = 33;
 		p1 = indices[index+0]*3;
 		p2 = indices[index+1]*3;
 		p3 = indices[index+2]*3;
@@ -997,9 +998,6 @@ public class Shapes {
 		V.set(cubeVerts[p3+0]-cubeVerts[p1+0], cubeVerts[p3+1]-cubeVerts[p1+1], cubeVerts[p3+2]-cubeVerts[p1+2]);		
 		N = U.crs(V).nor();		
 		nRight.set(N);
-		
-		Pools.free(U);
-		Pools.free(V);
 		
 		float[] cubeNormals = {
 				0, -1, 0, // bottom
@@ -1055,6 +1053,19 @@ public class Shapes {
 				vertices[i++] = cubeTex[tIdx++];
 			}
 		}
+		
+		System.out.println("Front: "+nFront);
+		System.out.println("Back: "+nBack);
+		System.out.println("Left: "+nLeft);
+		System.out.println("Right: "+nRight);
+		
+		Pools.free(nFront);
+		Pools.free(nBack);
+		Pools.free(nLeft);
+		Pools.free(nRight);
+		
+		Pools.free(U);
+		Pools.free(V);
 		
 		return vertices;
 	}
@@ -1430,4 +1441,8 @@ public class Shapes {
 		return mesh;
 	}
 
+	public static void main(String[] args)
+	{
+		getBoxVertices(1, 1, 0, 1, 1, 1, 0, true, true);
+	}
 }

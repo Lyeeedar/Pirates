@@ -593,7 +593,7 @@ public class VolumePartitioner
 					@Override
 					public int compare(BoundingBox bb0, BoundingBox bb1)
 					{
-						return (int) ((bb0.min.x - bb1.min.x)*100.0f);
+						return Float.compare(bb0.min.x, bb1.min.x);
 					}
 				});
 		
@@ -1080,9 +1080,7 @@ public class VolumePartitioner
 					String[] parts = condition.split(comparison);
 					float left = parseEquation(parts[0], 0, variables);
 					float right = parseEquation(parts[1], 0, variables);
-					
-					System.out.println("Parts: "+parts[0]+" "+parts[1]);
-					
+										
 					if (comparison.equals("<="))
 					{
 						succeed = left <= right;
@@ -1103,9 +1101,7 @@ public class VolumePartitioner
 					{
 						succeed = left > right;
 					}
-					
-					System.out.println(left+" "+comparison+" "+right+" = "+succeed+"     ("+condition+")");
-					
+										
 					break;
 				}
 			}
@@ -1802,7 +1798,7 @@ public class VolumePartitioner
 						@Override
 						public int compare(BoundingBox bb0, BoundingBox bb1)
 						{
-							return (int) ((bb0.min.y - bb1.min.y)*100.0f);
+							return Float.compare(bb0.min.y, bb1.min.y);
 						}
 					});
 		}
@@ -1814,7 +1810,7 @@ public class VolumePartitioner
 						@Override
 						public int compare(BoundingBox bb0, BoundingBox bb1)
 						{
-							return (int) ((bb0.min.z - bb1.min.z)*100.0f);
+							return Float.compare(bb0.min.z, bb1.min.z);
 						}
 					});
 		}
